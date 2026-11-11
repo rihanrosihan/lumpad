@@ -15,12 +15,13 @@ fi
 
 id lumpad &>/dev/null || useradd --system --home $APP --shell /usr/sbin/nologin lumpad
 [ -d $APP ] || { echo "Clone the repo to $APP first (see README)"; exit 1; }
+git config --global --add safe.directory $APP
 chown -R lumpad:lumpad $APP
 [ -f $APP/.env ] || { cp $APP/.env.example $APP/.env; chmod 600 $APP/.env; chown lumpad:lumpad $APP/.env; }
 sed -i "s#^PUBLIC_URL=.*#PUBLIC_URL=https://$DOMAIN#" $APP/.env
 
-read -rsp "Password for web login ($USER_NAME): " PW; echo
-HASH=$(caddy hash-password --plaintext "$PW")
+echo "Choose the web login password for '$USER_NAME' (typing is hidden; Enter it twice):"
+HASH=$(caddy hash-password)
 sed -e "s#__DOMAIN__#$DOMAIN#" -e "s#__USER__#$USER_NAME#" -e "s#__HASH__#$HASH#" $APP/deploy/Caddyfile > /etc/caddy/Caddyfile
 cp $APP/deploy/lumpad.service /etc/systemd/system/lumpad.service
 systemctl daemon-reload; systemctl enable --now lumpad; systemctl restart caddy
