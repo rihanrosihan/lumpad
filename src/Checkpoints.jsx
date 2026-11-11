@@ -55,7 +55,7 @@ export default function Checkpoints({ vdot, results, setResults, focus }) {
   useEffect(() => { if (focus) { setOpen(focus); setTimeout(() => refs.current[focus]?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50) } }, [focus])
   const upd = (id, patch) => setResults({ ...results, [id]: { ...results[id], ...patch } })
 
-  return <Screen title="Checkpoints" sub="20 titik ukur menuju sub-4:00">
+  return <>
     <Card className={kg.fired ? 'c-red' : ''}>
       <div className="ch"><h2>Kill gate</h2><Chip tone={kg.fired ? 'red' : 'green'}>{kg.fired ? 'AKTIF' : 'belum menyala'}</Chip></div>
       <p className="muted">{kg.fired ? kg.why + ' → pindah ke tier terukur (4:15 / 4:30 / finish-first). Race tetap dilari.' : 'Dua TT merah berturut-turut mulai CP4, atau rasio CP11 < 0,85.'}</p>
@@ -91,5 +91,5 @@ export default function Checkpoints({ vdot, results, setResults, focus }) {
         </li>
       })}
     </ol>
-  </Screen>
+  </>
 }

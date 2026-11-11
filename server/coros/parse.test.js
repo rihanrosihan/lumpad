@@ -84,3 +84,16 @@ test('laps: centimetres → metres, picks the 1-km group, tolerates the anomaly 
   assert.equal(r.laps[0].distance_m, 1000); assert.equal(r.laps[1].distance_m, 58.86); assert.equal(r.laps[1].gct_ms, undefined); assert.equal(r.power, 177)
   assert.equal(parseLaps('Tool call anomalies detected. High risk of session context pollution'), null)
 })
+
+import { parseTrainingLoad, parseRecovery, parseSleepOverview, parseActivityDetail, parseFitness } from './parse.js'
+test('training load: short/long-term load and ratio per day', () => {
+  const r = parseTrainingLoad('Training Load Assessment\n========\n\n2027-01-11\nComment: Resuming\nShort-Term Load: 36\nLong-Term Load: 62\nLoad Ratio: 0.58\n\n2027-01-10\nComment: Performance\nShort-Term Load: 56\nLong-Term Load: 73\nLoad Ratio: 0.76')
+  assert.deepEqual(r[0], { date: '2027-01-11', load_comment: 'Resuming', load_short: 36, load_long: 62, load_ratio: 0.58 }); assert.equal(r.length, 2)
+})
+test('recovery, sleep score, activity detail, fitness overview', () => {
+  assert.deepEqual(parseRecovery('Recovery: 87%\nLevel: Fresh\nEstimated Full Recovery: 0h'), { recovery_pct: 87, recovery_level: 'Fresh' })
+  assert.deepEqual(parseSleepOverview('Sleep Overview\n\n2027-01-09\nSleep Score: 38\nAwake Count (>5 min): 1\n\n2027-01-10\nSleep Score: 84\nAwake Count (>5 min): 0'), [{ date: '2027-01-09', sleep_score: 38, sleep_awake_count: 1 }, { date: '2027-01-10', sleep_score: 84, sleep_awake_count: 0 }])
+  assert.deepEqual(parseActivityDetail('Workout Time: 44:53\nTraining Load: 158\nAerobic TE: 3.6\nAnaerobic TE: 1.8\nTraining Focus: Tempo\nPerformance: Below Average'), { training_load: 158, aerobic_te: 3.6, anaerobic_te: 1.8, training_focus: 'Tempo', performance: 'Below Average' })
+  assert.deepEqual(parseFitness('VO2max: 47\nRunning Level: 66\nThreshold Pace: 5:56 /km\n5 km Prediction: 28:40\n10 km Prediction: 1:00:33\nHalf Marathon Prediction: 2:17:13\nMarathon Prediction: 4:53:04'),
+    { vo2max: 47, running_level: 66, threshold_pace_s_km: 356, pred_5k_s: 1720, pred_10k_s: 3633, pred_hm_s: 8233, pred_m_s: 17584 })
+})

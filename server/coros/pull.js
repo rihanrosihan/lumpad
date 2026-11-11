@@ -1,5 +1,5 @@
 // Staged pull from COROS → normalised rows → applyIngest (idempotent). `call(tool,args)` is injected (real MCP or a test double).
-import { parseDailyHealth, parseSleepHrv, parseResting, parseSportRecords, parseLaps } from './parse.js'
+import { parseDailyHealth, parseSleepHrv, parseResting, parseSportRecords, parseLaps, parseTrainingLoad, parseRecovery, parseSleepOverview, parseActivityDetail, parseFitness } from './parse.js'
 import { applyIngest } from '../ingest.js'
 import { db } from '../store.js'
 
@@ -40,6 +40,24 @@ export async function pullRange({ call, from, to, trigger, progress = () => {}, 
   const rt = await retry(() => call('queryRestingHeartRate', { days: Math.min(days, 90) }), 2, note, 'resting HR')
   if (rt != null) for (const r of parseResting(rt)) if (keep(r.date)) { Object.assign(get(r.date), r); stats.resting++ }
 
+  // 3b. training load (acute / chronic / ratio per day) — one call, halve on failure like daily health
+  progress({ stage: 'load', done: 0, total: 1 })
+  for (let n = Math.min(days, 400); n >= 7; n = Math.floor(n / 2)) {
+    const t = await retry(() => call('queryTrainingLoadAssessment', { days: n }), 2, note, `training load (${n} days)`)
+    if (t != null) { for (const r of parseTrainingLoad(t)) if (keep(r.date)) { Object.assign(get(r.date), r); stats.load = (stats.load || 0) + 1 } if (n < days) note(`training load only reached back ${n} days`); break }
+  }
+  // 3c. sleep score in 30-day windows
+  const sw = []; for (let s = from; s <= to; s = addDays(s, 30)) sw.push([s, addDays(s, 29) > to ? to : addDays(s, 29)])
+  for (const [i, [s, e]] of sw.entries()) {
+    progress({ stage: 'sleep', done: i, total: sw.length })
+    const t = await retry(() => call('querySleepOverview', { startDate: ymd(s), endDate: ymd(e) }), 2, note, `sleep score ${s}..${e}`)
+    if (t != null) for (const r of parseSleepOverview(t)) if (keep(r.date)) Object.assign(get(r.date), r)
+  }
+  // 3d. "now" snapshots: recovery % and fitness assessment (COROS only exposes the current value; stored under today's date)
+  progress({ stage: 'snapshot', done: 0, total: 2 })
+  const rec = await retry(() => call('queryRecoveryStatus', {}), 2, note, 'recovery status'); if (rec != null) Object.assign(get(to), parseRecovery(rec))
+  const fit = await retry(() => call('queryFitnessAssessmentOverview', {}), 2, note, 'fitness overview'); const fitness = fit != null ? parseFitness(fit) : {}
+
   // 4. activities, month by month (split a window if the page is full)
   const acts = []
   const fetchActs = async (s, e, depth = 0) => {
@@ -60,6 +78,13 @@ export async function pullRange({ call, from, to, trigger, progress = () => {}, 
     const p = t && parseLaps(t)
     if (p?.laps.length) { a.laps = p.laps; a.cadence ??= p.cadence; a.power ??= p.power; stats.laps += p.laps.length } else { stats.lapsMissing++; note(`laps missing for run ${a.date} (${a.source_id})`) }
   }
+  // 5b. per-activity training load / TE / focus (runs + strength) where we don't have it yet
+  const need = uniq.filter((a) => (RUN.has(a.sport_code) || a.sport_code === 402) && db.prepare('SELECT training_load FROM activities WHERE id = ?').get('coros:' + a.source_id)?.training_load == null)
+  for (const [i, a] of need.entries()) {
+    progress({ stage: 'details', done: i, total: need.length })
+    const t = await retry(() => call('getActivityDetail', { labelId: a.source_id, sportType: a.sport_code }), 2, () => {}, '')
+    const d = t && parseActivityDetail(t); if (d && Object.keys(d).length) Object.assign(a, d)
+  }
   uniq.forEach((a) => { delete a.sport_code; stats.activities++ })
 
   // 6. write (idempotent)
@@ -67,8 +92,8 @@ export async function pullRange({ call, from, to, trigger, progress = () => {}, 
   const health = [...rows.values()].filter((r) => Object.keys(r).length > 1).sort((a, b) => a.date.localeCompare(b.date))
   let res = { counts: { health: 0, activities: 0, laps: 0 }, rejected: [] }
   for (let i = 0; i < Math.max(1, Math.ceil(uniq.length / 300)); i++) {
-    const r = applyIngest({ run: { trigger, started_at: new Date().toISOString(), notes: i === 0 ? notes.slice(0, 30) : [] }, health: i === 0 ? health : [], activities: uniq.slice(i * 300, (i + 1) * 300) })
-    for (const k of ['health', 'activities', 'laps']) res.counts[k] += r.counts[k]; res.rejected.push(...r.rejected)
+    const r = applyIngest({ run: { trigger, started_at: new Date().toISOString(), notes: i === 0 ? notes.slice(0, 30) : [] }, health: i === 0 ? health : [], fitness: i === 0 && Object.keys(fitness).length ? [{ date: to, ...fitness }] : [], activities: uniq.slice(i * 300, (i + 1) * 300) })
+    for (const k of ['health', 'activities', 'laps']) res.counts[k] += r.counts[k]; res.counts.fitness = (res.counts.fitness || 0) + (r.counts.fitness || 0); res.rejected.push(...r.rejected)
   }
   return { stats, counts: res.counts, rejected: res.rejected.length, notes }
 }

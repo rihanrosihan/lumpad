@@ -56,3 +56,7 @@ export function useStore(key, init) {
   }, [])
   return [v, set]
 }
+
+// App settings (synced like every other key): race date and whether the organiser has confirmed it, shoe roles.
+export const DEFAULT_SETTINGS = { raceDate: '2027-10-24', raceConfirmed: false, shoeRoles: {} }
+export const useSettings = () => { const [s, set] = useStore('lumpad.settings', DEFAULT_SETTINGS); return [{ ...DEFAULT_SETTINGS, ...s }, set] }

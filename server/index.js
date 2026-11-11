@@ -7,6 +7,7 @@ import { load, save } from './db.js'
 import * as corosAuth from './coros/oauth.js'
 import { withCoros } from './coros/mcp.js'
 import { startJob, recentJobs, isRunning, startScheduler } from './jobs.js'
+import { listMerged, activityDetail, gearList, readinessData } from './activities.js'
 import { applyIngest, checkToken, syncStatus, healthRange, activitiesRange, lapsOf, validDate } from './ingest.js'
 
 const send = (res, code, body, headers = {}) => { res.writeHead(code, { 'content-type': 'application/json', ...headers }); res.end(JSON.stringify(body)) }
@@ -33,6 +34,10 @@ const routes = {
   'POST /api/coros/disconnect': async () => { await corosAuth.disconnect(); return { ok: true } },
   'POST /api/sync/run': async () => { needCoros(); return { job: startJob('daily') } },
   'POST /api/sync/backfill': async (_q, req) => { needCoros(); const b = JSON.parse((await readBody(req, 1e4)).toString() || '{}'); if (b.from && !validDate(b.from)) throw Object.assign(new Error('bad from date'), { status: 400 }); return { job: startJob('backfill', { from: b.from }) } },
+  'GET /api/activities/merged': async (q) => listMerged(...range(q)),
+  'GET /api/activities/detail': async (q) => { const a = activityDetail(q.get('id') || ''); if (!a) throw Object.assign(new Error('not found'), { status: 404 }); return a },
+  'GET /api/gear': async () => gearList(),
+  'GET /api/readiness': async (q) => readinessData(...range(q)),
   'GET /api/sync/jobs': async () => jobView(),
   // read-only monitoring for the sync routine / Claude (bearer token, no health values — counts and dates only)
   'GET /api/ingest/status': async (_q, req) => { checkToken(req); return { ...syncStatus(), ...jobView(), coros: corosAuth.status() } },

@@ -3,6 +3,9 @@ import { paces } from './lib/vdot.js'
 import { sessionPaces } from './lib/pace.js'
 import { BY_DATE, WEEKS, weekOf, today, parse, iso, addDays, mondayOf, MONTHS, MON3, fmtLong, KIND, PHASE_NAME, PLAN_START, RACE_DATE } from './lib/calendar.js'
 import { Chip, Screen, Sheet, Icon, StrengthChips } from './ui.jsx'
+import { useApi } from './api.js'
+import Checkpoints from './Checkpoints.jsx'
+import Race from './Race.jsx'
 
 const monthKm = (m) => Math.round(Object.values(BY_DATE).filter((d) => +d.date.slice(5, 7) === m + 1).reduce((a, d) => a + d.km, 0))
 const monthOfWeek = (w) => +w.days[Math.floor(w.days.length / 2)].date.slice(5, 7) - 1
@@ -22,7 +25,7 @@ function Season({ month, setMonth, T }) {
   </>
 }
 
-export default function Calendar({ vdot, focus }) {
+function MonthView({ vdot, focus, raceDate }) {
   const T = today(), p = paces(vdot.v)
   const inPlan = T >= PLAN_START && T <= '2027-12-31'
   const [month, setMonth] = useState(inPlan ? parse(T).getMonth() : 0), [sel, setSel] = useState(null)
@@ -37,7 +40,11 @@ export default function Calendar({ vdot, focus }) {
   const step = (n) => { const t = addDays(sel, n); if (BY_DATE[t]) { setSel(t); setMonth(+t.slice(5, 7) - 1) } }
   const todayMonth = inPlan ? parse(T).getMonth() : null
 
-  return <Screen title="Kalender 2027" sub={`${PHASE_NAME[phase] || ''} · ${monthKm(month)} km bulan ini · total 2.873 km`}>
+  const first = `2027-${String(month + 1).padStart(2, '0')}-01`, last = `2027-${String(month + 1).padStart(2, '0')}-31`
+  const A = useApi(`/api/activities/merged?from=${first}&to=${last}`)
+  const done = useMemo(() => { const m = {}; for (const a of A.data || []) if (a.sport_class === 'run' && a.distance_m) m[a.date] = (m[a.date] || 0) + a.distance_m / 1000; return m }, [A.data])
+  return <>
+    <p className="sub" style={{ marginTop: -4, marginBottom: 10 }}>{PHASE_NAME[phase] || ''} · {monthKm(month)} km bulan ini · total 2.873 km</p>
     <Season month={month} setMonth={setMonth} T={T} />
     <div className="monthbar">
       <button disabled={month === 0} onClick={() => setMonth(month - 1)} aria-label="Bulan sebelumnya"><Icon n="left" /></button>
@@ -49,13 +56,13 @@ export default function Calendar({ vdot, focus }) {
       {weeks.map((wk, i) => { const w = weekOf(wk.find((x) => BY_DATE[x]) || ''); return <div className="calw" key={i}>
         <span className="wl" aria-label={w ? `Minggu ${w.id.slice(1)}, ${Math.round(w.km)} km` : undefined}><b>{w?.id || ''}</b><small>{w ? Math.round(w.km) : ''}</small></span>
         {wk.map((s) => { const x = BY_DATE[s], inm = +s.slice(5, 7) === month + 1, c = cpOf(x)
-          return <button key={s} disabled={!x} aria-label={describe(s, x)} aria-current={s === T ? 'date' : undefined}
-            className={`cell ${x ? 'k-' + x.kind : 'k-none'} ${inm ? '' : 'out'} ${s === T ? 'today' : ''} ${s === RACE_DATE ? 'raceday' : ''}`} onClick={() => setSel(s)}>
-            <i>{+s.slice(8)}</i><b>{x && x.km ? x.km : ''}</b>{c && <em>{c}</em>}{!c && x && <u>{KIND[x.kind].short}</u>}</button> })}
+          return <button key={s} disabled={!x} aria-label={describe(s, x) + (done[s] ? `, sudah lari ${done[s].toFixed(1)} km` : '')} aria-current={s === T ? 'date' : undefined}
+            className={`cell ${x ? 'k-' + x.kind : 'k-none'} ${inm ? '' : 'out'} ${s === T ? 'today' : ''} ${s === raceDate ? 'raceday' : ''}`} onClick={() => setSel(s)}>
+            <i>{+s.slice(8)}</i>{done[s] ? <span className="done" aria-hidden="true">✓</span> : null}<b>{x && x.km ? x.km : ''}</b>{c && <em>{c}</em>}{!c && x && <u>{KIND[x.kind].short}</u>}</button> })}
       </div> })}
     </div>
     <div className="legend" aria-label="Keterangan warna">{['easy', 'long', 'quality', 'tt', 'speed', 'race', 'rest'].map((k) => <span key={k}><i className={`kdot k-${k}`} />{KIND[k].label} <b>({KIND[k].short})</b></span>)}</div>
-    <p className="muted">Angka = km hari itu · kolom kiri = nomor minggu dan total km minggu.</p>
+    <p className="muted">Angka = km rencana · ✓ = sudah dilari · kolom kiri = nomor minggu dan total km minggu.</p>
 
     <Sheet open={!!d} onClose={() => setSel(null)} label={d ? fmtLong(d.date) : ''}>
       {d && <>
@@ -74,5 +81,16 @@ export default function Calendar({ vdot, focus }) {
         <p className="src">Pace dari VDOT {vdot.v.toFixed(1)} · {vdot.src}</p>
       </>}
     </Sheet>
+  </>
+}
+
+export default function Calendar({ vdot, results, setResults, focus, settings, go }) {
+  const [view, setView] = useState('month')
+  useEffect(() => { if (focus && typeof focus === 'object') setView(focus.view === 'cp' ? 'cp' : focus.view === 'race' ? 'race' : 'month'); else if (focus) setView('month') }, [focus])
+  return <Screen title="Kalender" sub="Rencana 2027, checkpoint dan race">
+    <div className="seg3" role="group" aria-label="Tampilan kalender">{[['month', 'Kalender'], ['cp', 'Checkpoint'], ['race', 'Race']].map(([k, l]) => <button key={k} aria-pressed={view === k} onClick={() => setView(k)}>{l}</button>)}</div>
+    {view === 'month' && <MonthView vdot={vdot} focus={typeof focus === 'string' ? focus : null} raceDate={settings.raceDate} />}
+    {view === 'cp' && <Checkpoints vdot={vdot} results={results} setResults={setResults} focus={focus?.id} />}
+    {view === 'race' && <Race vdot={vdot} results={results} settings={settings} go={go} />}
   </Screen>
 }

@@ -44,6 +44,18 @@ CREATE TABLE sync_jobs (
 );
 CREATE TABLE raw_pulls (id INTEGER PRIMARY KEY AUTOINCREMENT, source TEXT NOT NULL, tool TEXT NOT NULL, params TEXT, body BLOB, pulled_at TEXT NOT NULL);
 CREATE INDEX raw_pulls_tool ON raw_pulls(tool, pulled_at);
+`, `
+ALTER TABLE health_daily ADD COLUMN load_ratio REAL;
+ALTER TABLE health_daily ADD COLUMN load_comment TEXT;
+ALTER TABLE health_daily ADD COLUMN sleep_score REAL;
+ALTER TABLE health_daily ADD COLUMN sleep_awake_count REAL;
+ALTER TABLE health_daily ADD COLUMN recovery_level TEXT;
+ALTER TABLE activities ADD COLUMN training_load REAL;
+ALTER TABLE activities ADD COLUMN aerobic_te REAL;
+ALTER TABLE activities ADD COLUMN anaerobic_te REAL;
+ALTER TABLE activities ADD COLUMN training_focus TEXT;
+ALTER TABLE activities ADD COLUMN performance TEXT;
+CREATE TABLE fitness_daily (date TEXT PRIMARY KEY, vo2max REAL, running_level REAL, threshold_pace_s_km REAL, pred_5k_s REAL, pred_10k_s REAL, pred_hm_s REAL, pred_m_s REAL, pulled_at TEXT NOT NULL);
 `]
 
 const v = db.prepare('PRAGMA user_version').get().user_version

@@ -57,3 +57,34 @@ export function parseLaps(text) {
   })) // COROS lap distances are in centimetres
   return { laps, cadence: all?.avgCadence || undefined, power: all?.avgPower || undefined }
 }
+
+// ---- load / recovery / fitness / sleep score / activity detail (formats verified live, 11 Nov 2026)
+const tsec = (s) => { if (!s) return undefined; const p = s.split(':').map(Number); return p.some(Number.isNaN) ? undefined : p.reduce((a, n) => a * 60 + n, 0) }
+// queryTrainingLoadAssessment → Short-Term (acute) / Long-Term (chronic) load and their ratio (ACWR) per day
+export function parseTrainingLoad(text) {
+  const out = [], re = /(\d{4}-\d{2}-\d{2})\s*\n\s*Comment:\s*([^\n]+)\n\s*Short-Term Load:\s*(\d+)\s*\n\s*Long-Term Load:\s*(\d+)\s*\n\s*Load Ratio:\s*([\d.]+)/g
+  for (let m; (m = re.exec(String(text))); ) out.push({ date: m[1], load_comment: m[2].trim().slice(0, 30), load_short: +m[3], load_long: +m[4], load_ratio: +m[5] })
+  return out
+}
+export function parseRecovery(text) { const t = String(text); return clean({ recovery_pct: num(/Recovery:\s*(\d+)\s*%/, t), recovery_level: /Level:\s*([^\n]+)/.exec(t)?.[1].trim().slice(0, 30) }) }
+// querySleepOverview → score + awake count per wake-up date
+export function parseSleepOverview(text) {
+  const out = []
+  for (const b of String(text).split(/^(\d{4}-\d{2}-\d{2})$/m).slice(1).reduce((a, x, i, arr) => (i % 2 === 0 ? [...a, [x, arr[i + 1]]] : a), []))
+    out.push(clean({ date: b[0], sleep_score: num(/Sleep Score:\s*(\d+)/, b[1]), sleep_awake_count: num(/Awake Count[^:]*:\s*(\d+)/, b[1]) }))
+  return out.filter((r) => Object.keys(r).length > 1)
+}
+export function parseActivityDetail(text) {
+  const t = String(text)
+  return clean({
+    training_load: num(/Training Load:\s*(\d+)/, t), aerobic_te: num(/Aerobic TE:\s*([\d.]+)/, t), anaerobic_te: num(/Anaerobic TE:\s*([\d.]+)/, t),
+    training_focus: /Training Focus:\s*([^\n]+)/.exec(t)?.[1].trim().slice(0, 40), performance: /Performance:\s*([^\n]+)/.exec(t)?.[1].trim().slice(0, 40),
+  })
+}
+export function parseFitness(text) {
+  const t = String(text), tm = (label) => tsec(new RegExp('^' + label + ':\\s*([\\d:]+)', 'm').exec(t)?.[1])
+  return clean({
+    vo2max: num(/VO2max:\s*(\d+)/, t), running_level: num(/Running Level:\s*(\d+)/, t), threshold_pace_s_km: tm('Threshold Pace'),
+    pred_5k_s: tm('5 km Prediction'), pred_10k_s: tm('10 km Prediction'), pred_hm_s: tm('Half Marathon Prediction'), pred_m_s: tm('Marathon Prediction'),
+  })
+}

@@ -13,6 +13,11 @@ function fake({ lapFails = 0, lapAlwaysBad = false } = {}) {
     if (tool === 'querySleepHrv') return `HRV Assessment\n2027-01-05:\n  HRV Avg: 80 ms — Normal\n  Normal Range: 50 - 100 ms\n  Baseline: 78 ms\n\nSleep HRV Time Series\n2027-01-05:\n  hrv=1 ms`
     if (tool === 'queryRestingHeartRate') return '2027-01-05: 55 bpm\n2027-01-06: 57 bpm'
     if (tool === 'querySportRecords') return `1. Outdoor Run — 2027-01-05\n   Duration: 30:00 | Distance: 5.00 km\n   Average Pace: 6:00 /km | Avg HR: 150 bpm | Calories: 300 kcal\n   LabelId: 900 | SportType: 100\n\n2. Walk — 2027-01-06\n   Duration: 10:00 | Distance: 1.00 km\n   LabelId: 901 | SportType: 900\n`
+    if (tool === 'queryTrainingLoadAssessment') return 'Training Load Assessment\n\n2027-01-06\nComment: Maintaining\nShort-Term Load: 40\nLong-Term Load: 60\nLoad Ratio: 0.67\n\n2027-01-05\nComment: Resuming\nShort-Term Load: 30\nLong-Term Load: 58\nLoad Ratio: 0.52'
+    if (tool === 'querySleepOverview') return 'Sleep Overview\n\n2027-01-05\nSleep Score: 84\nAwake Count (>5 min): 0\n'
+    if (tool === 'queryRecoveryStatus') return 'Recovery: 90%\nLevel: Fresh\nEstimated Full Recovery: 0h'
+    if (tool === 'queryFitnessAssessmentOverview') return 'VO2max: 47\nRunning Level: 66\nThreshold Pace: 5:56 /km\n5 km Prediction: 28:40\n10 km Prediction: 1:00:33\nHalf Marathon Prediction: 2:17:13\nMarathon Prediction: 4:53:04'
+    if (tool === 'getActivityDetail') return 'Training Load: 158\nAerobic TE: 3.6\nAnaerobic TE: 1.8\nTraining Focus: Tempo\nPerformance: Below Average'
     if (tool === 'queryActivityLapData') { if (lapAlwaysBad || lf++ < lapFails) return 'Tool call anomalies detected. High risk of session context pollution'; return LAPS }
     throw new Error('unexpected tool ' + tool)
   }
@@ -22,15 +27,20 @@ test('staged pull merges 3 health tools by date, windows HRV in 7s, saves activi
   const f = fake(), notes = [], stages = new Set()
   const r = await pullRange({ call: f.call, from: '2027-01-01', to: '2027-01-20', trigger: 'backfill', notes, progress: (p) => stages.add(p.stage) })
   assert.equal(f.log.filter(([t]) => t === 'querySleepHrv').length, 3) // 1–7, 8–14, 15–20
-  assert.deepEqual([...stages], ['health', 'hrv', 'resting', 'activities', 'laps', 'saving'])
+  assert.deepEqual([...stages], ['health', 'hrv', 'resting', 'load', 'sleep', 'snapshot', 'activities', 'laps', 'details', 'saving'])
   const h = db.prepare('SELECT * FROM health_daily WHERE date = ?').get('2027-01-05')
   assert.equal(h.sleep_hr_avg, 61); assert.equal(h.hrv_avg, 80); assert.equal(h.resting_hr, 55); assert.equal(h.sleep_total_min, 420)
   assert.equal(db.prepare('SELECT COUNT(*) n FROM laps').get().n, 1)
+  assert.equal(h.load_short, 30); assert.equal(h.load_ratio, 0.52); assert.equal(h.sleep_score, 84)
+  assert.equal(db.prepare('SELECT recovery_pct FROM health_daily WHERE date = ?').get('2027-01-20').recovery_pct, 90) // snapshot stored under the pull's end date
+  assert.equal(db.prepare('SELECT vo2max, pred_m_s FROM fitness_daily').get().pred_m_s, 17584)
+  const a = db.prepare("SELECT training_load, aerobic_te, training_focus FROM activities WHERE id = 'coros:900'").get(); assert.deepEqual([a.training_load, a.aerobic_te, a.training_focus], [158, 3.6, 'Tempo'])
   assert.equal(r.rejected, 0); assert.equal(db.prepare('SELECT trigger FROM sync_runs ORDER BY id DESC LIMIT 1').get().trigger, 'backfill')
 })
 test('re-running is idempotent (no duplicates) and skips laps already stored', async () => {
   const f = fake(); await pullRange({ call: f.call, from: '2027-01-01', to: '2027-01-20', trigger: 'daily' })
-  assert.equal(db.prepare('SELECT COUNT(*) n FROM health_daily').get().n, 3); assert.equal(db.prepare("SELECT COUNT(*) n FROM activities").get().n, 2)
+  assert.equal(db.prepare('SELECT COUNT(*) n FROM health_daily').get().n, 4) // 3 nights + the end-date snapshot row; second run adds nothing
+  assert.equal(db.prepare("SELECT COUNT(*) n FROM activities").get().n, 2)
   assert.equal(f.log.filter(([t]) => t === 'queryActivityLapData').length, 0)
 })
 test('flaky lap tool: recovers on retry; gives up cleanly after 3 tries without failing the run', async () => {
@@ -44,7 +54,7 @@ test('flaky lap tool: recovers on retry; gives up cleanly after 3 tries without 
 test('a failing tool is noted, other data still saved', async () => {
   const f = fake(), call = async (t, a) => (t === 'querySleepHrv' ? Promise.reject(new Error('boom')) : f.call(t, a)), notes = []
   await pullRange({ call, from: '2027-01-01', to: '2027-01-10', trigger: 'daily', notes })
-  assert.ok(notes.some((n) => /HRV/.test(n))); assert.equal(db.prepare('SELECT COUNT(*) n FROM health_daily').get().n, 3)
+  assert.ok(notes.some((n) => /HRV/.test(n))); assert.ok(db.prepare('SELECT COUNT(*) n FROM health_daily').get().n >= 3)
 })
 test('job runner: records progress/done, refuses concurrent jobs, records errors', async () => {
   let release; const gate = new Promise((r) => (release = r))

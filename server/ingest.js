@@ -7,6 +7,7 @@ const R = { // [type, lo, hi]
   health: {
     sleep_hr_avg: ['n', 25, 200], sleep_hr_min: ['n', 25, 200], sleep_hr_max: ['n', 25, 250], hrv_avg: ['n', 3, 400], hrv_status: ['s', 40],
     hrv_range_lo: ['n', 0, 400], hrv_range_hi: ['n', 0, 400], hrv_baseline: ['n', 0, 400], resting_hr: ['n', 25, 150], stress_avg: ['n', 0, 100],
+    load_ratio: ['n', 0, 20], load_comment: ['s', 30], sleep_score: ['n', 0, 100], sleep_awake_count: ['n', 0, 50], recovery_level: ['s', 30],
     steps: ['n', 0, 200000], sleep_total_min: ['n', 0, 1500], sleep_deep_min: ['n', 0, 1500], sleep_light_min: ['n', 0, 1500],
     sleep_rem_min: ['n', 0, 1500], sleep_awake_min: ['n', 0, 1500], recovery_pct: ['n', 0, 100], load_short: ['n', 0, 5000], load_long: ['n', 0, 5000],
   },
@@ -14,12 +15,14 @@ const R = { // [type, lo, hi]
     start_ts: ['n', 1e9, 4e9], sport: ['s', 40], name: ['s', 200], distance_m: ['n', 0, 1e6], duration_s: ['n', 0, 2e5], avg_hr: ['n', 25, 250],
     avg_pace_s_km: ['n', 60, 5000], cadence: ['n', 0, 300], power: ['n', 0, 2000], elevation_m: ['n', -500, 9000], calories: ['n', 0, 20000],
     temp_c: ['n', -50, 60], humidity: ['n', 0, 100], gear_id: ['s', 64], location: ['s', 120],
+    training_load: ['n', 0, 3000], aerobic_te: ['n', 0, 6], anaerobic_te: ['n', 0, 6], training_focus: ['s', 40], performance: ['s', 40],
   },
   lap: { distance_m: ['n', 0, 1e6], duration_s: ['n', 0, 2e5], avg_pace_s_km: ['n', 60, 5000], avg_hr: ['n', 25, 250], cadence: ['n', 0, 300], power: ['n', 0, 2000], gct_ms: ['n', 50, 2000] },
+  fitness: { vo2max: ['n', 10, 100], running_level: ['n', 0, 200], threshold_pace_s_km: ['n', 120, 900], pred_5k_s: ['n', 600, 7200], pred_10k_s: ['n', 1200, 14400], pred_hm_s: ['n', 2400, 28800], pred_m_s: ['n', 5000, 50000] },
   gear: { name: ['s', 120], brand: ['s', 80], model: ['s', 80], distance_m: ['n', 0, 1e8] },
 }
 const DATE = /^20[2-3]\d-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/
-const LIM = { health: 800, activities: 400, laps: 600, gear: 60 }
+const LIM = { health: 800, activities: 400, laps: 600, gear: 60, fitness: 400 }
 
 // returns {ok, v} where v holds only valid whitelisted fields; null/undefined fields are skipped (never overwrite with null)
 function pick(o, spec) {
@@ -74,6 +77,11 @@ export function applyIngest(p) {
       upsert('gear', { id: g.id }, { ...body, pulled_at: now })
       counts.gear++
     }
+    for (const f of arr('fitness')) {
+      const r = DATE.test(f?.date) ? pick(f, R.fitness) : { ok: false, why: 'bad date' }
+      if (!r.ok) { rejected.push({ kind: 'fitness', date: f?.date, why: r.why }); continue }
+      upsert('fitness_daily', { date: f.date }, { ...r.v, pulled_at: now }); counts.fitness = (counts.fitness || 0) + 1
+    }
     const notes = Array.isArray(p?.run?.notes) ? p.run.notes.slice(0, 30).map((s) => String(s).slice(0, 300)) : []
     db.prepare('INSERT INTO sync_runs (received_at, started_at, trigger, ok, counts, notes) VALUES (?,?,?,?,?,?)').run(
       now, typeof p?.run?.started_at === 'string' ? p.run.started_at.slice(0, 40) : null, ['daily', 'manual', 'backfill'].includes(p?.run?.trigger) ? p.run.trigger : 'manual',
@@ -103,6 +111,7 @@ export const syncStatus = () => ({
   healthDays: db.prepare('SELECT COUNT(*) n FROM health_daily').get().n,
   activities: db.prepare('SELECT COUNT(*) n, MIN(date) first, MAX(date) last FROM activities').get(),
 })
+export const fitnessLatest = () => db.prepare('SELECT * FROM fitness_daily ORDER BY date DESC LIMIT 1').get() || null
 export const healthRange = (from, to) => db.prepare('SELECT * FROM health_daily WHERE date BETWEEN ? AND ? ORDER BY date').all(from, to)
 export const activitiesRange = (from, to) => db.prepare('SELECT * FROM activities WHERE date BETWEEN ? AND ? ORDER BY start_ts, date').all(from, to)
 export const lapsOf = (id) => db.prepare('SELECT * FROM laps WHERE activity_id = ? ORDER BY idx').all(id)
