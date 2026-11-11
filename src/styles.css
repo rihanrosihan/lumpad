@@ -156,3 +156,6 @@ main:focus{outline:none}
 .monthbar .mid{flex:1;display:flex;flex-direction:column;align-items:center}.monthbar .mid button{white-space:nowrap;min-height:44px;padding:0 14px}
 .gatemini{background:color-mix(in srgb,var(--surface) 98%,transparent)}
 .tld small{display:block}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.btn.full{width:100%;margin-top:8px}.btn.ghost{background:transparent;color:var(--muted);border:1px solid var(--line)}
+.btn:disabled{opacity:.5}.job{margin-top:12px;border-top:1px solid var(--line);padding-top:4px}.job ul{padding-left:18px;list-style:disc}
+a.btn{text-decoration:none;margin-top:6px}

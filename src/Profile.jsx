@@ -1,6 +1,7 @@
 import { useStore, useSyncStatus } from './store.js'
 import { TARGET, CHECKPOINTS } from './lib/plan.js'
 import Data from './Data.jsx'
+import CorosCard from './CorosCard.jsx'
 import { Card, Screen, Chip } from './ui.jsx'
 import { useSyncStatus2, wib, ago } from './sync.js'
 
@@ -24,6 +25,7 @@ export default function Profile({ resetResults }) {
       </>}
       <p className="muted">Jadwal: setiap hari ±07:50 WIB lewat rutin Claude (COROS + Strava). Sync manual: bilang "sync Lumpad" di sesi Claude ini atau jalankan rutinnya dari aplikasi Claude.</p>
     </Card>
+    <CorosCard />
     <Card title="Atlet"><div className="ath"><span className="avatar">R</span><div><b>Rihan</b><p className="muted">31 th · 178 cm · Bekasi · UESCA-certified</p><p className="muted">COROS Apex 4 + Pod 2 · HR optical wrist</p></div></div>
       <div className="banner">Konflik data: berat badan Strava 86,0 kg vs COROS 75,3 kg (Omron 18 Sep: 75,3 kg). Dipakai: COROS/Omron sampai ditimbang ulang.</div></Card>
     <Card title="Target & garis"><dl className="kv">{ROWS.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>

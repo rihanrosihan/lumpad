@@ -9,6 +9,7 @@ EnvironmentFile=/opt/lumpad/.env
 Environment=PORT=8787 DATA_DIR=/opt/lumpad/server/data
 ExecStart=/usr/bin/node --disable-warning=ExperimentalWarning server/index.js
 Restart=on-failure
+UMask=0077
 NoNewPrivileges=true
 ProtectSystem=full
 ReadWritePaths=/opt/lumpad/server/data

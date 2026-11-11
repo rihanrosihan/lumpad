@@ -7,6 +7,7 @@ const dir = process.env.DATA_DIR || path.resolve('server/data')
 fs.mkdirSync(dir, { recursive: true })
 export const DB_PATH = process.env.LUMPAD_DB || path.join(dir, 'lumpad.db')
 export const db = new DatabaseSync(DB_PATH)
+try { fs.chmodSync(DB_PATH, 0o600) } catch {}
 db.exec('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;')
 
 const MIGRATIONS = [`
@@ -34,7 +35,16 @@ CREATE TABLE gear (id TEXT PRIMARY KEY, name TEXT, brand TEXT, model TEXT, dista
 CREATE TABLE sync_runs (
   id INTEGER PRIMARY KEY AUTOINCREMENT, received_at TEXT NOT NULL, started_at TEXT, trigger TEXT,
   ok INTEGER NOT NULL, counts TEXT, notes TEXT
-);`]
+);`, `
+CREATE TABLE oauth_clients (provider TEXT PRIMARY KEY, client_id TEXT NOT NULL, redirect_uri TEXT NOT NULL, created_at TEXT NOT NULL);
+CREATE TABLE oauth_tokens (provider TEXT PRIMARY KEY, blob TEXT NOT NULL, expires_at INTEGER, scope TEXT, updated_at TEXT NOT NULL); -- blob = AES-256-GCM sealed JSON
+CREATE TABLE sync_jobs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, kind TEXT NOT NULL, status TEXT NOT NULL, params TEXT, progress TEXT, error TEXT,
+  started_at TEXT NOT NULL, finished_at TEXT, local_date TEXT
+);
+CREATE TABLE raw_pulls (id INTEGER PRIMARY KEY AUTOINCREMENT, source TEXT NOT NULL, tool TEXT NOT NULL, params TEXT, body BLOB, pulled_at TEXT NOT NULL);
+CREATE INDEX raw_pulls_tool ON raw_pulls(tool, pulled_at);
+`]
 
 const v = db.prepare('PRAGMA user_version').get().user_version
 for (let i = v; i < MIGRATIONS.length; i++) {

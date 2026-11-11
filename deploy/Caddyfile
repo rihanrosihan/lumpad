@@ -10,6 +10,14 @@ __DOMAIN__ {
 	handle @ingest {
 		reverse_proxy 127.0.0.1:8787
 	}
+	# read-only sync status (counts and dates only), bearer-token protected in the app
+	@istatus {
+		method GET
+		path /api/ingest/status
+	}
+	handle @istatus {
+		reverse_proxy 127.0.0.1:8787
+	}
 
 	# Everything else: web login
 	handle {

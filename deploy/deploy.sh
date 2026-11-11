@@ -13,10 +13,16 @@ if ! grep -q '^INGEST_TOKEN=.\{32,\}' .env; then
   sed -i '/^INGEST_TOKEN=/d' .env; echo "INGEST_TOKEN=$(openssl rand -hex 32)" >> .env
   echo ">> INGEST_TOKEN dibuat di /opt/lumpad/.env (tampilkan sendiri: grep INGEST_TOKEN /opt/lumpad/.env)"
 fi
+# Key that seals COROS OAuth tokens in the database (lives only in .env, so DB copies/backups hold ciphertext only)
+if ! grep -q '^LUMPAD_TOKEN_KEY=[0-9a-f]\{64\}' .env; then
+  sed -i '/^LUMPAD_TOKEN_KEY=/d' .env; echo "LUMPAD_TOKEN_KEY=$(openssl rand -hex 32)" >> .env
+  echo ">> LUMPAD_TOKEN_KEY dibuat di /opt/lumpad/.env (jangan hilang: tanpa ini COROS harus dihubungkan ulang)"
+fi
+grep -q '^PUBLIC_URL=https://' .env || echo ">> PERINGATAN: PUBLIC_URL di .env belum https://… (dipakai untuk callback COROS)"
 chown lumpad:lumpad .env; chmod 600 .env
 
 # Caddy: ensure the ingest bypass exists (idempotent)
-grep -q '@ingest' /etc/caddy/Caddyfile || bash /opt/lumpad/deploy/update-caddy.sh
+grep -q '@istatus' /etc/caddy/Caddyfile || bash /opt/lumpad/deploy/update-caddy.sh
 
 cp deploy/lumpad.service /etc/systemd/system/lumpad.service && systemctl daemon-reload
 [ -f /etc/cron.d/lumpad-backup ] || echo '15 3 * * * root /opt/lumpad/deploy/backup.sh' > /etc/cron.d/lumpad-backup
