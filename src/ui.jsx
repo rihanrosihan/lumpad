@@ -1,0 +1,29 @@
+import { useEffect } from 'react'
+import { KIND, strengthOf } from './lib/calendar.js'
+
+const P = {
+  home: 'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z',
+  ready: 'M3 12h4l2-6 4 12 2-6h6',
+  cal: 'M5 4h14a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zM4 9h16M8 2v4M16 2v4',
+  flag: 'M6 21V4m0 0h11l-2 4 2 4H6',
+  user: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0',
+  chev: 'M9 6l6 6-6 6', left: 'M15 6l-6 6 6 6', x: 'M6 6l12 12M18 6 6 18', check: 'M5 12l5 5 9-10',
+}
+export const Icon = ({ n, size = 22 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={P[n]} /></svg>
+
+export const Chip = ({ children, tone, kind, className = '' }) => <span className={`chip ${tone ? 't-' + tone : ''} ${kind ? 'k-' + kind : ''} ${className}`}>{children}</span>
+export const KindDot = ({ kind }) => <span className={`kdot k-${kind}`} title={KIND[kind]?.label} />
+export const StrengthChips = ({ day }) => <>{strengthOf(day).map((t) => <Chip key={t} tone="str">{t}</Chip>)}</>
+export const Screen = ({ title, sub, right, children }) => <section className="screen">
+  <header className="sh"><div><h1>{title}</h1>{sub && <p className="sub">{sub}</p>}</div>{right}</header>{children}
+</section>
+export const Card = ({ title, right, tone, children, className = '' }) => <div className={`card ${tone ? 'c-' + tone : ''} ${className}`}>
+  {(title || right) && <div className="ch"><h2>{title}</h2>{right}</div>}{children}</div>
+export const Stat = ({ k, v, sub }) => <div className="stat"><span>{k}</span><b>{v}</b>{sub && <small>{sub}</small>}</div>
+
+export function Sheet({ open, onClose, children }) {
+  useEffect(() => { if (!open) return; const f = (e) => e.key === 'Escape' && onClose(); window.addEventListener('keydown', f); return () => window.removeEventListener('keydown', f) }, [open, onClose])
+  if (!open) return null
+  return <div className="sheet-wrap" onClick={onClose}><div className="sheet" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+    <div className="grab" /><button className="x" onClick={onClose} aria-label="Tutup"><Icon n="x" size={20} /></button>{children}</div></div>
+}

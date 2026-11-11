@@ -18,6 +18,19 @@ test('kill gate: two reds from CP4', () => {
   assert.equal(killGate({ 4: { vdot: 31 }, 6: { vdot: 34.4 } }).fired, false)
   assert.equal(killGate({ 11: { ratio: 0.8 } }).fired, true)
 })
-test('gate: sleep HR 70 on Tuesday is red', () => {
-  assert.equal(evaluate({ sleepHR: 70, hrv: '', pain: '', tibia: false, te: '', mealBufferMin: '', plannedMin: '', fasted: false }, 2).level, 'red')
+test('gate: easy day', () => { assert.equal(evaluate({ sleepHR: 70, hrv: '', pain: '', tibia: false, te: '', mealBufferMin: '', plannedMin: '', fasted: false }, { kind: 'easy', tags: [] }).level, 'yellow') })
+test('gate: sleep HR 70 before a quality session is red, before easy is yellow', () => {
+  assert.equal(evaluate({ sleepHR: 70, hrv: '', pain: '', tibia: false, te: '', mealBufferMin: '', plannedMin: '', fasted: false }, { kind: 'quality', tags: [] }).level, 'red')
+})
+import { CHECKPOINTS, cpDistance } from './plan.js'
+import { raceTime } from './vdot.js'
+test('G/R thresholds match the poster (±6s: lines are shown rounded to 0.1)', () => {
+  const poster = { 1: ['29:42', '30:31'], 2: ['29:28', '30:16'], 3: ['28:42', '29:28'], 4: ['58:35', '1:00:07'], 6: ['27:42', '28:24'], 8: ['56:14', '57:38'], 10: ['26:11', '26:48'], 11: ['2:04:06', '2:07:10'], 12: ['25:27', '26:02'], 15: ['24:57', '25:31'] }
+  for (const [id, [g, r]] of Object.entries(poster)) {
+    const c = CHECKPOINTS.find((x) => x.id === +id), d = cpDistance(c)
+    const G = raceTime(c.line - 0.5, d), R = raceTime(c.line - 1.5, d)
+    console.log('CP' + id, fmtTime(G), g, fmtTime(R), r)
+    assert.ok(Math.abs(G - parseTime(g)) <= (d > 10000 ? 12 : 6), `CP${id} G ${fmtTime(G)} vs ${g}`)
+    assert.ok(Math.abs(R - parseTime(r)) <= (d > 10000 ? 12 : 6), `CP${id} R ${fmtTime(R)} vs ${r}`)
+  }
 })

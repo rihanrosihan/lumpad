@@ -11,7 +11,9 @@ const readBody = (req, max = 20e6) => new Promise((ok, no) => { const c = []; le
 const KEY = /^lumpad\.[A-Za-z0-9._-]{1,80}$/
 const kvKey = (q) => { const k = q.get('key') || ''; if (!KEY.test(k)) throw Object.assign(new Error('bad key'), { status: 400 }); return k }
 
+const PREFIX = /^lumpad\.[A-Za-z0-9._-]{0,60}$/
 const routes = {
+  'GET /api/kv/prefix': async (q) => { const p = q.get('prefix') || ''; if (!PREFIX.test(p)) throw Object.assign(new Error('bad prefix'), { status: 400 }); return Object.fromEntries(Object.entries(load('kv', {})).filter(([k]) => k.startsWith(p)).map(([k, v]) => [k, v.value])) },
   'GET /api/kv': async (q) => { const k = kvKey(q), e = load('kv', {})[k]; return e ? { found: true, ...e } : { found: false } },
   'PUT /api/kv': async (q, req) => {
     const k = kvKey(q), body = JSON.parse((await readBody(req, 1e6)).toString()), kv = load('kv', {})

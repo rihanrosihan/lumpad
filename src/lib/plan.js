@@ -15,7 +15,7 @@ export const TEMPLATE = {
 // [id, date, name, kind, line(VDOT), note]
 export const CHECKPOINTS = [
   [1, '2027-01-16', '5K TT · baseline B0 (post-injury)', 'tt', 31.7, 'Pain ≥2/10 atau HRV reduced → tunda 1 minggu; Birthday Run ≤12 km'],
-  [2, '2027-02-02', '5K TT · pre-Ramadan', 'tt', 31.7, 'Merah → pace B0 selama Ramadan'],
+  [2, '2027-02-02', '5K TT · pre-Ramadan', 'tt', 32.0, 'Merah → pace B0 selama Ramadan'],
   [3, '2027-03-23', 'Anchor 5K TT', 'tt', 33.0, 'Sets B1. Kuning/merah → pace tetap B0'],
   [4, '2027-04-13', '10K TT', 'tt', 33.7, 'Sets B2. Merah pertama yang dihitung kill gate'],
   [5, '2027-05-01', '24 km long run proof', 'lr', null, 'Fuel 30–60 g/jam; nyeri 0/10'],
@@ -24,7 +24,7 @@ export const CHECKPOINTS = [
   [8, '2027-06-01', '10K TT', 'tt', 35.4, 'Sets B4 (Pancasila Day)'],
   [9, '2027-06-13', 'Jakim FM (C-race) + G-MJM gate Rab 16 Jun', 'race', null, 'Run-walk <6:00, finish-first. Bukan tes VDOT'],
   [10, '2027-07-13', '5K TT (post-June return)', 'tt', 36.8, 'Sets B5; ukur biaya dua FM dalam 7 hari'],
-  [11, '2027-08-01', 'HM TT · ratio gate', 'ratio', null, 'Rasio ≥0.90 lolos; <0.85 → re-target'],
+  [11, '2027-08-01', 'HM TT · ratio gate', 'ratio', 35.5, 'Rasio ≥0.90 lolos; <0.85 → re-target'],
   [12, '2027-08-19', '5K TT · W33 cutback', 'tt', 38.0, 'Sets B8'],
   [13, '2027-08-28', '30 km LR · 10 km @MP', 'lr', null, 'MP block tetap 10 km bila merah'],
   [14, '2027-09-04', '32 km LR · 12 km @MP', 'lr', null, 'Fuel 60 g/jam; merah → tier 4:15'],
@@ -55,3 +55,6 @@ export function killGate(results) {
   if (r != null && r < 0.85) return { fired: true, why: `Rasio CP11 ${r.toFixed(2)} < 0.85` }
   return { fired: false }
 }
+
+// Distance of a time-trial checkpoint, and green/red time thresholds derived from the line (G = line−0.5, R = line−1.5 VDOT)
+export const cpDistance = (c) => (/HM/.test(c.name) ? 21097.5 : /10K/.test(c.name) ? 10000 : /5K/.test(c.name) ? 5000 : null)
