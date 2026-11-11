@@ -41,7 +41,7 @@ export function parseSportRecords(text) {
       source: 'coros', source_id: label, date: head[2], sport: SPORT[st] || head[1].trim().slice(0, 40), name: head[1].trim().slice(0, 200), sport_code: st,
       distance_m: dist ? Math.round(+dist[1].replace(/,/g, '') * (dist[2] === 'km' ? 1000 : 1)) : undefined,
       duration_s: clock(/Duration:\s*([\d:]+)/.exec(b)?.[1]), avg_pace_s_km: pace ? clock(pace[1]) : undefined,
-      avg_hr: num(/Avg HR:\s*(\d+)/, b), calories: num(/Calories:\s*([\d,]+)/, b), start_ts: num(/startTimestamp=(\d+)/, b),
+      avg_hr: num(/Avg HR:\s*(\d+)/, b), calories: num(/Calories:\s*([\d,]+)/, b), start_ts: num(/startTimestamp=(\d+)/, b), end_ts: num(/endTimestamp=(\d+)/, b),
       location: /Location:\s*([^\n]+)/.exec(b)?.[1].trim().slice(0, 120),
     }))
   }

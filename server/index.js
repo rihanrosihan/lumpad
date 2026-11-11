@@ -7,6 +7,7 @@ import { load, save } from './db.js'
 import * as corosAuth from './coros/oauth.js'
 import { withCoros } from './coros/mcp.js'
 import { startJob, recentJobs, isRunning, startScheduler } from './jobs.js'
+import { status as archiveStatus } from './coros/archive.js'
 import { listMerged, activityDetail, gearList, readinessData, lapsInRange, exportRows, toCsv } from './activities.js'
 import { applyIngest, checkToken, syncStatus, healthRange, activitiesRange, lapsOf, validDate } from './ingest.js'
 
@@ -34,6 +35,9 @@ const routes = {
   'POST /api/coros/disconnect': async () => { await corosAuth.disconnect(); return { ok: true } },
   'POST /api/sync/run': async () => { needCoros(); return { job: startJob('daily') } },
   'POST /api/sync/backfill': async (_q, req) => { needCoros(); const b = JSON.parse((await readBody(req, 1e4)).toString() || '{}'); if (b.from && !validDate(b.from)) throw Object.assign(new Error('bad from date'), { status: 400 }); return { job: startJob('backfill', { from: b.from }) } },
+  // dedicated COROS archive (coros.db): 2025→today, all tools, daily budget — progress, budget and ETA (counts/dates only)
+  'GET /api/coros/archive': async () => ({ ...archiveStatus(), ...jobView() }),
+  'POST /api/coros/archive/run': async () => { needCoros(); return { job: startJob('archive') } },
   'GET /api/activities/merged': async (q) => listMerged(...range(q)),
   'GET /api/activities/detail': async (q) => { const a = activityDetail(q.get('id') || ''); if (!a) throw Object.assign(new Error('not found'), { status: 404 }); return a },
   'GET /api/gear': async () => gearList(),
@@ -47,7 +51,7 @@ const routes = {
     res.writeHead(200, { 'content-type': fmt === 'json' ? 'application/json' : 'text/csv; charset=utf-8', 'content-disposition': `attachment; filename="${name}"` }); res.end(body); return null },
   'GET /api/sync/jobs': async () => jobView(),
   // read-only monitoring for the sync routine / Claude (bearer token, no health values — counts and dates only)
-  'GET /api/ingest/status': async (_q, req) => { checkToken(req); return { ...syncStatus(), ...jobView(), coros: corosAuth.status() } },
+  'GET /api/ingest/status': async (_q, req) => { checkToken(req); const a = archiveStatus(); return { ...syncStatus(), ...jobView(), coros: corosAuth.status(), archive: { backlog: a.backlog, etaDays: a.etaDays, complete: a.complete, healthFrom: a.healthFrom, activities: a.activities, fit: a.fit, total: a.total } } },
   'POST /api/ingest': async (_q, req) => { checkToken(req); return applyIngest(JSON.parse((await readBody(req, 5e6)).toString())) },
   'GET /api/sync/status': async () => syncStatus(),
   'GET /api/health/range': async (q) => healthRange(...range(q)),
