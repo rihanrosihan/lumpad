@@ -54,8 +54,9 @@ export function parseLaps(text) {
   const g = groups.find((x) => x.type === 2), all = groups.find((x) => x.type === -1)?.laps?.[0]
   const laps = (g?.laps || []).map((l) => clean({
     distance_m: l.distance / 100, duration_s: l.time, avg_pace_s_km: l.avgPace, avg_hr: l.avgHr, cadence: l.avgCadence || undefined, power: l.avgPower || undefined, gct_ms: l.groundTime || undefined,
-  })) // COROS lap distances are in centimetres
-  return { laps, cadence: all?.avgCadence || undefined, power: all?.avgPower || undefined }
+    max_hr: l.maxHr || undefined, stride_m: l.avgStrideLength ? l.avgStrideLength / 100 : undefined, vo_cm: l.strideHeight ? l.strideHeight / 10 : undefined, vratio_pct: l.strideRatio ? l.strideRatio / 10 : undefined,
+  })) // COROS units: distance cm; stride length cm (82 = 0.82 m, matches the detail view); vertical oscillation mm; vertical ratio ‰
+  return { laps, cadence: all?.avgCadence || undefined, power: all?.avgPower || undefined, max_hr: all?.maxHr || undefined }
 }
 
 // ---- load / recovery / fitness / sleep score / activity detail (formats verified live, 11 Nov 2026)
@@ -66,7 +67,11 @@ export function parseTrainingLoad(text) {
   for (let m; (m = re.exec(String(text))); ) out.push({ date: m[1], load_comment: m[2].trim().slice(0, 30), load_short: +m[3], load_long: +m[4], load_ratio: +m[5] })
   return out
 }
-export function parseRecovery(text) { const t = String(text); return clean({ recovery_pct: num(/Recovery:\s*(\d+)\s*%/, t), recovery_level: /Level:\s*([^\n]+)/.exec(t)?.[1].trim().slice(0, 30) }) }
+export function parseRecovery(text) {
+  const t = String(text), e = /Estimated Full Recovery:\s*([^\n]+)/.exec(t)?.[1] || '', d = /(\d+)\s*d/.exec(e), h = /(\d+)\s*h/.exec(e)
+  return clean({ recovery_pct: num(/Recovery:\s*(\d+)\s*%/, t), recovery_level: /Level:\s*([^\n]+)/.exec(t)?.[1].trim().slice(0, 30), recovery_hours: d || h ? (d ? +d[1] * 24 : 0) + (h ? +h[1] : 0) : undefined })
+}
+export function parseDevices(text) { return [...String(text).matchAll(/^\s*\d+\.\s+(.+)$/gm)].map((m) => m[1].trim().slice(0, 60)) }
 // querySleepOverview → score + awake count per wake-up date
 export function parseSleepOverview(text) {
   const out = []
@@ -78,6 +83,7 @@ export function parseActivityDetail(text) {
   const t = String(text)
   return clean({
     training_load: num(/Training Load:\s*(\d+)/, t), aerobic_te: num(/Aerobic TE:\s*([\d.]+)/, t), anaerobic_te: num(/Anaerobic TE:\s*([\d.]+)/, t),
+    adjusted_pace_s_km: tsec(/Adjusted Pace:\s*(\d+:\d{2})/.exec(t)?.[1]),
     training_focus: /Training Focus:\s*([^\n]+)/.exec(t)?.[1].trim().slice(0, 40), performance: /Performance:\s*([^\n]+)/.exec(t)?.[1].trim().slice(0, 40),
   })
 }

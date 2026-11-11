@@ -7,7 +7,7 @@ const R = { // [type, lo, hi]
   health: {
     sleep_hr_avg: ['n', 25, 200], sleep_hr_min: ['n', 25, 200], sleep_hr_max: ['n', 25, 250], hrv_avg: ['n', 3, 400], hrv_status: ['s', 40],
     hrv_range_lo: ['n', 0, 400], hrv_range_hi: ['n', 0, 400], hrv_baseline: ['n', 0, 400], resting_hr: ['n', 25, 150], stress_avg: ['n', 0, 100],
-    load_ratio: ['n', 0, 20], load_comment: ['s', 30], sleep_score: ['n', 0, 100], sleep_awake_count: ['n', 0, 50], recovery_level: ['s', 30],
+    load_ratio: ['n', 0, 20], load_comment: ['s', 30], sleep_score: ['n', 0, 100], sleep_awake_count: ['n', 0, 50], recovery_level: ['s', 30], recovery_hours: ['n', 0, 240],
     steps: ['n', 0, 200000], sleep_total_min: ['n', 0, 1500], sleep_deep_min: ['n', 0, 1500], sleep_light_min: ['n', 0, 1500],
     sleep_rem_min: ['n', 0, 1500], sleep_awake_min: ['n', 0, 1500], recovery_pct: ['n', 0, 100], load_short: ['n', 0, 5000], load_long: ['n', 0, 5000],
   },
@@ -15,9 +15,9 @@ const R = { // [type, lo, hi]
     start_ts: ['n', 1e9, 4e9], sport: ['s', 40], name: ['s', 200], distance_m: ['n', 0, 1e6], duration_s: ['n', 0, 2e5], avg_hr: ['n', 25, 250],
     avg_pace_s_km: ['n', 60, 5000], cadence: ['n', 0, 300], power: ['n', 0, 2000], elevation_m: ['n', -500, 9000], calories: ['n', 0, 20000],
     temp_c: ['n', -50, 60], humidity: ['n', 0, 100], gear_id: ['s', 64], location: ['s', 120],
-    training_load: ['n', 0, 3000], aerobic_te: ['n', 0, 6], anaerobic_te: ['n', 0, 6], training_focus: ['s', 40], performance: ['s', 40],
+    training_load: ['n', 0, 3000], adjusted_pace_s_km: ['n', 60, 5000], max_hr: ['n', 40, 250], aerobic_te: ['n', 0, 6], anaerobic_te: ['n', 0, 6], training_focus: ['s', 40], performance: ['s', 40],
   },
-  lap: { distance_m: ['n', 0, 1e6], duration_s: ['n', 0, 2e5], avg_pace_s_km: ['n', 60, 5000], avg_hr: ['n', 25, 250], cadence: ['n', 0, 300], power: ['n', 0, 2000], gct_ms: ['n', 50, 2000] },
+  lap: { distance_m: ['n', 0, 1e6], duration_s: ['n', 0, 2e5], avg_pace_s_km: ['n', 60, 5000], avg_hr: ['n', 25, 250], cadence: ['n', 0, 300], power: ['n', 0, 2000], gct_ms: ['n', 50, 2000], max_hr: ['n', 40, 250], stride_m: ['n', 0.2, 3], vo_cm: ['n', 1, 30], vratio_pct: ['n', 1, 30] },
   fitness: { vo2max: ['n', 10, 100], running_level: ['n', 0, 200], threshold_pace_s_km: ['n', 120, 900], pred_5k_s: ['n', 600, 7200], pred_10k_s: ['n', 1200, 14400], pred_hm_s: ['n', 2400, 28800], pred_m_s: ['n', 5000, 50000] },
   gear: { name: ['s', 120], brand: ['s', 80], model: ['s', 80], distance_m: ['n', 0, 1e8] },
 }

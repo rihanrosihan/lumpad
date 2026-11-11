@@ -1,81 +1,111 @@
 import { useEffect, useMemo, useState } from 'react'
 import { paces, fmtPace } from './lib/vdot.js'
-import { BY_DATE, today, addDays, fmtLong, MONTHS, KIND } from './lib/calendar.js'
+import { BY_DATE, today, addDays, fmtLong, MONTHS } from './lib/calendar.js'
+import { efOf, decoupling, zoneTime, hrZoneTime, cumulativeKm } from './lib/analysis.js'
+import { mean } from './lib/stats.js'
+import { useStore } from './store.js'
 import { Card, Chip, Screen, Sheet, Icon } from './ui.jsx'
 import { useApi, fmtDur, fmtPaceS } from './api.js'
-import { BarChart, LineChart, Legend } from './charts.jsx'
+import { BandLine, MultiTrack, Sparkline } from './charts2.jsx'
 
-const CLASSES = [['all', 'Semua'], ['run', 'Lari'], ['walk', 'Jalan'], ['strength', 'Kekuatan']]
+const SPORTS = [['all', 'Semua'], ['run', 'Lari'], ['walk', 'Jalan'], ['strength', 'Gym']]
+const TYPES = [['all', 'Semua jenis'], ['easy', 'Easy'], ['long', 'Long'], ['tempo', 'Tempo'], ['interval', 'Interval'], ['tt', 'TT / race']]
+const typeOf = (a) => { const d = BY_DATE[a.date]; if (!d || a.sport_class !== 'run') return null; if (d.kind === 'tt' || d.kind === 'race') return 'tt'; if (d.kind === 'long' || a.distance_m >= 20000) return 'long'; if (d.kind === 'quality') return /repeats|into|interval|400|600|800|mile/i.test(d.label) ? 'interval' : 'tempo'; return 'easy' }
 const CLS = (a) => 'k-a' + String(a.sport_class).split(':')[0]
 const km = (m) => (m == null ? '—' : (m / 1000).toFixed(m < 10000 ? 2 : 1))
 const monthRange = (ym) => { const [y, m] = ym.split('-').map(Number); return [`${ym}-01`, `${ym}-${String(new Date(y, m, 0).getDate()).padStart(2, '0')}`] }
 const shiftMonth = (ym, n) => { const [y, m] = ym.split('-').map(Number), d = new Date(y, m - 1 + n, 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` }
-const sportLabel = { run: 'Lari', walk: 'Jalan', strength: 'Kekuatan' }
+const SPORT_LABEL = { run: 'Lari', walk: 'Jalan', strength: 'Gym' }
 
 export default function Activity({ vdot, focus }) {
-  const T = today(), [ym, setYm] = useState(T.slice(0, 7)), [cls, setCls] = useState('all'), [sel, setSel] = useState(null)
-  const [from, to] = monthRange(ym)
-  const A = useApi(`/api/activities/merged?from=${from}&to=${to}`), G = useApi('/api/gear')
+  const T = today(), [ym, setYm] = useState(T.slice(0, 7)), [sport, setSport] = useState('all'), [type, setType] = useState('all'), [sel, setSel] = useState(null)
+  const [from, to] = monthRange(ym), prevYm = shiftMonth(ym, -1), [pf] = monthRange(prevYm)
+  const A = useApi(`/api/activities/merged?from=${pf}&to=${to}`), G = useApi('/api/gear'), Hist = useApi(`/api/activities/merged?from=${addDays(T, -180)}&to=${T}`)
   const gear = useMemo(() => Object.fromEntries((G.data || []).map((g) => [g.id, g.name])), [G.data])
   useEffect(() => { if (focus?.id) setSel(focus.id) }, [focus])
-  const all = A.data || [], list = all.filter((a) => cls === 'all' || a.sport_class === cls)
-  const runs = all.filter((a) => a.sport_class === 'run'), tot = { n: list.length, km: runs.reduce((s, a) => s + (a.distance_m || 0), 0) / 1000, time: list.reduce((s, a) => s + (a.duration_s || 0), 0), tl: list.reduce((s, a) => s + (a.training_load || 0), 0) }
+  const all = (A.data || []).filter((a) => a.date >= from), list = all.filter((a) => (sport === 'all' || a.sport_class === sport) && (type === 'all' || typeOf(a) === type))
+  const cum = cumulativeKm(all, ym), cumPrev = cumulativeKm(A.data || [], prevYm)
+  const curve = cum.map((c, i) => ({ date: `${ym}-${String(c.day).padStart(2, '0')}`, cur: ym === T.slice(0, 7) && c.day > +T.slice(8) ? null : c.km, prev: cumPrev[i]?.km ?? cumPrev.at(-1)?.km }))
+  const tot = { n: list.length, km: list.filter((a) => a.sport_class === 'run').reduce((s, a) => s + (a.distance_m || 0), 0) / 1000, time: list.reduce((s, a) => s + (a.duration_s || 0), 0), tl: list.reduce((s, a) => s + (a.training_load || 0), 0) }
 
-  return <Screen title="Aktivitas" sub="Semua latihan dari COROS dan Strava, digabung">
+  return <Screen title="Aktivitas" sub="Log eksekusi & telemetri · COROS + Strava digabung">
     <div className="monthbar">
       <button onClick={() => setYm(shiftMonth(ym, -1))} aria-label="Bulan sebelumnya"><Icon n="left" /></button>
       <div className="mid"><h2 aria-live="polite">{MONTHS[+ym.slice(5) - 1]} {ym.slice(0, 4)}</h2>{ym !== T.slice(0, 7) && <button onClick={() => setYm(T.slice(0, 7))}>Ke bulan ini</button>}</div>
       <button onClick={() => setYm(shiftMonth(ym, 1))} aria-label="Bulan berikutnya" className="flip"><Icon n="left" /></button>
     </div>
-    <div className="seg3" role="group" aria-label="Filter olahraga">{CLASSES.map(([k, l]) => <button key={k} aria-pressed={cls === k} onClick={() => setCls(k)}>{l}</button>)}</div>
+    <Card title="Km kumulatif" right={<span className="muted">{cum.at(-1)?.km ?? 0} vs {cumPrev.at(-1)?.km ?? 0} km</span>}>
+      <BandLine data={curve} keys={[{ key: 'cur', color: 'var(--c-long)' }, { key: 'prev', color: 'var(--muted)', cls: 'dash' }]} height={110} label={`Km lari kumulatif bulan ini ${cum.at(-1)?.km} dibanding bulan lalu ${cumPrev.at(-1)?.km}`} />
+      <div className="legend"><span><i className="ll" style={{ borderColor: 'var(--c-long)' }} />Bulan ini</span><span><i className="ll" style={{ borderColor: 'var(--muted)', borderTopStyle: 'dashed' }} />Bulan lalu</span></div>
+    </Card>
+    <div className="seg3" role="group" aria-label="Filter olahraga">{SPORTS.map(([k, l]) => <button key={k} aria-pressed={sport === k} onClick={() => setSport(k)}>{l}</button>)}</div>
+    <div className="chiprow" role="group" aria-label="Filter jenis latihan">{TYPES.map(([k, l]) => <button key={k} aria-pressed={type === k} onClick={() => setType(k)}>{l}</button>)}</div>
     <div className="sumrow"><div><b>{tot.n}</b><small>aktivitas</small></div><div><b>{tot.km.toFixed(1)}</b><small>km lari</small></div><div><b>{fmtDur(tot.time)}</b><small>waktu</small></div><div><b>{tot.tl || '—'}</b><small>load</small></div></div>
 
     {A.state === 'loading' && <><div className="skel" style={{ height: 72 }} /><div className="skel" style={{ height: 72 }} /></>}
     {A.state === 'error' && <div className="card empty"><b>Gagal memuat</b>Server tidak terjangkau.</div>}
-    {A.state === 'ok' && !list.length && <div className="card empty"><b>{all.length ? 'Tidak ada aktivitas untuk filter ini' : 'Belum ada aktivitas bulan ini'}</b>{all.length ? 'Coba filter “Semua”.' : 'Data masuk lewat sync COROS/Strava — cek Profil › Koneksi.'}</div>}
+    {A.state === 'ok' && !list.length && <div className="card empty"><b>{all.length ? 'Tidak ada aktivitas untuk filter ini' : 'Belum ada aktivitas bulan ini'}</b>{all.length ? 'Coba “Semua”.' : 'Data masuk lewat sync COROS/Strava — cek Profil › Koneksi.'}</div>}
     <div className="alist">{list.map((a) => <button key={a.id} className={`arow ${CLS(a)}`} onClick={() => setSel(a.ids[0])} aria-label={`${fmtLong(a.date)}: ${a.name}, ${a.distance_m ? km(a.distance_m) + ' km, ' : ''}${fmtDur(a.duration_s)}`}>
-      <div className="t"><b>{a.name || sportLabel[a.sport_class] || a.sport}</b><small>{a.date.slice(5)} · {sportLabel[a.sport_class] || a.sport}{a.gear_id && gear[a.gear_id] ? ' · ' + gear[a.gear_id] : ''}{a.sources.length > 1 ? '' : ' · ' + a.sources[0]}</small></div>
+      <div className="t"><b>{a.name || SPORT_LABEL[a.sport_class] || a.sport}</b><small>{a.date.slice(5)} · {SPORT_LABEL[a.sport_class] || a.sport}{typeOf(a) ? ' · ' + TYPES.find((t) => t[0] === typeOf(a))[1] : ''}{a.gear_id && gear[a.gear_id] ? ' · ' + gear[a.gear_id] : ''}</small></div>
       <div className="n"><b>{a.distance_m ? km(a.distance_m) + ' km' : fmtDur(a.duration_s)}</b><small>{a.avg_pace_s_km && a.sport_class === 'run' ? fmtPaceS(a.avg_pace_s_km) + '/km' : a.avg_hr ? a.avg_hr + ' bpm' : ''}</small>{a.training_load ? <span className="tlb2">TL {a.training_load}</span> : null}</div>
     </button>)}</div>
-    <Detail id={sel} onClose={() => setSel(null)} gear={gear} vdot={vdot} />
+    <Detail id={sel} onClose={() => setSel(null)} gear={gear} vdot={vdot} history={Hist.data || []} />
   </Screen>
 }
 
-function Detail({ id, onClose, gear, vdot }) {
+const ZC = { E: 'var(--green)', M: 'var(--c-long)', T: 'var(--yellow)', I: 'var(--c-quality)', R: 'var(--red)' }
+function ZoneBars({ title, rows }) { const tot = rows.reduce((a, r) => a + r.s, 0) || 1; return <div className="zbars"><h3>{title}</h3>{rows.map((r) => <div key={r.k} className="zrow"><span>{r.k}</span><div className="tb"><i style={{ width: (r.s / tot) * 100 + '%', background: r.c }} /></div><b>{Math.round((r.s / tot) * 100)}%</b></div>)}</div> }
+
+function Detail({ id, onClose, gear, vdot, history }) {
   const D = useApi(id ? `/api/activities/detail?id=${encodeURIComponent(id)}` : '', !!id), a = D.data
+  const [ctx, setCtx] = useStore('lumpad.act.' + (id || 'none').replace(/[^A-Za-z0-9._-]/g, '_'), { rpe: '', gels: '', cho_g: '', note: '' })
   const p = paces(vdot.v), plan = a ? BY_DATE[a.date] : null, laps = a?.laps || []
-  const E = [p.E[1], p.E[0]] // fast..slow, s/km
-  const verdict = (() => {
-    if (!a || a.sport_class !== 'run' || !a.avg_pace_s_km || !plan || !['easy', 'social', 'long', 'speed'].includes(plan.kind)) return null
-    const x = a.avg_pace_s_km; return x < E[0] - 3 ? ['yellow', `Lebih cepat dari easy (${fmtPace(E[0])}–${fmtPace(E[1])})`] : x > E[1] + 3 ? ['yellow', 'Lebih lambat dari rentang easy'] : ['green', 'Dalam rentang easy']
-  })()
+  const ef = a ? efOf(a) : null, kind = a ? typeOf(a) : null
+  const efHist = a && kind ? history.filter((h) => typeOf(h) === kind && h.date <= a.date && efOf(h)).sort((x, y) => x.date.localeCompare(y.date)).slice(-10).map(efOf) : []
+  const dc = decoupling(laps), steady = kind === 'easy' || kind === 'long'
+  const hrmax = Math.max(0, ...history.map((h) => h.max_hr || 0), a?.max_hr || 0, ...laps.map((l) => l.max_hr || 0)) || null
+  const pz = laps.length ? zoneTime(laps, p) : null, hz = laps.length ? hrZoneTime(laps, hrmax) : null
+  const maxPace = Math.max(...laps.map((l) => l.avg_pace_s_km || 0)), minPace = Math.min(...laps.filter((l) => l.distance_m >= 900).map((l) => l.avg_pace_s_km))
+  const dyn = (k) => { const v = mean(laps.map((l) => l[k])); return v == null ? null : Math.round(v * 100) / 100 }
+  const E = [p.E[1], p.E[0]]
+  const verdict = a && a.sport_class === 'run' && a.avg_pace_s_km && plan && ['easy', 'social', 'long', 'speed'].includes(plan.kind) ? (a.avg_pace_s_km < E[0] - 3 ? ['yellow', `Lebih cepat dari easy (${fmtPace(E[0])}–${fmtPace(E[1])})`] : a.avg_pace_s_km > E[1] + 3 ? ['yellow', 'Lebih lambat dari rentang easy'] : ['green', 'Dalam rentang easy']) : null
+  const setC = (patch) => setCtx({ ...ctx, ...patch })
   return <Sheet open={!!id} onClose={onClose} label={a?.name || 'Detail aktivitas'}>
     {D.state === 'loading' && <div className="skel" style={{ height: 120 }} />}
     {D.state === 'error' && <p className="muted">Gagal memuat detail.</p>}
     {a && <>
-      <p className="muted">{fmtLong(a.date)}</p>
-      <h2 className="sess-title">{a.name}</h2>
-      <div className="chips"><Chip>{sportLabel[a.sport_class] || a.sport}</Chip>{a.sources.map((s) => <Chip key={s}>{s}</Chip>)}{a.training_focus && <Chip tone="str">{a.training_focus}</Chip>}</div>
-      <dl className="kv" style={{ marginTop: 10 }}>
-        {[['Jarak', a.distance_m ? km(a.distance_m) + ' km' : null], ['Waktu', fmtDur(a.duration_s)], ['Pace', a.avg_pace_s_km && a.sport_class === 'run' ? fmtPaceS(a.avg_pace_s_km) + ' /km' : null], ['HR rata-rata', a.avg_hr ? a.avg_hr + ' bpm' : null],
-          ['Cadence', a.cadence ? a.cadence + ' spm' : null], ['Power', a.power ? a.power + ' W' : null], ['Elevasi', a.elevation_m != null ? a.elevation_m + ' m' : null], ['Kalori', a.calories ? a.calories + ' kkal' : null],
-          ['Training Load', a.training_load], ['Aerobic / Anaerobic TE', a.aerobic_te != null ? `${a.aerobic_te} / ${a.anaerobic_te ?? '—'}` : null], ['Performa', a.performance],
-          ['Cuaca', a.temp_c != null ? `${a.temp_c}°C · RH ${a.humidity ?? '—'}%` : 'belum ditarik'], ['Sepatu', a.gear_id ? gear[a.gear_id] || a.gear_id : 'belum ditarik'], ['Lokasi', a.location]]
-          .filter(([, v]) => v != null && v !== '').map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}
-      </dl>
+      <p className="muted">{fmtLong(a.date)}</p><h2 className="sess-title">{a.name}</h2>
+      <div className="chips"><Chip>{SPORT_LABEL[a.sport_class] || a.sport}</Chip>{a.sources.map((s) => <Chip key={s}>{s}</Chip>)}{a.training_focus && <Chip tone="str">{a.training_focus}</Chip>}</div>
+      <div className="score-grid" style={{ marginTop: 10 }}>
+        <div><small>Jarak</small><b>{a.distance_m ? km(a.distance_m) : '—'}</b><em>km</em></div><div><small>Waktu gerak</small><b>{fmtDur(a.duration_s)}</b></div><div><small>Pace</small><b>{a.sport_class === 'run' ? fmtPaceS(a.avg_pace_s_km) : '—'}</b><em>/km</em></div>
+        <div><small>GAP</small><b>{a.adjusted_pace_s_km ? fmtPaceS(a.adjusted_pace_s_km) : '—'}</b><em>[COROS]</em></div><div><small>HR rata/maks</small><b>{a.avg_hr ?? '—'}</b><em>{a.max_hr ? `maks ${a.max_hr}` : ''}</em></div><div><small>Training Load</small><b>{a.training_load ?? '—'}</b><em>TE {a.aerobic_te ?? '—'}/{a.anaerobic_te ?? '—'}</em></div>
+      </div>
+      {a.sport_class === 'run' && <Card title="Efisiensi aerobik">
+        <div className="mgrid two"><div><small>Efficiency Factor</small><b>{ef ?? '—'}</b><Sparkline data={efHist} label={`EF 10 lari ${kind} terakhir`} w={110} /></div>
+          <div><small>Decoupling Pa:Hr</small><b>{dc && steady ? dc.pct + '%' : '—'}</b>{dc && steady ? <Chip tone={dc.band}>{dc.band === 'green' ? 'tahan lama' : dc.band === 'yellow' ? 'drift sedang' : 'drift tinggi'}</Chip> : <em className="muted">{steady ? 'butuh ≥4 lap' : 'hanya lari steady'}</em>}</div></div>
+        <p className="src-note">[calc] EF = kecepatan (m/mnt, pakai GAP bila ada) ÷ HR rata-rata; sparkline = 10 lari jenis sama. Ambang decoupling 5 % / 7,5 % = konvensi, bukan hasil studi.</p></Card>}
       {plan && <Card title="Rencana vs aktual">
         <div className="vs"><div><small>Rencana</small><b>{plan.label}{plan.km ? ` · ${plan.km} km` : ''}</b></div><div><small>Aktual</small><b>{a.distance_m ? km(a.distance_m) + ' km' : fmtDur(a.duration_s)}</b></div></div>
-        {a.distance_m && plan.km ? <p className="muted">Selisih jarak: {((a.distance_m / 1000) - plan.km >= 0 ? '+' : '') + ((a.distance_m / 1000) - plan.km).toFixed(2)} km ({Math.round(((a.distance_m / 1000) / plan.km) * 100)}% dari rencana)</p> : null}
-        {verdict && <p><Chip tone={verdict[0]}>{verdict[1]}</Chip></p>}
-      </Card>}
-      {laps.length > 0 ? <Card title="Lap per km">
-        <BarChart data={laps.map((l) => ({ date: 'lap' + l.idx, value: l.avg_pace_s_km ? Math.round(3600 / l.avg_pace_s_km * 10) / 10 : 0, tick: String(l.idx) }))} label={`Kecepatan per lap (km/jam): ${laps.map((l) => l.avg_pace_s_km ? (3600 / l.avg_pace_s_km).toFixed(1) : '-').join(', ')}`} />
-        <p className="muted">Tinggi batang = kecepatan (km/jam); lebih tinggi = lebih cepat.</p>
-        <table className="lapt"><thead><tr><th>Lap</th><th>Jarak</th><th>Pace</th><th>HR</th><th>Cad</th><th>W</th></tr></thead><tbody>
-          {(() => { const fast = Math.min(...laps.filter((l) => l.distance_m >= 900).map((l) => l.avg_pace_s_km)); return laps.map((l) => <tr key={l.idx}><td>{l.idx}</td><td>{l.distance_m >= 1000 ? '1,00' : (l.distance_m / 1000).toFixed(2)}</td><td className={l.avg_pace_s_km === fast ? 'fast' : ''}>{fmtPaceS(l.avg_pace_s_km)}</td><td>{l.avg_hr ?? '—'}</td><td>{l.cadence ?? '—'}</td><td>{l.power ?? '—'}</td></tr>) })()}
-        </tbody></table>
-        <p className="src-note">Sumber: COROS (lap 1 km). Collapse didiagnosis dari pace, power, cadence, HR bersama — bukan satu label.</p>
-      </Card> : a.sport_class === 'run' && <p className="muted">Lap belum ditarik untuk lari ini.</p>}
+        {a.distance_m && plan.km ? <p className="muted">{Math.round(((a.distance_m / 1000) / plan.km) * 100)}% dari rencana</p> : null}{verdict && <Chip tone={verdict[0]}>{verdict[1]}</Chip>}</Card>}
+      {laps.length > 1 && <Card title="Telemetri per lap"><MultiTrack laps={laps} tracks={[{ key: 'avg_pace_s_km', label: 'Pace', color: 'var(--c-long)', invert: true, fmt: fmtPaceS }, { key: 'avg_hr', label: 'HR', color: 'var(--red)' }, { key: 'cadence', label: 'Cadence', color: 'var(--c-quality)' }, { key: 'power', label: 'Power', color: 'var(--c-tt)' }, { key: 'stride_m', label: 'Langkah', color: 'var(--c-social)' }]} />
+        <p className="src-note">Resolusi 1 km per lap — COROS MCP tidak memberi data per detik. Geser untuk membaca nilai.</p></Card>}
+      {laps.length > 0 && <Card title="Split per km">
+        <table className="lapt"><thead><tr><th>Lap</th><th>Pace</th><th>HR</th><th>Cad</th><th>GCT</th></tr></thead><tbody>
+          {laps.map((l) => <tr key={l.idx}><td>{l.idx}{l.distance_m < 990 ? <small className="muted"> ({(l.distance_m / 1000).toFixed(2)})</small> : ''}</td><td className={'pbar-td ' + (l.avg_pace_s_km === minPace ? 'fast' : '')}><i style={{ width: (maxPace ? (l.avg_pace_s_km / maxPace) * 100 : 0) + '%' }} /><span>{fmtPaceS(l.avg_pace_s_km)}</span></td><td>{l.avg_hr ?? '—'}</td><td>{l.cadence ?? '—'}</td><td>{l.gct_ms ?? '—'}</td></tr>)}
+        </tbody></table></Card>}
+      {(pz || hz) && <Card title="Distribusi zona">
+        {pz && <ZoneBars title="Zona pace VDOT" rows={['E', 'M', 'T', 'I', 'R'].map((k) => ({ k, s: pz[k], c: ZC[k] }))} />}
+        {hz && <ZoneBars title={`Zona HR (% HR maks ${hrmax})`} rows={['Z1 <60%', 'Z2 60–70', 'Z3 70–80', 'Z4 80–90', 'Z5 >90'].map((k, i) => ({ k, s: hz[i], c: ['var(--c-rest)', 'var(--green)', 'var(--c-long)', 'var(--c-quality)', 'var(--red)'][i] }))} />}
+        <p className="src-note">[calc] Per lap. HR maks = tertinggi yang pernah tercatat di lapmu (estimasi, bukan tes lab).</p></Card>}
+      <Card title="Dinamika lari & konteks">
+        <div className="score-grid"><div><small>GCT</small><b>{dyn('gct_ms') ?? '—'}</b><em>ms</em></div><div><small>Osilasi vertikal</small><b>{dyn('vo_cm') ?? '—'}</b><em>cm</em></div><div><small>Rasio vertikal</small><b>{dyn('vratio_pct') ?? '—'}</b><em>%</em></div>
+          <div><small>Langkah</small><b>{dyn('stride_m') ?? '—'}</b><em>m</em></div><div><small>Sepatu</small><b className="sm-b">{a.gear_id ? gear[a.gear_id] || '—' : '—'}</b></div><div><small>Cuaca</small><b className="sm-b">{a.temp_c != null ? `${a.temp_c}°C · ${a.humidity ?? '—'}%` : 'belum ditarik'}</b></div></div>
+        <div className="fld" style={{ marginTop: 12 }}><span>RPE (1–10)</span><div className="pill10" role="group" aria-label="RPE">{Array.from({ length: 10 }, (_, i) => i + 1).map((n) => <button key={n} aria-pressed={ctx.rpe === n} onClick={() => setC({ rpe: ctx.rpe === n ? '' : n })}>{n}</button>)}</div></div>
+        <div className="form" style={{ marginTop: 10 }}><label className="fld"><span>Gel diminum</span><input inputMode="numeric" type="number" value={ctx.gels} onChange={(e) => setC({ gels: e.target.value === '' ? '' : +e.target.value })} /></label>
+          <label className="fld"><span>Karbo aktual (g)</span><input inputMode="numeric" type="number" value={ctx.cho_g} onChange={(e) => setC({ cho_g: e.target.value === '' ? '' : +e.target.value })} /></label></div>
+        {ctx.cho_g !== '' && a.duration_s > 0 && <p className="muted">≈ {Math.round(ctx.cho_g / (a.duration_s / 3600))} g/jam (target run &gt; 90 mnt: 30–60 g/jam dari menit 45)</p>}
+        <p className="src-note">Log meminta asupan aktual — tidak diisi dari rencana.</p>
+      </Card>
     </>}
   </Sheet>
 }

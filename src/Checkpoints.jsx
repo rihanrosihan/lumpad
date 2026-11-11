@@ -60,6 +60,8 @@ export default function Checkpoints({ vdot, results, setResults, focus }) {
       <div className="ch"><h2>Kill gate</h2><Chip tone={kg.fired ? 'red' : 'green'}>{kg.fired ? 'AKTIF' : 'belum menyala'}</Chip></div>
       <p className="muted">{kg.fired ? kg.why + ' → pindah ke tier terukur (4:15 / 4:30 / finish-first). Race tetap dilari.' : 'Dua TT merah berturut-turut mulai CP4, atau rasio CP11 < 0,85.'}</p>
     </Card>
+    <div className="stepper" role="list" aria-label="Pipeline checkpoint">{CHECKPOINTS.map((c) => { const r = results[c.id] || {}, t = (c.kind === 'tt' || c.kind === 'ratio') && r.vdot != null ? tone(r.vdot, c.line) : null, st = t || (r.vdot != null || r.ratio != null ? 'done' : c.id === next ? 'next' : '')
+      return <button key={c.id} role="listitem" className={'s-' + st} onClick={() => { setOpen(c.id); setShowPast(true); setTimeout(() => refs.current[c.id]?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50) }} aria-label={`CP${c.id} ${c.name}${t ? ', hasil ' + t : ''}`}><b>CP{c.id}</b>{c.date.slice(5)}</button> })}</div>
     <Card title="Jalur fitness (VDOT)" right={<span className="muted">sekarang {vdot.v.toFixed(1)}</span>}>
       <PathChart results={results} />
       <div className="legend"><span><i className="ll req" />Garis dibutuhkan</span><span><i className="ll best" />Laju terbaik teramati (0,74/bln)</span><span><i className="kdot k-easy" />Hasil TT (hijau / kuning / merah)</span></div>

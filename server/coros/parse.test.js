@@ -91,9 +91,19 @@ test('training load: short/long-term load and ratio per day', () => {
   assert.deepEqual(r[0], { date: '2027-01-11', load_comment: 'Resuming', load_short: 36, load_long: 62, load_ratio: 0.58 }); assert.equal(r.length, 2)
 })
 test('recovery, sleep score, activity detail, fitness overview', () => {
-  assert.deepEqual(parseRecovery('Recovery: 87%\nLevel: Fresh\nEstimated Full Recovery: 0h'), { recovery_pct: 87, recovery_level: 'Fresh' })
+  assert.deepEqual(parseRecovery('Recovery: 87%\nLevel: Fresh\nEstimated Full Recovery: 0h'), { recovery_pct: 87, recovery_level: 'Fresh', recovery_hours: 0 })
   assert.deepEqual(parseSleepOverview('Sleep Overview\n\n2027-01-09\nSleep Score: 38\nAwake Count (>5 min): 1\n\n2027-01-10\nSleep Score: 84\nAwake Count (>5 min): 0'), [{ date: '2027-01-09', sleep_score: 38, sleep_awake_count: 1 }, { date: '2027-01-10', sleep_score: 84, sleep_awake_count: 0 }])
   assert.deepEqual(parseActivityDetail('Workout Time: 44:53\nTraining Load: 158\nAerobic TE: 3.6\nAnaerobic TE: 1.8\nTraining Focus: Tempo\nPerformance: Below Average'), { training_load: 158, aerobic_te: 3.6, anaerobic_te: 1.8, training_focus: 'Tempo', performance: 'Below Average' })
   assert.deepEqual(parseFitness('VO2max: 47\nRunning Level: 66\nThreshold Pace: 5:56 /km\n5 km Prediction: 28:40\n10 km Prediction: 1:00:33\nHalf Marathon Prediction: 2:17:13\nMarathon Prediction: 4:53:04'),
     { vo2max: 47, running_level: 66, threshold_pace_s_km: 356, pred_5k_s: 1720, pred_10k_s: 3633, pred_hm_s: 8233, pred_m_s: 17584 })
+})
+
+import { parseRecovery as pr2, parseLaps as pl2, parseActivityDetail as pad2, parseDevices } from './parse.js'
+test('new fields: recovery hours, lap dynamics with unit conversions, adjusted pace, devices', () => {
+  assert.equal(pr2('Recovery: 60%\nLevel: Low\nEstimated Full Recovery: 1d 6h').recovery_hours, 30)
+  assert.equal(pr2('Recovery: 100%\nLevel: Fresh\nEstimated Full Recovery: 0h').recovery_hours, 0)
+  const l = pl2(JSON.stringify({ lapGroups: [{ type: 2, laps: [{ distance: 100000, time: 465, avgPace: 465, avgHr: 144, maxHr: 154, avgStrideLength: 78, strideHeight: 80, strideRatio: 105 }] }, { type: -1, laps: [{ maxHr: 186 }] }] }))
+  assert.deepEqual([l.laps[0].stride_m, l.laps[0].vo_cm, l.laps[0].vratio_pct, l.laps[0].max_hr, l.max_hr], [0.78, 8, 10.5, 154, 186])
+  assert.equal(pad2('Adjusted Pace: 7:22 /km\nTraining Load: 158').adjusted_pace_s_km, 442)
+  assert.deepEqual(parseDevices('Bound Devices (2)\n\n1. COROS POD 2\n   Bluetooth ID: x\n\n2. COROS APEX 4 42mm\n'), ['COROS POD 2', 'COROS APEX 4 42mm'])
 })

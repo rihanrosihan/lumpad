@@ -23,7 +23,7 @@ export function paces(vdot) {
   const T = paceSecPerKm(vdot, 0.888)
   return {
     E: [paceSecPerKm(vdot, 0.59), paceSecPerKm(vdot, 0.74)], // slow..fast
-    T, subT: T + 12, I: paceSecPerKm(vdot, 1.0),
+    T, subT: T + 12, I: paceSecPerKm(vdot, 1.0), R: raceTime(vdot, 1609.34) / 1.60934, // R ≈ current mile race pace (Daniels)
     M: raceTime(vdot, 42195) / 42.195,
     fiveK: raceTime(vdot, 5000), tenK: raceTime(vdot, 10000),
     half: raceTime(vdot, 21097.5), full: raceTime(vdot, 42195),

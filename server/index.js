@@ -7,7 +7,7 @@ import { load, save } from './db.js'
 import * as corosAuth from './coros/oauth.js'
 import { withCoros } from './coros/mcp.js'
 import { startJob, recentJobs, isRunning, startScheduler } from './jobs.js'
-import { listMerged, activityDetail, gearList, readinessData } from './activities.js'
+import { listMerged, activityDetail, gearList, readinessData, lapsInRange, exportRows, toCsv } from './activities.js'
 import { applyIngest, checkToken, syncStatus, healthRange, activitiesRange, lapsOf, validDate } from './ingest.js'
 
 const send = (res, code, body, headers = {}) => { res.writeHead(code, { 'content-type': 'application/json', ...headers }); res.end(JSON.stringify(body)) }
@@ -38,6 +38,13 @@ const routes = {
   'GET /api/activities/detail': async (q) => { const a = activityDetail(q.get('id') || ''); if (!a) throw Object.assign(new Error('not found'), { status: 404 }); return a },
   'GET /api/gear': async () => gearList(),
   'GET /api/readiness': async (q) => readinessData(...range(q)),
+  'GET /api/laps': async (q) => lapsInRange(...range(q)),
+  // personal data export (behind the web login): activities / health as CSV or JSON
+  'GET /api/export': async (q, _r, res) => {
+    const what = q.get('what') === 'health' ? 'health_daily' : 'activities', fmt = q.get('format') === 'csv' ? 'csv' : 'json'
+    const rows = exportRows(what), name = `lumpad-${what}-${new Date().toISOString().slice(0, 10)}.${fmt}`
+    const body = fmt === 'json' ? JSON.stringify(rows, null, 1) : toCsv(rows)
+    res.writeHead(200, { 'content-type': fmt === 'json' ? 'application/json' : 'text/csv; charset=utf-8', 'content-disposition': `attachment; filename="${name}"` }); res.end(body); return null },
   'GET /api/sync/jobs': async () => jobView(),
   // read-only monitoring for the sync routine / Claude (bearer token, no health values — counts and dates only)
   'GET /api/ingest/status': async (_q, req) => { checkToken(req); return { ...syncStatus(), ...jobView(), coros: corosAuth.status() } },

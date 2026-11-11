@@ -56,6 +56,14 @@ ALTER TABLE activities ADD COLUMN anaerobic_te REAL;
 ALTER TABLE activities ADD COLUMN training_focus TEXT;
 ALTER TABLE activities ADD COLUMN performance TEXT;
 CREATE TABLE fitness_daily (date TEXT PRIMARY KEY, vo2max REAL, running_level REAL, threshold_pace_s_km REAL, pred_5k_s REAL, pred_10k_s REAL, pred_hm_s REAL, pred_m_s REAL, pulled_at TEXT NOT NULL);
+`, `
+ALTER TABLE activities ADD COLUMN adjusted_pace_s_km REAL;
+ALTER TABLE activities ADD COLUMN max_hr REAL;
+ALTER TABLE laps ADD COLUMN max_hr REAL;
+ALTER TABLE laps ADD COLUMN stride_m REAL;
+ALTER TABLE laps ADD COLUMN vo_cm REAL;
+ALTER TABLE laps ADD COLUMN vratio_pct REAL;
+ALTER TABLE health_daily ADD COLUMN recovery_hours REAL;
 `]
 
 const v = db.prepare('PRAGMA user_version').get().user_version

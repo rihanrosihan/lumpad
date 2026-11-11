@@ -1,5 +1,6 @@
 // Staged pull from COROS → normalised rows → applyIngest (idempotent). `call(tool,args)` is injected (real MCP or a test double).
-import { parseDailyHealth, parseSleepHrv, parseResting, parseSportRecords, parseLaps, parseTrainingLoad, parseRecovery, parseSleepOverview, parseActivityDetail, parseFitness } from './parse.js'
+import { parseDailyHealth, parseSleepHrv, parseResting, parseSportRecords, parseLaps, parseTrainingLoad, parseRecovery, parseSleepOverview, parseActivityDetail, parseFitness, parseDevices } from './parse.js'
+import { load as kvLoad, save as kvSave } from '../db.js'
 import { applyIngest } from '../ingest.js'
 import { db } from '../store.js'
 
@@ -57,6 +58,8 @@ export async function pullRange({ call, from, to, trigger, progress = () => {}, 
   progress({ stage: 'snapshot', done: 0, total: 2 })
   const rec = await retry(() => call('queryRecoveryStatus', {}), 2, note, 'recovery status'); if (rec != null) Object.assign(get(to), parseRecovery(rec))
   const fit = await retry(() => call('queryFitnessAssessmentOverview', {}), 2, note, 'fitness overview'); const fitness = fit != null ? parseFitness(fit) : {}
+  const dev = await retry(() => call('queryDevices', {}), 1, () => {}, '')
+  if (dev != null) { const kv = kvLoad('kv', {}); kv['lumpad.devices'] = { value: { devices: parseDevices(dev), at: new Date().toISOString() }, updatedAt: new Date().toISOString() }; kvSave('kv', kv) }
 
   // 4. activities, month by month (split a window if the page is full)
   const acts = []
@@ -76,7 +79,7 @@ export async function pullRange({ call, from, to, trigger, progress = () => {}, 
     progress({ stage: 'laps', done: i, total: runs.length })
     const t = await retry(async () => { const r = await call('queryActivityLapData', { labelId: a.source_id, sportType: a.sport_code }); if (!parseLaps(r)) throw new Error('unreadable laps response'); return r }, 3, () => {}, '')
     const p = t && parseLaps(t)
-    if (p?.laps.length) { a.laps = p.laps; a.cadence ??= p.cadence; a.power ??= p.power; stats.laps += p.laps.length } else { stats.lapsMissing++; note(`laps missing for run ${a.date} (${a.source_id})`) }
+    if (p?.laps.length) { a.laps = p.laps; a.cadence ??= p.cadence; a.power ??= p.power; a.max_hr ??= p.max_hr; stats.laps += p.laps.length } else { stats.lapsMissing++; note(`laps missing for run ${a.date} (${a.source_id})`) }
   }
   // 5b. per-activity training load / TE / focus (runs + strength) where we don't have it yet
   const need = uniq.filter((a) => (RUN.has(a.sport_code) || a.sport_code === 402) && db.prepare('SELECT training_load FROM activities WHERE id = ?').get('coros:' + a.source_id)?.training_load == null)

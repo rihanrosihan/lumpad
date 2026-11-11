@@ -1,6 +1,10 @@
 import { raceTime, fmtTime } from './lib/vdot.js'
 import { PLAN, BY_DATE, today, diffDays, addDays, fmtLong, fmtShort, KIND } from './lib/calendar.js'
 import { Card, Chip } from './ui.jsx'
+import { useApi } from './api.js'
+import { WEEKS } from './lib/calendar.js'
+import { BarChart } from './charts.jsx'
+import { mean } from './lib/stats.js'
 
 const RATE = 0.74 // best observed VDOT/month (n=2) — hypothesis, shown as such
 const FM = 42195, RATIO = 0.95 // FM time = time for VDOT (ratio × fitness), as in the project plan; checked: 38.2 → 4:08:41 (doc 4:08:32)
@@ -23,6 +27,9 @@ export default function Race({ vdot, results, settings, go }) {
   const gap = raceTime(best * RATIO, FM) - 14400
   const races = PLAN.filter((d) => d.kind === 'race').map((d) => d.date)
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays('2027-10-18', i)).map((d) => BY_DATE[d]).filter(Boolean)
+  const W = useApi(`/api/activities/merged?from=${addDays(T, -60)}&to=${T}`), wx = (W.data || []).filter((a) => a.sport_class === 'run' && a.temp_c != null)
+  const peak = Math.max(...WEEKS.map((w) => w.km)), taper = WEEKS.filter((w) => ['W38', 'W39', 'W40', 'W41', 'W42'].includes(w.id)).map((w) => ({ date: w.id, value: Math.round((w.km / peak) * 100), tick: w.id }))
+  const kg = +settings.bodyMassKg || 75.3
   return <>
     <Card className="sess k-race">
       <div className="sess-top"><Chip kind="race">A-race</Chip>{settings.raceConfirmed ? <Chip tone="green">tanggal resmi</Chip> : <Chip tone="yellow">tanggal belum resmi</Chip>}</div>
@@ -44,6 +51,18 @@ export default function Race({ vdot, results, settings, go }) {
       <p className="src-note">[calc] Titik awal: {anchor.src} ({anchor.v.toFixed(1)}). Waktu = waktu untuk VDOT × 0,95 (rasio realisasi, sesuai plan). Rasio FM teramati 0,59 (Jakim 2026, confounded) [HYPOTHESIS n=1] tidak dipakai di sini.</p>
     </Card>
 
+    <Card title="Taper (dari plan)" right={<span className="muted">% minggu puncak ({peak} km)</span>}>
+      <BarChart data={taper} label={'Volume taper: ' + taper.map((t) => `${t.date} ${t.value}%`).join(', ')} />
+      <p className="muted">{taper.map((t) => `${t.date} ${t.value}%`).join(' · ')}. Strides race-pace tetap ada (Sel 2×1 km @MP di W42).</p>
+    </Card>
+    <Card title="Carb-loading 36–48 jam">
+      <div className="score-grid"><div><small>Berat badan</small><b>{kg}</b><em>kg (Profil)</em></div><div><small>Target / hari</small><b>{Math.round(kg * 10)}–{Math.round(kg * 12)}</b><em>g karbo</em></div><div><small>Kapan</small><b>Jum–Sab</b><em>22–23 Okt</em></div></div>
+      <p className="src-note">ACSM / AND / DC 2016 (Thomas, Erdman & Burke; PMID 26891166): 10–12 g/kg/24 jam selama 36–48 jam sebelum event &gt; 90 menit. Snack &lt; 90 menit pra-start = low-fiber (aturan project).</p>
+    </Card>
+    <Card title="Panas & kelembapan">
+      <p>Lari pagimu 60 hari terakhir: <b>{wx.length ? `${Math.round(mean(wx.map((a) => a.temp_c)))}°C · RH ${Math.round(mean(wx.map((a) => a.humidity ?? NaN).filter((x) => !Number.isNaN(x))) || 0)}%` : 'cuaca belum ditarik'}</b>{wx.length ? ` (${wx.length} lari dengan data cuaca)` : ''}</p>
+      <p className="src-note">Ely 2007 (PMID 17473775): waktu marathon makin lambat saat WBGT naik dari 5 ke 25 °C, lebih besar untuk pelari yang lebih lambat (pelari top: +1,7% → +4,5%). Kondisi Jakarta kemungkinan di atas rentang studi — tidak ada angka koreksi yang diekstrapolasi. Heat tax-mu sendiri belum diukur (open item 8): catat suhu/RH di setiap CP.</p>
+    </Card>
     <Card title="Minggu race (W42)">
       {weekDays.map((d) => <button key={d.date} className="rowbtn" onClick={() => go('calendar', d.date)}><span className={`kdot k-${d.kind}`} /><span><b>{d.label || KIND[d.kind].label}</b><small>{fmtLong(d.date)}</small></span><b>{d.km ? d.km + ' km' : ''}</b></button>)}
       <button className="btn sm full" onClick={() => go('calendar', { view: 'cp', id: 18 })}>Gate CP18 (Kam 21 Okt)</button>

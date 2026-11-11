@@ -40,3 +40,15 @@ export function readinessData(from, to) {
     fitness: db.prepare('SELECT * FROM fitness_daily ORDER BY date DESC LIMIT 1').get() || null,
   }
 }
+
+// laps of COROS runs in a window, keyed by activity id (for intensity distribution / HR max)
+export function lapsInRange(from, to) {
+  const out = {}; for (const l of db.prepare("SELECT l.* FROM laps l JOIN activities a ON a.id = l.activity_id WHERE a.date BETWEEN ? AND ? ORDER BY l.activity_id, l.idx").all(from, to)) (out[l.activity_id] ||= []).push(l)
+  return out
+}
+export const exportRows = (table) => db.prepare(`SELECT * FROM ${table === 'health_daily' ? 'health_daily' : 'activities'} ORDER BY date`).all()
+export function toCsv(rows) {
+  if (!rows.length) return ''
+  const cols = Object.keys(rows[0]), esc = (v) => (v == null ? '' : /[",\n]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : String(v))
+  return [cols.join(','), ...rows.map((r) => cols.map((c) => esc(r[c])).join(','))].join('\n')
+}
