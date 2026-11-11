@@ -1,6 +1,6 @@
 // Plan data transcribed from Running Calendar 2027 v4.5 (poster) + app description.
 // Full 52-week session list is NOT extracted yet: needs plan.py JSON (open item). Template + 20 CP only.
-export const TARGET = { goal: 'Sub-4:00 FM · JRF Min 24 Okt 2027 (tanggal belum resmi)', mp: '5:41', vdotRace: 37.9, vdotNeeded: 39.9, baseline: 31.7 }
+export const TARGET = { goal: 'Sub-4:00 FM · JRF Min 24 Okt 2027 (tanggal resmi)', mp: '5:41', vdotRace: 37.9, vdotNeeded: 39.9, baseline: 31.7 }
 
 export const TEMPLATE = {
   1: { run: 'Rest kaki', goal: 'Pemulihan jaringan', strength: 'Upper (3×8–12, RIR 2)' },

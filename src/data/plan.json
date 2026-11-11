@@ -3587,7 +3587,7 @@
  {
   "date": "2027-10-23",
   "km": 5.0,
-  "label": "JRF Half* · bib jog",
+  "label": "JRF Half · bib jog",
   "kind": "race",
   "tags": [],
   "note": "≤5 km easy, then stop",
@@ -3598,7 +3598,7 @@
  {
   "date": "2027-10-24",
   "km": 42.2,
-  "label": "JRF Full* · A-RACE",
+  "label": "JRF Full · A-RACE",
   "kind": "race",
   "tags": [
    "CP19"

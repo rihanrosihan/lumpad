@@ -20,6 +20,31 @@ const RULES = [
   'Lower terakhir Sel 12 Okt (12 hari sebelum FM). Race week: Sel 2×1 km @MP · Kam gate CP18 · Jum physio ringan · Sab Half = bib jog ≤5 km atau DNS.',
 ]
 
+// JRF course facts (organiser). COPs are the 2026 edition: same route in 2027, cut-off times may change.
+const JRF = { place: 'Gelora Bung Karno Sports Complex, Jakarta', gun: '04:00', cutoffMin: 300, half: '2027-10-23',
+  cops: [['COP 1', 18, '06:10'], ['COP 2', 28, '07:20'], ['COP 3', 31.8, '07:45'], ['COP 4', 36.8, '08:20'], ['Finish', 42.195, '09:00']] }
+const tod = (s) => +s.slice(0, 2) * 60 + +s.slice(3, 5) // minutes since midnight
+const clock = (m) => `${String(Math.floor(m / 60) % 24).padStart(2, '0')}.${String(Math.round(m % 60)).padStart(2, '0')}`
+const pace = (secPerKm) => `${Math.floor(secPerKm / 60)}:${String(Math.round(secPerKm % 60)).padStart(2, '0')}`
+function Cutoffs() {
+  const runs = [['sub-4:00', 341], ['fallback 4:30', 4.5 * 3600 / 42.195]] // s/km, even pace
+  const rows = JRF.cops.map(([name, km, close]) => {
+    const allowed = tod(close) - tod(JRF.gun), need = (allowed * 60) / km
+    return { name, km, close, need, at: runs.map(([, p]) => tod(JRF.gun) + (p * km) / 60), margin: runs.map(([, p]) => allowed - (p * km) / 60) }
+  })
+  const tight = rows.reduce((a, r) => (r.need < a.need ? r : a))
+  return <Card title="Cut-off (COP)" right={<Chip tone="yellow">basis COP 2026</Chip>}>
+    <div className="scroll"><table className="zm">
+      <thead><tr><th>Titik</th><th>KM</th><th>Tutup</th><th>Pace maks</th><th>Tiba @sub-4</th><th>Tiba @4:30</th></tr></thead>
+      <tbody>{rows.map((r) => <tr key={r.name}><td>{r.name}</td><td>{r.km}</td><td>{r.close.replace(':', '.')}</td><td>{pace(r.need)}/km</td>
+        {r.at.map((t, i) => <td key={i}>{clock(t)} <small className="muted">(+{Math.round(r.margin[i])}′)</small></td>)}</tr>)}</tbody>
+    </table></div>
+    <p className="muted">Pace rata-rata paling lambat yang masih lolos semua titik: <b>{pace(tight.need)}/km</b> (paling ketat di {tight.name}). Batas finis {JRF.cutoffMin / 60} jam setelah gun ({JRF.gun.replace(':', '.')} → 09.00 WIB); finis setelahnya = DNF tanpa medali/jersey.</p>
+    <p className="banner" role="note">COP dihitung dari jam (time of day), bukan dari waktu chip. Kalau kamu menyeberangi garis start beberapa menit setelah gun, selisih (+menit) di tabel berkurang sebanyak itu. Gerbang runner tutup tepat {JRF.gun.replace(':', '.')} WIB — telat = DNS.</p>
+    <p className="src-note">[calc] Pace rata maks = (jam tutup − {JRF.gun.replace(':', '.')}) ÷ km. Waktu tiba = pace rata-rata konstan (sub-4 5:41/km; 4:30 ≈ {pace(runs[1][1])}/km). COP dari edisi 2026; rute 2027 sama, jam COP bisa berubah — perbarui saat panitia merilis.</p>
+  </Card>
+}
+
 // Confirmed registrations, keyed by race date. Lives in the synced store (server KV), not in the repo: holds order IDs etc.
 function Registration({ date, r, setBib, go }) {
   const T = today()
@@ -54,12 +79,15 @@ export default function Race({ vdot, results, settings, go }) {
     <Card className="sess k-race">
       <div className="sess-top"><Chip kind="race">A-race</Chip>{settings.raceConfirmed ? <Chip tone="green">tanggal resmi</Chip> : <Chip tone="yellow">tanggal belum resmi</Chip>}</div>
       <h2 className="sess-title">JRF Full Marathon</h2>
-      <p className="muted">{fmtLong(race)}</p>
+      <p className="muted">{fmtLong(race)} · start {JRF.gun.replace(':', '.')} WIB · {JRF.place}</p>
       <div className="bigkm"><b>{left > 0 ? left : 0}</b><span>hari lagi</span></div>
       <dl className="pace"><div><dt>Target</dt><dd>sub-4:00 · 5:41 /km</dd></div><div><dt>Fallback (kill gate)</dt><dd>4:15 · 4:30 · finish-first</dd></div></dl>
+      <p className="muted">Half marathon: {fmtLong(JRF.half)} (sehari sebelumnya) — di plan cuma bib jog ≤5 km atau DNS.</p>
       {race !== '2027-10-24' && <p className="banner" role="note">Tanggal race diubah dari rencana (24 Okt). Kalender dan checkpoint tetap mengikuti tanggal 24 Okt — susun ulang plan kalau tanggalnya benar-benar bergeser.</p>}
       <p className="src">Ubah tanggal di Profil › Race.</p>
     </Card>
+
+    <Cutoffs />
 
     <Card title="Proyeksi waktu marathon" right={<Chip>HYPOTHESIS n=2</Chip>}>
       <dl className="kv">
