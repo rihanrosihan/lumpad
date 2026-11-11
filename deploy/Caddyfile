@@ -1,18 +1,28 @@
 __DOMAIN__ {
 	encode gzip
-	basicauth {
-		__USER__ __HASH__
+
+	# Machine-to-machine sync: bypasses the web login but is protected by a bearer token
+	# checked in the app (constant-time compare, throttled). POST only, exact path.
+	@ingest {
+		method POST
+		path /api/ingest
 	}
-	handle /api/strava/callback {
-		# Strava redirects the browser here; it already carries your basic-auth session.
+	handle @ingest {
 		reverse_proxy 127.0.0.1:8787
 	}
-	handle /api/* {
-		reverse_proxy 127.0.0.1:8787
-	}
+
+	# Everything else: web login
 	handle {
-		root * /opt/lumpad/dist
-		try_files {path} /index.html
-		file_server
+		basicauth {
+			__USER__ __HASH__
+		}
+		handle /api/* {
+			reverse_proxy 127.0.0.1:8787
+		}
+		handle {
+			root * /opt/lumpad/dist
+			try_files {path} /index.html
+			file_server
+		}
 	}
 }

@@ -3,6 +3,7 @@ import { useStore } from './store.js'
 import { evaluate, weeklyGate, EMPTY_DAY, hasInput } from './lib/gate.js'
 import { BY_DATE, today, addDays, fmtLong, fmtShort, KIND, dow } from './lib/calendar.js'
 import { Card, Chip, Screen, Icon, StrengthChips } from './ui.jsx'
+import { useHealthDay, hrvLow, ago } from './sync.js'
 
 const LV = { green: 'Jalankan', yellow: 'Turunkan', red: 'Ganti easy / istirahat' }
 function Field({ label, children, hint }) { return <label className="fld"><span>{label}</span>{children}{hint && <small>{hint}</small>}</label> }
@@ -12,7 +13,9 @@ export default function Readiness() {
   const [f, setF] = useStore('lumpad.daily.' + date, EMPTY_DAY)
   const [hist, setHist] = useState({})
   useEffect(() => { fetch('/api/kv/prefix?prefix=lumpad.daily.').then((r) => r.json()).then(setHist).catch(() => {}) }, [])
+  const hd = useHealthDay(date)
   const sess = BY_DATE[date] || null
+  const mismatch = hd?.sleep_hr_avg != null && f.sleepHR !== '' && Math.abs(f.sleepHR - hd.sleep_hr_avg) > 3
   const g = evaluate(f, sess)
   const num = (k) => (e) => setF({ ...f, [k]: e.target.value === '' ? '' : +e.target.value })
   const days7 = Array.from({ length: 7 }, (_, i) => addDays(date, i - 6))
@@ -33,6 +36,18 @@ export default function Readiness() {
       {g.reasons.length > 0 ? <ul>{g.reasons.map((r, i) => <li key={i} className={r.level}>{r.msg}</li>)}</ul> : <p>{hasInput(f) ? 'Tidak ada sinyal merah.' : 'Isi form di bawah.'}</p>}
       {g.level !== 'green' && hasInput(f) && <input className="ovr" placeholder="Override? Tulis alasannya (disimpan)" value={f.override} onChange={(e) => setF({ ...f, override: e.target.value })} />}
     </div>
+
+    <Card title="Dari COROS" right={hd && <span className="muted">ditarik {ago(hd.pulled_at)}</span>}>
+      {hd === undefined ? <p className="muted">Memuat…</p> : !hd ? <p className="muted">Belum ditarik untuk tanggal ini (sync harian 08:00 WIB). Isi manual di bawah, atau minta sync sekarang.</p> : <>
+        <dl className="kv">
+          <div><dt>Sleep HR (rata-rata)</dt><dd>{hd.sleep_hr_avg ?? '—'} bpm{hd.sleep_hr_min != null ? <small className="muted"> · min {hd.sleep_hr_min} · maks {hd.sleep_hr_max}</small> : ''}</dd></div>
+          <div><dt>HRV tidur</dt><dd>{hd.hrv_avg ?? '—'} ms · {hd.hrv_status || '—'}{hd.hrv_range_lo != null ? <small className="muted"> · normal {hd.hrv_range_lo}–{hd.hrv_range_hi}</small> : ''}</dd></div>
+          <div><dt>Resting HR</dt><dd>{hd.resting_hr ?? '—'} bpm</dd></div>
+        </dl>
+        {mismatch && <div className="banner">Beda dengan isianmu: Sleep HR yang kamu ketik {f.sleepHR}, COROS {hd.sleep_hr_avg}. Yang menang: data mentah COROS, kecuali kamu menimpanya.</div>}
+        <button onClick={() => setF({ ...f, ...(hd.sleep_hr_avg != null ? { sleepHR: Math.round(hd.sleep_hr_avg) } : {}), ...(hd.hrv_status ? { hrv: hrvLow(hd.hrv_status) ? 'reduced' : 'normal' } : {}) })}>Pakai data COROS</button>
+      </>}
+    </Card>
 
     <Card title="Sesi terjadwal">
       {sess ? <div className="plain-sess"><Chip kind={sess.kind}>{KIND[sess.kind].label}</Chip> <b>{sess.label}</b> <span className="muted">{sess.km ? sess.km + ' km' : ''}</span><div className="chips"><StrengthChips day={sess} /></div></div> : <p className="muted">Tidak ada sesi di plan untuk tanggal ini.</p>}

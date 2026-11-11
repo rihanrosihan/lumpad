@@ -7,7 +7,7 @@ User=lumpad
 WorkingDirectory=/opt/lumpad
 EnvironmentFile=/opt/lumpad/.env
 Environment=PORT=8787 DATA_DIR=/opt/lumpad/server/data
-ExecStart=/usr/bin/node server/index.js
+ExecStart=/usr/bin/node --disable-warning=ExperimentalWarning server/index.js
 Restart=on-failure
 NoNewPrivileges=true
 ProtectSystem=full

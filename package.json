@@ -7,7 +7,7 @@
     "dev": "vite --host",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node --test src/lib/*.test.js",
+    "test": "node --test src/lib/*.test.js server/*.test.js",
     "server": "node server/index.js"
   },
   "dependencies": {

@@ -4,6 +4,7 @@ import * as pubmed from './pubmed.js'
 import * as coros from './coros.js'
 import * as lib from './library.js'
 import { load, save } from './db.js'
+import { applyIngest, checkToken, syncStatus, healthRange, activitiesRange, lapsOf, validDate } from './ingest.js'
 
 const send = (res, code, body, headers = {}) => { res.writeHead(code, { 'content-type': 'application/json', ...headers }); res.end(JSON.stringify(body)) }
 const readBody = (req, max = 20e6) => new Promise((ok, no) => { const c = []; let n = 0; req.on('data', (d) => { n += d.length; if (n > max) { no(new Error('too large')); req.destroy() } else c.push(d) }); req.on('end', () => ok(Buffer.concat(c))) })
@@ -12,7 +13,12 @@ const KEY = /^lumpad\.[A-Za-z0-9._-]{1,80}$/
 const kvKey = (q) => { const k = q.get('key') || ''; if (!KEY.test(k)) throw Object.assign(new Error('bad key'), { status: 400 }); return k }
 
 const PREFIX = /^lumpad\.[A-Za-z0-9._-]{0,60}$/
+const range = (q) => { const from = q.get('from'), to = q.get('to') || from; if (!validDate(from) || !validDate(to)) throw Object.assign(new Error('bad date range'), { status: 400 }); return [from, to] }
 const routes = {
+  'POST /api/ingest': async (_q, req) => { checkToken(req); return applyIngest(JSON.parse((await readBody(req, 5e6)).toString())) },
+  'GET /api/sync/status': async () => syncStatus(),
+  'GET /api/health/range': async (q) => healthRange(...range(q)),
+  'GET /api/activities': async (q) => activitiesRange(...range(q)).map((a) => ({ ...a, laps: q.get('laps') ? lapsOf(a.id) : undefined })),
   'GET /api/kv/prefix': async (q) => { const p = q.get('prefix') || ''; if (!PREFIX.test(p)) throw Object.assign(new Error('bad prefix'), { status: 400 }); return Object.fromEntries(Object.entries(load('kv', {})).filter(([k]) => k.startsWith(p)).map(([k, v]) => [k, v.value])) },
   'GET /api/kv': async (q) => { const k = kvKey(q), e = load('kv', {})[k]; return e ? { found: true, ...e } : { found: false } },
   'PUT /api/kv': async (q, req) => {

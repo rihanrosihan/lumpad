@@ -6,6 +6,7 @@ import { BY_DATE, PLAN, today, diffDays, fmtLong, fmtShort, addDays, mondayOf, w
 import { CHECKPOINTS, TARGET, cpDistance } from './lib/plan.js'
 import { raceTime, fmtTime } from './lib/vdot.js'
 import { Card, Chip, Screen, StrengthChips, Icon } from './ui.jsx'
+import { useSyncStatus2, wib, ago } from './sync.js'
 
 export const thresholds = (c) => { const d = cpDistance(c); return d && c.line ? { G: fmtTime(raceTime(c.line - 0.5, d)), R: fmtTime(raceTime(c.line - 1.5, d)) } : null }
 const GATE = { green: ['Jalankan', 'Semua sinyal aman'], yellow: ['Turunkan', 'Kurangi intensitas'], red: ['Ganti easy / istirahat', 'Jangan paksa'] }
@@ -13,6 +14,7 @@ const GATE = { green: ['Jalankan', 'Semua sinyal aman'], yellow: ['Turunkan', 'K
 export default function Home({ vdot, results, go }) {
   const T = today(), day = BY_DATE[T], p = paces(vdot.v)
   const [f] = useStore('lumpad.daily.' + T, EMPTY_DAY)
+  const sync = useSyncStatus2()
   const g = evaluate(f, day), checked = hasInput(f)
   const toRace = diffDays(RACE_DATE, T), beforePlan = T < PLAN_START
   const nextCp = CHECKPOINTS.find((c) => c.date >= T), th = nextCp && thresholds(nextCp)
@@ -22,6 +24,9 @@ export default function Home({ vdot, results, go }) {
   const upcoming = PLAN.filter((d) => d.date >= T && d.km > 0).slice(0, 3)
 
   return <Screen title={fmtLong(T).split(',')[0]} sub={fmtLong(T).split(', ')[1]} right={<div className="pill" title="Hari menuju JRF"><b>H-{Math.max(0, toRace)}</b><small>JRF 24 Okt</small></div>}>
+    <button className={`fresh ${sync?.lastRun ? (sync.lastRun.ok ? 'ok' : 'warn') : 'none'}`} onClick={() => go('profile')}>
+      <i />{sync === undefined ? 'Memeriksa sync…' : sync?.lastRun ? <>Sync {ago(sync.lastRun.received_at)} · {wib(sync.lastRun.received_at)} WIB{sync.latestHealth ? ` · tidur ${sync.latestHealth.slice(5)}` : ''}{!sync.lastRun.ok && ' · ada yang ditolak'}</> : 'Belum ada sync — data COROS/Strava belum masuk'}
+    </button>
     <button className={`gatecard g-${checked ? g.level : 'none'}`} onClick={() => go('ready')}>
       <span className="gdot" />
       <span className="gtxt"><b>{checked ? 'Gate: ' + GATE[g.level][0] : 'Belum check-in pagi'}</b>

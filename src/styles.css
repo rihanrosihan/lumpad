@@ -116,3 +116,5 @@ form.row,label.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}form.r
 .sync{font-size:.65rem;font-weight:500;color:var(--muted)}
 @media(min-width:700px){.app{padding-top:12px}.tabbar{left:50%;right:auto;transform:translateX(-50%);width:560px;border-radius:18px 18px 0 0;border:1px solid var(--line);border-bottom:0}}
 .card h3{font-size:.85rem;font-weight:650;margin:14px 0 6px}.card p{margin:4px 0}.card p.muted{margin:4px 0}
+.fresh{display:flex;align-items:center;gap:8px;width:100%;font-size:.78rem;color:var(--muted);padding:2px 4px 10px}.fresh i{width:8px;height:8px;border-radius:50%;background:var(--c-none);flex:none}.fresh.ok i{background:var(--green)}.fresh.warn i{background:var(--yellow)}.fresh.none i{background:var(--c-rest)}
+.kv small{font-weight:400}
