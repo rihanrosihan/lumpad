@@ -12,3 +12,4 @@ table{border-collapse:collapse;width:100%}td,th{padding:4px 8px;border-bottom:1p
 .banner{background:var(--y);border-radius:8px;padding:8px 10px;font-size:.85rem;margin-top:8px}
 .tag{font-size:.7rem;padding:2px 6px;border-radius:6px;background:var(--bd);vertical-align:middle}ul{margin:4px 0;padding-left:20px}
 button,a.btn{padding:6px 10px;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--fg);font:inherit;cursor:pointer}form.row{display:flex;gap:8px}
+.sync{font-size:.7rem;font-weight:400;margin-left:8px}.sync.ok{color:#2a8f4e}.sync.saving{color:var(--mut)}.sync.offline{color:#c0392b}

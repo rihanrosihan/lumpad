@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useStore } from './store.js'
+import { useStore, useSyncStatus } from './store.js'
 import { paces, fmtPace, fmtTime, vdotFromRace, parseTime } from './lib/vdot.js'
 import { TARGET, TEMPLATE, CHECKPOINTS, tone, killGate } from './lib/plan.js'
 import { evaluate } from './lib/gate.js'
@@ -112,8 +112,9 @@ export default function App() {
   const [tab, setTab] = useState('today')
   const [results, setResults] = useStore('lumpad.results', {})
   const vdot = useMemo(() => latestVdot(results), [results])
+  const sync = useSyncStatus()
   return <main>
-    <header><h1>Lumpad</h1><p className="muted">{TARGET.goal}</p>
+    <header><h1>Lumpad <small className={'sync ' + sync}>{{ ok: '● tersimpan di server', saving: '● menyimpan…', offline: '● offline — hanya di browser ini' }[sync]}</small></h1><p className="muted">{TARGET.goal}</p>
       <div className="banner">Konflik data: berat badan Strava 86,0 kg vs COROS 75,3 kg — COROS/Omron dipakai sampai ditimbang ulang.</div></header>
     <nav>{[['today', 'Hari ini'], ['cp', 'Checkpoint'], ['pace', 'Pace'], ['data', 'Data']].map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}</nav>
     {tab === 'today' && <Today results={results} vdot={vdot} />}

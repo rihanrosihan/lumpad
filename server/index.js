@@ -8,7 +8,15 @@ import { load, save } from './db.js'
 const send = (res, code, body, headers = {}) => { res.writeHead(code, { 'content-type': 'application/json', ...headers }); res.end(JSON.stringify(body)) }
 const readBody = (req, max = 20e6) => new Promise((ok, no) => { const c = []; let n = 0; req.on('data', (d) => { n += d.length; if (n > max) { no(new Error('too large')); req.destroy() } else c.push(d) }); req.on('end', () => ok(Buffer.concat(c))) })
 
+const KEY = /^lumpad\.[A-Za-z0-9._-]{1,80}$/
+const kvKey = (q) => { const k = q.get('key') || ''; if (!KEY.test(k)) throw Object.assign(new Error('bad key'), { status: 400 }); return k }
+
 const routes = {
+  'GET /api/kv': async (q) => { const k = kvKey(q), e = load('kv', {})[k]; return e ? { found: true, ...e } : { found: false } },
+  'PUT /api/kv': async (q, req) => {
+    const k = kvKey(q), body = JSON.parse((await readBody(req, 1e6)).toString()), kv = load('kv', {})
+    kv[k] = { value: body.value, updatedAt: new Date().toISOString() }; save('kv', kv); return { ok: true, updatedAt: kv[k].updatedAt }
+  },
   'GET /api/health': async () => ({ ok: true }),
   'GET /api/sources': async () => ({ strava: strava.status(), coros: coros.status(), consensus: lib.consensusStatus(), pubmed: { api: 'public' } }),
   'GET /api/strava/login': async (_q, _b, res) => { if (!strava.configured()) throw Object.assign(new Error('Set STRAVA_CLIENT_ID/STRAVA_CLIENT_SECRET'), { status: 501 }); res.writeHead(302, { location: strava.authUrl() }); res.end(); return null },
