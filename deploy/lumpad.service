@@ -1,0 +1,17 @@
+[Unit]
+Description=Lumpad API
+After=network.target
+
+[Service]
+User=lumpad
+WorkingDirectory=/opt/lumpad
+EnvironmentFile=/opt/lumpad/.env
+Environment=PORT=8787 DATA_DIR=/opt/lumpad/server/data
+ExecStart=/usr/bin/node server/index.js
+Restart=on-failure
+NoNewPrivileges=true
+ProtectSystem=full
+ReadWritePaths=/opt/lumpad/server/data
+
+[Install]
+WantedBy=multi-user.target

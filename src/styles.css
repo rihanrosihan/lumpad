@@ -1,0 +1,14 @@
+:root{--bg:#f6f7f9;--fg:#1c2330;--card:#fff;--mut:#667085;--bd:#e3e6eb;--g:#e6f6ec;--y:#fff4d6;--r:#fde4e4;--ac:#3b4fd8}
+@media(prefers-color-scheme:dark){:root{--bg:#12151b;--fg:#e8ebf0;--card:#1b2029;--mut:#98a2b3;--bd:#2c3340;--g:#173a27;--y:#4a3b10;--r:#4a1c1c;--ac:#8c9bff}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 system-ui,sans-serif}
+main{max-width:720px;margin:0 auto;padding:16px}h1{margin:0}h2{margin:0 0 8px;font-size:1.15rem}h3{margin:8px 0 4px;font-size:1rem}
+.muted{color:var(--mut);font-size:.9rem;margin:4px 0}.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin:12px 0}
+.gate.green,.cp.green{background:var(--g)}.gate.yellow,.cp.yellow{background:var(--y)}.gate.red,.cp.red{background:var(--r)}
+nav{display:flex;gap:8px;margin:12px 0}nav button{flex:1;padding:10px;border:1px solid var(--bd);border-radius:10px;background:var(--card);color:var(--fg);font:inherit}nav .on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}label{display:flex;flex-direction:column;font-size:.85rem;gap:2px}
+label.row{flex-direction:row;align-items:center;gap:8px;flex-wrap:wrap}label.chk{flex-direction:row;align-items:center;gap:6px}
+input,select{padding:8px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--fg);font:inherit;width:100%}label.row input{width:auto}
+table{border-collapse:collapse;width:100%}td,th{padding:4px 8px;border-bottom:1px solid var(--bd);text-align:left;font-size:.9rem}.scroll{overflow-x:auto}
+.banner{background:var(--y);border-radius:8px;padding:8px 10px;font-size:.85rem;margin-top:8px}
+.tag{font-size:.7rem;padding:2px 6px;border-radius:6px;background:var(--bd);vertical-align:middle}ul{margin:4px 0;padding-left:20px}
+button,a.btn{padding:6px 10px;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--fg);font:inherit;cursor:pointer}form.row{display:flex;gap:8px}

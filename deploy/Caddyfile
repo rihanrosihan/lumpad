@@ -1,0 +1,18 @@
+__DOMAIN__ {
+	encode gzip
+	basic_auth {
+		__USER__ __HASH__
+	}
+	handle /api/strava/callback {
+		# Strava redirects the browser here; it already carries your basic-auth session.
+		reverse_proxy 127.0.0.1:8787
+	}
+	handle /api/* {
+		reverse_proxy 127.0.0.1:8787
+	}
+	handle {
+		root * /opt/lumpad/dist
+		try_files {path} /index.html
+		file_server
+	}
+}
