@@ -5,6 +5,7 @@ import { useApi } from './api.js'
 import { WEEKS } from './lib/calendar.js'
 import { BarChart } from './charts.jsx'
 import { mean } from './lib/stats.js'
+import { useStore } from './store.js'
 
 const RATE = 0.74 // best observed VDOT/month (n=2) — hypothesis, shown as such
 const FM = 42195, RATIO = 0.95 // FM time = time for VDOT (ratio × fitness), as in the project plan; checked: 38.2 → 4:08:41 (doc 4:08:32)
@@ -19,7 +20,26 @@ const RULES = [
   'Lower terakhir Sel 12 Okt (12 hari sebelum FM). Race week: Sel 2×1 km @MP · Kam gate CP18 · Jum physio ringan · Sab Half = bib jog ≤5 km atau DNS.',
 ]
 
+// Confirmed registrations, keyed by race date. Lives in the synced store (server KV), not in the repo: holds order IDs etc.
+function Registration({ date, r, setBib, go }) {
+  const T = today()
+  return <Card title={r.event} right={<Chip tone="green">terdaftar ✓</Chip>}>
+    <p className="muted">{fmtLong(date)} · {diffDays(date, T) > 0 ? diffDays(date, T) + ' hari lagi' : 'lewat'}{r.eventDates ? ` · event ${r.eventDates}` : ''}</p>
+    <dl className="kv">
+      <div><dt>Jarak</dt><dd>{r.distance}{r.category ? ` · ${r.category}` : ''}</dd></div>
+      {r.start && <div><dt>Rute</dt><dd>{r.start} → {r.finish}</dd></div>}
+      <div><dt>Nama di BIB</dt><dd>{r.nameOnBib || '—'}</dd></div>
+      <div><dt>Jersey</dt><dd>{r.jersey || '—'}</dd></div>
+      <div><dt>Order ID</dt><dd>{r.orderId || '—'}</dd></div>
+    </dl>
+    <label className="fld"><span>Nomor BIB</span><input inputMode="numeric" placeholder="belum keluar" value={r.bib || ''} onChange={(e) => setBib(e.target.value.slice(0, 12))} /></label>
+    {r.plan && <p className="muted">{r.plan}</p>}
+    <button className="btn sm full" onClick={() => go('calendar', date)}>Lihat di kalender</button>
+  </Card>
+}
+
 export default function Race({ vdot, results, settings, go }) {
+  const [regs, setRegs] = useStore('lumpad.registrations', {})
   const T = today(), race = settings.raceDate, left = diffDays(race, T)
   const lastTT = Object.entries(results).filter(([, r]) => r?.vdot != null).map(([id, r]) => ({ id: +id, v: r.vdot, date: PLAN.find((d) => d.tags.includes('CP' + id))?.date })).filter((x) => x.date).sort((a, b) => a.date.localeCompare(b.date)).at(-1)
   const anchor = lastTT ? { v: lastTT.v, date: lastTT.date, src: `CP${lastTT.id}` } : { v: 33.0, date: '2027-03-23', src: 'garis CP3 (belum ada TT)' }
@@ -68,8 +88,10 @@ export default function Race({ vdot, results, settings, go }) {
       <button className="btn sm full" onClick={() => go('calendar', { view: 'cp', id: 18 })}>Gate CP18 (Kam 21 Okt)</button>
     </Card>
 
+    {Object.entries(regs || {}).filter(([d]) => d !== race).sort(([a], [b]) => a.localeCompare(b)).map(([d, r]) => <Registration key={d} date={d} r={r} go={go} setBib={(bib) => setRegs((x) => ({ ...x, [d]: { ...x[d], bib } }))} />)}
+
     <Card title="Race lain di 2027">
-      {races.filter((d) => d !== '2027-10-24').map((d) => { const x = BY_DATE[d]; return <button key={d} className="rowbtn" onClick={() => go('calendar', d)}><span className="kdot k-race" /><span><b>{x.label}</b><small>{fmtLong(d)} · {diffDays(d, T) > 0 ? diffDays(d, T) + ' hari lagi' : 'lewat'}</small></span></button> })}
+      {races.filter((d) => d !== '2027-10-24').map((d) => { const x = BY_DATE[d], reg = regs?.[d]; return <button key={d} className="rowbtn" onClick={() => go('calendar', d)}><span className="kdot k-race" /><span><b>{x.label}</b><small>{fmtLong(d)} · {diffDays(d, T) > 0 ? diffDays(d, T) + ' hari lagi' : 'lewat'}</small></span>{reg ? <Chip tone="green">terdaftar</Chip> : (x.km >= 21 ? <Chip tone="yellow">belum daftar</Chip> : null)}</button> })}
       <p className="muted">Jakim 13 Jun dan MJM 20 Jun = C-race (run-walk, &lt;6:00, finish-first), bukan tes VDOT. MJM hanya dilari kalau gate G-MJM (Rab 16 Jun: jog 20&apos; nyeri 0/10, Sleep HR ≤67, HRV tidak Reduced) lolos.</p>
     </Card>
 

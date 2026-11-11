@@ -10,6 +10,7 @@ import { Gantt, Combo } from './charts2.jsx'
 import { compliance } from './lib/analysis.js'
 import { dailyLoadSeries, pmc } from './lib/load.js'
 import { PLAN } from './lib/calendar.js'
+import { useStore } from './store.js'
 
 const monthKm = (m) => Math.round(Object.values(BY_DATE).filter((d) => +d.date.slice(5, 7) === m + 1).reduce((a, d) => a + d.km, 0))
 const monthOfWeek = (w) => +w.days[Math.floor(w.days.length / 2)].date.slice(5, 7) - 1
@@ -40,6 +41,7 @@ function MonthView({ vdot, focus, raceDate }) {
     return out
   }, [month])
   const d = sel && BY_DATE[sel], cp = cpOf(d)
+  const [regs] = useStore('lumpad.registrations', {}), reg = d && regs?.[d.date]
   const phase = (() => { const c = {}; Object.values(BY_DATE).filter((x) => +x.date.slice(5, 7) === month + 1).forEach((x) => (c[x.phase] = (c[x.phase] || 0) + 1)); return Object.entries(c).sort((a, b) => b[1] - a[1])[0]?.[0] })()
   const step = (n) => { const t = addDays(sel, n); if (BY_DATE[t]) { setSel(t); setMonth(+t.slice(5, 7) - 1) } }
   const todayMonth = inPlan ? parse(T).getMonth() : null
@@ -100,10 +102,11 @@ function MonthView({ vdot, focus, raceDate }) {
         <div className="sess-top"><Chip kind={d.kind}>{KIND[d.kind].label}</Chip><span className="muted">{d.week} · {PHASE_NAME[d.phase] || d.phase}</span></div>
         <h2 className="sess-title">{d.label || KIND[d.kind].label}</h2>
         {d.km > 0 && <div className="bigkm"><b>{d.km}</b><span>km</span></div>}
-        <div className="chips"><StrengthChips day={d} />{d.tags.filter((t) => /^CP|^MP/.test(t)).map((t) => <Chip key={t} tone="cp">{t}</Chip>)}</div>
+        <div className="chips">{reg && <Chip tone="green">terdaftar ✓{reg.bib ? ` · BIB ${reg.bib}` : ''}</Chip>}<StrengthChips day={d} />{d.tags.filter((t) => /^CP|^MP/.test(t)).map((t) => <Chip key={t} tone="cp">{t}</Chip>)}</div>
         {sessionPaces(d, p).length > 0 && <dl className="pace">{sessionPaces(d, p).map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>}
         {d.note && <p className="note">{d.note}</p>}
         {d.event && <p className="note">♥ {d.event}</p>}
+        {reg && <p className="note">{reg.event} · {reg.distance} · {reg.category}{reg.start ? ` · ${reg.start} → ${reg.finish}` : ''}</p>}
         <p className="src">Pace dari VDOT {vdot.v.toFixed(1)} · {vdot.src}</p>
       </>}
     </Sheet>
