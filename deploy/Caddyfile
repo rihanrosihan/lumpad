@@ -1,6 +1,6 @@
 __DOMAIN__ {
 	encode gzip
-	basic_auth {
+	basicauth {
 		__USER__ __HASH__
 	}
 	handle /api/strava/callback {
