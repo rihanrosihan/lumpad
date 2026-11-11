@@ -11,12 +11,7 @@ export default function Profile({ resetResults }) {
   const [theme, setTheme] = useStore('lumpad.theme', 'auto')
   const sync = useSyncStatus()
   const ss = useSyncStatus2()
-  return <Screen title="Profil" sub="Atlet, target, sumber data, tampilan">
-    <Card title="Atlet"><div className="ath"><span className="avatar">R</span><div><b>Rihan</b><p className="muted">31 th · 178 cm · Bekasi · UESCA-certified</p><p className="muted">COROS Apex 4 + Pod 2 · HR optical wrist</p></div></div>
-      <div className="banner">Konflik data: berat badan Strava 86,0 kg vs COROS 75,3 kg (Omron 18 Sep: 75,3 kg). Dipakai: COROS/Omron sampai ditimbang ulang.</div></Card>
-    <Card title="Target & garis"><dl className="kv">{ROWS.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
-      <p className="muted">Laju dibutuhkan 1,02 VDOT/bln ≈ 1,4× laju terbaik teramati (0,74) <Chip>HYPOTHESIS n=2</Chip>. Aplikasi tidak menjamin sub-4.</p></Card>
-    <Card title="Aturan terkunci"><ul className="rules">{LOCKED.map((x) => <li key={x}>{x}</li>)}</ul></Card>
+  return <Screen title="Profil" sub="Sync, atlet, target, tampilan">
     <Card title="Sync harian" right={ss?.lastRun && <Chip tone={ss.lastRun.ok ? 'green' : 'yellow'}>{ss.lastRun.ok ? 'OK' : 'ada yang ditolak'}</Chip>}>
       {ss === undefined ? <p className="muted">Memuat…</p> : !ss ? <p className="muted">Status sync tidak tersedia.</p> : <>
         <dl className="kv">
@@ -29,8 +24,12 @@ export default function Profile({ resetResults }) {
       </>}
       <p className="muted">Jadwal: setiap hari ±07:50 WIB lewat rutin Claude (COROS + Strava). Sync manual: bilang "sync Lumpad" di sesi Claude ini atau jalankan rutinnya dari aplikasi Claude.</p>
     </Card>
-    <h2 className="sec">Sumber data</h2>
-    <Data />
+    <Card title="Atlet"><div className="ath"><span className="avatar">R</span><div><b>Rihan</b><p className="muted">31 th · 178 cm · Bekasi · UESCA-certified</p><p className="muted">COROS Apex 4 + Pod 2 · HR optical wrist</p></div></div>
+      <div className="banner">Konflik data: berat badan Strava 86,0 kg vs COROS 75,3 kg (Omron 18 Sep: 75,3 kg). Dipakai: COROS/Omron sampai ditimbang ulang.</div></Card>
+    <Card title="Target & garis"><dl className="kv">{ROWS.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
+      <p className="muted">Laju dibutuhkan 1,02 VDOT/bln ≈ 1,4× laju terbaik teramati (0,74) <Chip>HYPOTHESIS n=2</Chip>. Aplikasi tidak menjamin sub-4.</p></Card>
+    <Card title="Aturan terkunci"><ul className="rules">{LOCKED.map((x) => <li key={x}>{x}</li>)}</ul></Card>
+    <details className="card fold"><summary>Alat cadangan: Strava API, impor FIT, literatur</summary><Data /></details>
     <Card title="Tampilan"><div className="seg wide">{[['auto', 'Otomatis'], ['light', 'Terang'], ['dark', 'Gelap']].map(([k, l]) => <button key={k} className={theme === k ? 'on' : ''} onClick={() => setTheme(k)}>{l}</button>)}</div></Card>
     <Card title="Sistem"><dl className="kv">
       <div><dt>Sinkron</dt><dd>{{ ok: 'Tersimpan di server', saving: 'Menyimpan…', offline: 'Offline (hanya di browser ini)' }[sync]}</dd></div>

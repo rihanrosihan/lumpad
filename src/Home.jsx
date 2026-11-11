@@ -24,13 +24,13 @@ export default function Home({ vdot, results, go }) {
   const upcoming = PLAN.filter((d) => d.date >= T && d.km > 0).slice(0, 3)
 
   return <Screen title={fmtLong(T).split(',')[0]} sub={fmtLong(T).split(', ')[1]} right={<div className="pill" title="Hari menuju JRF"><b>H-{Math.max(0, toRace)}</b><small>JRF 24 Okt</small></div>}>
-    <button className={`fresh ${sync?.lastRun ? (sync.lastRun.ok ? 'ok' : 'warn') : 'none'}`} onClick={() => go('profile')}>
-      <i />{sync === undefined ? 'Memeriksa sync…' : sync?.lastRun ? <>Sync {ago(sync.lastRun.received_at)} · {wib(sync.lastRun.received_at)} WIB{sync.latestHealth ? ` · tidur ${sync.latestHealth.slice(5)}` : ''}{!sync.lastRun.ok && ' · ada yang ditolak'}</> : 'Belum ada sync — data COROS/Strava belum masuk'}
+    <button className={`fresh ${sync === null ? 'warn' : sync?.lastRun ? (sync.lastRun.ok ? 'ok' : 'warn') : 'none'}`} onClick={() => go('profile')}>
+      <i />{sync === undefined ? 'Memeriksa sync…' : sync === null ? 'Status sync tidak terjangkau — data bisa usang' : sync?.lastRun ? <>Sync {ago(sync.lastRun.received_at)} · {wib(sync.lastRun.received_at)} WIB{sync.latestHealth ? ` · tidur ${sync.latestHealth.slice(5)}` : ''}{!sync.lastRun.ok && ' · ada yang ditolak'}</> : 'Belum ada sync — data COROS/Strava belum masuk'}
     </button>
     <button className={`gatecard g-${checked ? g.level : 'none'}`} onClick={() => go('ready')}>
       <span className="gdot" />
       <span className="gtxt"><b>{checked ? 'Gate: ' + GATE[g.level][0] : 'Belum check-in pagi'}</b>
-        <small>{checked ? (g.reasons.find((r) => r.level !== 'info')?.msg || GATE[g.level][1]) : 'Isi Sleep HR, HRV dan nyeri dulu — gate memutuskan sesi hari ini'}</small></span>
+        <small>{checked ? (g.reasons.find((r) => r.level !== 'info')?.msg || GATE[g.level][1]) : 'Ketuk untuk isi 4 data (±15 detik) — gate menentukan sesi hari ini'}</small></span>
       <Icon n="chev" size={18} />
     </button>
 
@@ -48,8 +48,8 @@ export default function Home({ vdot, results, go }) {
       {beforePlan && <><h3 className="mini">Berikutnya</h3>{upcoming.map((d) => <button key={d.date} className="rowbtn" onClick={() => go('calendar', d.date)}><span className={`kdot k-${d.kind}`} /><span><b>{d.label}</b><small>{fmtLong(d.date)}</small></span><b>{d.km} km</b></button>)}</>}
     </Card>}
 
-    <Card title="Minggu ini" right={wk && <span className="muted">{wk.id} · {wk.km} km</span>}>
-      <div className="strip">{strip.map((s, i) => { const d = BY_DATE[s]; return <button key={s} className={`sc ${s === T ? 'today' : ''} ${d ? 'k-' + d.kind : 'k-none'}`} onClick={() => go('calendar', s)}>
+    <Card className="tight" title="Minggu ini" right={wk && <span className="muted">{wk.id} · {wk.km} km</span>}>
+      <div className="strip">{strip.map((s, i) => { const d = BY_DATE[s]; return <button key={s} aria-current={s === T ? 'date' : undefined} aria-label={`${fmtLong(s)}: ${d ? (d.label || KIND[d.kind].label) + (d.km ? ', ' + d.km + ' km' : '') : 'tidak ada sesi'}`} className={`sc ${s === T ? 'today' : ''} ${d ? 'k-' + d.kind : 'k-none'}`} onClick={() => go('calendar', s)}>
         <small>{DAYS3[(i + 1) % 7]}</small><b>{d && d.km ? d.km : '–'}</b><i>{d ? KIND[d.kind].short : ''}</i></button> })}</div>
     </Card>
 

@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useStore } from './store.js'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useStore, useSyncStatus } from './store.js'
 import { Icon } from './ui.jsx'
 import Home from './Home.jsx'
 import Readiness from './Readiness.jsx'
@@ -22,14 +22,19 @@ export default function App() {
   const [results, setResults] = useStore('lumpad.results', {})
   const [theme] = useStore('lumpad.theme', 'auto')
   const vdot = useMemo(() => latestVdot(results), [results])
+  const sync = useSyncStatus()
+  const mainRef = useRef(), first = useRef(true)
+  useEffect(() => { if (first.current) { first.current = false; return } mainRef.current?.focus({ preventScroll: true }) }, [tab])
   useEffect(() => { const f = () => setTab(fromHash()); addEventListener('hashchange', f); return () => removeEventListener('hashchange', f) }, [])
   useEffect(() => { document.documentElement.dataset.theme = theme === 'auto' ? '' : theme }, [theme])
   const go = (t, arg = null) => { setFocus(arg); location.hash = '#/' + t; setTab(t); window.scrollTo(0, 0) }
 
   return <div className="app">
-    <main>
+    <a className="skip" href="#main" onClick={(e) => { e.preventDefault(); mainRef.current?.focus() }}>Lewati ke konten</a>
+    {sync === 'offline' && <div className="offbar" role="status">Offline — perubahan tersimpan hanya di browser ini dan akan dikirim saat tersambung</div>}
+    <main id="main" ref={mainRef} tabIndex={-1}>
       {tab === 'home' && <Home vdot={vdot} results={results} go={go} />}
-      {tab === 'ready' && <Readiness />}
+      {tab === 'ready' && <Readiness vdot={vdot} />}
       {tab === 'calendar' && <Calendar vdot={vdot} focus={focus} />}
       {tab === 'checkpoints' && <Checkpoints vdot={vdot} results={results} setResults={setResults} focus={focus} />}
       {tab === 'profile' && <Profile />}

@@ -5,9 +5,15 @@ export function useSyncStatus2() {
   useEffect(() => { fetch('/api/sync/status').then((r) => (r.ok ? r.json() : null)).then(setS).catch(() => setS(null)) }, [])
   return s
 }
+// state: 'loading' | 'none' (no row for that day) | 'error' (server unreachable) | 'ok'
 export function useHealthDay(date) {
-  const [h, setH] = useState(undefined)
-  useEffect(() => { setH(undefined); fetch(`/api/health/range?from=${date}&to=${date}`).then((r) => (r.ok ? r.json() : [])).then((a) => setH(a[0] || null)).catch(() => setH(null)) }, [date])
+  const [h, setH] = useState({ state: 'loading', row: null })
+  useEffect(() => {
+    let dead = false; setH({ state: 'loading', row: null })
+    fetch(`/api/health/range?from=${date}&to=${date}`).then((r) => { if (!r.ok) throw new Error(r.status); return r.json() })
+      .then((a) => !dead && setH(a[0] ? { state: 'ok', row: a[0] } : { state: 'none', row: null })).catch(() => !dead && setH({ state: 'error', row: null }))
+    return () => { dead = true }
+  }, [date])
   return h
 }
 // "2026-11-11T01:02:03Z" → "08:02" in Jakarta

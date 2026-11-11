@@ -25,7 +25,7 @@ export default function Data() {
     <section className="card">
       <h2>COROS (impor FIT)</h2>
       <p className="muted">API COROS untuk developer individu belum terverifikasi (open item 9). Unggah file .fit dari COROS app.</p>
-      <input type="file" accept=".fit" onChange={upload} />
+      <input type="file" accept=".fit" onChange={upload} aria-label="Pilih file FIT dari COROS" />
       {fit.slice(0, 3).map((a, i) => <div key={i}><b>{a.date?.slice(0, 10)}</b> · {km(a.distance)} km · {a.laps.length} lap
         <table><thead><tr><th>Lap</th><th>km</th><th>Pace</th><th>HR</th><th>Cad</th><th>W</th></tr></thead><tbody>
           {a.laps.map((l) => <tr key={l.lap}><td>{l.lap}</td><td>{km(l.distance)}</td><td>{l.pace ? fmtPace(l.pace) : '—'}</td><td>{l.hr ?? '—'}</td><td>{l.cadence ?? '—'}</td><td>{l.power ?? '—'}</td></tr>)}</tbody></table></div>)}

@@ -9,17 +9,30 @@ const readLocal = (key, init) => { try { const r = localStorage.getItem(key); re
 const hasLocal = (key) => { try { return localStorage.getItem(key) != null } catch { return false } }
 const writeLocal = (key, v) => { try { localStorage.setItem(key, JSON.stringify(v)) } catch {} }
 
-const timers = {}
+// Writes are debounced, queued per key, and retried until the server accepts them (every 10 s, and immediately when the
+// browser comes back online). `pending` always holds the latest unsent value per key.
+const timers = {}, pending = {}
+let retry
 function schedulePut(key, value) {
-  clearTimeout(timers[key]); setStatus('saving')
-  timers[key] = setTimeout(() => put(key, value), 500)
+  pending[key] = value; clearTimeout(timers[key]); setStatus('saving')
+  timers[key] = setTimeout(flush, 500)
 }
-async function put(key, value) {
-  try {
-    const r = await fetch('/api/kv?key=' + encodeURIComponent(key), { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ value }) })
-    setStatus(r.ok ? 'ok' : 'offline')
-  } catch { setStatus('offline') }
+async function flush() {
+  clearTimeout(retry)
+  const keys = Object.keys(pending); if (!keys.length) return setStatus('ok')
+  let failed = false
+  for (const key of keys) {
+    const value = pending[key]
+    try {
+      const r = await fetch('/api/kv?key=' + encodeURIComponent(key), { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ value }) })
+      if (!r.ok) throw new Error(r.status)
+      if (pending[key] === value) delete pending[key] // a newer edit during the request stays queued
+    } catch { failed = true }
+  }
+  if (failed || Object.keys(pending).length) { setStatus(failed ? 'offline' : 'saving'); retry = setTimeout(flush, 10000) } else setStatus('ok')
 }
+if (typeof window !== 'undefined') window.addEventListener('online', flush)
+const put = (key, value) => schedulePut(key, value)
 
 // Server is the source of truth. localStorage = instant cache + one-time migration:
 // if the server has nothing for this key but the browser does, the browser copy is uploaded.

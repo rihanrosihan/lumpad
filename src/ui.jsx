@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { KIND, strengthOf } from './lib/calendar.js'
 
 const P = {
@@ -21,9 +21,24 @@ export const Card = ({ title, right, tone, children, className = '' }) => <div c
   {(title || right) && <div className="ch"><h2>{title}</h2>{right}</div>}{children}</div>
 export const Stat = ({ k, v, sub }) => <div className="stat"><span>{k}</span><b>{v}</b>{sub && <small>{sub}</small>}</div>
 
-export function Sheet({ open, onClose, children }) {
-  useEffect(() => { if (!open) return; const f = (e) => e.key === 'Escape' && onClose(); window.addEventListener('keydown', f); return () => window.removeEventListener('keydown', f) }, [open, onClose])
+export function Sheet({ open, onClose, label, children }) {
+  const ref = useRef(), closeRef = useRef()
+  useEffect(() => {
+    if (!open) return
+    const prev = document.activeElement
+    closeRef.current?.focus()
+    const f = (e) => {
+      if (e.key === 'Escape') return onClose()
+      if (e.key !== 'Tab') return // keep focus inside the dialog
+      const els = [...ref.current.querySelectorAll('button:not(:disabled),a[href],input,select,[tabindex]:not([tabindex="-1"])')]
+      if (!els.length) return
+      const first = els[0], last = els[els.length - 1]
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() } else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
+    }
+    window.addEventListener('keydown', f)
+    return () => { window.removeEventListener('keydown', f); prev?.focus?.() }
+  }, [open, onClose])
   if (!open) return null
-  return <div className="sheet-wrap" onClick={onClose}><div className="sheet" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
-    <div className="grab" /><button className="x" onClick={onClose} aria-label="Tutup"><Icon n="x" size={20} /></button>{children}</div></div>
+  return <div className="sheet-wrap" onClick={onClose}><div ref={ref} className="sheet" role="dialog" aria-modal="true" aria-label={label} onClick={(e) => e.stopPropagation()}>
+    <div className="grab" aria-hidden="true" /><button ref={closeRef} className="x" onClick={onClose} aria-label="Tutup"><Icon n="x" size={20} /></button>{children}</div></div>
 }

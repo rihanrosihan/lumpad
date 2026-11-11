@@ -28,10 +28,29 @@ function PathChart({ results }) {
   </svg>
 }
 
+// Time-trial result: explicit Save (Enter also works) with inline validation, so a typo is never silently dropped
+function TimeEntry({ c, r, upd }) {
+  const [v, setV] = useState(r.time || ''), [err, setErr] = useState('')
+  useEffect(() => setV(r.time || ''), [r.time])
+  const save = () => {
+    const s = v.trim(); if (!s) { setErr(''); return upd(c.id, { time: '', vdot: null }) }
+    if (!/^\d{1,2}(:\d{2}){1,2}$/.test(s)) return setErr('Format: mm:ss atau h:mm:ss, mis. 29:18')
+    const vd = vdotFromRace(cpDistance(c), parseTime(s))
+    if (!isFinite(vd) || vd < 20 || vd > 80) return setErr('Waktu ini tidak masuk akal untuk jarak tersebut — cek lagi')
+    setErr(''); upd(c.id, { time: s, vdot: vd })
+  }
+  return <div className="te"><label className="fld"><span>Waktu TT (mm:ss atau h:mm:ss)</span>
+    <input value={v} placeholder="mis. 29:18" inputMode="numeric" enterKeyHint="done" aria-invalid={!!err} onChange={(e) => setV(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && save()} />
+    {err && <small className="err" role="alert">{err}</small>}</label>
+    <button className="btn sm" onClick={save}>Simpan</button></div>
+}
+
 export default function Checkpoints({ vdot, results, setResults, focus }) {
   const T = today(), kg = killGate(results)
   const next = CHECKPOINTS.find((c) => c.date >= T)?.id
   const [open, setOpen] = useState(focus || next)
+  const pastList = CHECKPOINTS.filter((c) => c.date < T && c.id !== next)
+  const [showPast, setShowPast] = useState(false)
   const refs = useRef({})
   useEffect(() => { if (focus) { setOpen(focus); setTimeout(() => refs.current[focus]?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50) } }, [focus])
   const upd = (id, patch) => setResults({ ...results, [id]: { ...results[id], ...patch } })
@@ -43,18 +62,19 @@ export default function Checkpoints({ vdot, results, setResults, focus }) {
     </Card>
     <Card title="Jalur fitness (VDOT)" right={<span className="muted">sekarang {vdot.v.toFixed(1)}</span>}>
       <PathChart results={results} />
-      <div className="legend"><span><i className="ll req" />Garis dibutuhkan</span><span><i className="ll best" />Laju terbaik teramati (0,74/bln)</span><span><i className="kdot k-tt" />Hasil TT</span></div>
+      <div className="legend"><span><i className="ll req" />Garis dibutuhkan</span><span><i className="ll best" />Laju terbaik teramati (0,74/bln)</span><span><i className="kdot k-easy" />Hasil TT (hijau / kuning / merah)</span></div>
     </Card>
 
     <ol className="tl">
-      {CHECKPOINTS.map((c) => {
+      {pastList.length > 0 && <li><button className="grp" aria-expanded={showPast} onClick={() => setShowPast(!showPast)}><span>Sudah lewat ({pastList.length})</span><span>{showPast ? 'Sembunyikan' : 'Tampilkan'}</span></button></li>}
+      {CHECKPOINTS.filter((c) => showPast || !pastList.includes(c) || open === c.id).map((c) => {
         const r = results[c.id] || {}, tt = c.kind === 'tt', t = (tt || c.kind === 'ratio') && r.vdot != null ? tone(r.vdot, c.line) : null
         const logged = r.vdot != null || r.ratio != null || ['Sleep HR', 'HRV', 'Pain', '°C', 'RH %'].some((k) => r[k])
         const past = c.date < T, d = parse(c.date), th = thresholds(c), isOpen = open === c.id
         const status = t ? t : logged ? 'done' : c.id === next ? 'next' : past ? 'miss' : 'todo'
         return <li key={c.id} ref={(el) => (refs.current[c.id] = el)} className={`tli s-${status}`}>
           <button className="tlh" onClick={() => setOpen(isOpen ? null : c.id)} aria-expanded={isOpen}>
-            <span className="tld"><b>{d.getDate()}</b><small>{fmtShort(c.date).split(' ')[1]} · {DAYS3[d.getDay()]}</small></span>
+            <span className="tld"><b>{d.getDate()}</b><small>{fmtShort(c.date).split(' ')[1]}</small><small>{DAYS3[d.getDay()]}</small></span>
             <span className="tlt"><small>CP{c.id} · {KIND_LABEL[c.kind]}</small><b>{c.name}</b>
               <small>{past ? (logged ? 'tercatat' : 'belum dicatat') : diffDays(c.date, T) === 0 ? 'hari ini' : diffDays(c.date, T) + ' hari lagi'}{c.line ? ` · garis ${c.line.toFixed(1)}` : ''}</small></span>
             <span className={`st st-${status}`} aria-label={status}>{t ? t[0].toUpperCase() : status === 'done' ? <Icon n="check" size={14} /> : status === 'next' ? '▶' : ''}</span>
@@ -62,12 +82,8 @@ export default function Checkpoints({ vdot, results, setResults, focus }) {
           {isOpen && <div className="tlb">
             <p className="note">{c.note}</p>
             {th && <p className="thr"><Chip tone="green">Hijau ≤ {th.G}</Chip> <Chip tone="red">Merah &gt; {th.R}</Chip></p>}
-            {tt && <label className="fld"><span>Waktu TT (mm:ss atau h:mm:ss)</span>
-              <input key={c.id + (r.time || '')} defaultValue={r.time || ''} placeholder="mis. 29:18" inputMode="numeric" onBlur={(e) => {
-                const s = e.target.value.trim(); if (!s) return upd(c.id, { time: '', vdot: null })
-                try { const v = vdotFromRace(cpDistance(c), parseTime(s)); if (isFinite(v)) upd(c.id, { time: s, vdot: v }) } catch {}
-              }} /></label>}
-            {t && <p><Chip tone={t}>{t === 'green' ? 'Hijau' : t === 'yellow' ? 'Kuning' : 'Merah'}</Chip> VDOT {r.vdot.toFixed(1)} · selisih {(r.vdot - c.line).toFixed(1)} dari garis</p>}
+            {tt && <TimeEntry c={c} r={r} upd={upd} />}
+            {t && <p role="status"><Chip tone={t}>{t === 'green' ? 'Hijau' : t === 'yellow' ? 'Kuning' : 'Merah'}</Chip> VDOT {r.vdot.toFixed(1)} · selisih {(r.vdot - c.line).toFixed(1)} dari garis</p>}
             {c.kind === 'ratio' && <label className="fld"><span>Rasio HM (VDOT HM ÷ VDOT 5K/10K terbaru)</span>
               <input type="number" step="0.01" inputMode="decimal" value={r.ratio ?? ''} onChange={(e) => upd(c.id, { ratio: e.target.value === '' ? null : +e.target.value })} /></label>}
             <div className="form five">{['Sleep HR', 'HRV', 'Pain', '°C', 'RH %'].map((k) => <label key={k} className="fld"><span>{k}</span><input value={r[k] || ''} onChange={(e) => upd(c.id, { [k]: e.target.value })} /></label>)}</div>
