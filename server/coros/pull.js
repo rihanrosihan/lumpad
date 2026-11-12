@@ -25,7 +25,7 @@ export async function pullRange({ call, from, to, trigger, progress = () => {}, 
 
   // 1. daily health (the tool takes only "last N days" → one call, halve on failure)
   progress({ stage: 'health', done: 0, total: 1 })
-  for (let n = days; n >= 7; n = Math.floor(n / 2)) {
+  for (let n = Math.max(days, 7); n >= 7; n = Math.floor(n / 2)) {
     const t = await retry(() => call('queryDailyHealthData', { days: n }), 2, note, `daily health (${n} days)`)
     if (t != null) { for (const r of parseDailyHealth(t)) if (keep(r.date)) Object.assign(get(r.date), r); stats.health = rows.size; if (n < days) note(`daily health only reached back ${n} days`); break }
   }
@@ -43,7 +43,7 @@ export async function pullRange({ call, from, to, trigger, progress = () => {}, 
 
   // 3b. training load (acute / chronic / ratio per day) — one call, halve on failure like daily health
   progress({ stage: 'load', done: 0, total: 1 })
-  for (let n = Math.min(days, 400); n >= 7; n = Math.floor(n / 2)) {
+  for (let n = Math.max(Math.min(days, 400), 7); n >= 7; n = Math.floor(n / 2)) {
     const t = await retry(() => call('queryTrainingLoadAssessment', { days: n }), 2, note, `training load (${n} days)`)
     if (t != null) { for (const r of parseTrainingLoad(t)) if (keep(r.date)) { Object.assign(get(r.date), r); stats.load = (stats.load || 0) + 1 } if (n < days) note(`training load only reached back ${n} days`); break }
   }
