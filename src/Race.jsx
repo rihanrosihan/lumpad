@@ -1,6 +1,6 @@
 import { raceTime, fmtTime } from './lib/vdot.js'
 import { PLAN, BY_DATE, today, diffDays, addDays, fmtLong, fmtShort, KIND } from './lib/calendar.js'
-import { Card, Chip } from './ui.jsx'
+import { Card, Chip, Evidence } from './ui.jsx'
 import { useApi } from './api.js'
 import { WEEKS } from './lib/calendar.js'
 import { BarChart } from './charts.jsx'
@@ -41,7 +41,7 @@ function Cutoffs() {
     </table></div>
     <p className="muted">Pace rata-rata paling lambat yang masih lolos semua titik: <b>{pace(tight.need)}/km</b> (paling ketat di {tight.name}). Batas finis {JRF.cutoffMin / 60} jam setelah gun ({JRF.gun.replace(':', '.')} → 09.00 WIB); finis setelahnya = DNF tanpa medali/jersey.</p>
     <p className="banner" role="note">COP dihitung dari jam (time of day), bukan dari waktu chip. Kalau kamu menyeberangi garis start beberapa menit setelah gun, selisih (+menit) di tabel berkurang sebanyak itu. Gerbang runner tutup tepat {JRF.gun.replace(':', '.')} WIB — telat = DNS.</p>
-    <p className="src-note">[calc] Pace rata maks = (jam tutup − {JRF.gun.replace(':', '.')}) ÷ km. Waktu tiba = pace rata-rata konstan (sub-4 5:41/km; 4:30 ≈ {pace(runs[1][1])}/km). COP dari edisi 2026; rute 2027 sama, jam COP bisa berubah — perbarui saat panitia merilis.</p>
+    <Evidence>[calc] Pace rata maks = (jam tutup − {JRF.gun.replace(':', '.')}) ÷ km. Waktu tiba = pace rata-rata konstan (sub-4 5:41/km; 4:30 ≈ {pace(runs[1][1])}/km). COP dari edisi 2026; rute 2027 sama, jam COP bisa berubah — perbarui saat panitia merilis.</Evidence>
   </Card>
 }
 
@@ -96,7 +96,7 @@ export default function Race({ vdot, results, settings, go }) {
         <div><dt>Kalau race hari ini</dt><dd>VDOT {vdot.v.toFixed(1)} → {fm(vdot.v)}</dd></div>
       </dl>
       <p className={gap > 0 ? 'banner' : 'muted'}>{gap > 0 ? `Di jalur laju terbaik, finis ±${Math.round(gap / 60)} menit di atas 4:00 — target menuntut laju ±1,4× yang pernah teramati. Aplikasi tidak menjamin sub-4.` : 'Di jalur laju terbaik, sub-4:00 tercapai.'}</p>
-      <p className="src-note">[calc] Titik awal: {anchor.src} ({anchor.v.toFixed(1)}). Waktu = waktu untuk VDOT × 0,95 (rasio realisasi, sesuai plan). Rasio FM teramati 0,59 (Jakim 2026, confounded) [HYPOTHESIS n=1] tidak dipakai di sini.</p>
+      <Evidence>[calc] Titik awal: {anchor.src} ({anchor.v.toFixed(1)}). Waktu = waktu untuk VDOT × 0,95 (rasio realisasi, sesuai plan). Rasio FM teramati 0,59 (Jakim 2026, confounded) [HYPOTHESIS n=1] tidak dipakai di sini.</Evidence>
     </Card>
 
     <Card title="Taper (dari plan)" right={<span className="muted">% minggu puncak ({peak} km)</span>}>
@@ -105,11 +105,11 @@ export default function Race({ vdot, results, settings, go }) {
     </Card>
     <Card title="Carb-loading 36–48 jam">
       <div className="score-grid"><div><small>Berat badan</small><b>{kg}</b><em>kg (Profil)</em></div><div><small>Target / hari</small><b>{Math.round(kg * 10)}–{Math.round(kg * 12)}</b><em>g karbo</em></div><div><small>Kapan</small><b>Jum–Sab</b><em>22–23 Okt</em></div></div>
-      <p className="src-note">ACSM / AND / DC 2016 (Thomas, Erdman & Burke; PMID 26891166): 10–12 g/kg/24 jam selama 36–48 jam sebelum event &gt; 90 menit. Snack &lt; 90 menit pra-start = low-fiber (aturan project).</p>
+      <Evidence>ACSM / AND / DC 2016 (Thomas, Erdman & Burke; PMID 26891166): 10–12 g/kg/24 jam selama 36–48 jam sebelum event &gt; 90 menit. Snack &lt; 90 menit pra-start = low-fiber (aturan project).</Evidence>
     </Card>
     <Card title="Panas & kelembapan">
       <p>Lari pagimu 60 hari terakhir: <b>{wx.length ? `${Math.round(mean(wx.map((a) => a.temp_c)))}°C · RH ${Math.round(mean(wx.map((a) => a.humidity ?? NaN).filter((x) => !Number.isNaN(x))) || 0)}%` : 'cuaca belum ditarik'}</b>{wx.length ? ` (${wx.length} lari dengan data cuaca)` : ''}</p>
-      <p className="src-note">Ely 2007 (PMID 17473775): waktu marathon makin lambat saat WBGT naik dari 5 ke 25 °C, lebih besar untuk pelari yang lebih lambat (pelari top: +1,7% → +4,5%). Kondisi Jakarta kemungkinan di atas rentang studi — tidak ada angka koreksi yang diekstrapolasi. Heat tax-mu sendiri belum diukur (open item 8): catat suhu/RH di setiap CP.</p>
+      <Evidence>Ely 2007 (PMID 17473775): waktu marathon makin lambat saat WBGT naik dari 5 ke 25 °C, lebih besar untuk pelari yang lebih lambat (pelari top: +1,7% → +4,5%). Kondisi Jakarta kemungkinan di atas rentang studi — tidak ada angka koreksi yang diekstrapolasi. Heat tax-mu sendiri belum diukur (open item 8): catat suhu/RH di setiap CP.</Evidence>
     </Card>
     <Card title="Minggu race (W42)">
       {weekDays.map((d) => <button key={d.date} className="rowbtn" onClick={() => go('calendar', d.date)}><span className={`kdot k-${d.kind}`} /><span><b>{d.label || KIND[d.kind].label}</b><small>{fmtLong(d.date)}</small></span><b>{d.km ? d.km + ' km' : ''}</b></button>)}

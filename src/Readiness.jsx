@@ -7,27 +7,29 @@ import { PILLAR } from './lib/readiness.js'
 import { formZone, progressionBand } from './lib/load.js'
 import { quadrantLabel } from './lib/hrv.js'
 import { mean, r1 } from './lib/stats.js'
-import { Card, Chip, Screen, Icon } from './ui.jsx'
+import { Card, Chip, Screen, Icon, Info, Evidence } from './ui.jsx'
 import { useHealthDay, hrvLow, ago } from './sync.js'
 import { hm } from './api.js'
 import { useModel } from './model.js'
 import { RadialGauge, Speedometer, BandLine, PMCChart, Quadrant, Waterfall, BodyMap, Stacked100, Bullet, GroupedBars, TwinBars } from './charts2.jsx'
 
 const Field = ({ label, hint, err, children }) => <label className="fld"><span>{label}</span>{children}{err ? <small className="err" role="alert">{err}</small> : hint && <small>{hint}</small>}</label>
-const Src = ({ children }) => <p className="src-note">{children}</p>
+const Src = ({ children }) => <Evidence>{children}</Evidence>
 const sign = (n) => (n == null ? '—' : (n > 0 ? '+' : '') + n)
 const TIER_TONE = { prime: 'green', optimal: 'teal', compromised: 'yellow', depleted: 'red' }
 const Pill5 = ({ label, value, onChange, lo, hi }) => <div className="fld" style={{ gridColumn: 'span 2' }}><span>{label} <small className="muted">(1 = {lo} · 5 = {hi})</small></span>
   <div className="pill5" role="group" aria-label={label}>{[1, 2, 3, 4, 5].map((n) => <button key={n} aria-pressed={value === n} onClick={() => onChange(value === n ? '' : n)}>{n}</button>)}</div></div>
 
-export default function Readiness({ vdot, settings }) {
+export default function Readiness({ vdot, settings, focus }) {
   const T = today(), [date, setDate] = useState(T)
   const [f, setF] = useStore('lumpad.daily.' + date, EMPTY_DAY), [ov, setOv] = useStore('lumpad.muscle.' + date, {})
+  const [mode, setMode] = useStore('lumpad.ready.mode', 'pagi')
+  useEffect(() => { if (focus?.mode === 'pagi' || focus?.mode === 'analisis') setMode(focus.mode) }, [focus]) // eslint-disable-line
   const [hist, setHist] = useState({}), [range, setRange] = useState(42), [acwrMode, setAcwrMode] = useState('ewma')
   const hd = useHealthDay(date), row = hd.row, M = useModel(date, settings, vdot, f, ov)
   useEffect(() => { fetch('/api/kv/prefix?prefix=lumpad.daily.').then((r) => r.json()).then(setHist).catch(() => {}) }, [])
   const topRef = useRef(), [stuck, setStuck] = useState(false)
-  useEffect(() => { const o = new IntersectionObserver(([e]) => setStuck(!e.isIntersecting)); o.observe(topRef.current); return () => o.disconnect() }, [])
+  useEffect(() => { if (mode !== 'pagi' || !topRef.current) { setStuck(false); return } const o = new IntersectionObserver(([e]) => setStuck(!e.isIntersecting)); o.observe(topRef.current); return () => o.disconnect() }, [mode])
 
   const sess = BY_DATE[date] || null, g = evaluate(f, sess), has = hasInput(f), p = paces(vdot.v), rd = M.readiness, tier = rd.tier
   const easy = `${fmtPace(p.E[1])}–${fmtPace(p.E[0])} /km`
@@ -48,13 +50,15 @@ export default function Readiness({ vdot, settings }) {
   const tapRegion = (k) => { const auto = M.muscle[k] || 0, curv = ov[k]; const next = curv == null ? Math.min(3, Math.round(auto) + 1) : curv >= 3 ? null : curv + 1; const o = { ...ov }; if (next == null) delete o[k]; else o[k] = next; setOv(o) }
 
   return <Screen title="Readiness" sub="Model transparan berbasis bukti · aturan tervalidasimu menang">
-    {stuck && <div className={`gatemini g-${tier ? { prime: 'green', optimal: 'green', compromised: 'yellow', depleted: 'red' }[tier.id] : has ? g.level : 'none'}`}><span className="gdot" aria-hidden="true" /><span>{label}</span><small>{sess ? `${sess.label || KIND[sess.kind].label}${sess.km ? ' · ' + sess.km + ' km' : ''}` : ''}</small></div>}
+    {(stuck || mode === 'analisis') && <div className={`gatemini g-${tier ? { prime: 'green', optimal: 'green', compromised: 'yellow', depleted: 'red' }[tier.id] : has ? g.level : 'none'}`}><span className="gdot" aria-hidden="true" /><span>{label}</span><small>{sess ? `${sess.label || KIND[sess.kind].label}${sess.km ? ' · ' + sess.km + ' km' : ''}` : ''}</small></div>}
     <div className="datebar">
       <button onClick={() => setDate(addDays(date, -1))} aria-label="Hari sebelumnya"><Icon n="left" /></button>
       <div><b>{fmtLong(date)}</b>{date === T && <small>hari ini</small>}</div>
       <button onClick={() => setDate(addDays(date, 1))} aria-label="Hari berikutnya" className="flip"><Icon n="left" /></button>
     </div>
+    <div className="seg3" role="group" aria-label="Tampilan Readiness">{[['pagi', 'Pagi'], ['analisis', 'Analisis']].map(([k, l]) => <button key={k} aria-pressed={mode === k} onClick={() => { setMode(k); window.scrollTo(0, 0) }}>{l}</button>)}</div>
 
+    {mode === 'pagi' && <>
     {/* ---- Layer 2.1: verdict & prescription ---- */}
     <div ref={topRef} className="card" role="status" aria-live="polite">
       <div className="hero">
@@ -74,29 +78,25 @@ export default function Readiness({ vdot, settings }) {
           : <p>{rd.score != null || has ? 'Tidak ada alasan menurunkan sesi.' : 'Isi check-in untuk verdict.'}</p>}
       </div>}
       {(needsMod && g.level !== 'green' && has) && <input className="ovr" aria-label="Alasan override" placeholder="Tetap lanjut? Tulis alasannya (disimpan)" value={f.override} onChange={(e) => set({ override: e.target.value })} />}
-      <h3>Kontribusi pilar</h3>
-      <div className="pbar" role="img" aria-label={Object.entries(rd.pillars).map(([k, v]) => `${PILLAR[k]} ${Math.round(v.earned)} dari ${v.weight}`).join(', ')}>
-        {Object.entries(rd.pillars).map(([k, v]) => <i key={k} className={'pb-' + k} style={{ width: v.earned + '%' }} />)}</div>
-      {Object.entries(rd.pillars).map(([k, v]) => <details key={k} className="more"><summary>{PILLAR[k]} · {Math.round(v.earned)}/{v.weight}{v.haveWeight < v.weight ? ` (data ${Math.round(v.haveWeight)})` : ''}</summary>
-        {v.comps.map((c) => <div key={c.id} className="prow"><span>{c.label}</span><b>{c.pts == null ? '—' : `${r1(c.pts)}/${r1(c.max)}`}</b><small>{c.value == null ? 'belum ada data' : c.value}</small></div>)}</details>)}
-      <Src>Bobot: muskuloskeletal & subjektif 30 · otonom 30 · tidur 20 · beban 20 (fase taper/peak ±5). Alasan & rumus: docs/readiness-model.md. Saw 2016 (PMID 26423706): ukuran subjektif lebih sensitif dari objektif.</Src>
     </div>
 
     {/* ---- Morning check-in (incl. 5-second subjective sliders) ---- */}
     <Card title="Check-in pagi" className="coros" right={<span className="saved" aria-live="polite">{has ? 'tersimpan otomatis' : ''}</span>}>
       {hd.state === 'none' && <p className="muted">Data COROS belum ditarik untuk tanggal ini — isi manual.</p>}
-      {row && <><p className="muted">Dari COROS (ditarik {ago(row.pulled_at)}): Sleep HR {row.sleep_hr_avg ?? '—'} · HRV {row.hrv_avg ?? '—'} ms {row.hrv_status ? `(${row.hrv_status})` : ''}</p>
+      {row && <><p className="muted">COROS ({ago(row.pulled_at)}): Sleep HR {row.sleep_hr_avg ?? '—'} · HRV {row.hrv_avg ?? '—'} ms {row.hrv_status ? `(${row.hrv_status})` : ''}</p>
         <button className="btn primary" onClick={useCoros}>Pakai data COROS</button></>}
       <div className="form" style={{ marginTop: 14 }}>
         <Field label="Sleep HR (bpm)" hint="> 67 = tanpa lari keras" err={shrErr}><input inputMode="numeric" type="number" value={f.sleepHR} aria-invalid={!!shrErr} onChange={num('sleepHR')} /></Field>
         <Field label="HRV tidur"><div className="seg" role="group" aria-label="HRV">{[['normal', 'Normal'], ['reduced', 'Reduced']].map(([v, l]) => <button key={v} aria-pressed={f.hrv === v} className={f.hrv === v ? 'on ' + v : ''} onClick={() => set({ hrv: f.hrv === v ? '' : v })}>{l}</button>)}</div></Field>
         <div className="fld" style={{ gridColumn: 'span 2' }}><span id="painl">Nyeri saat lari (0–10) — ≥ 2 = durability event</span>
           <div className="pain" role="group" aria-labelledby="painl">{[0, 1, 2, 3, 4, 5, 6].map((n) => <button key={n} aria-pressed={f.pain === n} className={n >= 2 ? 'hi' : ''} onClick={() => set({ pain: f.pain === n ? '' : n })}>{n === 6 ? '6+' : n}</button>)}</div></div>
+        <label className="sw"><input type="checkbox" checked={f.tibia} onChange={(e) => set({ tibia: e.target.checked })} /><span>Tibia nyeri tekan</span></label>
+      </div>
+      <details className="more"><summary>Rasa tubuh (opsional) · Energi {f.energy || '—'} · Pegal {f.doms || '—'} · Hidrasi {f.hydration || '—'}</summary><div className="form">
         <Pill5 label="Energi" value={f.energy} onChange={(v) => set({ energy: v })} lo="habis" hi="segar" />
         <Pill5 label="Pegal otot" value={f.doms} onChange={(v) => set({ doms: v })} lo="sangat pegal" hi="tidak pegal" />
         <Pill5 label="Hidrasi / makan" value={f.hydration} onChange={(v) => set({ hydration: v })} lo="kurang" hi="baik" />
-        <label className="sw"><input type="checkbox" checked={f.tibia} onChange={(e) => set({ tibia: e.target.checked })} /><span>Tibia nyeri tekan</span></label>
-      </div>
+      </div></details>
       <details className="more"><summary>Data tambahan (opsional)</summary><div className="form">
         <Field label="TE kemarin"><input inputMode="decimal" type="number" step="0.1" value={f.te} onChange={num('te')} /></Field>
         <Field label="Buffer makan (menit)" hint="≥ 90 sebelum lari"><input inputMode="numeric" type="number" value={f.mealBufferMin} onChange={num('mealBufferMin')} /></Field>
@@ -105,16 +105,42 @@ export default function Readiness({ vdot, settings }) {
       </div></details>
     </Card>
 
+
+    <div className="score-grid two" role="group" aria-label="Ringkasan pemulihan">
+      <div><small>HRV semalam <Info k="HRV" /></small><b>{hv.today ?? '—'}</b><em>{hv.enough ? `7 hr ${hv.roll7} ms` : 'butuh 14 hr'}</em></div>
+      <div><small>Resting HR <Info k="RHR" /></small><b>{rh.value ?? '—'}</b><em>{rh.enough ? `${sign(rh.dev)} vs 30 hr` : ''}</em></div>
+      <div><small>Tidur (asleep)</small><b>{sl.enough ? hm(sl.asleep_min) : '—'}</b><em>{sl.enough ? `${sign(Math.round(sl.vs_need_min))} mnt vs kebutuhan` : ''}</em></div>
+      <div><small>Form (TSB) <Info k="TSB" /></small><b>{sign(cur?.tsb)}</b><em>{fz ? `${cur.tsbPct}% · ${fz.label}` : ''}</em></div>
+    </div>
+
+    {wg.blocked && <>
+    <Card title="Gate mingguan · ◇ tempo Kamis" tone={wg.blocked ? 'red' : 'green'}>
+      <p><b>{wg.blocked ? 'Kamis tetap strides / hills' : 'Tidak ada alasan menahan ◇ tempo'}</b></p>
+      <p className="muted">{wg.bad} malam Sleep HR &gt; 67 / HRV Reduced dalam 7 hari{wg.pain ? ' · ada nyeri/tibia positif' : ''}.</p>
+    </Card>
+    </>}
+    <button className="btn wide" onClick={() => { setMode('analisis'); window.scrollTo(0, 0) }}>Lihat analisis lengkap →</button>
+    </>}
+
+    {mode === 'analisis' && <>
+    <Card title="Kontribusi pilar">
+      <div className="pbar" role="img" aria-label={Object.entries(rd.pillars).map(([k, v]) => `${PILLAR[k]} ${Math.round(v.earned)} dari ${v.weight}`).join(', ')}>
+        {Object.entries(rd.pillars).map(([k, v]) => <i key={k} className={'pb-' + k} style={{ width: v.earned + '%' }} />)}</div>
+      {Object.entries(rd.pillars).map(([k, v]) => <details key={k} className="more"><summary>{PILLAR[k]} · {Math.round(v.earned)}/{v.weight}{v.haveWeight < v.weight ? ` (data ${Math.round(v.haveWeight)})` : ''}</summary>
+        {v.comps.map((c) => <div key={c.id} className="prow"><span>{c.label}</span><b>{c.pts == null ? '—' : `${r1(c.pts)}/${r1(c.max)}`}</b><small>{c.value == null ? 'belum ada data' : c.value}</small></div>)}</details>)}
+      <Src>Bobot: muskuloskeletal & subjektif 30 · otonom 30 · tidur 20 · beban 20 (fase taper/peak ±5). Alasan & rumus: docs/readiness-model.md. Saw 2016 (PMID 26423706): ukuran subjektif lebih sensitif dari objektif.</Src>
+    </Card>
+
     {/* ---- Layer 2.2: load ---- */}
     <h2 className="sech">Beban latihan & risiko cedera</h2>
     {M.state === 'ok' && !M.series.some((d) => d.load) ? <div className="card empty"><b>Belum ada Training Load</b>Hubungkan COROS dan tarik riwayat — panel beban terisi otomatis.</div> : <>
       <div className="score-grid">
-        <div><small>Fitness (CTL)</small><b>{cur?.ctl ?? '—'}</b><em>{M.ramp != null ? `${sign(M.ramp)} / 7 hr` : ''}</em></div>
-        <div><small>Fatigue (ATL)</small><b>{cur?.atl ?? '—'}</b><em>{prevAtl ? `${sign(Math.round(((cur.atl - prevAtl) / prevAtl) * 100))}% vs mgg lalu` : ''}</em></div>
-        <div><small>Form (TSB)</small><b>{sign(cur?.tsb)}</b><em>{fz ? `${cur.tsbPct}% · ${fz.label}` : ''}</em></div>
-        <div><small>ACWR ({acwrMode === 'ewma' ? 'EWMA' : '7:28'})</small><b>{acwrShown ?? '—'}</b><em>{acwrShown == null ? 'butuh 35 hr' : acwrShown > 1.5 ? 'tinggi' : acwrShown > 1.3 ? 'waspada' : acwrShown < 0.8 ? 'rendah' : 'sweet spot'}</em></div>
+        <div><small>Fitness (CTL) <Info k="CTL" /></small><b>{cur?.ctl ?? '—'}</b><em>{M.ramp != null ? `${sign(M.ramp)} / 7 hr` : ''}</em></div>
+        <div><small>Fatigue (ATL) <Info k="ATL" /></small><b>{cur?.atl ?? '—'}</b><em>{prevAtl ? `${sign(Math.round(((cur.atl - prevAtl) / prevAtl) * 100))}% vs mgg lalu` : ''}</em></div>
+        <div><small>Form (TSB) <Info k="TSB" /></small><b>{sign(cur?.tsb)}</b><em>{fz ? `${cur.tsbPct}% · ${fz.label}` : ''}</em></div>
+        <div><small>ACWR ({acwrMode === 'ewma' ? 'EWMA' : '7:28'}) <Info k="ACWR" /></small><b>{acwrShown ?? '—'}</b><em>{acwrShown == null ? 'butuh 35 hr' : acwrShown > 1.5 ? 'tinggi' : acwrShown > 1.3 ? 'waspada' : acwrShown < 0.8 ? 'rendah' : 'sweet spot'}</em></div>
         <div><small>Ramp CTL</small><b>{sign(M.ramp)}</b><em>per 7 hari</em></div>
-        <div><small>Monotony · Strain</small><b>{M.mono?.monotony ?? '—'}</b><em>{M.mono?.strain != null ? `strain ${M.mono.strain}` : ''}</em></div>
+        <div><small>Monotony · Strain <Info k="Monotony" /></small><b>{M.mono?.monotony ?? '—'}</b><em>{M.mono?.strain != null ? `strain ${M.mono.strain}` : ''}</em></div>
       </div>
       <Card title="PMC: fitness · fatigue · form" right={<div className="seg" role="group" aria-label="Rentang">{[[42, '6M'], [90, '3B']].map(([d, l]) => <button key={d} aria-pressed={range === d} className={range === d ? 'on' : ''} onClick={() => setRange(d)}>{l}</button>)}</div>}>
         <PMCChart data={pmcData} proj={M.proj} label={`Fitness ${cur?.ctl}, fatigue ${cur?.atl}, form ${cur?.tsb}; proyeksi 14 hari dari rencana`} />
@@ -137,10 +163,10 @@ export default function Readiness({ vdot, settings }) {
     {/* ---- Layer 2.3: autonomic ---- */}
     <h2 className="sech">Sistem saraf otonom</h2>
     <div className="score-grid">
-      <div><small>HRV semalam</small><b>{hv.today ?? '—'}</b><em>{hv.enough ? `7 hr ${hv.roll7} ms` : 'butuh 14 hr'}</em></div>
+      <div><small>HRV semalam <Info k="HRV" /></small><b>{hv.today ?? '—'}</b><em>{hv.enough ? `7 hr ${hv.roll7} ms` : 'butuh 14 hr'}</em></div>
       <div><small>Koridor 60 hr</small><b>{hv.enough ? `${hv.lo}–${hv.hi}` : '—'}</b><em>± 0,5 SD (ln)</em></div>
-      <div><small>CV 7 hari</small><b>{hv.cv7 != null ? hv.cv7 + '%' : '—'}</b><em>{hv.flagCv ? 'tidak stabil' : hv.enough ? 'stabil' : ''}</em></div>
-      <div><small>Resting HR</small><b>{rh.value ?? '—'}</b><em>{rh.enough ? `${sign(rh.dev)} vs 30 hr` : ''}</em></div>
+      <div><small>CV 7 hari <Info k="CV" /></small><b>{hv.cv7 != null ? hv.cv7 + '%' : '—'}</b><em>{hv.flagCv ? 'tidak stabil' : hv.enough ? 'stabil' : ''}</em></div>
+      <div><small>Resting HR <Info k="RHR" /></small><b>{rh.value ?? '—'}</b><em>{rh.enough ? `${sign(rh.dev)} vs 30 hr` : ''}</em></div>
       <div><small>Status 7 hari</small><b>{hv.enough ? (hv.flagTrend ? 'turun' : 'normal') : '—'}</b><em>{hv.flagDay ? 'hari ini tertekan' : ''}</em></div>
       <div><small>RHR spike</small><b>{rh.enough ? (rh.spike ? 'ya' : 'tidak') : '—'}</b><em>≥ +5 bpm</em></div>
     </div>
@@ -178,5 +204,6 @@ export default function Readiness({ vdot, settings }) {
       <p><b>{wg.blocked ? 'Kamis tetap strides / hills' : 'Tidak ada alasan menahan ◇ tempo'}</b></p>
       <p className="muted">{wg.bad} malam Sleep HR &gt; 67 / HRV Reduced dalam 7 hari{wg.pain ? ' · ada nyeri/tibia positif' : ''}.</p>
     </Card>
+    </>}
   </Screen>
 }

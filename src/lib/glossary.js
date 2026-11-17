@@ -1,0 +1,26 @@
+// One-sentence definitions for every abbreviation shown in the UI. Source tags follow docs/readiness-model.md.
+export const GLOSSARY = {
+  CTL: ['Fitness (CTL)', 'Rata-rata beban latihan jangka panjang (konstanta 42 hari). Naik pelan kalau kamu konsisten berlatih; turun cepat kalau berhenti. Dihitung dari Training Load COROS.'],
+  ATL: ['Fatigue (ATL)', 'Rata-rata beban latihan jangka pendek (konstanta 7 hari). Naik cepat setelah blok berat, turun cepat saat istirahat.'],
+  TSB: ['Form (TSB)', 'Fitness kemarin dikurangi fatigue kemarin. Positif = lebih segar dari baseline-mu; sangat negatif = menumpuk lelah. Dibaca relatif terhadap fitness, bukan angka mutlak.'],
+  ACWR: ['ACWR', 'Acute:Chronic Workload Ratio = beban jangka pendek ÷ beban jangka panjang. 0,8–1,3 cenderung risiko cedera terendah (prior literatur); ini informasi, bukan aturan gate.'],
+  EWMA: ['EWMA', 'Exponentially Weighted Moving Average: rata-rata bergerak yang memberi bobot lebih ke hari terbaru. Lebih sensitif daripada rata-rata biasa 7:28 hari.'],
+  PMC: ['PMC', 'Performance Management Chart: grafik fitness, fatigue, dan form dari waktu ke waktu.'],
+  HRV: ['HRV', 'Heart Rate Variability: variasi jarak antar detak jantung saat tidur (ms). Dibaca terhadap baseline pribadimu, bukan terhadap orang lain.'],
+  RHR: ['RHR', 'Resting Heart Rate: detak jantung istirahat (bpm). Naik 5 bpm atau lebih dari biasanya bisa menandakan stres, sakit, atau kurang tidur.'],
+  CV: ['CV', 'Coefficient of Variation: seberapa stabil HRV-mu dalam 7 hari (simpangan baku ÷ rata-rata). Naik saat rata-rata turun = tanda tidak stabil.'],
+  SWC: ['SWC', 'Smallest Worthwhile Change: perubahan terkecil yang berarti. Koridor HRV memakai ±0,5 simpangan baku.'],
+  Monotony: ['Monotony', 'Rata-rata beban harian ÷ simpangan bakunya (7 hari). Tinggi = hari-hari terlalu mirip tanpa hari ringan.'],
+  Strain: ['Strain', 'Beban mingguan × monotony. Tinggi berarti banyak beban yang tidak bervariasi (Foster 1998).'],
+  TE: ['TE', 'Training Effect (COROS, 0–5): seberapa besar sesi itu menggeser kebugaran aerobik (aerobic) dan anaerobik.'],
+  TL: ['Training Load', 'Beban sesi yang dihitung COROS dari intensitas dan durasi. Dijumlah per hari untuk grafik beban.'],
+  GAP: ['GAP', 'Grade Adjusted Pace: pace yang disetarakan ke jalan datar supaya tanjakan dan turunan tidak menyesatkan.'],
+  EF: ['EF', 'Efficiency Factor: kecepatan (m/menit) ÷ HR rata-rata. Naik di pace yang sama = efisiensi aerobik membaik.'],
+  Decoupling: ['Decoupling Pa:Hr', 'Selisih EF paruh pertama vs kedua lari steady. Di bawah 5% = tahan lama; di atas 7,5% = HR melayang (konvensi, bukan hasil studi).'],
+  VDOT: ['VDOT', 'Indeks kebugaran Daniels dari hasil race atau time trial. Dari VDOT dihitung semua zona pace.'],
+  MTSS: ['MTSS', 'Medial Tibial Stress Syndrome (shin splints): nyeri tulang kering akibat beban berulang.'],
+  DOMS: ['DOMS', 'Delayed Onset Muscle Soreness: pegal otot yang muncul 1–2 hari setelah latihan.'],
+  VO2max: ['VO2max', 'Estimasi kapasitas aerobik maksimal dari COROS (algoritma, bukan tes lab).'],
+  LTHR: ['LTHR', 'Lactate Threshold Heart Rate: HR di ambang laktat. Belum ada sumbernya di data COROS.'],
+}
+export const GLOSSARY_KEYS = Object.keys(GLOSSARY)

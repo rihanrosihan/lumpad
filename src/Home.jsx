@@ -2,7 +2,7 @@ import { useStore } from './store.js'
 import { paces, raceTime, fmtTime, fmtPace } from './lib/vdot.js'
 import { sessionPaces } from './lib/pace.js'
 import { evaluate, EMPTY_DAY, hasInput } from './lib/gate.js'
-import { BY_DATE, today, diffDays, fmtLong, fmtShort, addDays, mondayOf, weekOf, KIND, PHASE_NAME, PLAN_START } from './lib/calendar.js'
+import { BY_DATE, today, diffDays, fmtLong, fmtShort, addDays, mondayOf, weekOf, KIND, PHASE_NAME, PLAN_START, DAYS3 } from './lib/calendar.js'
 import { CHECKPOINTS, TARGET, cpDistance, tone } from './lib/plan.js'
 import { formZone } from './lib/load.js'
 import { decoupling, sessionSteps } from './lib/analysis.js'
@@ -78,13 +78,20 @@ export default function Home({ vdot, settings, results, go }) {
       <div className="chips"><StrengthChips day={day} />{day.tags.filter((t) => /^CP/.test(t)).map((t) => <Chip key={t} tone="cp">{t}</Chip>)}</div>
     </Card> : <Card title={T < PLAN_START ? 'Plan 2027 belum mulai' : 'Di luar plan'}><p className="muted">{T < PLAN_START ? `Hari pertama: ${fmtShort(PLAN_START)}. Sampai itu: easy, jaga volume, rehab.` : 'Tidak ada sesi terjadwal.'}</p></Card>}
 
-    {/* 3. weekly bento */}
+    {/* 3. this week at a glance */}
+    <Card title="Minggu ini" className="tight" right={<button className="link" onClick={() => go('calendar')}>Kalender</button>}>
+      <div className="strip">{Array.from({ length: 7 }, (_, i) => addDays(mon, i)).map((sd, i) => { const d = BY_DATE[sd], ran = M.acts.filter((a) => a.sport_class === 'run' && a.date === sd).reduce((t, a) => t + (a.distance_m || 0) / 1000, 0)
+        return <button key={sd} aria-current={sd === T ? 'date' : undefined} aria-label={`${fmtLong(sd)}: ${d ? (d.label || KIND[d.kind].label) + (d.km ? ', rencana ' + d.km + ' km' : '') : 'tidak ada sesi'}${ran ? ', sudah lari ' + ran.toFixed(1) + ' km' : ''}`} className={`sc ${sd === T ? 'today' : ''} ${d ? 'k-' + d.kind : 'k-none'}`} onClick={() => go('calendar', sd)}>
+          <small>{DAYS3[(i + 1) % 7]}</small><b>{d && d.km ? d.km : '–'}</b><i>{ran ? '✓ ' + r1(ran) : d ? KIND[d.kind].short : ''}</i></button> })}</div>
+    </Card>
+
+    {/* 3b. weekly bento (each card opens its detail) */}
     <div className="bento">
-      <div><h3>Volume minggu ini</h3><div className="row-c"><Ring value={actWeek} max={planWeek || 1} label={`${r1(actWeek)} dari ${r1(planWeek)} km`} size={78} /><div><b>{r1(actWeek)}</b><span className="muted"> / {r1(planWeek)} km</span><br /><small className="muted">{sign(r1(actWeek - actPrev))} km vs minggu lalu</small></div></div></div>
-      <div><h3>Intensitas 7 hari</h3>{M.intensity ? <Stacked100 parts={[{ k: 'Rendah', v: M.intensity.low, c: 'var(--green)' }, { k: 'Sedang', v: M.intensity.mid, c: 'var(--yellow)' }, { k: 'Tinggi', v: M.intensity.high, c: 'var(--red)' }]} marker={70} label={`Rendah ${M.intensity.low}%, sedang ${M.intensity.mid}%, tinggi ${M.intensity.high}%; patokan 70% rendah`} /> : <p className="muted">Belum ada lari.</p>}<small className="muted">patokan ≥70% rendah (Campos 2021)</small></div>
-      <div><h3>Beban harian</h3><BarChart data={loads7} height={64} label={`Training load minggu ini: ${loads7.map((d) => d.value).join(', ')}`} /><small className="muted">garis putus = rencana (perkiraan)</small></div>
-      <div><h3>{nextCp ? `CP${nextCp.id}` : 'Race'}</h3><div className="flipnum">{nextCp ? diffDays(nextCp.date, T) : toRace}<small className="muted" style={{ fontSize: '.8rem', fontWeight: 500 }}> hari</small></div>
-        <small className="muted">{nextCp && th ? `Hijau ≤ ${th.G} · sekarang ±${fmtTime(raceTime(vdot.v, dist))}` : nextCp ? nextCp.name : 'sub-4:00'}</small></div>
+      <button className="bx" onClick={() => go('activity')} aria-label="Volume minggu ini, buka Aktivitas"><h3>Volume minggu ini</h3><div className="row-c"><Ring value={actWeek} max={planWeek || 1} label={`${r1(actWeek)} dari ${r1(planWeek)} km`} size={78} /><div><b>{r1(actWeek)}</b><span className="muted"> / {r1(planWeek)} km</span><br /><small className="muted">{sign(r1(actWeek - actPrev))} km vs minggu lalu</small></div></div></button>
+      <button className="bx" onClick={() => go('ready', { mode: 'analisis' })} aria-label="Intensitas 7 hari, buka analisis"><h3>Intensitas 7 hari</h3>{M.intensity ? <Stacked100 parts={[{ k: 'Rendah', v: M.intensity.low, c: 'var(--green)' }, { k: 'Sedang', v: M.intensity.mid, c: 'var(--yellow)' }, { k: 'Tinggi', v: M.intensity.high, c: 'var(--red)' }]} marker={70} label={`Rendah ${M.intensity.low}%, sedang ${M.intensity.mid}%, tinggi ${M.intensity.high}%; patokan 70% rendah`} /> : <p className="muted">Belum ada lari.</p>}<small className="muted">patokan ≥70% rendah (Campos 2021)</small></button>
+      <button className="bx" onClick={() => go('ready', { mode: 'analisis' })} aria-label="Beban harian, buka analisis"><h3>Beban harian</h3><BarChart data={loads7} height={64} label={`Training load minggu ini: ${loads7.map((d) => d.value).join(', ')}`} /><small className="muted">garis putus = rencana (perkiraan)</small></button>
+      <button className="bx" onClick={() => nextCp ? go('calendar', { view: 'cp', id: nextCp.id }) : go('calendar', { view: 'race' })} aria-label={nextCp ? `Checkpoint CP${nextCp.id}, ${diffDays(nextCp.date, T)} hari lagi` : `Race, ${toRace} hari lagi`}><h3>{nextCp ? `CP${nextCp.id}` : 'Race'}</h3><div className="flipnum">{nextCp ? diffDays(nextCp.date, T) : toRace}<small className="muted" style={{ fontSize: '.8rem', fontWeight: 500 }}> hari</small></div>
+        <small className="muted">{nextCp && th ? `Hijau ≤ ${th.G} · sekarang ±${fmtTime(raceTime(vdot.v, dist))}` : nextCp ? nextCp.name : 'sub-4:00'}</small></button>
     </div>
 
     {/* 4. last activity strip */}
@@ -92,6 +99,10 @@ export default function Home({ vdot, settings, results, go }) {
       <span className={`kdot k-a${String(last.sport_class).split(':')[0]}`} />
       <span><b>{last.name}</b><small>{fmtShort(last.date)} · {last.distance_m ? (last.distance_m / 1000).toFixed(2) + ' km' : fmtDur(last.duration_s)}{last.avg_pace_s_km && last.sport_class === 'run' ? ` · ${fmtPaceS(last.avg_pace_s_km)}/km` : ''}{last.avg_hr ? ` · ${last.avg_hr} bpm` : ''}{last.training_load ? ` · TL ${last.training_load}` : ''}</small></span>
       {dc && lastSteady ? <Chip tone={dc.band}>Pa:Hr {dc.pct}%</Chip> : <Icon n="chev" size={18} />}
+    </button>}
+
+    {nextCp && <button className="card rowbtn plain" onClick={() => go('calendar', { view: 'cp', id: nextCp.id })} aria-label={`Checkpoint berikutnya CP${nextCp.id}, ${diffDays(nextCp.date, T)} hari lagi`}>
+      <span className="kdot k-tt" /><span><b>CP{nextCp.id} · {nextCp.name}</b><small>{fmtShort(nextCp.date)} · {diffDays(nextCp.date, T)} hari{th ? ` · hijau ≤ ${th.G}` : ''}</small></span><Icon n="chev" size={18} />
     </button>}
 
     <Card title="Fitness menuju sub-4" right={<span className="muted">{vdot.v.toFixed(1)} → {TARGET.vdotNeeded}</span>}>

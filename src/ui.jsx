@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { KIND, strengthOf } from './lib/calendar.js'
+import { GLOSSARY } from './lib/glossary.js'
 
 const P = {
   home: 'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z',
@@ -43,3 +44,12 @@ export function Sheet({ open, onClose, label, children }) {
   return <div className="sheet-wrap" onClick={onClose}><div ref={ref} className="sheet" role="dialog" aria-modal="true" aria-label={label} onClick={(e) => e.stopPropagation()}>
     <div className="grab" aria-hidden="true" /><button ref={closeRef} className="x" onClick={onClose} aria-label="Tutup"><Icon n="x" size={20} /></button>{children}</div></div>
 }
+
+// "?" next to a metric: opens a one-sentence definition. The button keeps a 44px target but takes little room (negative margins).
+export function Info({ k }) {
+  const [open, setOpen] = useState(false), g = GLOSSARY[k]; if (!g) return null
+  return <><button className="info" onClick={() => setOpen(true)} aria-label={`Apa itu ${g[0]}?`}><span aria-hidden="true">?</span></button>
+    <Sheet open={open} onClose={() => setOpen(false)} label={g[0]}><h2 className="sess-title">{g[0]}</h2><p>{g[1]}</p></Sheet></>
+}
+// evidence / source notes stay available but collapsed so numbers, not paragraphs, lead
+export const Evidence = ({ children }) => <details className="evid"><summary>Dasar bukti</summary><p className="src-note">{children}</p></details>

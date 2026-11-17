@@ -35,7 +35,7 @@ export default function App() {
     {sync === 'offline' && <div className="offbar" role="status">Offline — perubahan tersimpan hanya di browser ini dan akan dikirim saat tersambung</div>}
     <main id="main" ref={mainRef} tabIndex={-1}>
       {tab === 'home' && <Home vdot={vdot} settings={settings} results={results} go={go} />}
-      {tab === 'ready' && <Readiness vdot={vdot} settings={settings} />}
+      {tab === 'ready' && <Readiness vdot={vdot} settings={settings} focus={focus} />}
       {tab === 'activity' && <Activity vdot={vdot} focus={focus} />}
       {tab === 'calendar' && <Calendar vdot={vdot} results={results} setResults={setResults} focus={focus} settings={settings} go={go} />}
       {tab === 'profile' && <Profile vdot={vdot} results={results} settings={settings} setSettings={setSettings} />}
