@@ -1,0 +1,9 @@
+[Unit]
+Description=Lumpad auto-deploy (test, deploy, health-check, rollback)
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/lumpad/deploy/autodeploy.sh
+TimeoutStartSec=900
+Nice=10

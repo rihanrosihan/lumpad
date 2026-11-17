@@ -2,7 +2,7 @@
 # Update: pull, build, restart. Run as root (or sudo) from anywhere.
 set -euo pipefail
 cd /opt/lumpad
-git pull --ff-only   # as root: only root holds the deploy key
+[ "${SKIP_PULL:-}" = 1 ] || git pull --ff-only   # as root: only root holds the deploy key (SKIP_PULL=1: autodeploy rollback)
 mkdir -p /opt/lumpad/server/data
 chown -R lumpad:lumpad /opt/lumpad
 sudo -u lumpad npm ci --no-audit --no-fund
@@ -26,6 +26,10 @@ grep -q '@istatus' /etc/caddy/Caddyfile || bash /opt/lumpad/deploy/update-caddy.
 
 cp deploy/lumpad.service /etc/systemd/system/lumpad.service && systemctl daemon-reload
 [ -f /etc/cron.d/lumpad-backup ] || echo '15 3 * * * root /opt/lumpad/deploy/backup.sh' > /etc/cron.d/lumpad-backup
+# Auto-deploy: timer checks origin/main every 5 min (disable: touch /etc/lumpad-autodeploy.disabled)
+chmod +x deploy/autodeploy.sh
+cp deploy/lumpad-autodeploy.service deploy/lumpad-autodeploy.timer /etc/systemd/system/ && systemctl daemon-reload
+systemctl enable --now lumpad-autodeploy.timer >/dev/null 2>&1 || true
 systemctl restart lumpad
 sleep 1
 systemctl is-active lumpad && curl -fsS http://127.0.0.1:8787/api/health && echo
