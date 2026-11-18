@@ -1,0 +1,20 @@
+[Unit]
+Description=Lumpad v2 backend (Go)
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+User=lumpad
+EnvironmentFile=/opt/lumpad/.env.v2
+ExecStart=/opt/lumpad/lumpadd/lumpadd serve
+Restart=on-failure
+RestartSec=3
+MemoryHigh=120M
+MemoryMax=200M
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/lumpad/server/data
+
+[Install]
+WantedBy=multi-user.target

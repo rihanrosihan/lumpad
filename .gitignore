@@ -7,3 +7,6 @@ Running_project_export.zip
 .npm
 *.snapshot.db
 tools/golden/out/
+lumpadd/lumpadd
+lumpadd/fitbench
+lumpadd/*.exe
