@@ -5,7 +5,7 @@ import { fmtShort, today } from './lib/calendar.js'
 
 // ---- tiny markdown (bold, bullets, paragraphs) — no HTML injection
 const inline = (t) => t.split(/(\*\*[^*]+\*\*)/g).map((p, i) => (p.startsWith('**') ? <b key={i}>{p.slice(2, -2)}</b> : p))
-function Md({ text }) {
+export function Md({ text }) {
   const blocks = String(text || '').split(/\n{2,}/)
   return <div className="md">{blocks.map((b, i) => { const lines = b.split('\n')
     if (lines.every((l) => /^\s*[-*] /.test(l))) return <ul key={i}>{lines.map((l, j) => <li key={j}>{inline(l.replace(/^\s*[-*] /, ''))}</li>)}</ul>
@@ -14,9 +14,20 @@ function Md({ text }) {
 }
 const f1 = (x, d = 1) => (x == null || Number.isNaN(x) ? '—' : (+x).toFixed(d))
 const pct = (x) => (x == null ? '—' : Math.round(x * 100) + '%')
-const post = (path, body) => fetch(path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body || {}) }).then(async (r) => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || r.status); return j })
+export const post = (path, body) => fetch(path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body || {}) }).then(async (r) => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || r.status); return j })
 const PRIO = { now: ['red', 'sekarang'], this_week: ['yellow', 'minggu ini'], later: ['none', 'nanti'] }
 const INTENTS = [['daily_brief', 'Brief hari ini'], ['weekly_review', 'Review minggu'], ['race_plan', 'Rencana race'], ['question', 'Tanya bebas']]
+
+export function Result({ p, res }) {
+  const wb = p?._writeback
+  return <Card title="Hasil" right={<span className="muted">{res.model} · ¥{f1(res.cost_cny, 2)}</span>}>
+    <p className="lead">{p.summary}</p>
+    {p.flags?.length > 0 && <div className="chips">{p.flags.map((f, i) => <Chip key={i} tone={f.type === 'gate' || f.type === 'injury' ? 'red' : 'yellow'}>{f.text}</Chip>)}</div>}
+    {p.recommendations?.length > 0 && <ol className="recs">{p.recommendations.map((r, i) => <li key={i}><div><Chip tone={PRIO[r.priority]?.[0]}>{PRIO[r.priority]?.[1] || r.priority}</Chip>{r.needs_athlete_ok && <Chip>perlu persetujuanmu</Chip>}</div><b>{r.action}</b><small>{r.why}</small></li>)}</ol>}
+    <details className="more"><summary>Analisis lengkap</summary><Md text={p.analysis_md} /></details>
+    {wb && (wb.stored.length + wb.merged.length + wb.rejected.length > 0) && <p className="src-note">Memori: {wb.stored.length} baru (menunggu konfirmasi) · {wb.merged.length} digabung · {wb.rejected.length} ditolak (angka/kutipan tidak terverifikasi).</p>}
+  </Card>
+}
 
 const Tiles = ({ items }) => <div className="score-grid">{items.map(([k, v, e], i) => <div key={i}><small>{k}</small><b>{v}</b>{e && <em>{e}</em>}</div>)}</div>
 
@@ -46,13 +57,7 @@ function Ask({ st }) {
       {err && <p className="err" role="alert">{err}</p>}
     </Card>
     {res && !res.ok && <Card title="Jawaban tidak valid"><p className="muted">Format jawaban model tidak lolos validasi, memori tidak ditulis. {res.errors?.[0]}</p></Card>}
-    {p && <Card title="Hasil" right={<span className="muted">{res.model} · ¥{f1(res.cost_cny, 2)}</span>}>
-      <p className="lead">{p.summary}</p>
-      {p.flags?.length > 0 && <div className="chips">{p.flags.map((f, i) => <Chip key={i} tone={f.type === 'gate' || f.type === 'injury' ? 'red' : 'yellow'}>{f.text}</Chip>)}</div>}
-      {p.recommendations?.length > 0 && <ol className="recs">{p.recommendations.map((r, i) => <li key={i}><div><Chip tone={PRIO[r.priority]?.[0]}>{PRIO[r.priority]?.[1] || r.priority}</Chip>{r.needs_athlete_ok && <Chip>perlu persetujuanmu</Chip>}</div><b>{r.action}</b><small>{r.why}</small></li>)}</ol>}
-      <details className="more"><summary>Analisis lengkap</summary><Md text={p.analysis_md} /></details>
-      {wb && (wb.stored.length + wb.merged.length + wb.rejected.length > 0) && <p className="src-note">Memori: {wb.stored.length} baru (menunggu konfirmasi) · {wb.merged.length} digabung · {wb.rejected.length} ditolak (angka/kutipan tidak terverifikasi).</p>}
-    </Card>}
+    {p && <Result p={p} res={res} />}
   </>
 }
 function Recent() {
