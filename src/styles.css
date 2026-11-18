@@ -741,3 +741,4 @@ nav.tabbar {
 @media(prefers-color-scheme:dark){:root:not([data-theme=light]) .gs.ph-BASE{color:#111}}
 :root[data-theme=dark] .gs.ph-BASE{color:#111}
 .strip .sc.today{background:#3f4fc8!important;border-color:#3f4fc8}
+@media(min-width:1100px){.bt small{max-width:300px}}

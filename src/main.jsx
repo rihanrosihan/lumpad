@@ -9,7 +9,7 @@ import './styles.css'
 const _fetch = window.fetch.bind(window)
 window.fetch = (input, init = {}) => {
   const url = typeof input === 'string' ? input : input.url, m = (init.method || (typeof input !== 'string' && input.method) || 'GET').toUpperCase()
-  if (m !== 'GET' && m !== 'HEAD' && (url.startsWith('/') || url.startsWith(location.origin))) init = { ...init, headers: { ...(init.headers || {}), 'X-Lumpad': '1' } }
+  if (m !== 'GET' && m !== 'HEAD' && (url.startsWith('/') || url.startsWith(location.origin))) { const h = new Headers(init.headers || (typeof input !== 'string' ? input.headers : undefined)); h.set('X-Lumpad', '1'); init = { ...init, headers: h } }
   return _fetch(input, init)
 }
 createRoot(document.getElementById('root')).render(<App />)

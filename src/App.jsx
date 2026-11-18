@@ -101,7 +101,7 @@ export default function App() {
     <header className="appbar">
       <div className="appbar-in">
         <button className="menubtn" onClick={() => setMenu(true)} aria-label="Open menu"><Icon n="menu" size={20} /></button>
-        <button className="brand" onClick={jump('home')} aria-label="LUMPAD — go Home"><span className="logo" aria-hidden="true"><i>SUB 4</i><small>COACH</small></span><span className="bt"><b>LUMPAD<em className="osv">OS 5.0 · Fluid Telemetry</em></b><small><i>{fmtLong(T)}</i><u> · </u>{cur === 'activity-detail' ? 'Run Analysis & AI Narrative' : CRUMB[tab]}</small></span></button>
+        <button className="brand" onClick={jump('home')} aria-label="LUMPAD — go Home"><span className="logo" aria-hidden="true"><i>SUB 4</i><small>COACH</small></span><span className="bt"><b>LUMPAD<em className="osv">OS 5.0 · Fluid Telemetry</em></b><small><i>{fmtLong(T).replace(/^(\w{3})\w*, (\w{3})\w* /, '$1, $2 ')}</i><u> · </u>{cur === 'activity-detail' ? 'Run Analysis & AI Narrative' : CRUMB[tab]}</small></span></button>
         <Ribbon>
           <span className="rp"><i className={'dot ' + (last?.ok ? 'ok' : 'warn')} />COROS<b>{last ? wib(last.received_at) + ' WIB' : '—'}</b></span>
           <button className="rp" onClick={jump('profile')}>VDOT<b className="am">{vdot.v.toFixed(1)}</b>→<b>{TARGET.vdotNeeded}</b></button>
