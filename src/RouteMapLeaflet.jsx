@@ -2,16 +2,16 @@ import { useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useStore } from './store.js'
+import { tileSpec } from './lib/tiles.js'
 
 // Real map (OpenStreetMap data, CARTO basemap tiles) under the official route. Needs img-src https://*.basemaps.cartocdn.com in the CSP;
 // without network the line is still drawn on a plain background. The map is locked until "Move map" is pressed so scrolling the page never drags it.
 const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || '#888'
 const GRADE = { down: '--c-tt', flat: '--green', gentle: '--yellow', rise: '--c-quality' }
 const isDark = () => { const t = document.documentElement.dataset.theme; return t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches) }
-const tileUrl = () => `https://{s}.basemaps.cartocdn.com/${isDark() ? 'dark_all' : 'light_all'}/{z}/{x}/{y}{r}.png`
 
 export default function RouteMapLeaflet({ R, P = null, km, setKm, sel = null, hl = null, height = 'min(70vh, 600px)' }) {
-  const el = useRef(null), M = useRef({}), [unlocked, setUnlocked] = useState(false), [tilesOn, setTilesOn] = useStore('lumpad.maptiles', 'on'), [zoom, setZoom] = useState(12)
+  const el = useRef(null), M = useRef({}), [unlocked, setUnlocked] = useState(false), [tilesOn, setTilesOn] = useStore('lumpad.maptiles', 'on'), [mapKey] = useStore('lumpad.mapkey', ''), [zoom, setZoom] = useState(12), [dim, setDim] = useState(false)
   const posAt = (k) => { const l = R.line; let i = l.findIndex((p) => p[2] >= k); if (i < 1) i = i === 0 ? 1 : l.length - 1; const a = l[i - 1], b = l[i], f = (k - a[2]) / Math.max(1e-9, b[2] - a[2]); return [a[0] + f * (b[0] - a[0]), a[1] + f * (b[1] - a[1])] }
 
   // build once
@@ -36,9 +36,9 @@ export default function RouteMapLeaflet({ R, P = null, km, setKm, sel = null, hl
   // tiles on / off, light / dark
   useEffect(() => {
     const m = M.current; if (!m.map) return
-    const apply = () => { if (m.tiles) { m.map.removeLayer(m.tiles); m.tiles = null } if (tilesOn !== 'off') m.tiles = L.tileLayer(tileUrl(), { subdomains: 'abcd', maxZoom: 19, attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer">CARTO</a>' }).addTo(m.map).bringToBack() }
+    const apply = () => { if (m.tiles) { m.map.removeLayer(m.tiles); m.tiles = null } const sp = tileSpec(mapKey, isDark()); setDim(sp.filter && tilesOn !== 'off'); if (tilesOn !== 'off') m.tiles = L.tileLayer(sp.url, { subdomains: sp.subdomains || 'abc', maxZoom: 19, attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer">CARTO</a>' }).addTo(m.map).bringToBack() }
     m.retile = apply; apply()
-  }, [tilesOn, R])
+  }, [tilesOn, mapKey, R])
 
   // interaction lock
   useEffect(() => { const map = M.current.map; if (!map) return; for (const h of ['dragging', 'touchZoom', 'scrollWheelZoom', 'doubleClickZoom']) map[h][unlocked ? 'enable' : 'disable']() }, [unlocked])
@@ -57,7 +57,7 @@ export default function RouteMapLeaflet({ R, P = null, km, setKm, sel = null, hl
   }, [zoom, R]) // eslint-disable-line
   useEffect(() => { M.current.cur?.setLatLng(posAt(km)) }, [km, R]) // eslint-disable-line
 
-  return <div className="rmapL">
+  return <div className={`rmapL ${dim ? 'dim' : ''}`}>
     <div ref={el} className="rml" style={{ height }} role="application" aria-label="Map of the course. Press Move map to pan and zoom, or use the slider below." />
     <div className="rml-bar"><button className={unlocked ? 'on' : ''} aria-pressed={unlocked} onClick={() => setUnlocked(!unlocked)}>{unlocked ? 'Lock map' : 'Move map'}</button><button aria-pressed={tilesOn !== 'off'} onClick={() => setTilesOn(tilesOn === 'off' ? 'on' : 'off')}>{tilesOn === 'off' ? 'Show street map' : 'Lines only'}</button></div>
   </div>

@@ -25,9 +25,11 @@ const GROUPS = [['vdot', 'VDOT & zones'], ['shoe', 'Shoes'], ['race', 'Race & bo
 const Group = ({ id, title, open, setOpen, children }) => <details className="pgroup" id={'g-' + id} open={!!open} onToggle={(e) => { if (e.currentTarget.open !== !!open) setOpen(id, e.currentTarget.open) }}><summary>{title}</summary><div className="gbody">{children}</div></details>
 const km = (m) => (m == null ? '—' : Math.round(m / 100) / 10)
 
+import { KEY_RE } from './lib/tiles.js'
 import { ZONES, ZONE_DEFAULTS, cfgOf, hrRange, paceRange, fmtPace as fmtZPace } from './lib/zones.js'
 
 export default function Profile({ vdot, results, settings, setSettings }) {
+  const [mapKey, setMapKey] = useStore('lumpad.mapkey', '')
   const T = today(), [theme, setTheme] = useStore('lumpad.theme', 'auto')
   const sync = useSyncStatus(), ss = useSyncStatus2(), G = useApi('/api/gear'), R = useApi(`/api/readiness?from=${addDays(T, -30)}&to=${T}`)
   const A = useApi(`/api/activities/merged?from=${addDays(T, -365)}&to=${T}`), L = useApi(`/api/laps?from=${addDays(T, -365)}&to=${T}`), Dv = useApi('/api/kv?key=lumpad.devices')
@@ -65,6 +67,12 @@ export default function Profile({ vdot, results, settings, setSettings }) {
       </div>
       <h3>VDOT progress</h3>
       {vhist.length > 1 ? <BandLine data={vhist.map((h) => ({ date: h.date, v: h.v, need: null }))} keys={[{ key: 'v', color: 'var(--c-long)' }]} height={110} label={'VDOT progress: ' + vhist.map((h) => `${h.date} ${h.v}`).join(', ')} /> : <p className="muted">Baseline {TARGET.baseline} — the curve fills in after the first TT (CP1, {fmtShort(CHECKPOINTS[0].date)}).</p>}
+    </Card>
+
+    <Card title="Map tiles (course map)" right={<Chip tone={mapKey ? 'green' : undefined}>{mapKey ? 'CARTO key set' : 'free tiles'}</Chip>}>
+      <p className="muted">The course map uses CARTO / OpenStreetMap tiles. Paste your CARTO Basemaps API key to use the keyed Voyager tiles; it is saved on your server (not in the code) and sent only to CARTO with each tile. Leave it empty to use the free tiles.</p>
+      <label className="fld"><span>CARTO Basemaps API key</span><input type="password" autoComplete="off" spellCheck="false" value={mapKey} onChange={(e) => setMapKey(e.target.value.trim())} placeholder="cb1_…" aria-invalid={!!mapKey && !KEY_RE.test(mapKey)} /></label>
+      {mapKey && !KEY_RE.test(mapKey) && <p className="err" role="alert">That does not look like a CARTO key (letters, digits, _ and -, 8–80 characters). The free tiles are used until it does.</p>}
     </Card>
 
     <Card title="Training zones (watch)" right={<Chip>{settings.lthr ? 'your values' : 'LTHR estimated'}</Chip>}>

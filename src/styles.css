@@ -510,3 +510,4 @@ button.rp:hover{background:var(--surface)}.rp b.am{color:var(--amber-t)}.rp b.co
 .rml-fin span{transform:translate(8px,10px)}
 .rml-km span{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#fff;color:#111;border:1px solid #111;font-size:.68rem;font-weight:800}
 .rml-bar{display:flex;gap:8px;margin-top:6px}.rml-bar button{min-height:44px;padding:0 14px;border-radius:12px;background:var(--surface2);font-weight:600;font-size:.86rem}.rml-bar button.on{background:var(--accent);color:#fff}
+.rmapL.dim .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.82) contrast(.92) saturate(.7)}
