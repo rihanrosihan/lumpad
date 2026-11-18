@@ -39,4 +39,14 @@ export const WEEKS = (() => {
   return [...m.values()].map((w) => ({ ...w, km: Math.round(w.km * 10) / 10 }))
 })()
 export const weekOf = (date) => WEEKS.find((w) => w.days.some((d) => d.date === date))
-export const PHASE_NAME = { 'OFF-SEASON': 'Off-season', RAMADAN: 'Ramadan', BASE: 'Base', BUILD: 'Build', 'C-RACE': 'C-race', RECOVERY: 'Recovery', PEAK: 'Peak', TAPER: 'Taper', 'RACE WEEK': 'Race week' }
+export const PHASE_NAME = { 'PRE-SEASON': 'Pre-season', 'OFF-SEASON': 'Off-season', RAMADAN: 'Ramadan', BASE: 'Base', BUILD: 'Build', 'C-RACE': 'C-race', RECOVERY: 'Recovery', PEAK: 'Peak', TAPER: 'Taper', 'RACE WEEK': 'Race week' }
+
+// Calendar months covered by the plan (Nov 2026 → Dec 2027): [{ key:'2026-11', y, m (0–11) }]
+export const PLAN_MONTHS = (() => {
+  const out = [], seen = new Set()
+  for (const d of PLAN) { const key = d.date.slice(0, 7); if (!seen.has(key)) { seen.add(key); out.push({ key, y: +key.slice(0, 4), m: +key.slice(5, 7) - 1 }) } }
+  return out
+})()
+export const monthLabel = (mo) => `${MONTHS[mo.m]} ${mo.y}`
+export const PLAN_END = PLAN.at(-1).date
+export const PLAN_KM = Math.round(PLAN.reduce((a, d) => a + d.km, 0))

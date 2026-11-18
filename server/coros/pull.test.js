@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert'
 process.env.LUMPAD_DB = ':memory:'; process.env.DATA_DIR = '/tmp/lumpad-test-data'; process.env.LUMPAD_TOKEN_KEY = 'cd'.repeat(32)
-const { pullRange, addDays } = await import('./pull.js'), { db } = await import('../store.js'), jobs = await import('../jobs.js')
+const { pullRange, addDays } = await import('./pull.js'), kvdb = await import('../db.js'), { db } = await import('../store.js'), jobs = await import('../jobs.js')
 
 const dh = (d, hr) => `--- ${d.replace(/-/g, '')} ---\nSteps: 100 | Calories: 1 kcal | Exercise: 0 min\nStress: Avg 30\nSleep Summary:\n  Total: 7h 0min | Deep: 1h 0min | Light: 4h 0min | REM: 1h 30min | Awake: 30 min\n  Sleep HR: Avg ${hr} bpm | Min 45 bpm | Max 80 bpm\n`
 const LAPS = JSON.stringify({ lapGroups: [{ type: 2, laps: [{ distance: 100000, time: 450, avgPace: 450, avgHr: 150, avgCadence: 165, avgPower: 170, groundTime: 300 }] }, { type: -1, laps: [{ avgCadence: 165, avgPower: 170 }] }] })
@@ -17,6 +17,7 @@ function fake({ lapFails = 0, lapAlwaysBad = false } = {}) {
     if (tool === 'querySleepOverview') return 'Sleep Overview\n\n2027-01-05\nSleep Score: 84\nAwake Count (>5 min): 0\n'
     if (tool === 'queryRecoveryStatus') return 'Recovery: 90%\nLevel: Fresh\nEstimated Full Recovery: 0h'
     if (tool === 'queryFitnessAssessmentOverview') return 'VO2max: 47\nRunning Level: 66\nThreshold Pace: 5:56 /km\n5 km Prediction: 28:40\n10 km Prediction: 1:00:33\nHalf Marathon Prediction: 2:17:13\nMarathon Prediction: 4:53:04'
+    if (tool === 'queryTrainingSchedule') return 'Training Schedule\n====\n\n2026-11-23\nP10540\nPlan ID: 9\nidInPlan: 1\nDistance: 8.00 km\nEstimated Time: 1:11:19\nLoad: 103 TL\n\nUse Plan ID'
     if (tool === 'getActivityDetail') return 'Training Load: 158\nAerobic TE: 3.6\nAnaerobic TE: 1.8\nTraining Focus: Tempo\nPerformance: Below Average'
     if (tool === 'queryActivityLapData') { if (lapAlwaysBad || lf++ < lapFails) return 'Tool call anomalies detected. High risk of session context pollution'; return LAPS }
     throw new Error('unexpected tool ' + tool)
@@ -24,10 +25,11 @@ function fake({ lapFails = 0, lapAlwaysBad = false } = {}) {
   return { call, log }
 }
 test('staged pull merges 3 health tools by date, windows HRV in 7s, saves activities + laps', async () => {
+  kvdb.save('coros_plan', null)
   const f = fake(), notes = [], stages = new Set()
   const r = await pullRange({ call: f.call, from: '2027-01-01', to: '2027-01-20', trigger: 'backfill', notes, progress: (p) => stages.add(p.stage) })
   assert.equal(f.log.filter(([t]) => t === 'querySleepHrv').length, 3) // 1–7, 8–14, 15–20
-  assert.deepEqual([...stages], ['health', 'hrv', 'resting', 'load', 'sleep', 'snapshot', 'activities', 'laps', 'details', 'saving'])
+  assert.deepEqual([...stages], ['health', 'hrv', 'resting', 'load', 'sleep', 'snapshot', 'plan', 'activities', 'laps', 'details', 'saving'])
   const h = db.prepare('SELECT * FROM health_daily WHERE date = ?').get('2027-01-05')
   assert.equal(h.sleep_hr_avg, 61); assert.equal(h.hrv_avg, 80); assert.equal(h.resting_hr, 55); assert.equal(h.sleep_total_min, 420)
   assert.equal(db.prepare('SELECT COUNT(*) n FROM laps').get().n, 1)
@@ -36,6 +38,8 @@ test('staged pull merges 3 health tools by date, windows HRV in 7s, saves activi
   assert.equal(db.prepare('SELECT vo2max, pred_m_s FROM fitness_daily').get().pred_m_s, 17584)
   const a = db.prepare("SELECT training_load, aerobic_te, training_focus FROM activities WHERE id = 'coros:900'").get(); assert.deepEqual([a.training_load, a.aerobic_te, a.training_focus], [158, 3.6, 'Tempo'])
   assert.equal(r.rejected, 0); assert.equal(db.prepare('SELECT trigger FROM sync_runs ORDER BY id DESC LIMIT 1').get().trigger, 'backfill')
+  const plan = kvdb.load('coros_plan', null); assert.equal(plan.rows[0].date, '2026-11-23'); assert.equal(plan.rows[0].km, 8); assert.equal(f.log.filter(([t]) => t === 'queryTrainingSchedule').length, 4)
+  await pullRange({ call: f.call, from: '2027-01-01', to: '2027-01-20', trigger: 'daily' }); assert.equal(f.log.filter(([t]) => t === 'queryTrainingSchedule').length, 4) // fresh copy (<6 h) is not re-pulled
 })
 test('re-running is idempotent (no duplicates) and skips laps already stored', async () => {
   const f = fake(); await pullRange({ call: f.call, from: '2027-01-01', to: '2027-01-20', trigger: 'daily' })

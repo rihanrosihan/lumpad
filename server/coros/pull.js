@@ -1,5 +1,6 @@
 // Staged pull from COROS → normalised rows → applyIngest (idempotent). `call(tool,args)` is injected (real MCP or a test double).
 import { parseDailyHealth, parseSleepHrv, parseResting, parseSportRecords, parseLaps, parseTrainingLoad, parseRecovery, parseSleepOverview, parseActivityDetail, parseFitness, parseDevices } from './parse.js'
+import { pullSchedule } from './plan.js'
 import { load as kvLoad, save as kvSave } from '../db.js'
 import { applyIngest } from '../ingest.js'
 import { db } from '../store.js'
@@ -60,6 +61,16 @@ export async function pullRange({ call, from, to, trigger, progress = () => {}, 
   const fit = await retry(() => call('queryFitnessAssessmentOverview', {}), 2, note, 'fitness overview'); const fitness = fit != null ? parseFitness(fit) : {}
   const dev = await retry(() => call('queryDevices', {}), 1, () => {}, '')
   if (dev != null) { const kv = kvLoad('kv', {}); kv['lumpad.devices'] = { value: { devices: parseDevices(dev), at: new Date().toISOString() }, updatedAt: new Date().toISOString() }; kvSave('kv', kv) }
+
+  // 3e. the COROS training schedule (watch plan): Nov 2026 → end of 2027, refreshed at most every 6 h; an empty answer never overwrites a good copy
+  progress({ stage: 'plan', done: 0, total: 1 })
+  try {
+    const prev = kvLoad('coros_plan', null)
+    if (!prev?.at || Date.now() - Date.parse(prev.at) > 6 * 3600e3) {
+      const rows = await pullSchedule(call, '2026-11-01', '2027-12-31', addDays)
+      if (rows.length) kvSave('coros_plan', { rows, at: new Date().toISOString() }); else if (!prev) note('training plan: COROS returned no scheduled workouts')
+    }
+  } catch (e) { note(`training plan: ${String(e.message).slice(0, 120)}`) }
 
   // 4. activities, month by month (split a window if the page is full)
   const acts = []

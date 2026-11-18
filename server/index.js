@@ -104,6 +104,7 @@ const routes = {
   'GET /api/pubmed/search': async (q) => pubmed.search(q.get('q') || '', Math.min(+q.get('max') || 8, 20)),
   'POST /api/coros/fit': async (_q, req) => { const a = await coros.parseFit(await readBody(req)); save('coros_acts', [a, ...load('coros_acts', [])].slice(0, 500)); return a },
   'GET /api/coros/activities': async () => load('coros_acts', []),
+  'GET /api/coros/plan': async () => load('coros_plan', { rows: null, at: null }),
   'GET /api/library': async () => lib.list(),
   'POST /api/library': async (_q, req) => lib.add(JSON.parse((await readBody(req, 1e5)).toString())),
   'DELETE /api/library': async (q) => lib.remove(q.get('id')),

@@ -9,6 +9,8 @@ import { Card, Chip, Screen, StrengthChips, Icon } from './ui.jsx'
 import { useApi, fmtDur, fmtPaceS } from './api.js'
 import { StepChart } from './charts2.jsx'
 import { effectiveDay } from './lib/scaler.js'
+import { useCorosPlan } from './useCoros.js'
+import { labelOf, fmtHM } from './lib/corosplan.js'
 
 const RULES = ['Sleep HR ≤ 67 bpm for hard sessions', 'Sleep HRV not Reduced for quality / TT', 'Pain while running < 2/10 (≥ 2 = durability event)', 'Tibia not tender before Lower', 'Meal buffer ≥ 90 min for hard sessions']
 const cpOf = (d) => d?.tags.find((t) => /^CP\d+$/.test(t))
@@ -17,13 +19,20 @@ const cpOf = (d) => d?.tags.find((t) => /^CP\d+$/.test(t))
 export default function DayPage({ date, vdot, settings, go }) {
   const T = today(), [scale] = useStore('lumpad.scale', {}), d = effectiveDay(BY_DATE[date], scale.items?.[date], T), p = paces(vdot.v)
   const [f] = useStore('lumpad.daily.' + date, EMPTY_DAY), [regs] = useStore('lumpad.registrations', {})
-  const G = useApi('/api/gear'), A = useApi(`/api/activities/merged?from=${date}&to=${date}`)
-  if (!d) return <Screen title="Day Plan" sub={fmtLong(date)}><div className="card empty"><b>This date is outside the 2027 plan</b>Pick a day from the calendar.</div><button className="btn" onClick={() => go('calendar')}>Go to Calendar</button></Screen>
+  const CP = useCorosPlan(), G = useApi('/api/gear'), A = useApi(`/api/activities/merged?from=${date}&to=${date}`)
+  if (!d) return <Screen title="Day Plan" sub={fmtLong(date)}><div className="card empty"><b>This date is outside the season plan</b>Pick a day from the calendar.</div><button className="btn" onClick={() => go('calendar')}>Go to Calendar</button></Screen>
   const prev = BY_DATE[addDays(date, -1)] ? addDays(date, -1) : null, next = BY_DATE[addDays(date, 1)] ? addDays(date, 1) : null
   const cp = cpOf(d), reg = regs?.[date], steps = sessionSteps(d), pace = sessionPaces(d, p), hard = HARD.has(d.kind)
   const g = evaluate(f, d), checked = hasInput(f), isToday = date === T, past = date < T
   const shoe = pickShoe(d, G.data, settings.shoeRoles), acts = (A.data || []).filter((a) => a.sport_class === 'run')
-  const away = diffDays(date, T)
+  const away = diffDays(date, T), cr = CP.map[date], inCoros = CP.rows.length && date >= CP.rows[0].date && date <= CP.rows.at(-1).date
+  const corosCard = inCoros ? <Card title="COROS watch plan" right={<Chip tone={CP.live ? 'green' : undefined}>{CP.live ? 'live' : 'snapshot'}</Chip>}>
+    {cr ? <>
+      <p><b>{labelOf(cr)}</b>{cr.km ? ` · ${cr.km} km` : ' · no distance target'}{cr.sec ? ` · ${fmtHM(cr.sec)}` : ''}{cr.tl ? ` · ${cr.tl} TL` : ''}</p>
+      {d.src === 'coros' ? <p className="muted">This day comes straight from the COROS plan (the season starts 23 Nov).</p>
+        : d.km > 0 || cr.km ? <p className="muted">Lumpad prescribes {d.km || 0} km, COROS {cr.km || 0} km ({(cr.km || 0) - d.km >= 0 ? '+' : ''}{Math.round(((cr.km || 0) - d.km) * 10) / 10} km). Lumpad's plan, checkpoints and gate rules drive this date; the watch shows the COROS workout.</p> : <p className="muted">Lumpad has no run on this day; the watch has the COROS workout.</p>}
+    </> : <p className="muted">{d.km > 0 ? `COROS has no workout on this day (Lumpad prescribes ${d.km} km).` : 'No COROS workout — rest in both plans.'}</p>}
+  </Card> : null
   return <Screen title="Day Plan" sub={`${d.week} · ${PHASE_NAME[d.phase] || d.phase}`}>
     <div className="dbar">
       <button className="btn sm" onClick={() => go('calendar')}><Icon n="left" size={16} />Calendar</button>
@@ -35,7 +44,7 @@ export default function DayPage({ date, vdot, settings, go }) {
         <Card className={`sess k-${d.kind}`}>
           <div className="sess-top"><Chip kind={d.kind}>{KIND[d.kind].label}</Chip>{cp && <Chip tone="cp">{cp}</Chip>}{reg && <Chip tone="green">registered ✓{reg.bib ? ` · BIB ${reg.bib}` : ''}</Chip>}<StrengthChips day={d} />{d.scaled && <Chip tone="yellow">auto-scaled · was {d.plannedLabel}{d.plannedKm ? ` ${d.plannedKm} km` : ''}</Chip>}</div>
           <h2 className="sess-title">{d.label || KIND[d.kind].label}</h2>
-          {d.km > 0 ? <div className="bigkm"><b>{d.km}</b><span>km</span></div> : <p className="muted">{d.kind === 'gym' ? 'Gym day — no running.' : 'Rest day.'}</p>}
+          {d.km > 0 ? <div className="bigkm"><b>{d.km}</b><span>km</span></div> : <p className="muted">{d.kind === 'gym' ? 'Gym day — no running.' : d.src === 'coros' && d.kind !== 'rest' ? 'Free-mode run in COROS — no distance target; run by feel (easy).' : 'Rest day.'}</p>}
           {d.note && <p className="note">{d.note}</p>}
           {d.event && <p className="note">♥ {d.event}</p>}
           {reg && <p className="note">{reg.event} · {reg.distance} · {reg.category}{reg.start ? ` · ${reg.start} → ${reg.finish}` : ''}</p>}
@@ -45,6 +54,7 @@ export default function DayPage({ date, vdot, settings, go }) {
           {pace.length > 0 ? <dl className="pace">{pace.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl> : <p className="muted">No pace target for this session.</p>}
           <p className="src">Pace from {vdot.src} · structure from the plan label (WU 2 / CD 1 km) [calc]</p>
         </Card>}
+        {corosCard}
         <Card title={past || isToday ? 'Plan vs actual' : 'Actual'}>
           {A.state === 'loading' && <div className="skel" style={{ height: 56 }} />}
           {A.state === 'ok' && !acts.length && <p className="muted">{date > T ? 'Has not happened yet.' : 'No run recorded on this day.'}</p>}

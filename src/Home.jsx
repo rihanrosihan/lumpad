@@ -100,8 +100,8 @@ export default function Home({ vdot, settings, results, go, M: Mprop }) {
         <HomeCoach go={go} />
         {!day && <div className="planb">
           <span className="planb-chip">{T < PLAN_START ? `Base & rehab block · ${diffDays(PLAN_START, T)} days to the plan` : 'Outside the plan'}</span>
-          <h2>{T < PLAN_START ? '2027 plan has not started' : 'No session scheduled'}</h2>
-          <p>{T < PLAN_START ? `First day: ${fmtShort(PLAN_START)}. Until then: easy runs, hold volume, rehab.` : 'Check the calendar for the next session.'}</p>
+          <h2>{T < PLAN_START ? 'The season has not started' : 'No session scheduled'}</h2>
+          <p>{T < PLAN_START ? `First day: ${fmtLong(PLAN_START)} (COROS plan week 1). Until then: easy runs, hold volume, rehab.` : 'Check the calendar for the next session.'}</p>
           <button className="planb-btn" onClick={() => go('calendar', { view: 'cp' })}>Checkpoint roadmap</button>
         </div>}
         <div className="b-week"><Card title="This week" className="tight" right={<button className="link" onClick={() => go('calendar')}>Calendar</button>}>
