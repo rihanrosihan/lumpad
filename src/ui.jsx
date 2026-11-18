@@ -10,6 +10,8 @@ const P = {
   user: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0',
   run: 'M13 4a1.5 1.5 0 1 0 0 .01M6 21l3-6 3 2 2-5-3-3 2-3 4 2 1 3M9 15l-3 1',
   coach: 'M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H10l-5 4v-4H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM8 10h8M8 13h5',
+  sun: 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4',
+  moon: 'M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z', sync: 'M21 3v6h-6M3 21v-6h6M20 9a8 8 0 0 0-14-3L3 9M4 15a8 8 0 0 0 14 3l3-3',
   chev: 'M9 6l6 6-6 6', left: 'M15 6l-6 6 6 6', x: 'M6 6l12 12M18 6 6 18', check: 'M5 12l5 5 9-10',
 }
 export const Icon = ({ n, size = 22 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={P[n]} /></svg>

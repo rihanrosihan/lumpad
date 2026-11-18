@@ -7,7 +7,7 @@ import { CHECKPOINTS, TARGET, cpDistance, tone } from './lib/plan.js'
 import { formZone } from './lib/load.js'
 import { decoupling, sessionSteps } from './lib/analysis.js'
 import { r1 } from './lib/stats.js'
-import { Card, Chip, Screen, StrengthChips, Icon } from './ui.jsx'
+import { Card, Chip, StrengthChips, Icon } from './ui.jsx'
 import { useSyncStatus2, wib, ago } from './sync.js'
 import { useApi, hm, fmtDur, fmtPaceS } from './api.js'
 import { useModel, plannedLoad } from './model.js'
@@ -42,16 +42,28 @@ export default function Home({ vdot, settings, results, go }) {
   const last = M.acts.filter((a) => a.sport_class === 'run')[0] || M.acts[0], dc = last ? decoupling(M.lapsById[last.id] || []) : null
   const lastSteady = last && ['easy', 'long', 'social'].includes(BY_DATE[last.date]?.kind)
 
-  return <Screen title={fmtLong(T).split(',')[0]} sub={fmtLong(T).split(', ')[1]} right={<button className="pill" onClick={() => go('calendar', { view: 'race' })} aria-label={`${toRace} hari menuju JRF`}><b>H-{Math.max(0, toRace)}</b><small>JRF {fmtShort(settings.raceDate)}</small></button>}>
+  const phase = day ? `${wk?.id} · ${PHASE_NAME[day.phase] || day.phase}` : T < PLAN_START ? `Pra-plan · mulai ${fmtShort(PLAN_START)}` : 'Di luar plan'
+  const focus = T < PLAN_START ? 'Fokus: easy, jaga volume, rehab' : day ? `Hari ini: ${day.label || KIND[day.kind].label}${day.km ? ' · ' + day.km + ' km' : ''}` : ''
+  return <section className="screen home">
+    <div className="bib">
+      <div className="bib-l">
+        <div className="bib-t"><span className="tag">BRIEFING HARIAN</span><span className="mono">{fmtLong(T).split(', ')[1]}</span></div>
+        <h1>{fmtLong(T).split(',')[0]}</h1>
     <button className={`fresh ${sync === null ? 'warn' : sync?.lastRun ? (sync.lastRun.ok ? 'ok' : 'warn') : 'none'}`} onClick={() => go('profile')}>
       <i />{sync === undefined ? 'Memeriksa sync…' : sync === null ? 'Status sync tidak terjangkau — data bisa usang' : sync?.lastRun ? <>Sync {ago(sync.lastRun.received_at)} · {wib(sync.lastRun.received_at)} WIB</> : 'Belum ada sync — data COROS/Strava belum masuk'}
     </button>
+      </div>
+      <div className="bib-r">
+        <div className="phase"><b>{phase}</b><small>{focus}</small></div>
+        <button className="bibnum" onClick={() => go('calendar', { view: 'race' })} aria-label={`${toRace} hari menuju JRF`}><b>H-{Math.max(0, toRace)}</b><small>JRF {fmtShort(settings.raceDate)}</small></button>
+      </div>
+    </div>
 
     <FuelCard last={last} today={T} />
     <HomeCoach go={go} />
 
-    {/* 1. readiness hero */}
-    <button className="card hero-btn" onClick={() => go('ready')} aria-label={`Readiness ${rd.score ?? 'belum ada'}. Buka detail`}>
+    <div className="hgrid">
+    <button className="card hero-btn g-hero" onClick={() => go('ready')} aria-label={`Readiness ${rd.score ?? 'belum ada'}. Buka detail`}>
       <div className="hero">
         <RadialGauge value={rd.score} tone={tier ? TIER_TONE[tier.id] : 'none'} label="Readiness" size={112} sub={rd.score == null ? 'data kurang' : '/ 100'} />
         <div className="hx"><span className={'tierc ' + (tier ? 'tier-' + tier.id : '')}>{tier ? tier.label : checked ? { green: 'Jalankan', yellow: 'Turunkan', red: 'Istirahat' }[g.level] : 'Belum check-in'}</span>
@@ -65,8 +77,7 @@ export default function Home({ vdot, settings, results, go }) {
       </div>
     </button>
 
-    {/* 2. today's session */}
-    {day ? <Card className={`sess k-${day.kind}`}>
+    {day && <Card className={`sess g-sess k-${day.kind}`}>
       <div className="sess-top"><Chip kind={day.kind}>{KIND[day.kind].label}</Chip><span className="muted">{wk?.id} · {PHASE_NAME[day.phase] || day.phase}</span></div>
       <h2 className="sess-title">{day.label || KIND[day.kind].label}</h2>
       {adjusted && <Chip tone="yellow">{adjusted}</Chip>}
@@ -81,38 +92,45 @@ export default function Home({ vdot, settings, results, go }) {
         <ul className="rules">{[...(day.tags || []).filter((t) => /Upper|Lower|Full|FB/.test(t)).map((t) => `Gym: ${t} (sesuai rencana)`), 'Mobilitas 10 menit + cek tibia dan nyeri', `Target tidur ≥ ${hm(settings.sleepNeedMin || 480)}`, 'Jalan santai 20–30 menit (opsional)', 'Minum cukup; makan karbo + protein normal'].map((x) => <li key={x}>{x}</li>)}</ul>
       </>}
       <div className="chips"><StrengthChips day={day} />{day.tags.filter((t) => /^CP/.test(t)).map((t) => <Chip key={t} tone="cp">{t}</Chip>)}</div>
-    </Card> : <Card title={T < PLAN_START ? 'Plan 2027 belum mulai' : 'Di luar plan'}><p className="muted">{T < PLAN_START ? `Hari pertama: ${fmtShort(PLAN_START)}. Sampai itu: easy, jaga volume, rehab.` : 'Tidak ada sesi terjadwal.'}</p></Card>}
-
-    {/* 3. this week at a glance */}
+    </Card>}
+      <div className="hside g-side">
+        {!day && <div className="planb">
+          <span className="planb-chip">{T < PLAN_START ? `Blok dasar & rehab · ${diffDays(PLAN_START, T)} hari menuju plan` : 'Di luar plan'}</span>
+          <h2>{T < PLAN_START ? 'Plan 2027 belum mulai' : 'Tidak ada sesi terjadwal'}</h2>
+          <p>{T < PLAN_START ? `Hari pertama: ${fmtShort(PLAN_START)}. Sampai itu: easy, jaga volume, rehab.` : 'Cek kalender untuk sesi berikutnya.'}</p>
+          <button className="planb-btn" onClick={() => go('calendar', { view: 'cp' })}>Roadmap checkpoint</button>
+        </div>}
     <Card title="Minggu ini" className="tight" right={<button className="link" onClick={() => go('calendar')}>Kalender</button>}>
       <div className="strip">{Array.from({ length: 7 }, (_, i) => addDays(mon, i)).map((sd, i) => { const d = BY_DATE[sd], ran = M.acts.filter((a) => a.sport_class === 'run' && a.date === sd).reduce((t, a) => t + (a.distance_m || 0) / 1000, 0)
         return <button key={sd} aria-current={sd === T ? 'date' : undefined} aria-label={`${fmtLong(sd)}: ${d ? (d.label || KIND[d.kind].label) + (d.km ? ', rencana ' + d.km + ' km' : '') : 'tidak ada sesi'}${ran ? ', sudah lari ' + ran.toFixed(1) + ' km' : ''}`} className={`sc ${sd === T ? 'today' : ''} ${d ? 'k-' + d.kind : 'k-none'}`} onClick={() => go('calendar', sd)}>
           <small>{DAYS3[(i + 1) % 7]}</small><b>{d && d.km ? d.km : '–'}</b><i>{ran ? '✓ ' + r1(ran) : d ? KIND[d.kind].short : ''}</i></button> })}</div>
     </Card>
 
-    {/* 3b. weekly bento (each card opens its detail) */}
+    {nextCp && <button className="card rowbtn plain" onClick={() => go('calendar', { view: 'cp', id: nextCp.id })} aria-label={`Checkpoint berikutnya CP${nextCp.id}, ${diffDays(nextCp.date, T)} hari lagi`}>
+      <span className="kdot k-tt" /><span><b>CP{nextCp.id} · {nextCp.name}</b><small>{fmtShort(nextCp.date)} · {diffDays(nextCp.date, T)} hari{th ? ` · hijau ≤ ${th.G}` : ''}</small></span><Icon n="chev" size={18} />
+    </button>}
+      </div>
+    </div>
+
     <div className="bento">
       <button className="bx" onClick={() => go('activity')} aria-label="Volume minggu ini, buka Aktivitas"><h3>Volume minggu ini</h3><div className="row-c"><Ring value={actWeek} max={planWeek || 1} label={`${r1(actWeek)} dari ${r1(planWeek)} km`} size={78} /><div><b>{r1(actWeek)}</b><span className="muted"> / {r1(planWeek)} km</span><br /><small className="muted">{sign(r1(actWeek - actPrev))} km vs minggu lalu</small></div></div></button>
       <button className="bx" onClick={() => go('ready', { mode: 'analisis' })} aria-label="Intensitas 7 hari, buka analisis"><h3>Intensitas 7 hari</h3>{M.intensity ? <Stacked100 parts={[{ k: 'Rendah', v: M.intensity.low, c: 'var(--green)' }, { k: 'Sedang', v: M.intensity.mid, c: 'var(--yellow)' }, { k: 'Tinggi', v: M.intensity.high, c: 'var(--red)' }]} marker={70} label={`Rendah ${M.intensity.low}%, sedang ${M.intensity.mid}%, tinggi ${M.intensity.high}%; patokan 70% rendah`} /> : <p className="muted">Belum ada lari.</p>}<small className="muted">patokan ≥70% rendah (Campos 2021)</small></button>
       <button className="bx" onClick={() => go('ready', { mode: 'analisis' })} aria-label="Beban harian, buka analisis"><h3>Beban harian</h3><BarChart data={loads7} height={64} label={`Training load minggu ini: ${loads7.map((d) => d.value).join(', ')}`} /><small className="muted">garis putus = rencana (perkiraan)</small></button>
-      <button className="bx" onClick={() => nextCp ? go('calendar', { view: 'cp', id: nextCp.id }) : go('calendar', { view: 'race' })} aria-label={nextCp ? `Checkpoint CP${nextCp.id}, ${diffDays(nextCp.date, T)} hari lagi` : `Race, ${toRace} hari lagi`}><h3>{nextCp ? `CP${nextCp.id}` : 'Race'}</h3><div className="flipnum">{nextCp ? diffDays(nextCp.date, T) : toRace}<small className="muted" style={{ fontSize: '.8rem', fontWeight: 500 }}> hari</small></div>
+      <button className="bx feat" onClick={() => nextCp ? go('calendar', { view: 'cp', id: nextCp.id }) : go('calendar', { view: 'race' })} aria-label={nextCp ? `Checkpoint CP${nextCp.id}, ${diffDays(nextCp.date, T)} hari lagi` : `Race, ${toRace} hari lagi`}><h3>{nextCp ? `CP${nextCp.id}` : 'Race'}</h3><div className="flipnum">{nextCp ? diffDays(nextCp.date, T) : toRace}<small className="muted" style={{ fontSize: '.8rem', fontWeight: 500 }}> hari</small></div>
         <small className="muted">{nextCp && th ? `Hijau ≤ ${th.G} · sekarang ±${fmtTime(raceTime(vdot.v, dist))}` : nextCp ? nextCp.name : 'sub-4:00'}</small></button>
     </div>
 
-    {/* 4. last activity strip */}
+    <div className="hgrid2">
     {last && <button className="card rowbtn plain strip-last" onClick={() => go('activity', { id: last.ids[0] })} aria-label={`Aktivitas terakhir ${last.name}`}>
       <span className={`kdot k-a${String(last.sport_class).split(':')[0]}`} />
       <span><b>{last.name}</b><small>{fmtShort(last.date)} · {last.distance_m ? (last.distance_m / 1000).toFixed(2) + ' km' : fmtDur(last.duration_s)}{last.avg_pace_s_km && last.sport_class === 'run' ? ` · ${fmtPaceS(last.avg_pace_s_km)}/km` : ''}{last.avg_hr ? ` · ${last.avg_hr} bpm` : ''}{last.training_load ? ` · TL ${last.training_load}` : ''}</small></span>
       {dc && lastSteady ? <Chip tone={dc.band}>Pa:Hr {dc.pct}%</Chip> : <Icon n="chev" size={18} />}
     </button>}
 
-    {nextCp && <button className="card rowbtn plain" onClick={() => go('calendar', { view: 'cp', id: nextCp.id })} aria-label={`Checkpoint berikutnya CP${nextCp.id}, ${diffDays(nextCp.date, T)} hari lagi`}>
-      <span className="kdot k-tt" /><span><b>CP{nextCp.id} · {nextCp.name}</b><small>{fmtShort(nextCp.date)} · {diffDays(nextCp.date, T)} hari{th ? ` · hijau ≤ ${th.G}` : ''}</small></span><Icon n="chev" size={18} />
-    </button>}
-
     <Card title="Fitness menuju sub-4" right={<span className="muted">{vdot.v.toFixed(1)} → {TARGET.vdotNeeded}</span>}>
       <div className="bar"><i style={{ width: Math.max(0, Math.min(1, (vdot.v - TARGET.baseline) / (TARGET.vdotNeeded - TARGET.baseline))) * 100 + '%' }} /></div>
       <p className="muted">Butuh {(TARGET.vdotNeeded - vdot.v).toFixed(1)} VDOT lagi · 1,02/bln vs laju terbaik teramati 0,74 <Chip>HYPOTHESIS n=2</Chip></p>
     </Card>
-  </Screen>
+    </div>
+  </section>
 }

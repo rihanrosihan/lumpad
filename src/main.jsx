@@ -1,6 +1,9 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
+import '@fontsource-variable/inter'
+import '@fontsource-variable/plus-jakarta-sans'
+import '@fontsource-variable/jetbrains-mono'
 import './styles.css'
 // CSRF guard: every same-origin write carries a custom header the server requires
 const _fetch = window.fetch.bind(window)
