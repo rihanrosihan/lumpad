@@ -3,6 +3,7 @@
 import { load, save } from './db.js'
 import { db } from './store.js'
 import { seal, unseal } from './coros/oauth.js'
+import { gearKey } from './gearkey.js'
 const API = 'https://www.strava.com/api/v3', TOK = 'https://www.strava.com/oauth/token'
 const cfg = () => ({ id: process.env.STRAVA_CLIENT_ID, secret: process.env.STRAVA_CLIENT_SECRET, base: process.env.PUBLIC_URL || 'http://localhost:5173' })
 export const configured = () => !!(cfg().id && cfg().secret)
@@ -58,14 +59,14 @@ export async function syncShoes({ since = '2025-01-01', fetchFn = get, maxPages 
   const after = Math.floor(Date.parse(since + 'T00:00:00Z') / 1000), list = []
   for (let page = 1; page <= maxPages; page++) { const { data } = await fetchFn(`/athlete/activities?per_page=200&page=${page}&after=${after}`); list.push(...data); if (data.length < 200) break }
   const prof = await fetchFn('/athlete').then((r) => r.data).catch(() => ({}))
-  const shoes = (prof.shoes || []).map((g) => ({ id: g.id, name: g.name || g.nickname || g.id, brand: g.brand_name || '', model: g.model_name || '', distance_m: g.distance || 0, retired: !!g.retired }))
+  const shoes = (prof.shoes || []).map((g) => ({ id: gearKey(g.id), name: g.name || g.nickname || g.id, brand: g.brand_name || '', model: g.model_name || '', distance_m: g.distance || 0, retired: !!g.retired }))
   const coros = db.prepare("SELECT id, start_ts, distance_m FROM activities WHERE source='coros' AND start_ts IS NOT NULL AND date >= ?").all(since)
   let matched = 0, noGear = 0; const unmatched = []
   for (const a of list) {
     if (!RUNS.has(a.sport_type || a.type)) continue
     if (!a.gear_id) { noGear++; continue }
     const ts = Math.floor(Date.parse(a.start_date) / 1000), c = coros.filter((x) => Math.abs(x.start_ts - ts) <= 180).sort((x, y) => Math.abs(x.start_ts - ts) - Math.abs(y.start_ts - ts))[0]
-    if (c) { db.prepare('UPDATE activities SET gear_id=? WHERE id=?').run(a.gear_id, c.id); matched++ } else unmatched.push(a.id)
+    if (c) { db.prepare('UPDATE activities SET gear_id=? WHERE id=?').run(gearKey(a.gear_id), c.id); matched++ } else unmatched.push(a.id)
   }
   for (const g of shoes) db.prepare('INSERT INTO gear (id, name, brand, model, distance_m, retired, pulled_at) VALUES (?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET name=excluded.name, brand=excluded.brand, model=excluded.model, distance_m=excluded.distance_m, retired=excluded.retired, pulled_at=excluded.pulled_at').run(g.id, g.name, g.brand, g.model, g.distance_m, g.retired ? 1 : 0, new Date().toISOString())
   const runs = db.prepare("SELECT COUNT(*) n, SUM(gear_id IS NOT NULL) g FROM activities WHERE source='coros' AND sport='Run' AND date >= '2026-01-01'").get()

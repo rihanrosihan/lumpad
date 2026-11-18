@@ -2,6 +2,7 @@
 // invalid values reject that single record (reported back), never the whole batch. Idempotent (upserts).
 import crypto from 'node:crypto'
 import { db, tx } from './store.js'
+import { gearKey } from './gearkey.js'
 
 const R = { // [type, lo, hi]; 'n' = number (out of range rejects the record), 'p' = soft number (pace: out of range is dropped, record kept), 's' = string
   health: {
@@ -58,7 +59,7 @@ export function applyIngest(p) {
       const r = okSrc && DATE.test(a?.date) ? pick(a, R.activity) : { ok: false, why: 'bad source/id/date' }
       if (!r.ok) { rejected.push({ kind: 'activity', id: a?.source_id, why: r.why }); continue }
       const id = `${a.source}:${a.source_id}`
-      const body = { source: a.source, source_id: a.source_id, date: a.date, ...r.v }
+      const body = { source: a.source, source_id: a.source_id, date: a.date, ...r.v, ...(r.v.gear_id ? { gear_id: gearKey(r.v.gear_id) } : {}) }
       upsert('activities', { id }, { ...body, pulled_at: now })
       counts.activities++
       if (Array.isArray(a.laps)) {
@@ -75,7 +76,7 @@ export function applyIngest(p) {
       const r = typeof g?.id === 'string' && /^[\w.-]{1,64}$/.test(g.id) ? pick(g, R.gear) : { ok: false, why: 'bad id' }
       if (!r.ok) { rejected.push({ kind: 'gear', id: g?.id, why: r.why }); continue }
       const body = { ...r.v, ...(typeof g.retired === 'boolean' ? { retired: g.retired ? 1 : 0 } : {}) }
-      upsert('gear', { id: g.id }, { ...body, pulled_at: now })
+      upsert('gear', { id: gearKey(g.id) }, { ...body, pulled_at: now })
       counts.gear++
     }
     for (const f of arr('fitness')) {
@@ -127,5 +128,6 @@ export function coverage() {
   const days = db.prepare('SELECT date FROM health_daily ORDER BY date').all().map((r) => r.date), have = new Set(days), gaps = []
   if (days.length > 1) for (let t = Date.parse(days[0] + 'T00:00:00Z'); t <= Date.parse(days.at(-1) + 'T00:00:00Z'); t += 864e5) { const d = new Date(t).toISOString().slice(0, 10); if (!have.has(d)) gaps.push(d) }
   const noLaps = db.prepare("SELECT COUNT(*) n FROM activities a WHERE (sport LIKE '%run%' OR sport LIKE '%Run%') AND distance_m >= 1000 AND NOT EXISTS(SELECT 1 FROM laps l WHERE l.activity_id=a.id)").get().n
-  return { bySource, bySport, byMonth, health: { days: days.length, first: days[0] || null, last: days.at(-1) || null, gaps: gaps.slice(0, 60), gapCount: gaps.length }, runsOver1kmWithoutLaps: noLaps }
+  const gear = db.prepare("SELECT COUNT(*) n, SUM(id GLOB 'g[0-9]*') prefixed, SUM(retired=1) retired FROM gear").get()
+  return { gear, bySource, bySport, byMonth, health: { days: days.length, first: days[0] || null, last: days.at(-1) || null, gaps: gaps.slice(0, 60), gapCount: gaps.length }, runsOver1kmWithoutLaps: noLaps }
 }

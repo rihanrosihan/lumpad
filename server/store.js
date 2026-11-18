@@ -70,4 +70,6 @@ const v = db.prepare('PRAGMA user_version').get().user_version
 for (let i = v; i < MIGRATIONS.length; i++) {
   db.exec('BEGIN'); try { db.exec(MIGRATIONS[i]); db.exec(`PRAGMA user_version = ${i + 1}`); db.exec('COMMIT') } catch (e) { db.exec('ROLLBACK'); throw e }
 }
+import { mergeGearIds } from './gearkey.js'
+try { mergeGearIds(db) } catch (e) { console.error('gear merge', e.message) }
 export const tx = (fn) => { db.exec('BEGIN'); try { const r = fn(); db.exec('COMMIT'); return r } catch (e) { db.exec('ROLLBACK'); throw e } }
