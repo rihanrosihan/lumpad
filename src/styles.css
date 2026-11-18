@@ -521,3 +521,4 @@ button.rp:hover{background:var(--surface)}.rp b.am{color:var(--amber-t)}.rp b.co
 @media (min-width:760px){.bsq-side{aspect-ratio:1/1;justify-content:space-between;width:100%}.bsq-side .pchart{flex:1 1 auto;min-height:0;width:100%;height:auto}}
 .bsq-map .rml-bar{position:absolute;left:10px;bottom:26px;z-index:800;margin:0}.bsq-map .rml-bar button{background:rgba(255,255,255,.92);color:#111;box-shadow:0 1px 4px rgba(0,0,0,.35)}.bsq-map .rml-bar button.on{background:var(--accent);color:#fff}
 .card .bsq-map .rml-bar button{background:rgba(255,255,255,.94)!important;color:#111!important;box-shadow:0 1px 4px rgba(0,0,0,.35)}.card .bsq-map .rml-bar button.on{background:var(--accent)!important;color:#fff!important}
+.rml-key{margin-top:6px;font-size:.84rem}.rml-key summary{min-height:44px;display:flex;align-items:center;cursor:pointer;color:var(--muted)}.bsq-map .rml-key{margin-top:8px}

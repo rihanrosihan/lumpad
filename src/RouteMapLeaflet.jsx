@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useStore } from './store.js'
-import { tileSpec } from './lib/tiles.js'
+import { tileSpec, KEY_RE } from './lib/tiles.js'
 
 // Real map (OpenStreetMap data, CARTO basemap tiles) under the official route. Needs img-src https://*.basemaps.cartocdn.com in the CSP;
 // without network the line is still drawn on a plain background. The map is locked until "Move map" is pressed so scrolling the page never drags it.
@@ -11,7 +11,7 @@ const GRADE = { down: '--c-tt', flat: '--green', gentle: '--yellow', rise: '--c-
 const isDark = () => { const t = document.documentElement.dataset.theme; return t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches) }
 
 export default function RouteMapLeaflet({ R, P = null, km, setKm, sel = null, hl = null, height = 'min(70vh, 600px)' }) {
-  const el = useRef(null), M = useRef({}), [unlocked, setUnlocked] = useState(false), [tilesOn, setTilesOn] = useStore('lumpad.maptiles', 'on'), [mapKey] = useStore('lumpad.mapkey', ''), [zoom, setZoom] = useState(12), [dim, setDim] = useState(false)
+  const el = useRef(null), M = useRef({}), [unlocked, setUnlocked] = useState(false), [tilesOn, setTilesOn] = useStore('lumpad.maptiles', 'on'), [mapKey, setMapKey] = useStore('lumpad.mapkey', ''), [zoom, setZoom] = useState(12), [dim, setDim] = useState(false)
   const posAt = (k) => { const l = R.line; let i = l.findIndex((p) => p[2] >= k); if (i < 1) i = i === 0 ? 1 : l.length - 1; const a = l[i - 1], b = l[i], f = (k - a[2]) / Math.max(1e-9, b[2] - a[2]); return [a[0] + f * (b[0] - a[0]), a[1] + f * (b[1] - a[1])] }
 
   // build once
@@ -36,7 +36,7 @@ export default function RouteMapLeaflet({ R, P = null, km, setKm, sel = null, hl
   // tiles on / off, light / dark
   useEffect(() => {
     const m = M.current; if (!m.map) return
-    const apply = () => { if (m.tiles) { m.map.removeLayer(m.tiles); m.tiles = null } const sp = tileSpec(mapKey, isDark()); setDim(sp.filter && tilesOn !== 'off'); if (tilesOn !== 'off') m.tiles = L.tileLayer(sp.url, { subdomains: sp.subdomains || 'abc', maxZoom: 19, attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer">CARTO</a>' }).addTo(m.map).bringToBack() }
+    const apply = () => { if (m.tiles) { m.map.removeLayer(m.tiles); m.tiles = null } const sp = tileSpec(mapKey, isDark()); setDim(sp.filter && tilesOn !== 'off'); if (tilesOn !== 'off') m.tiles = L.tileLayer(sp.url, { subdomains: sp.subdomains || 'abc', maxZoom: 19, referrerPolicy: 'origin', attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors' + (sp.keyed ? ' © <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer">CARTO</a>' : '') }).addTo(m.map).bringToBack() }
     m.retile = apply; apply()
   }, [tilesOn, mapKey, R])
 
@@ -59,6 +59,9 @@ export default function RouteMapLeaflet({ R, P = null, km, setKm, sel = null, hl
 
   return <div className={`rmapL ${dim ? 'dim' : ''}`}>
     <div ref={el} className="rml" style={{ height }} role="application" aria-label="Map of the course. Press Move map to pan and zoom, or use the slider below." />
+    {tilesOn !== 'off' && !tileSpec(mapKey, false).keyed && <details className="rml-key"><summary>Plain OpenStreetMap tiles: use your CARTO key for the Voyager style</summary>
+      <label className="fld"><span>CARTO Basemaps API key</span><input type="password" autoComplete="off" spellCheck="false" placeholder="cb1_…" value={mapKey} onChange={(e) => setMapKey(e.target.value.trim())} aria-invalid={!!mapKey && !KEY_RE.test(mapKey)} /></label>
+      {mapKey && !KEY_RE.test(mapKey) && <p className="err" role="alert">That does not look like a CARTO key.</p>}</details>}
     <div className="rml-bar"><button className={unlocked ? 'on' : ''} aria-pressed={unlocked} onClick={() => setUnlocked(!unlocked)}>{unlocked ? 'Lock map' : 'Move map'}</button><button aria-pressed={tilesOn !== 'off'} onClick={() => setTilesOn(tilesOn === 'off' ? 'on' : 'off')}>{tilesOn === 'off' ? 'Show street map' : 'Lines only'}</button></div>
   </div>
 }

@@ -69,8 +69,8 @@ export default function Profile({ vdot, results, settings, setSettings }) {
       {vhist.length > 1 ? <BandLine data={vhist.map((h) => ({ date: h.date, v: h.v, need: null }))} keys={[{ key: 'v', color: 'var(--c-long)' }]} height={110} label={'VDOT progress: ' + vhist.map((h) => `${h.date} ${h.v}`).join(', ')} /> : <p className="muted">Baseline {TARGET.baseline} — the curve fills in after the first TT (CP1, {fmtShort(CHECKPOINTS[0].date)}).</p>}
     </Card>
 
-    <Card title="Map tiles (course map)" right={<Chip tone={mapKey ? 'green' : undefined}>{mapKey ? 'CARTO key set' : 'free tiles'}</Chip>}>
-      <p className="muted">The course map uses CARTO / OpenStreetMap tiles. Paste your CARTO Basemaps API key to use the keyed Voyager tiles; it is saved on your server (not in the code) and sent only to CARTO with each tile. Leave it empty to use the free tiles.</p>
+    <Card title="Map tiles (course map)" right={<Chip tone={mapKey ? 'green' : undefined}>{mapKey ? 'CARTO key set' : 'OpenStreetMap'}</Chip>}>
+      <p className="muted">The course map uses CARTO / OpenStreetMap tiles. Paste your CARTO Basemaps API key to use the keyed Voyager tiles; it is saved on your server (not in the code) and sent only to CARTO with each tile. Without a key the plain OpenStreetMap tiles are used (CARTO's key-less tiles no longer work).</p>
       <label className="fld"><span>CARTO Basemaps API key</span><input type="password" autoComplete="off" spellCheck="false" value={mapKey} onChange={(e) => setMapKey(e.target.value.trim())} placeholder="cb1_…" aria-invalid={!!mapKey && !KEY_RE.test(mapKey)} /></label>
       {mapKey && !KEY_RE.test(mapKey) && <p className="err" role="alert">That does not look like a CARTO key (letters, digits, _ and -, 8–80 characters). The free tiles are used until it does.</p>}
     </Card>
