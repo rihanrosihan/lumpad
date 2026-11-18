@@ -11,6 +11,9 @@ APP=${APP_DIR:-/opt/lumpad}; STATE=${STATE_DIR:-/var/lib/lumpad-autodeploy}; BRA
 RUN_AS=${RUN_AS-lumpad}; DISABLE=${DISABLE_FILE:-/etc/lumpad-autodeploy.disabled}
 HEALTH=${HEALTH_URL:-http://127.0.0.1:8787/api/health}; HEALTH_TRIES=${HEALTH_TRIES:-20}
 DEPLOY=${DEPLOY_CMD:-bash $APP/deploy/deploy.sh}; BACKUP=${BACKUP_CMD:-bash $APP/deploy/backup.sh}
+# systemd runs this as root while /opt/lumpad belongs to the app user: git refuses ("dubious ownership") unless the directory is marked safe.
+# Done through env so it does not depend on HOME or on a global git config being visible to the service.
+export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=safe.directory GIT_CONFIG_VALUE_0="$APP"
 log() { echo "$(date '+%F %T') autodeploy: $*"; }
 as() { if [ -n "$RUN_AS" ]; then sudo -u "$RUN_AS" "$@"; else "$@"; fi }
 own() { [ -n "$RUN_AS" ] && chown -R "$RUN_AS:$RUN_AS" "$@"; return 0; }

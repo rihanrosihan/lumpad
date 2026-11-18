@@ -39,4 +39,9 @@ MSG=heal; push git rm -q BREAK_HEALTH; run >/dev/null; [ "$(head)" = "$(git -C "
 # 6 kill switch + dirty tree
 MSG=v7; push touch f7; touch "$W/off"; [ -z "$(run)" ] && ok "kill switch respected" || die "kill switch"; rm "$W/off"
 echo dirty >> "$W/app/package.json"; run | grep -q "perubahan lokal" && ok "dirty tree stops auto-deploy" || die "dirty"
+# 7 repo owned by another user (as on the server: app dir belongs to "lumpad", timer runs as root) must not trip "dubious ownership"
+if [ "$(id -u)" = 0 ] && id nobody >/dev/null 2>&1; then
+  git -C "$W/app" checkout -q package.json; rm -f "$W/state/failed"; MSG=v8; push touch f8; chown -R nobody "$W/app"; v8=$(git -C "$W/work" rev-parse HEAD); out=$(run)
+  echo "$out" | grep -q SELESAI && ok "works when the repo is owned by another user" || die "ownership: $out"
+else echo "skip  ownership scenario (needs root + user nobody)"; fi
 echo all passed
