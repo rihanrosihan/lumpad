@@ -1,6 +1,6 @@
 // Daily gate engine. green = jalankan, yellow = turunkan, red = ganti easy/istirahat.
 import { isLowerDay } from './strength.js'
-export const EMPTY_DAY = { sleepHR: '', hrv: '', pain: '', tibia: false, te: '', mealBufferMin: '', plannedMin: '', fasted: false, override: '' }
+export const EMPTY_DAY = { sleepHR: '', hrv: '', pain: '', painSites: {}, energy: '', tibia: false, te: '', mealBufferMin: '', plannedMin: '', fasted: false, override: '' }
 export const HARD = new Set(['quality', 'tt', 'long', 'race'])
 export const hasInput = (f) => f.sleepHR !== '' || f.hrv !== '' || f.pain !== '' || f.te !== '' || f.tibia || f.mealBufferMin !== ''
 const ORDER = { green: 0, yellow: 1, red: 2 }

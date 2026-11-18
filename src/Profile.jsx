@@ -7,6 +7,7 @@ import { tandaMarathon, trainingIndices, prs, shoeStats, SHOE_LIFE } from './lib
 import { mean, r1 } from './lib/stats.js'
 import Data from './Data.jsx'
 import CorosCard from './CorosCard.jsx'
+import StravaCard from './StravaCard.jsx'
 import { Card, Screen, Chip } from './ui.jsx'
 import { useSyncStatus2, wib, ago } from './sync.js'
 import { useApi } from './api.js'
@@ -76,6 +77,7 @@ export default function Profile({ vdot, results, settings, setSettings }) {
 
     {/* 2. Shoe garage */}
     <h2 className="sech">Garasi sepatu</h2>
+    <StravaCard />
     <Card title="Umur pakai" right={<span className="muted">{active.length} aktif</span>}>
       {G.state === 'ok' && !gear.length && <p className="muted">Belum ditarik — sepatu datang dari Strava.</p>}
       {shoeRows.map((g) => <div className="shoe" key={g.id}><div style={{ flex: 1, minWidth: 0 }}>

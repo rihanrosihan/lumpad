@@ -8,6 +8,7 @@ const P = {
   flag: 'M6 21V4m0 0h11l-2 4 2 4H6',
   user: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0',
   run: 'M13 4a1.5 1.5 0 1 0 0 .01M6 21l3-6 3 2 2-5-3-3 2-3 4 2 1 3M9 15l-3 1',
+  coach: 'M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H10l-5 4v-4H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM8 10h8M8 13h5',
   chev: 'M9 6l6 6-6 6', left: 'M15 6l-6 6 6 6', x: 'M6 6l12 12M18 6 6 18', check: 'M5 12l5 5 9-10',
 }
 export const Icon = ({ n, size = 22 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={P[n]} /></svg>

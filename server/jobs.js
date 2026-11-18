@@ -10,6 +10,7 @@ let running = null
 db.prepare("UPDATE sync_jobs SET status='interrupted', finished_at=? WHERE status='running'").run(new Date().toISOString()) // process restarted mid-job
 
 const upd = (id, f) => { const keys = Object.keys(f); db.prepare(`UPDATE sync_jobs SET ${keys.map((k) => k + '=?').join(',')} WHERE id=?`).run(...keys.map((k) => (typeof f[k] === 'object' && f[k] !== null ? JSON.stringify(f[k]) : f[k])), id) }
+export const hooks = { afterJob: null } // set by the intelligence layer: called when a COROS job finishes
 export const isRunning = () => !!running
 export const recentJobs = (n = 8) => db.prepare('SELECT id, kind, status, params, progress, error, started_at, finished_at FROM sync_jobs ORDER BY id DESC LIMIT ?').all(n)
   .map((j) => ({ ...j, params: JSON.parse(j.params || '{}'), progress: JSON.parse(j.progress || '{}') }))
@@ -35,7 +36,7 @@ export function startJob(kind, { from } = {}, { pull = defaultPull(kind) } = {})
   running = pull({ from: f, to, trigger: kind === 'daily' ? 'daily' : 'backfill', notes, progress: (p) => upd(id, { progress: p }) })
     .then((r) => upd(id, { status: 'done', progress: { stage: 'done', ...r }, finished_at: new Date().toISOString() }))
     .catch((e) => upd(id, { status: 'error', error: String(e.message).slice(0, 300), finished_at: new Date().toISOString() }))
-    .finally(() => { running = null })
+    .finally(() => { running = null; try { hooks.afterJob?.(kind) } catch {} })
   return id
 }
 export const whenIdle = () => running || Promise.resolve()

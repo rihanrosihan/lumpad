@@ -7,6 +7,7 @@ import { useStore } from './store.js'
 import { Card, Chip, Screen, Sheet, Icon } from './ui.jsx'
 import { useApi, fmtDur, fmtPaceS } from './api.js'
 import { BandLine, MultiTrack, Sparkline } from './charts2.jsx'
+import { FitPanel } from './FitPanel.jsx'
 
 const SPORTS = [['all', 'Semua'], ['run', 'Lari'], ['walk', 'Jalan'], ['strength', 'Gym']]
 const TYPES = [['all', 'Semua jenis'], ['easy', 'Easy'], ['long', 'Long'], ['tempo', 'Tempo'], ['interval', 'Interval'], ['tt', 'TT / race']]
@@ -87,6 +88,7 @@ function Detail({ id, onClose, gear, vdot, history }) {
       {plan && <Card title="Rencana vs aktual">
         <div className="vs"><div><small>Rencana</small><b>{plan.label}{plan.km ? ` · ${plan.km} km` : ''}</b></div><div><small>Aktual</small><b>{a.distance_m ? km(a.distance_m) + ' km' : fmtDur(a.duration_s)}</b></div></div>
         {a.distance_m && plan.km ? <p className="muted">{Math.round(((a.distance_m / 1000) / plan.km) * 100)}% dari rencana</p> : null}{verdict && <Chip tone={verdict[0]}>{verdict[1]}</Chip>}</Card>}
+      {a.sport_class === 'run' && <FitPanel id={a.ids?.[0] || id} />}
       {laps.length > 1 && <Card title="Telemetri per lap"><MultiTrack laps={laps} tracks={[{ key: 'avg_pace_s_km', label: 'Pace', color: 'var(--c-long)', invert: true, fmt: fmtPaceS }, { key: 'avg_hr', label: 'HR', color: 'var(--red)' }, { key: 'cadence', label: 'Cadence', color: 'var(--c-quality)' }, { key: 'power', label: 'Power', color: 'var(--c-tt)' }, { key: 'stride_m', label: 'Langkah', color: 'var(--c-social)' }]} />
         <p className="src-note">Resolusi 1 km per lap — COROS MCP tidak memberi data per detik. Geser untuk membaca nilai.</p></Card>}
       {laps.length > 0 && <Card title="Split per km">

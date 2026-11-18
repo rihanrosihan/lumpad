@@ -2,3 +2,7 @@ node_modules
 dist
 server/data
 .env
+Running_project_export.zip
+.ssh
+.npm
+*.snapshot.db
