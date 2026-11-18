@@ -26,12 +26,12 @@ export default function DayPage({ date, vdot, settings, go }) {
   const g = evaluate(f, d), checked = hasInput(f), isToday = date === T, past = date < T
   const shoe = pickShoe(d, G.data, settings.shoeRoles), acts = (A.data || []).filter((a) => a.sport_class === 'run')
   const away = diffDays(date, T), cr = CP.map[date], inCoros = CP.rows.length && date >= CP.rows[0].date && date <= CP.rows.at(-1).date
-  const corosCard = inCoros ? <Card title="COROS watch plan" right={<Chip tone={CP.live ? 'green' : undefined}>{CP.live ? 'live' : 'snapshot'}</Chip>}>
+  const corosCard = inCoros ? <Card title="On your COROS watch" right={<Chip tone={CP.live ? 'green' : undefined}>{CP.live ? 'live' : 'snapshot'}</Chip>}>
     {cr ? <>
       <p><b>{labelOf(cr)}</b>{cr.km ? ` · ${cr.km} km` : ' · no distance target'}{cr.sec ? ` · ${fmtHM(cr.sec)}` : ''}{cr.tl ? ` · ${cr.tl} TL` : ''}</p>
-      {d.src === 'coros' ? <p className="muted">This day comes straight from the COROS plan (the season starts 23 Nov).</p>
-        : d.km > 0 || cr.km ? <p className="muted">Lumpad prescribes {d.km || 0} km, COROS {cr.km || 0} km ({(cr.km || 0) - d.km >= 0 ? '+' : ''}{Math.round(((cr.km || 0) - d.km) * 10) / 10} km). Lumpad's plan, checkpoints and gate rules drive this date; the watch shows the COROS workout.</p> : <p className="muted">Lumpad has no run on this day; the watch has the COROS workout.</p>}
-    </> : <p className="muted">{d.km > 0 ? `COROS has no workout on this day (Lumpad prescribes ${d.km} km).` : 'No COROS workout — rest in both plans.'}</p>}
+      {d.src === 'coros' && d.from && d.from !== date ? <p className="muted">This is the COROS session scheduled for {fmtLong(d.from)}, moved here so its cycle ends on the real race.</p>
+        : cr.km !== d.km ? <p className="muted">Season plan {d.km || 0} km, watch {cr.km || 0} km ({(cr.km || 0) - d.km >= 0 ? '+' : ''}{Math.round(((cr.km || 0) - d.km) * 10) / 10} km).</p> : <p className="muted">Same as the season plan.</p>}
+    </> : <p className="muted">{d.km > 0 ? `The watch has no workout on this day (season plan: ${d.km} km).` : 'No COROS workout — rest in both plans.'}</p>}
     {(CP.all[date] || []).filter((x) => x.type === 'strength').map((x, i) => <p key={i} className="muted">+ {labelOf(x)} · {fmtHM(x.sec)} (COROS)</p>)}
   </Card> : null
   return <Screen title="Day Plan" sub={`${d.week} · ${PHASE_NAME[d.phase] || d.phase}`}>

@@ -1,0 +1,4429 @@
+[
+ {
+  "date": "2027-01-01",
+  "km": 20.3,
+  "label": "New Year Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "Tahun Baru Event D \u00b7 easy \u00b7 optional",
+  "week": "W0",
+  "phase": "OFF-SEASON",
+  "event": null,
+  "special": true
+ },
+ {
+  "date": "2027-01-02",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "REST DAY",
+  "week": "W0",
+  "phase": "OFF-SEASON",
+  "event": null
+ },
+ {
+  "date": "2027-01-03",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "REST DAY",
+  "week": "W0",
+  "phase": "OFF-SEASON",
+  "event": null
+ },
+ {
+  "date": "2027-01-04",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "GYM ONLY Upper",
+  "week": "W1",
+  "phase": "OFF-SEASON",
+  "event": null
+ },
+ {
+  "date": "2027-01-05",
+  "km": 6,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "Isra Mikraj",
+  "week": "W1",
+  "phase": "OFF-SEASON",
+  "event": null
+ },
+ {
+  "date": "2027-01-06",
+  "km": 5.5,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W1",
+  "phase": "OFF-SEASON",
+  "event": null
+ },
+ {
+  "date": "2027-01-07",
+  "km": 5.5,
+  "label": "Easy + strides",
+  "kind": "speed",
+  "tags": [
+   "Lower light"
+  ],
+  "note": "Lower light",
+  "week": "W1",
+  "phase": "OFF-SEASON",
+  "event": null
+ },
+ {
+  "date": "2027-01-08",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "REST DAY",
+  "week": "W1",
+  "phase": "OFF-SEASON",
+  "event": null
+ },
+ {
+  "date": "2027-01-09",
+  "km": 9,
+  "label": "Long Run (easy)",
+  "kind": "long",
+  "tags": [],
+  "note": "",
+  "week": "W1",
+  "phase": "OFF-SEASON",
+  "event": null
+ },
+ {
+  "date": "2027-01-10",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "REST DAY",
+  "week": "W1",
+  "phase": "OFF-SEASON",
+  "event": null
+ },
+ {
+  "date": "2027-01-11",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "GYM ONLY Upper",
+  "week": "W2",
+  "phase": "OFF-SEASON",
+  "event": null
+ },
+ {
+  "date": "2027-01-12",
+  "km": 10,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W2",
+  "phase": "OFF-SEASON",
+  "event": null
+ },
+ {
+  "date": "2027-01-13",
+  "km": 8,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W2",
+  "phase": "OFF-SEASON",
+  "event": null
+ },
+ {
+  "date": "2027-01-14",
+  "km": 0,
+  "label": "Medical check-up",
+  "kind": "easy",
+  "tags": [],
+  "note": "fasting labs + Sp.KO",
+  "week": "W2",
+  "phase": "OFF-SEASON",
+  "event": null,
+  "special": true
+ },
+ {
+  "date": "2027-01-15",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "REST DAY",
+  "week": "W2",
+  "phase": "OFF-SEASON",
+  "event": null
+ },
+ {
+  "date": "2027-01-16",
+  "km": 8,
+  "label": "5K Time Trial",
+  "kind": "tt",
+  "tags": [
+   "CP1"
+  ],
+  "note": "CP1 G \u2264 29:42 \u00b7 R > 30:31",
+  "week": "W2",
+  "phase": "OFF-SEASON",
+  "event": null
+ },
+ {
+  "date": "2027-01-17",
+  "km": 4,
+  "label": "Easy (optional)",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W2",
+  "phase": "OFF-SEASON",
+  "event": null
+ },
+ {
+  "date": "2027-01-18",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "GYM ONLY Upper",
+  "week": "W3",
+  "phase": "OFF-SEASON",
+  "event": null
+ },
+ {
+  "date": "2027-01-19",
+  "km": 22,
+  "label": "Birthday Run",
+  "kind": "easy",
+  "tags": [
+   "CP1"
+  ],
+  "note": "Event D \u00b7 easy 22K \u00b7 only if CP1 clean",
+  "week": "W3",
+  "phase": "OFF-SEASON",
+  "event": null,
+  "special": true
+ },
+ {
+  "date": "2027-01-20",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "REST DAY",
+  "week": "W3",
+  "phase": "OFF-SEASON",
+  "event": null
+ },
+ {
+  "date": "2027-01-21",
+  "km": 8,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W3",
+  "phase": "OFF-SEASON",
+  "event": null
+ },
+ {
+  "date": "2027-01-22",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "REST DAY",
+  "week": "W3",
+  "phase": "OFF-SEASON",
+  "event": null
+ },
+ {
+  "date": "2027-01-23",
+  "km": 12,
+  "label": "Long Run (easy)",
+  "kind": "long",
+  "tags": [
+   "FB upper"
+  ],
+  "note": "FB upper",
+  "week": "W3",
+  "phase": "OFF-SEASON",
+  "event": null
+ },
+ {
+  "date": "2027-01-24",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "REST DAY",
+  "week": "W3",
+  "phase": "OFF-SEASON",
+  "event": null
+ },
+ {
+  "date": "2027-01-25",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "Hari Gizi Nasional GYM ONLY Upper",
+  "week": "W4",
+  "phase": "OFF-SEASON",
+  "event": null
+ },
+ {
+  "date": "2027-01-26",
+  "km": 6.5,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W4",
+  "phase": "OFF-SEASON",
+  "event": null
+ },
+ {
+  "date": "2027-01-27",
+  "km": 5,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W4",
+  "phase": "OFF-SEASON",
+  "event": null
+ },
+ {
+  "date": "2027-01-28",
+  "km": 6.5,
+  "label": "Easy + strides",
+  "kind": "speed",
+  "tags": [
+   "Lower light"
+  ],
+  "note": "if pain-free Lower light 348 km \u00b7 26 run days",
+  "week": "W4",
+  "phase": "OFF-SEASON",
+  "event": null
+ },
+ {
+  "date": "2027-01-29",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "REST DAY \u00b7 long 28 \u00b7 4 quality/TT",
+  "week": "W4",
+  "phase": "OFF-SEASON",
+  "event": null
+ },
+ {
+  "date": "2027-01-30",
+  "km": 8,
+  "label": "Long Run (easy)",
+  "kind": "long",
+  "tags": [
+   "CP5",
+   "CP6",
+   "CP7",
+   "FB upper"
+  ],
+  "note": "FB upper \u00b7 CP5, CP6, CP7",
+  "week": "W4",
+  "phase": "OFF-SEASON",
+  "event": null
+ },
+ {
+  "date": "2027-01-31",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "REST DAY \u00b7 4 libur + 2 cuti",
+  "week": "W4",
+  "phase": "OFF-SEASON",
+  "event": null
+ },
+ {
+  "date": "2027-02-01",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "GYM ONLY Upper",
+  "week": "W5",
+  "phase": "RAMADAN",
+  "event": null
+ },
+ {
+  "date": "2027-02-02",
+  "km": 8,
+  "label": "5K Time Trial",
+  "kind": "tt",
+  "tags": [
+   "CP2"
+  ],
+  "note": "CP2 G \u2264 29:28 \u00b7 R > 30:16",
+  "week": "W5",
+  "phase": "RAMADAN",
+  "event": null
+ },
+ {
+  "date": "2027-02-03",
+  "km": 4,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [
+   "Lower"
+  ],
+  "note": "Lower",
+  "week": "W5",
+  "phase": "RAMADAN",
+  "event": null
+ },
+ {
+  "date": "2027-02-04",
+  "km": 11,
+  "label": "Easy + strides",
+  "kind": "speed",
+  "tags": [],
+  "note": "",
+  "week": "W5",
+  "phase": "RAMADAN",
+  "event": null
+ },
+ {
+  "date": "2027-02-05",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "Cuti \u00b7 Imlek REST DAY",
+  "week": "W5",
+  "phase": "RAMADAN",
+  "event": null
+ },
+ {
+  "date": "2027-02-06",
+  "km": 12,
+  "label": "Long Run (pre-Ramadan)",
+  "kind": "long",
+  "tags": [
+   "Full body"
+  ],
+  "note": "Imlek Full body",
+  "week": "W5",
+  "phase": "RAMADAN",
+  "event": null
+ },
+ {
+  "date": "2027-02-07",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "REST DAY",
+  "week": "W5",
+  "phase": "RAMADAN",
+  "event": null
+ },
+ {
+  "date": "2027-02-08",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "1 Ramadan \u2248 GYM ONLY Upper",
+  "week": "W6",
+  "phase": "RAMADAN",
+  "event": null
+ },
+ {
+  "date": "2027-02-09",
+  "km": 11,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [
+   "Lower"
+  ],
+  "note": "Hari Pers Nasional Lower short",
+  "week": "W6",
+  "phase": "RAMADAN",
+  "event": null
+ },
+ {
+  "date": "2027-02-10",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "REST DAY",
+  "week": "W6",
+  "phase": "RAMADAN",
+  "event": null
+ },
+ {
+  "date": "2027-02-11",
+  "km": 11,
+  "label": "Medium Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "Unilat. short",
+  "week": "W6",
+  "phase": "RAMADAN",
+  "event": null,
+  "special": false
+ },
+ {
+  "date": "2027-02-12",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "REST DAY",
+  "week": "W6",
+  "phase": "RAMADAN",
+  "event": null
+ },
+ {
+  "date": "2027-02-13",
+  "km": 10,
+  "label": "Long Run (fed)",
+  "kind": "long",
+  "tags": [
+   "Full body"
+  ],
+  "note": "post-berbuka, \u226490 min Full body",
+  "week": "W6",
+  "phase": "RAMADAN",
+  "event": null
+ },
+ {
+  "date": "2027-02-14",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "REST DAY",
+  "week": "W6",
+  "phase": "RAMADAN",
+  "event": null
+ },
+ {
+  "date": "2027-02-15",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "GYM ONLY Upper",
+  "week": "W7",
+  "phase": "RAMADAN",
+  "event": null
+ },
+ {
+  "date": "2027-02-16",
+  "km": 12,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [
+   "Lower"
+  ],
+  "note": "Lower short",
+  "week": "W7",
+  "phase": "RAMADAN",
+  "event": null
+ },
+ {
+  "date": "2027-02-17",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "REST DAY",
+  "week": "W7",
+  "phase": "RAMADAN",
+  "event": null
+ },
+ {
+  "date": "2027-02-18",
+  "km": 11,
+  "label": "Medium Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "Unilat. short",
+  "week": "W7",
+  "phase": "RAMADAN",
+  "event": null,
+  "special": false
+ },
+ {
+  "date": "2027-02-19",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "REST DAY",
+  "week": "W7",
+  "phase": "RAMADAN",
+  "event": null
+ },
+ {
+  "date": "2027-02-20",
+  "km": 11,
+  "label": "Long Run (fed)",
+  "kind": "long",
+  "tags": [
+   "Full body"
+  ],
+  "note": "post-berbuka, \u226490 min Full body",
+  "week": "W7",
+  "phase": "RAMADAN",
+  "event": null
+ },
+ {
+  "date": "2027-02-21",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "REST DAY",
+  "week": "W7",
+  "phase": "RAMADAN",
+  "event": null
+ },
+ {
+  "date": "2027-02-22",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "GYM ONLY Upper",
+  "week": "W8",
+  "phase": "RAMADAN",
+  "event": null
+ },
+ {
+  "date": "2027-02-23",
+  "km": 10,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [
+   "Lower"
+  ],
+  "note": "Lower short",
+  "week": "W8",
+  "phase": "RAMADAN",
+  "event": null
+ },
+ {
+  "date": "2027-02-24",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "REST DAY",
+  "week": "W8",
+  "phase": "RAMADAN",
+  "event": null
+ },
+ {
+  "date": "2027-02-25",
+  "km": 11,
+  "label": "Medium Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "Unilat. short 216 km",
+  "week": "W8",
+  "phase": "RAMADAN",
+  "event": null,
+  "special": false
+ },
+ {
+  "date": "2027-02-26",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "REST DAY \u00b7 21 run days \u00b7 long",
+  "week": "W8",
+  "phase": "RAMADAN",
+  "event": null
+ },
+ {
+  "date": "2027-02-27",
+  "km": 11,
+  "label": "Long Run (fed)",
+  "kind": "long",
+  "tags": [
+   "Full body"
+  ],
+  "note": "post-berbuka, \u226490 min Full body 42.2 \u00b7 1 quality/TT",
+  "week": "W8",
+  "phase": "RAMADAN",
+  "event": null
+ },
+ {
+  "date": "2027-02-28",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [
+   "CP8",
+   "CP9"
+  ],
+  "note": "REST DAY \u00b7 CP8, CP9 \u00b7 2 libur",
+  "week": "W8",
+  "phase": "RAMADAN",
+  "event": null
+ },
+ {
+  "date": "2027-03-01",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "GYM ONLY Upper",
+  "week": "W9",
+  "phase": "RAMADAN",
+  "event": null
+ },
+ {
+  "date": "2027-03-02",
+  "km": 13,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [
+   "Lower"
+  ],
+  "note": "Lower short",
+  "week": "W9",
+  "phase": "RAMADAN",
+  "event": null
+ },
+ {
+  "date": "2027-03-03",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "REST DAY",
+  "week": "W9",
+  "phase": "RAMADAN",
+  "event": null
+ },
+ {
+  "date": "2027-03-04",
+  "km": 11,
+  "label": "Medium Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "Unilat. short",
+  "week": "W9",
+  "phase": "RAMADAN",
+  "event": null,
+  "special": false
+ },
+ {
+  "date": "2027-03-05",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "REST DAY",
+  "week": "W9",
+  "phase": "RAMADAN",
+  "event": null
+ },
+ {
+  "date": "2027-03-06",
+  "km": 10,
+  "label": "Long Run (fed)",
+  "kind": "long",
+  "tags": [
+   "Full body"
+  ],
+  "note": "post-berbuka, \u226490 min Full body",
+  "week": "W9",
+  "phase": "RAMADAN",
+  "event": null
+ },
+ {
+  "date": "2027-03-07",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "REST DAY",
+  "week": "W9",
+  "phase": "RAMADAN",
+  "event": null
+ },
+ {
+  "date": "2027-03-08",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "Nyepi GYM ONLY Upper",
+  "week": "W10",
+  "phase": "RAMADAN",
+  "event": null
+ },
+ {
+  "date": "2027-03-09",
+  "km": 7,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [
+   "Lower"
+  ],
+  "note": "Cuti \u00b7 Idulfitri Lower short",
+  "week": "W10",
+  "phase": "RAMADAN",
+  "event": null
+ },
+ {
+  "date": "2027-03-10",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "Idulfitri REST DAY",
+  "week": "W10",
+  "phase": "RAMADAN",
+  "event": null
+ },
+ {
+  "date": "2027-03-11",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "Idulfitri REST DAY",
+  "week": "W10",
+  "phase": "RAMADAN",
+  "event": null
+ },
+ {
+  "date": "2027-03-12",
+  "km": 6.8,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "Cuti \u00b7 Idulfitri",
+  "week": "W10",
+  "phase": "RAMADAN",
+  "event": null
+ },
+ {
+  "date": "2027-03-13",
+  "km": 14.2,
+  "label": "Long Run (easy)",
+  "kind": "long",
+  "tags": [
+   "Full body"
+  ],
+  "note": "Full body",
+  "week": "W10",
+  "phase": "RAMADAN",
+  "event": null
+ },
+ {
+  "date": "2027-03-14",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "REST DAY",
+  "week": "W10",
+  "phase": "RAMADAN",
+  "event": null
+ },
+ {
+  "date": "2027-03-15",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "Cuti \u00b7 Idulfitri GYM ONLY Upper",
+  "week": "W11",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-03-16",
+  "km": 8,
+  "label": "Progressive Run",
+  "kind": "quality",
+  "tags": [
+   "Lower"
+  ],
+  "note": "Lower",
+  "week": "W11",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-03-17",
+  "km": 7,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W11",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-03-18",
+  "km": 8,
+  "label": "Easy + strides",
+  "kind": "speed",
+  "tags": [],
+  "note": "Unilat. BW",
+  "week": "W11",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-03-19",
+  "km": 4.5,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W11",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-03-20",
+  "km": 15.5,
+  "label": "Long Run",
+  "kind": "long",
+  "tags": [
+   "Full body"
+  ],
+  "note": "first LR after Ramadan Full body",
+  "week": "W11",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-03-21",
+  "km": 6.5,
+  "label": "Social / easy run",
+  "kind": "social",
+  "tags": [],
+  "note": "",
+  "week": "W11",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-03-22",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "GYM ONLY Upper",
+  "week": "W12",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-03-23",
+  "km": 8,
+  "label": "5K Time Trial",
+  "kind": "tt",
+  "tags": [
+   "CP3"
+  ],
+  "note": "CP3 G \u2264 28:42 \u00b7 R > 29:28",
+  "week": "W12",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-03-24",
+  "km": 9.1,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [
+   "Lower"
+  ],
+  "note": "Lower",
+  "week": "W12",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-03-25",
+  "km": 13,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "Cuti \u00b7 Wafat Yesus Kristus +3 libur",
+  "week": "W12",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-03-26",
+  "km": 8,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "Wafat Yesus +2 libur",
+  "week": "W12",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-03-27",
+  "km": 17,
+  "label": "Long Run",
+  "kind": "long",
+  "tags": [
+   "Full body"
+  ],
+  "note": "Full body",
+  "week": "W12",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-03-28",
+  "km": 11,
+  "label": "Social / easy run",
+  "kind": "social",
+  "tags": [],
+  "note": "Paskah +2.5 libur",
+  "week": "W12",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-03-29",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "PT GYM ONLY Upper",
+  "week": "W13",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-03-30",
+  "km": 9,
+  "label": "Tempo 2-1-1",
+  "kind": "quality",
+  "tags": [
+   "Lower",
+   "Plyo 30"
+  ],
+  "note": "Hari Film Nasional Lower Plyo 30\u201340",
+  "week": "W13",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-03-31",
+  "km": 11.5,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W13",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-04-01",
+  "km": 9,
+  "label": "Hills 8\u00d710 s",
+  "kind": "speed",
+  "tags": [
+   "Unilateral"
+  ],
+  "note": "Unilateral",
+  "week": "W13",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-04-02",
+  "km": 7,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W13",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-04-03",
+  "km": 18.5,
+  "label": "Long Run",
+  "kind": "long",
+  "tags": [
+   "Full body"
+  ],
+  "note": "Full body",
+  "week": "W13",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-04-04",
+  "km": 10,
+  "label": "Social / easy run",
+  "kind": "social",
+  "tags": [],
+  "note": "",
+  "week": "W13",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-04-05",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "\u2665 Daughter's birthday GYM ONLY Upper",
+  "week": "W14",
+  "phase": "BASE",
+  "event": "Daughter's birthday"
+ },
+ {
+  "date": "2027-04-06",
+  "km": 9,
+  "label": "800m Repeats",
+  "kind": "quality",
+  "tags": [
+   "Lower",
+   "Plyo 30"
+  ],
+  "note": "Lower \u22121 set Plyo 30",
+  "week": "W14",
+  "phase": "BASE",
+  "event": "Daughter's birthday"
+ },
+ {
+  "date": "2027-04-07",
+  "km": 8.5,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W14",
+  "phase": "BASE",
+  "event": "Daughter's birthday"
+ },
+ {
+  "date": "2027-04-08",
+  "km": 8,
+  "label": "Easy + strides",
+  "kind": "speed",
+  "tags": [
+   "Unilateral"
+  ],
+  "note": "Unilateral",
+  "week": "W14",
+  "phase": "BASE",
+  "event": "Daughter's birthday"
+ },
+ {
+  "date": "2027-04-09",
+  "km": 5,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W14",
+  "phase": "BASE",
+  "event": "Daughter's birthday"
+ },
+ {
+  "date": "2027-04-10",
+  "km": 16,
+  "label": "Long Run",
+  "kind": "long",
+  "tags": [
+   "Full body"
+  ],
+  "note": "Full body",
+  "week": "W14",
+  "phase": "BASE",
+  "event": "Daughter's birthday"
+ },
+ {
+  "date": "2027-04-11",
+  "km": 7.5,
+  "label": "Social / easy run",
+  "kind": "social",
+  "tags": [],
+  "note": "",
+  "week": "W14",
+  "phase": "BASE",
+  "event": "Daughter's birthday"
+ },
+ {
+  "date": "2027-04-12",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "GYM ONLY Upper",
+  "week": "W15",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-04-13",
+  "km": 13,
+  "label": "10K Time Trial",
+  "kind": "tt",
+  "tags": [
+   "CP4"
+  ],
+  "note": "CP4 G \u2264 58:35 \u00b7 R > 1:00:07",
+  "week": "W15",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-04-14",
+  "km": 10.5,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [
+   "Lower",
+   "Plyo 50"
+  ],
+  "note": "Lower Plyo 50",
+  "week": "W15",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-04-15",
+  "km": 10,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W15",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-04-16",
+  "km": 6.5,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W15",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-04-17",
+  "km": 20,
+  "label": "Long Run",
+  "kind": "long",
+  "tags": [
+   "Full body"
+  ],
+  "note": "Full body",
+  "week": "W15",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-04-18",
+  "km": 9.5,
+  "label": "Social / easy run",
+  "kind": "social",
+  "tags": [],
+  "note": "",
+  "week": "W15",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-04-19",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "GYM ONLY Upper",
+  "week": "W16",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-04-20",
+  "km": 10,
+  "label": "400m Repeats",
+  "kind": "quality",
+  "tags": [
+   "Lower",
+   "Plyo 40"
+  ],
+  "note": "Lower Plyo 40",
+  "week": "W16",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-04-21",
+  "km": 13.5,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "Hari Kartini",
+  "week": "W16",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-04-22",
+  "km": 10,
+  "label": "Hills 8\u00d710 s",
+  "kind": "speed",
+  "tags": [
+   "Unilateral"
+  ],
+  "note": "Unilateral",
+  "week": "W16",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-04-23",
+  "km": 8.5,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W16",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-04-24",
+  "km": 22,
+  "label": "Long Run",
+  "kind": "long",
+  "tags": [
+   "Full body"
+  ],
+  "note": "Full body",
+  "week": "W16",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-04-25",
+  "km": 11.5,
+  "label": "Social / easy run",
+  "kind": "social",
+  "tags": [],
+  "note": "",
+  "week": "W16",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-04-26",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "PT GYM ONLY Upper",
+  "week": "W17",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-04-27",
+  "km": 11,
+  "label": "Tempo 2km Repeats",
+  "kind": "quality",
+  "tags": [
+   "Lower",
+   "Plyo 60"
+  ],
+  "note": "Lower Plyo 60",
+  "week": "W17",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-04-28",
+  "km": 13.5,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W17",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-04-29",
+  "km": 10,
+  "label": "Easy + strides",
+  "kind": "speed",
+  "tags": [
+   "Unilateral"
+  ],
+  "note": "Unilateral 346 km \u00b7 26 run",
+  "week": "W17",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-04-30",
+  "km": 8,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "days \u00b7 long 30 \u00b7 7",
+  "week": "W17",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-05-01",
+  "km": 24,
+  "label": "Long Run",
+  "kind": "long",
+  "tags": [
+   "CP5"
+  ],
+  "note": "Hari Buruh CP5 CP5 \u00b7 LR proof",
+  "week": "W17",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-05-02",
+  "km": 11.5,
+  "label": "Social / easy run",
+  "kind": "social",
+  "tags": [
+   "FB upper"
+  ],
+  "note": "Hardiknas FB upper",
+  "week": "W17",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-05-03",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "GYM ONLY Upper",
+  "week": "W18",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-05-04",
+  "km": 8,
+  "label": "5K Time Trial",
+  "kind": "tt",
+  "tags": [
+   "CP6"
+  ],
+  "note": "CP6 G \u2264 27:42 \u00b7 R > 28:24",
+  "week": "W18",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-05-05",
+  "km": 12,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [
+   "Lower"
+  ],
+  "note": "Lower \u22121 set",
+  "week": "W18",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-05-06",
+  "km": 13,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "Kenaikan Yesus +3 libur",
+  "week": "W18",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-05-07",
+  "km": 8,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W18",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-05-08",
+  "km": 16,
+  "label": "Long Run",
+  "kind": "long",
+  "tags": [
+   "Full body"
+  ],
+  "note": "Full body",
+  "week": "W18",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-05-09",
+  "km": 11,
+  "label": "Social / easy run",
+  "kind": "social",
+  "tags": [],
+  "note": "",
+  "week": "W18",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-05-10",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "GYM ONLY Upper",
+  "week": "W19",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-05-11",
+  "km": 11,
+  "label": "On Off Ks",
+  "kind": "quality",
+  "tags": [
+   "Lower",
+   "Plyo 70"
+  ],
+  "note": "Lower Plyo 70",
+  "week": "W19",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-05-12",
+  "km": 12,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W19",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-05-13",
+  "km": 10,
+  "label": "Easy + strides",
+  "kind": "speed",
+  "tags": [
+   "Unilateral"
+  ],
+  "note": "Unilateral",
+  "week": "W19",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-05-14",
+  "km": 8,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W19",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-05-15",
+  "km": 24,
+  "label": "Long Run",
+  "kind": "long",
+  "tags": [
+   "Full body"
+  ],
+  "note": "Full body",
+  "week": "W19",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-05-16",
+  "km": 11,
+  "label": "Social / easy run",
+  "kind": "social",
+  "tags": [],
+  "note": "",
+  "week": "W19",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-05-17",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "Iduladha GYM ONLY Upper",
+  "week": "W20",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-05-18",
+  "km": 11,
+  "label": "Broken Miles",
+  "kind": "quality",
+  "tags": [
+   "Lower",
+   "Plyo 80"
+  ],
+  "note": "Cuti \u00b7 Iduladha Lower Plyo 80",
+  "week": "W20",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-05-19",
+  "km": 18,
+  "label": "Medium-long run",
+  "kind": "long",
+  "tags": [],
+  "note": "Cuti \u00b7 Waisak +3 libur",
+  "week": "W20",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-05-20",
+  "km": 13,
+  "label": "Hills 8\u00d710 s",
+  "kind": "speed",
+  "tags": [
+   "Unilateral"
+  ],
+  "note": "Waisak Harkitnas +3 libur Unilateral",
+  "week": "W20",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-05-21",
+  "km": 10,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W20",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-05-22",
+  "km": 26,
+  "label": "Long Run",
+  "kind": "long",
+  "tags": [],
+  "note": "\u2665 Dating anniversary fuel 30\u201360 g/h from min 45",
+  "week": "W20",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-05-23",
+  "km": 8,
+  "label": "Social / easy run",
+  "kind": "social",
+  "tags": [
+   "Full body"
+  ],
+  "note": "Full body",
+  "week": "W20",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-05-24",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "PT GYM ONLY Upper",
+  "week": "W21",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-05-25",
+  "km": 12,
+  "label": "Tempo 3km Repeats",
+  "kind": "quality",
+  "tags": [
+   "Lower",
+   "Plyo 60"
+  ],
+  "note": "Lower Plyo 60",
+  "week": "W21",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-05-26",
+  "km": 14.5,
+  "label": "Medium-long run",
+  "kind": "long",
+  "tags": [],
+  "note": "",
+  "week": "W21",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-05-27",
+  "km": 10,
+  "label": "Easy + strides",
+  "kind": "speed",
+  "tags": [
+   "Unilateral"
+  ],
+  "note": "Unilateral",
+  "week": "W21",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-05-28",
+  "km": 9.5,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W21",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-05-29",
+  "km": 28,
+  "label": "Long Run",
+  "kind": "long",
+  "tags": [
+   "CP7"
+  ],
+  "note": "CP7 CP7 \u00b7 race fueling + head-cooling",
+  "week": "W21",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-05-30",
+  "km": 8,
+  "label": "Social / easy run",
+  "kind": "social",
+  "tags": [
+   "FB upper"
+  ],
+  "note": "FB upper",
+  "week": "W21",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-05-31",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "GYM ONLY Upper",
+  "week": "W22",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-06-01",
+  "km": 13,
+  "label": "10K Time Trial",
+  "kind": "tt",
+  "tags": [
+   "CP8"
+  ],
+  "note": "Pancasila CP8 G \u2264 56:14 \u00b7 R > 57:38",
+  "week": "W22",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-06-02",
+  "km": 10,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [
+   "Lower"
+  ],
+  "note": "Lower \u22121 set",
+  "week": "W22",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-06-03",
+  "km": 8,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W22",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-06-04",
+  "km": 7,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W22",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-06-05",
+  "km": 14,
+  "label": "Long Run",
+  "kind": "long",
+  "tags": [
+   "FB upper"
+  ],
+  "note": "mini-taper for Jakim FB upper",
+  "week": "W22",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-06-06",
+  "km": 6,
+  "label": "Social / easy run",
+  "kind": "social",
+  "tags": [],
+  "note": "1 Muharram",
+  "week": "W22",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-06-07",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "GYM ONLY Upper",
+  "week": "W23",
+  "phase": "C-RACE",
+  "event": null
+ },
+ {
+  "date": "2027-06-08",
+  "km": 8,
+  "label": "Easy + strides",
+  "kind": "speed",
+  "tags": [
+   "Lower light"
+  ],
+  "note": "Lower light",
+  "week": "W23",
+  "phase": "C-RACE",
+  "event": null
+ },
+ {
+  "date": "2027-06-09",
+  "km": 6,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W23",
+  "phase": "C-RACE",
+  "event": null
+ },
+ {
+  "date": "2027-06-10",
+  "km": 6,
+  "label": "Easy + strides",
+  "kind": "speed",
+  "tags": [],
+  "note": "",
+  "week": "W23",
+  "phase": "C-RACE",
+  "event": null
+ },
+ {
+  "date": "2027-06-11",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "REST DAY",
+  "week": "W23",
+  "phase": "C-RACE",
+  "event": null
+ },
+ {
+  "date": "2027-06-12",
+  "km": 3,
+  "label": "Shakeout",
+  "kind": "quality",
+  "tags": [],
+  "note": "",
+  "week": "W23",
+  "phase": "C-RACE",
+  "event": null
+ },
+ {
+  "date": "2027-06-13",
+  "km": 42.2,
+  "label": "Jakim FM \u00b7 C-race",
+  "kind": "race",
+  "tags": [
+   "CP9"
+  ],
+  "note": "CP9 run-walk from km 1 \u00b7 <6:00",
+  "week": "W23",
+  "phase": "C-RACE",
+  "event": null
+ },
+ {
+  "date": "2027-06-14",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "GYM ONLY Upper light",
+  "week": "W24",
+  "phase": "C-RACE",
+  "event": null
+ },
+ {
+  "date": "2027-06-15",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "PT REST DAY",
+  "week": "W24",
+  "phase": "C-RACE",
+  "event": null
+ },
+ {
+  "date": "2027-06-16",
+  "km": 3,
+  "label": "G-MJM jog 20'",
+  "kind": "race",
+  "tags": [],
+  "note": "gate: pain 0/10, sleep HR \u226467",
+  "week": "W24",
+  "phase": "C-RACE",
+  "event": null
+ },
+ {
+  "date": "2027-06-17",
+  "km": 5,
+  "label": "Easy \u22645 km or rest",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W24",
+  "phase": "C-RACE",
+  "event": null
+ },
+ {
+  "date": "2027-06-18",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "Family trip \u00b7 Yogyakarta REST DAY",
+  "week": "W24",
+  "phase": "C-RACE",
+  "event": null
+ },
+ {
+  "date": "2027-06-19",
+  "km": 3,
+  "label": "Shakeout \u00b7 Yogyakarta",
+  "kind": "quality",
+  "tags": [],
+  "note": "",
+  "week": "W24",
+  "phase": "C-RACE",
+  "event": null
+ },
+ {
+  "date": "2027-06-20",
+  "km": 42.2,
+  "label": "MJM FM \u00b7 C-race",
+  "kind": "race",
+  "tags": [],
+  "note": "only if G-MJM passed",
+  "week": "W24",
+  "phase": "C-RACE",
+  "event": null
+ },
+ {
+  "date": "2027-06-21",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "REST DAY",
+  "week": "W25",
+  "phase": "RECOVERY",
+  "event": null
+ },
+ {
+  "date": "2027-06-22",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "REST DAY",
+  "week": "W25",
+  "phase": "RECOVERY",
+  "event": null
+ },
+ {
+  "date": "2027-06-23",
+  "km": 5,
+  "label": "Walk / jog",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W25",
+  "phase": "RECOVERY",
+  "event": null
+ },
+ {
+  "date": "2027-06-24",
+  "km": 6,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [
+   "Upper"
+  ],
+  "note": "Upper light",
+  "week": "W25",
+  "phase": "RECOVERY",
+  "event": null
+ },
+ {
+  "date": "2027-06-25",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "REST DAY",
+  "week": "W25",
+  "phase": "RECOVERY",
+  "event": null
+ },
+ {
+  "date": "2027-06-26",
+  "km": 7,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "Mobility",
+  "week": "W25",
+  "phase": "RECOVERY",
+  "event": null
+ },
+ {
+  "date": "2027-06-27",
+  "km": 8,
+  "label": "Social / easy run",
+  "kind": "social",
+  "tags": [],
+  "note": "",
+  "week": "W25",
+  "phase": "RECOVERY",
+  "event": null
+ },
+ {
+  "date": "2027-06-28",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "GYM ONLY Upper",
+  "week": "W26",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-06-29",
+  "km": 7,
+  "label": "Easy + strides",
+  "kind": "speed",
+  "tags": [
+   "Lower light"
+  ],
+  "note": "Harganas Lower light",
+  "week": "W26",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-06-30",
+  "km": 7,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W26",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-07-01",
+  "km": 7,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [
+   "Unilateral"
+  ],
+  "note": "Hari Bhayangkara Unilateral",
+  "week": "W26",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-07-02",
+  "km": 6,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W26",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-07-03",
+  "km": 13,
+  "label": "Long Run (easy)",
+  "kind": "long",
+  "tags": [
+   "Full body"
+  ],
+  "note": "Full body",
+  "week": "W26",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-07-04",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "REST DAY",
+  "week": "W26",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-07-05",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "GYM ONLY Upper",
+  "week": "W27",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-07-06",
+  "km": 8,
+  "label": "Easy + strides",
+  "kind": "speed",
+  "tags": [
+   "Lower maint."
+  ],
+  "note": "Lower maint.",
+  "week": "W27",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-07-07",
+  "km": 9,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W27",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-07-08",
+  "km": 8,
+  "label": "Hills 8\u00d710 s",
+  "kind": "speed",
+  "tags": [
+   "Unilateral"
+  ],
+  "note": "Unilateral",
+  "week": "W27",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-07-09",
+  "km": 6,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W27",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-07-10",
+  "km": 16,
+  "label": "Long Run",
+  "kind": "long",
+  "tags": [
+   "Full body"
+  ],
+  "note": "Full body",
+  "week": "W27",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-07-11",
+  "km": 8,
+  "label": "Social / easy run",
+  "kind": "social",
+  "tags": [],
+  "note": "",
+  "week": "W27",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-07-12",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "GYM ONLY Upper",
+  "week": "W28",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-07-13",
+  "km": 8,
+  "label": "5K Time Trial",
+  "kind": "tt",
+  "tags": [
+   "CP10"
+  ],
+  "note": "CP10 G \u2264 26:11 \u00b7 R > 26:48",
+  "week": "W28",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-07-14",
+  "km": 11,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [
+   "Lower maint."
+  ],
+  "note": "Lower maint.",
+  "week": "W28",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-07-15",
+  "km": 10,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W28",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-07-16",
+  "km": 7,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W28",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-07-17",
+  "km": 20,
+  "label": "Long Run",
+  "kind": "long",
+  "tags": [
+   "Full body"
+  ],
+  "note": "Full body",
+  "week": "W28",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-07-18",
+  "km": 10,
+  "label": "Social / easy run",
+  "kind": "social",
+  "tags": [],
+  "note": "",
+  "week": "W28",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-07-19",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "PT GYM ONLY Upper",
+  "week": "W29",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-07-20",
+  "km": 10,
+  "label": "800m Repeats",
+  "kind": "quality",
+  "tags": [
+   "Lower maint."
+  ],
+  "note": "Lower maint.",
+  "week": "W29",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-07-21",
+  "km": 12,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W29",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-07-22",
+  "km": 10,
+  "label": "\u25c7 Tempo 3-2-1",
+  "kind": "quality",
+  "tags": [
+   "Unilateral"
+  ],
+  "note": "Unilateral",
+  "week": "W29",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-07-23",
+  "km": 7.5,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "Hari Anak Nasional",
+  "week": "W29",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-07-24",
+  "km": 22,
+  "label": "Long Run",
+  "kind": "long",
+  "tags": [
+   "Full body",
+   "MP 3"
+  ],
+  "note": "MP 3 fuel 40 g/h Full body",
+  "week": "W29",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-07-25",
+  "km": 10.5,
+  "label": "Social / easy run",
+  "kind": "social",
+  "tags": [],
+  "note": "",
+  "week": "W29",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-07-26",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "GYM ONLY Upper",
+  "week": "W30",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-07-27",
+  "km": 12,
+  "label": "Over and Unders 1km",
+  "kind": "quality",
+  "tags": [
+   "Lower maint."
+  ],
+  "note": "Lower maint.",
+  "week": "W30",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-07-28",
+  "km": 14,
+  "label": "Medium-long run",
+  "kind": "long",
+  "tags": [],
+  "note": "",
+  "week": "W30",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-07-29",
+  "km": 10,
+  "label": "Easy + strides",
+  "kind": "speed",
+  "tags": [],
+  "note": "",
+  "week": "W30",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-07-30",
+  "km": 10,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "146 km \u00b7 21",
+  "week": "W30",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-07-31",
+  "km": 5,
+  "label": "Easy (pre-TT)",
+  "kind": "easy",
+  "tags": [
+   "FB upper"
+  ],
+  "note": "FB upper run days \u00b7 long 14 \u00b7",
+  "week": "W30",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-08-01",
+  "km": 25,
+  "label": "HM Time Trial",
+  "kind": "tt",
+  "tags": [
+   "CP11"
+  ],
+  "note": "CP11 G \u2264 2:04:06 \u00b7 R > 2:07:10",
+  "week": "W30",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-08-02",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "GYM ONLY Upper",
+  "week": "W31",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-08-03",
+  "km": 11,
+  "label": "Progressive Run",
+  "kind": "quality",
+  "tags": [
+   "Lower maint."
+  ],
+  "note": "Lower maint.",
+  "week": "W31",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-08-04",
+  "km": 14.5,
+  "label": "Medium-long run",
+  "kind": "long",
+  "tags": [],
+  "note": "",
+  "week": "W31",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-08-05",
+  "km": 11,
+  "label": "\u25c7 Descending Intervals",
+  "kind": "quality",
+  "tags": [
+   "Unilateral"
+  ],
+  "note": "Unilateral",
+  "week": "W31",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-08-06",
+  "km": 9.5,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W31",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-08-07",
+  "km": 27.5,
+  "label": "Long Run",
+  "kind": "long",
+  "tags": [
+   "MP 6"
+  ],
+  "note": "MP 6",
+  "week": "W31",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-08-08",
+  "km": 8,
+  "label": "Social / easy run",
+  "kind": "social",
+  "tags": [
+   "Full body"
+  ],
+  "note": "Full body",
+  "week": "W31",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-08-09",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "GYM ONLY Upper",
+  "week": "W32",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-08-10",
+  "km": 12,
+  "label": "Mile Up & Overs",
+  "kind": "quality",
+  "tags": [
+   "Lower maint."
+  ],
+  "note": "Lower maint.",
+  "week": "W32",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-08-11",
+  "km": 13,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W32",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-08-12",
+  "km": 11,
+  "label": "Easy + strides",
+  "kind": "speed",
+  "tags": [
+   "Unilateral"
+  ],
+  "note": "Unilateral",
+  "week": "W32",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-08-13",
+  "km": 8.5,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W32",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-08-14",
+  "km": 30,
+  "label": "Long Run",
+  "kind": "long",
+  "tags": [
+   "MP 8"
+  ],
+  "note": "MP 8 fuel 50 g/h",
+  "week": "W32",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-08-15",
+  "km": 9,
+  "label": "Social / easy run",
+  "kind": "social",
+  "tags": [
+   "Full body"
+  ],
+  "note": "Maulid Nabi +2 libur Full body",
+  "week": "W32",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-08-16",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "GYM ONLY Upper",
+  "week": "W33",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-08-17",
+  "km": 17.1,
+  "label": "Independence Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "HUT RI easy 17.08 km",
+  "week": "W33",
+  "phase": "BUILD",
+  "event": null,
+  "special": true
+ },
+ {
+  "date": "2027-08-18",
+  "km": 6,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [
+   "Lower maint."
+  ],
+  "note": "Lower maint.",
+  "week": "W33",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-08-19",
+  "km": 8,
+  "label": "5K Time Trial",
+  "kind": "tt",
+  "tags": [
+   "CP12"
+  ],
+  "note": "CP12 G \u2264 25:27 \u00b7 R > 26:02",
+  "week": "W33",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-08-20",
+  "km": 7.5,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W33",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-08-21",
+  "km": 18,
+  "label": "Long Run",
+  "kind": "long",
+  "tags": [],
+  "note": "",
+  "week": "W33",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-08-22",
+  "km": 10,
+  "label": "Social / easy run",
+  "kind": "social",
+  "tags": [
+   "Full body"
+  ],
+  "note": "Full body",
+  "week": "W33",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-08-23",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "GYM ONLY Upper",
+  "week": "W34",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-08-24",
+  "km": 11,
+  "label": "On Off Ks",
+  "kind": "quality",
+  "tags": [
+   "Lower maint."
+  ],
+  "note": "Lower maint.",
+  "week": "W34",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-08-25",
+  "km": 12.5,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W34",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-08-26",
+  "km": 11,
+  "label": "Hills 8\u00d710 s",
+  "kind": "speed",
+  "tags": [
+   "Unilateral"
+  ],
+  "note": "Unilateral",
+  "week": "W34",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-08-27",
+  "km": 8,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W34",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-08-28",
+  "km": 30,
+  "label": "Long Run",
+  "kind": "long",
+  "tags": [
+   "CP13",
+   "MP 10"
+  ],
+  "note": "CP13 MP 10",
+  "week": "W34",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-08-29",
+  "km": 7,
+  "label": "Social / easy run",
+  "kind": "social",
+  "tags": [
+   "Full body"
+  ],
+  "note": "Full body",
+  "week": "W34",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-08-30",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "PT GYM ONLY Upper",
+  "week": "W35",
+  "phase": "PEAK",
+  "event": null
+ },
+ {
+  "date": "2027-08-31",
+  "km": 10,
+  "label": "400s into 200s",
+  "kind": "quality",
+  "tags": [
+   "Lower maint."
+  ],
+  "note": "Lower maint.",
+  "week": "W35",
+  "phase": "PEAK",
+  "event": null,
+  "special": false
+ },
+ {
+  "date": "2027-09-01",
+  "km": 12.2,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W35",
+  "phase": "PEAK",
+  "event": null
+ },
+ {
+  "date": "2027-09-02",
+  "km": 12,
+  "label": "Easy + strides",
+  "kind": "speed",
+  "tags": [
+   "Unilateral"
+  ],
+  "note": "\u2665 Wife's birthday Unilateral",
+  "week": "W35",
+  "phase": "PEAK",
+  "event": null
+ },
+ {
+  "date": "2027-09-03",
+  "km": 8.5,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W35",
+  "phase": "PEAK",
+  "event": null
+ },
+ {
+  "date": "2027-09-04",
+  "km": 32,
+  "label": "Long Run",
+  "kind": "long",
+  "tags": [
+   "CP14",
+   "MP 12"
+  ],
+  "note": "CP14 MP 12 CP14 \u00b7 fuel 60 g/h",
+  "week": "W35",
+  "phase": "PEAK",
+  "event": null
+ },
+ {
+  "date": "2027-09-05",
+  "km": 7,
+  "label": "Social / easy run",
+  "kind": "social",
+  "tags": [
+   "Full body"
+  ],
+  "note": "Full body",
+  "week": "W35",
+  "phase": "PEAK",
+  "event": null
+ },
+ {
+  "date": "2027-09-06",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "GYM ONLY Upper",
+  "week": "W36",
+  "phase": "PEAK",
+  "event": null
+ },
+ {
+  "date": "2027-09-07",
+  "km": 10,
+  "label": "600s into 200s",
+  "kind": "quality",
+  "tags": [
+   "Lower maint."
+  ],
+  "note": "Lower maint.",
+  "week": "W36",
+  "phase": "PEAK",
+  "event": null,
+  "special": false
+ },
+ {
+  "date": "2027-09-08",
+  "km": 14,
+  "label": "Medium-long run",
+  "kind": "long",
+  "tags": [],
+  "note": "",
+  "week": "W36",
+  "phase": "PEAK",
+  "event": null
+ },
+ {
+  "date": "2027-09-09",
+  "km": 12,
+  "label": "Hills 8\u00d710 s",
+  "kind": "speed",
+  "tags": [
+   "Unilateral"
+  ],
+  "note": "Unilateral",
+  "week": "W36",
+  "phase": "PEAK",
+  "event": null
+ },
+ {
+  "date": "2027-09-10",
+  "km": 9.5,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W36",
+  "phase": "PEAK",
+  "event": null
+ },
+ {
+  "date": "2027-09-11",
+  "km": 28,
+  "label": "Long Run",
+  "kind": "long",
+  "tags": [
+   "MP 8"
+  ],
+  "note": "MP 8",
+  "week": "W36",
+  "phase": "PEAK",
+  "event": null
+ },
+ {
+  "date": "2027-09-12",
+  "km": 8,
+  "label": "Social / easy run",
+  "kind": "social",
+  "tags": [
+   "FB upper"
+  ],
+  "note": "FB upper",
+  "week": "W36",
+  "phase": "PEAK",
+  "event": null
+ },
+ {
+  "date": "2027-09-13",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "PT GYM ONLY Upper",
+  "week": "W37",
+  "phase": "PEAK",
+  "event": null
+ },
+ {
+  "date": "2027-09-14",
+  "km": 8,
+  "label": "5K Time Trial",
+  "kind": "tt",
+  "tags": [
+   "CP15"
+  ],
+  "note": "CP15 G \u2264 24:57 \u00b7 R > 25:31",
+  "week": "W37",
+  "phase": "PEAK",
+  "event": null
+ },
+ {
+  "date": "2027-09-15",
+  "km": 11.4,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [
+   "Lower maint."
+  ],
+  "note": "Lower maint.",
+  "week": "W37",
+  "phase": "PEAK",
+  "event": null
+ },
+ {
+  "date": "2027-09-16",
+  "km": 10,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W37",
+  "phase": "PEAK",
+  "event": null
+ },
+ {
+  "date": "2027-09-17",
+  "km": 7,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W37",
+  "phase": "PEAK",
+  "event": null
+ },
+ {
+  "date": "2027-09-18",
+  "km": 20,
+  "label": "Long Run",
+  "kind": "long",
+  "tags": [
+   "Full body"
+  ],
+  "note": "Full body",
+  "week": "W37",
+  "phase": "PEAK",
+  "event": null
+ },
+ {
+  "date": "2027-09-19",
+  "km": 10,
+  "label": "Social / easy run",
+  "kind": "social",
+  "tags": [],
+  "note": "",
+  "week": "W37",
+  "phase": "PEAK",
+  "event": null
+ },
+ {
+  "date": "2027-09-20",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "GYM ONLY Upper",
+  "week": "W38",
+  "phase": "PEAK",
+  "event": null
+ },
+ {
+  "date": "2027-09-21",
+  "km": 11,
+  "label": "Mile Repeats",
+  "kind": "quality",
+  "tags": [
+   "Lower maint."
+  ],
+  "note": "Lower maint.",
+  "week": "W38",
+  "phase": "PEAK",
+  "event": null
+ },
+ {
+  "date": "2027-09-22",
+  "km": 12,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W38",
+  "phase": "PEAK",
+  "event": null
+ },
+ {
+  "date": "2027-09-23",
+  "km": 8,
+  "label": "Easy + strides",
+  "kind": "speed",
+  "tags": [],
+  "note": "",
+  "week": "W38",
+  "phase": "PEAK",
+  "event": null
+ },
+ {
+  "date": "2027-09-24",
+  "km": 8,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W38",
+  "phase": "PEAK",
+  "event": null
+ },
+ {
+  "date": "2027-09-25",
+  "km": 32,
+  "label": "Long Run",
+  "kind": "long",
+  "tags": [
+   "CP16",
+   "MP 14"
+  ],
+  "note": "CP16 MP 14 CP16 \u00b7 dress rehearsal",
+  "week": "W38",
+  "phase": "PEAK",
+  "event": null
+ },
+ {
+  "date": "2027-09-26",
+  "km": 6.5,
+  "label": "Social / easy run",
+  "kind": "social",
+  "tags": [
+   "FB upper"
+  ],
+  "note": "FB upper",
+  "week": "W38",
+  "phase": "PEAK",
+  "event": null
+ },
+ {
+  "date": "2027-09-27",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "GYM ONLY Upper PATH",
+  "week": "W39",
+  "phase": "PEAK",
+  "event": null
+ },
+ {
+  "date": "2027-09-28",
+  "km": 12,
+  "label": "\u00bd Steady \u00bd Tempo",
+  "kind": "quality",
+  "tags": [
+   "Lower maint."
+  ],
+  "note": "Lower maint.",
+  "week": "W39",
+  "phase": "PEAK",
+  "event": null
+ },
+ {
+  "date": "2027-09-29",
+  "km": 13,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W39",
+  "phase": "PEAK",
+  "event": null
+ },
+ {
+  "date": "2027-09-30",
+  "km": 10,
+  "label": "Easy + strides",
+  "kind": "speed",
+  "tags": [
+   "Unilateral"
+  ],
+  "note": "Unilateral",
+  "week": "W39",
+  "phase": "PEAK",
+  "event": null
+ },
+ {
+  "date": "2027-10-01",
+  "km": 9,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "Kesaktian Pancasila",
+  "week": "W39",
+  "phase": "PEAK",
+  "event": null
+ },
+ {
+  "date": "2027-10-02",
+  "km": 26,
+  "label": "Long Run",
+  "kind": "long",
+  "tags": [
+   "MP 10"
+  ],
+  "note": "Hari Batik Nasional MP 10",
+  "week": "W39",
+  "phase": "PEAK",
+  "event": null
+ },
+ {
+  "date": "2027-10-03",
+  "km": 7.5,
+  "label": "Social / easy run",
+  "kind": "social",
+  "tags": [
+   "Full body"
+  ],
+  "note": "Full body",
+  "week": "W39",
+  "phase": "PEAK",
+  "event": null
+ },
+ {
+  "date": "2027-10-04",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "PT GYM ONLY Upper",
+  "week": "W40",
+  "phase": "TAPER",
+  "event": null
+ },
+ {
+  "date": "2027-10-05",
+  "km": 11,
+  "label": "Over and Unders 1km",
+  "kind": "quality",
+  "tags": [
+   "Lower light"
+  ],
+  "note": "HUT TNI Lower light",
+  "week": "W40",
+  "phase": "TAPER",
+  "event": null
+ },
+ {
+  "date": "2027-10-06",
+  "km": 9.5,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W40",
+  "phase": "TAPER",
+  "event": null
+ },
+ {
+  "date": "2027-10-07",
+  "km": 8,
+  "label": "Easy + strides",
+  "kind": "speed",
+  "tags": [],
+  "note": "",
+  "week": "W40",
+  "phase": "TAPER",
+  "event": null
+ },
+ {
+  "date": "2027-10-08",
+  "km": 6,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W40",
+  "phase": "TAPER",
+  "event": null
+ },
+ {
+  "date": "2027-10-09",
+  "km": 22,
+  "label": "Long Run",
+  "kind": "long",
+  "tags": [
+   "MP 8"
+  ],
+  "note": "MP 8",
+  "week": "W40",
+  "phase": "TAPER",
+  "event": null
+ },
+ {
+  "date": "2027-10-10",
+  "km": 8,
+  "label": "Social / easy run",
+  "kind": "social",
+  "tags": [
+   "FB upper"
+  ],
+  "note": "FB upper",
+  "week": "W40",
+  "phase": "TAPER",
+  "event": null
+ },
+ {
+  "date": "2027-10-11",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "GYM ONLY Upper",
+  "week": "W41",
+  "phase": "TAPER",
+  "event": null
+ },
+ {
+  "date": "2027-10-12",
+  "km": 8,
+  "label": "Easy + strides",
+  "kind": "speed",
+  "tags": [
+   "Lower light"
+  ],
+  "note": "Lower light",
+  "week": "W41",
+  "phase": "TAPER",
+  "event": null
+ },
+ {
+  "date": "2027-10-13",
+  "km": 4,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W41",
+  "phase": "TAPER",
+  "event": null
+ },
+ {
+  "date": "2027-10-14",
+  "km": 13,
+  "label": "M-reps 3\u00d73 km",
+  "kind": "quality",
+  "tags": [
+   "CP17",
+   "MP"
+  ],
+  "note": "CP17 CP17 \u00b7 at race MP",
+  "week": "W41",
+  "phase": "TAPER",
+  "event": null
+ },
+ {
+  "date": "2027-10-15",
+  "km": 4,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W41",
+  "phase": "TAPER",
+  "event": null
+ },
+ {
+  "date": "2027-10-16",
+  "km": 16,
+  "label": "Long Run",
+  "kind": "long",
+  "tags": [
+   "FB upper",
+   "MP 6"
+  ],
+  "note": "MP 6 FB upper",
+  "week": "W41",
+  "phase": "TAPER",
+  "event": null
+ },
+ {
+  "date": "2027-10-17",
+  "km": 4,
+  "label": "Social / easy run",
+  "kind": "social",
+  "tags": [],
+  "note": "",
+  "week": "W41",
+  "phase": "TAPER",
+  "event": null
+ },
+ {
+  "date": "2027-10-18",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "GYM ONLY Upper",
+  "week": "W42",
+  "phase": "RACE WEEK",
+  "event": null
+ },
+ {
+  "date": "2027-10-19",
+  "km": 6,
+  "label": "2\u00d71 km @MP",
+  "kind": "quality",
+  "tags": [],
+  "note": "",
+  "week": "W42",
+  "phase": "RACE WEEK",
+  "event": null
+ },
+ {
+  "date": "2027-10-20",
+  "km": 5,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W42",
+  "phase": "RACE WEEK",
+  "event": null
+ },
+ {
+  "date": "2027-10-21",
+  "km": 3,
+  "label": "Easy + gate",
+  "kind": "easy",
+  "tags": [
+   "CP18"
+  ],
+  "note": "CP18 CP18 \u00b7 FM go/no-go",
+  "week": "W42",
+  "phase": "RACE WEEK",
+  "event": null
+ },
+ {
+  "date": "2027-10-22",
+  "km": 3,
+  "label": "Easy (shakeout)",
+  "kind": "quality",
+  "tags": [],
+  "note": "PT physio: light only",
+  "week": "W42",
+  "phase": "RACE WEEK",
+  "event": null
+ },
+ {
+  "date": "2027-10-23",
+  "km": 5,
+  "label": "JRF Half \u00b7 bib jog",
+  "kind": "race",
+  "tags": [],
+  "note": "\u22645 km easy, then stop",
+  "week": "W42",
+  "phase": "RACE WEEK",
+  "event": null
+ },
+ {
+  "date": "2027-10-24",
+  "km": 42.2,
+  "label": "JRF Full \u00b7 A-RACE",
+  "kind": "race",
+  "tags": [
+   "CP19"
+  ],
+  "note": "CP19 CP19 \u00b7 sub-4:00 attempt",
+  "week": "W42",
+  "phase": "RACE WEEK",
+  "event": null
+ },
+ {
+  "date": "2027-10-25",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "REST DAY TIERS",
+  "week": "W43",
+  "phase": "RECOVERY",
+  "event": null
+ },
+ {
+  "date": "2027-10-26",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "REST DAY",
+  "week": "W43",
+  "phase": "RECOVERY",
+  "event": null
+ },
+ {
+  "date": "2027-10-27",
+  "km": 4,
+  "label": "Walk / jog",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W43",
+  "phase": "RECOVERY",
+  "event": null
+ },
+ {
+  "date": "2027-10-28",
+  "km": 5,
+  "label": "Walk / jog",
+  "kind": "easy",
+  "tags": [],
+  "note": "Hari Sumpah Pemuda fitness",
+  "week": "W43",
+  "phase": "RECOVERY",
+  "event": null
+ },
+ {
+  "date": "2027-10-29",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "GYM ONLY Upper light \u00d7 ratio \u2192 finish time",
+  "week": "W43",
+  "phase": "RECOVERY",
+  "event": null
+ },
+ {
+  "date": "2027-10-30",
+  "km": 5,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "VDOT TABLE",
+  "week": "W43",
+  "phase": "RECOVERY",
+  "event": null
+ },
+ {
+  "date": "2027-10-31",
+  "km": 6,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W43",
+  "phase": "RECOVERY",
+  "event": null
+ },
+ {
+  "date": "2027-11-01",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "GYM ONLY Upper",
+  "week": "W44",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-11-02",
+  "km": 6,
+  "label": "Easy + strides",
+  "kind": "speed",
+  "tags": [],
+  "note": "",
+  "week": "W44",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-11-03",
+  "km": 5,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W44",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-11-04",
+  "km": 6,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [
+   "Lower light"
+  ],
+  "note": "Lower light",
+  "week": "W44",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-11-05",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "REST DAY",
+  "week": "W44",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-11-06",
+  "km": 8,
+  "label": "Long Run (easy)",
+  "kind": "long",
+  "tags": [
+   "FB upper"
+  ],
+  "note": "FB upper",
+  "week": "W44",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-11-07",
+  "km": 5,
+  "label": "Easy + return gate",
+  "kind": "easy",
+  "tags": [
+   "CP20"
+  ],
+  "note": "CP20",
+  "week": "W44",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-11-08",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "GYM ONLY Upper",
+  "week": "W45",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-11-09",
+  "km": 7,
+  "label": "Easy + strides",
+  "kind": "speed",
+  "tags": [
+   "Lower light"
+  ],
+  "note": "Lower light",
+  "week": "W45",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-11-10",
+  "km": 6,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "Hari Pahlawan",
+  "week": "W45",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-11-11",
+  "km": 6,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [
+   "Unilateral"
+  ],
+  "note": "Unilateral",
+  "week": "W45",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-11-12",
+  "km": 5,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "Hari Kesehatan",
+  "week": "W45",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-11-13",
+  "km": 12,
+  "label": "Long Run (easy)",
+  "kind": "long",
+  "tags": [
+   "Full body"
+  ],
+  "note": "Full body",
+  "week": "W45",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-11-14",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "REST DAY",
+  "week": "W45",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-11-15",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "PT GYM ONLY Upper",
+  "week": "W46",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-11-16",
+  "km": 8,
+  "label": "Easy + strides",
+  "kind": "speed",
+  "tags": [
+   "Lower"
+  ],
+  "note": "Lower",
+  "week": "W46",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-11-17",
+  "km": 6,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W46",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-11-18",
+  "km": 7,
+  "label": "Hills 6\u00d710 s",
+  "kind": "speed",
+  "tags": [
+   "Unilateral"
+  ],
+  "note": "Unilateral",
+  "week": "W46",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-11-19",
+  "km": 5,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W46",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-11-20",
+  "km": 14,
+  "label": "Long Run (easy)",
+  "kind": "long",
+  "tags": [
+   "Full body"
+  ],
+  "note": "Full body",
+  "week": "W46",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-11-21",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "REST DAY",
+  "week": "W46",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-11-22",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "\u2665 Wedding anniversary GYM ONLY Upper",
+  "week": "W47",
+  "phase": "BASE",
+  "event": "Wedding anniversary"
+ },
+ {
+  "date": "2027-11-23",
+  "km": 7,
+  "label": "Easy + strides",
+  "kind": "speed",
+  "tags": [
+   "Lower"
+  ],
+  "note": "Lower",
+  "week": "W47",
+  "phase": "BASE",
+  "event": "Wedding anniversary"
+ },
+ {
+  "date": "2027-11-24",
+  "km": 5,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W47",
+  "phase": "BASE",
+  "event": "Wedding anniversary"
+ },
+ {
+  "date": "2027-11-25",
+  "km": 6,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [
+   "Unilateral"
+  ],
+  "note": "Hari Guru Nasional Unilateral",
+  "week": "W47",
+  "phase": "BASE",
+  "event": "Wedding anniversary"
+ },
+ {
+  "date": "2027-11-26",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "REST DAY",
+  "week": "W47",
+  "phase": "BASE",
+  "event": "Wedding anniversary"
+ },
+ {
+  "date": "2027-11-27",
+  "km": 10,
+  "label": "Long Run (easy)",
+  "kind": "long",
+  "tags": [
+   "Full body"
+  ],
+  "note": "Full body",
+  "week": "W47",
+  "phase": "BASE",
+  "event": "Wedding anniversary"
+ },
+ {
+  "date": "2027-11-28",
+  "km": 4,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W47",
+  "phase": "BASE",
+  "event": "Wedding anniversary"
+ },
+ {
+  "date": "2027-11-29",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "GYM ONLY Upper",
+  "week": "W48",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-11-30",
+  "km": 8,
+  "label": "Easy + strides",
+  "kind": "speed",
+  "tags": [
+   "Lower"
+  ],
+  "note": "Lower",
+  "week": "W48",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-12-01",
+  "km": 7,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W48",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-12-02",
+  "km": 7,
+  "label": "Hills 8\u00d710 s",
+  "kind": "speed",
+  "tags": [
+   "Unilateral"
+  ],
+  "note": "Unilateral",
+  "week": "W48",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-12-03",
+  "km": 6,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W48",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-12-04",
+  "km": 14,
+  "label": "Long Run (easy)",
+  "kind": "long",
+  "tags": [
+   "Full body"
+  ],
+  "note": "Full body",
+  "week": "W48",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-12-05",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "REST DAY",
+  "week": "W48",
+  "phase": "BASE",
+  "event": null
+ },
+ {
+  "date": "2027-12-06",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "GYM ONLY Upper",
+  "week": "W49",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-12-07",
+  "km": 10,
+  "label": "Tempo 4 km",
+  "kind": "quality",
+  "tags": [
+   "Lower"
+  ],
+  "note": "PT Lower",
+  "week": "W49",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-12-08",
+  "km": 7,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W49",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-12-09",
+  "km": 8,
+  "label": "Easy + strides",
+  "kind": "speed",
+  "tags": [
+   "Unilateral"
+  ],
+  "note": "Unilateral",
+  "week": "W49",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-12-10",
+  "km": 6,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W49",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-12-11",
+  "km": 15,
+  "label": "Long Run (easy)",
+  "kind": "long",
+  "tags": [
+   "Full body"
+  ],
+  "note": "Full body",
+  "week": "W49",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-12-12",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "REST DAY",
+  "week": "W49",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-12-13",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "GYM ONLY Upper",
+  "week": "W50",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-12-14",
+  "km": 11,
+  "label": "Tempo 5 km",
+  "kind": "quality",
+  "tags": [
+   "Lower"
+  ],
+  "note": "Lower",
+  "week": "W50",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-12-15",
+  "km": 8,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W50",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-12-16",
+  "km": 8,
+  "label": "Easy + strides",
+  "kind": "speed",
+  "tags": [
+   "Unilateral"
+  ],
+  "note": "Unilateral",
+  "week": "W50",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-12-17",
+  "km": 7,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W50",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-12-18",
+  "km": 16,
+  "label": "Long Run (easy)",
+  "kind": "long",
+  "tags": [
+   "Full body"
+  ],
+  "note": "Full body",
+  "week": "W50",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-12-19",
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "tags": [],
+  "note": "REST DAY",
+  "week": "W50",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-12-20",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "GYM ONLY Upper",
+  "week": "W51",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-12-21",
+  "km": 12,
+  "label": "Tempo 6 km",
+  "kind": "quality",
+  "tags": [
+   "Lower"
+  ],
+  "note": "Lower",
+  "week": "W51",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-12-22",
+  "km": 8,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "Hari Ibu",
+  "week": "W51",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-12-23",
+  "km": 8,
+  "label": "Easy + strides",
+  "kind": "speed",
+  "tags": [
+   "Unilateral"
+  ],
+  "note": "Unilateral",
+  "week": "W51",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-12-24",
+  "km": 8.5,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "Cuti \u00b7 Natal +2 libur",
+  "week": "W51",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-12-25",
+  "km": 17.5,
+  "label": "Long Run (easy)",
+  "kind": "long",
+  "tags": [],
+  "note": "Natal",
+  "week": "W51",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-12-26",
+  "km": 6,
+  "label": "Easy run (holiday)",
+  "kind": "easy",
+  "tags": [
+   "Full body"
+  ],
+  "note": "Isra Mikraj libur \u00b7 opt. Full body",
+  "week": "W51",
+  "phase": "BUILD",
+  "event": null
+ },
+ {
+  "date": "2027-12-27",
+  "km": 0,
+  "label": "",
+  "kind": "gym",
+  "tags": [
+   "Upper"
+  ],
+  "note": "GYM ONLY Upper PACE SLOTS",
+  "week": "W52",
+  "phase": "OFF-SEASON",
+  "event": null
+ },
+ {
+  "date": "2027-12-28",
+  "km": 8,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [
+   "Lower light"
+  ],
+  "note": "Lower light",
+  "week": "W52",
+  "phase": "OFF-SEASON",
+  "event": null
+ },
+ {
+  "date": "2027-12-29",
+  "km": 5,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W52",
+  "phase": "OFF-SEASON",
+  "event": null
+ },
+ {
+  "date": "2027-12-30",
+  "km": 6,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "",
+  "week": "W52",
+  "phase": "OFF-SEASON",
+  "event": null
+ },
+ {
+  "date": "2027-12-31",
+  "km": 4,
+  "label": "Easy Run",
+  "kind": "easy",
+  "tags": [],
+  "note": "fill after each benchmark",
+  "week": "W52",
+  "phase": "OFF-SEASON",
+  "event": null
+ }
+]

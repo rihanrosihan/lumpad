@@ -47,33 +47,36 @@ export function weekly(plan, coros) {
   return [...m.values()].sort((a, b) => a.mon.localeCompare(b.mon)).map((w) => ({ ...w, lumpad: Math.round(w.lumpad * 10) / 10, coros: Math.round(w.coros * 10) / 10, delta: Math.round((w.coros - w.lumpad) * 10) / 10 }))
 }
 
-// What the two plans disagree about. Pure → unit-tested. `actualAvg4` = mean weekly run km of the last 4 full weeks (optional).
-export function findings(plan, coros, { actualAvg4 = null, T = null } = {}) {
-  const out = [], P = Object.fromEntries(plan.map((d) => [d.date, d])), C = byDate(coros), W = weekly(plan, coros)
+// What the COROS watch plan and the season plan disagree about. Pure → unit-tested.
+// `actualAvg4` = mean weekly run km of the last 4 full weeks (optional).
+export function findings(plan, coros, { actualAvg4 = null } = {}) {
+  const out = [], C = byDate(coros), W = weekly(plan, coros), P = Object.fromEntries(plan.map((d) => [d.date, d]))
   const first = W.find((w) => w.coros > 0)
   if (actualAvg4 != null && first) {
-    const pct = actualAvg4 > 0 ? Math.round((first.coros / actualAvg4 - 1) * 100) : null
+    const second = W.find((w) => w.mon > first.mon && w.coros > 0), pct = actualAvg4 > 0 ? Math.round((first.coros / actualAvg4 - 1) * 100) : null
     out.push({ id: 'ramp', tone: first.coros > actualAvg4 * 1.3 ? 'yellow' : 'green', title: 'Opening weeks vs your recent running',
-      body: `Your last 4 weeks averaged ${actualAvg4.toFixed(0)} km/week. The first COROS week is ${first.coros} km${pct != null ? ` (${pct >= 0 ? '+' : ''}${pct}%)` : ''}${W.find((w) => w.mon > first.mon && w.coros > 0)?.coros > actualAvg4 * 2 ? ` and the next is ${W.find((w) => w.mon > first.mon)?.coros} km` : ''}. The 72 h auto-scaler and the gate will trim sessions, but the planned ramp is steeper than the +10% rule.` })
+      body: `Your last 4 weeks averaged ${actualAvg4.toFixed(0)} km/week. The first week is ${first.coros} km${pct != null ? ` (${pct >= 0 ? '+' : ''}${pct}%)` : ''}${second?.coros > actualAvg4 * 2 ? ` and the next is ${second.coros} km` : ''}. The 72 h auto-scaler and the gate trim sessions, but the planned ramp is steeper than the +10% rule.` })
   }
-  // overlapping COROS plan windows
+  // the watch still has the old marathon dates
+  const races = plan.filter((d) => d.kind === 'race' && d.km >= 40), raceDates = races.map((d) => d.date)
+  const stray = coros.filter((r) => r.km >= 40 && !raceDates.includes(r.date))
+  if (stray.length) out.push({ id: 'fm-stray', tone: 'red', title: 'COROS marathon dates are wrong', body: `The COROS plans have a marathon-distance day on ${stray.map((r) => r.date).join(', ')} (${stray[0].km} km each). The real races are ${races.map((d) => `${d.label.replace(/ ·.*/, '')} ${d.date.slice(5)}`).join(', ')}. The season plan here is already re-timed; the watch keeps the old dates until the plans are recreated in COROS.` })
+  const missing = raceDates.filter((d) => !C[d] || C[d].km < 40)
+  if (missing.length) out.push({ id: 'fm-missing', tone: 'yellow', title: 'Races the watch does not know', body: `${missing.join(', ')} — COROS has ordinary training days there (${missing.map((d) => (C[d]?.km ?? 0) + ' km').join(' / ')}).` })
   for (let i = 0; i < COROS_PLANS.length - 1; i++) { const a = COROS_PLANS[i], b = COROS_PLANS[i + 1]; if (b.from <= a.to) out.push({ id: 'overlap' + i, tone: 'yellow', title: `${a.id} and ${b.id} overlap`, body: `${a.label} runs until ${a.to}, ${b.label} starts ${b.from} — ${diffDays(a.to, b.from) + 1} days are scheduled by both; COROS keeps one workout per day, so check those weeks on the watch.` }) }
-  // marathon-distance days COROS schedules that Lumpad doesn't race
-  const lumpadRaces = new Set(plan.filter((d) => d.kind === 'race' && d.km >= 21).map((d) => d.date))
-  const corosFM = coros.filter((r) => r.km >= 40)
-  const stray = corosFM.filter((r) => !lumpadRaces.has(r.date)), missing = [...lumpadRaces].filter((d) => !C[d] || C[d].km < 40)
-  if (stray.length) out.push({ id: 'fm-stray', tone: 'yellow', title: 'COROS has marathon-distance days Lumpad does not', body: `${stray.map((r) => r.date).join(', ')} — a ${stray[0].km} km day each. These are the plan templates' own "race day" placeholders; Lumpad's races are ${[...lumpadRaces].join(', ')}.` })
-  if (missing.length) out.push({ id: 'fm-missing', tone: 'yellow', title: 'Lumpad races that COROS does not know', body: `${missing.join(', ')} — the COROS plans treat these as ordinary training days (${missing.map((d) => (C[d]?.km ?? 0) + ' km').join(' / ')}).` })
-  // after the last COROS workout
-  const last = coros.at(-1)?.date
-  if (last) { const rest = plan.filter((d) => d.date > last && d.date <= '2027-10-24' && d.km > 0); if (rest.length) out.push({ id: 'tail', tone: 'yellow', title: 'COROS stops before the taper', body: `Last COROS workout: ${last}. ${rest.length} Lumpad running days (${Math.round(rest.reduce((s, d) => s + d.km, 0))} km, incl. taper, race week and JRF) have no COROS workout on the watch.` }) }
-  // big volume gaps
-  const big = W.filter((w) => w.coros > 0 && w.lumpad > 0 && w.mon >= '2027-01-01' && w.mon < '2027-10-25' && w.coros >= w.lumpad * 1.5)
-  if (big.length) out.push({ id: 'vol-high', tone: 'red', title: `COROS volume ≥1.5× Lumpad in ${big.length} ${big.length === 1 ? "week" : "weeks"}`, body: `${big[0].mon} → ${big.at(-1).mon}: e.g. week of ${big[0].mon} COROS ${big[0].coros} km vs Lumpad ${big[0].lumpad} km. Lumpad's Jan–Mar is the post-injury return (B0 baseline); the COROS template assumes a normal marathon build.` })
-  const after = W.filter((w) => w.mon >= '2027-10-25' && w.coros > 0 && w.coros >= w.lumpad * 1.5)
-  if (after.length) out.push({ id: 'post-race', tone: 'yellow', title: `After JRF: COROS keeps building (${after.length} ${after.length === 1 ? "week" : "weeks"} ≥1.5× Lumpad)`, body: `Week of ${after[0].mon}: COROS ${after[0].coros} km vs Lumpad's recovery week ${after[0].lumpad} km (COROS plan D includes a ${Math.max(...coros.filter((r) => r.date >= after[0].mon && r.date < addDays(after[0].mon, 7)).map((r) => r.km || 0))} km long run). Plan D is a 12-week build to its own marathon in December.` })
-  const low = W.filter((w) => w.coros > 0 && w.lumpad > 0 && w.mon >= '2027-04-01' && w.coros <= w.lumpad * 0.7)
-  if (low.length) out.push({ id: 'vol-low', tone: 'yellow', title: `COROS volume ≤70% of Lumpad in ${low.length} weeks`, body: `Mostly Apr–Aug (peak of Lumpad's build). Lumpad's 70–86 km weeks are not on the watch for those dates.` })
-  void T; void P
+  // how far the watch is from the season plan
+  const days = plan.filter((d) => C[d.date] || d.km > 0), differ = days.filter((d) => Math.abs((C[d.date]?.km || 0) - d.km) > 0.5)
+  if (differ.length) { const aw = W.filter((w) => w.coros > 0 || w.lumpad > 0), sum = aw.reduce((s, w) => s + w.delta, 0)
+    out.push({ id: 'differ', tone: 'yellow', title: `${differ.length} days differ between the season plan and the watch`, body: `Over the whole season COROS has ${Math.abs(Math.round(sum))} km ${sum < 0 ? 'less' : 'more'} than the season plan. Most differences are the re-timed cycles (Mar → Oct).` }) }
+  // Ramadan
+  const ram = W.filter((w) => w.phase === 'RAMADAN' && w.lumpad >= 80)
+  if (ram.length) out.push({ id: 'ramadan', tone: 'yellow', title: `${ram.length} weeks of ≥80 km fall in Ramadan`, body: `${ram.map((w) => `${w.mon.slice(5)}: ${w.lumpad} km`).join(', ')}. The COROS plan does not know about fasting; plan fuel, hydration and the gate for those weeks.` })
+  // checkpoints sitting on hard COROS days
+  const cps = plan.filter((d) => d.tags.some((t) => /^CP\d+$/.test(t)) && d.src === 'coros' && (d.kind === 'long' || d.kind === 'quality') && d.km > 0)
+  if (cps.length) out.push({ id: 'cp-collide', tone: 'yellow', title: `${cps.length} checkpoints sit on long or quality COROS days`, body: `${cps.slice(0, 4).map((d) => `${d.tags.find((t) => /^CP\d+$/.test(t))} on ${d.date.slice(5)} (${d.km} km ${d.kind})`).join(', ')}${cps.length > 4 ? ', …' : ''}. Checkpoints keep their original dates for now; they were set for the lower-volume plan.` })
+  // last long run before the A race
+  const a = plan.find((d) => d.kind === 'race' && /A-RACE/.test(d.label))
+  if (a) { const lr = plan.filter((d) => d.date < a.date && d.date >= addDays(a.date, -28) && d.km >= 25).at(-1)
+    if (lr) out.push({ id: 'lr-before-a', tone: diffDays(a.date, lr.date) < 14 ? 'yellow' : 'green', title: 'Last long run before the A race', body: `${lr.km} km on ${lr.date.slice(5)}, ${diffDays(a.date, lr.date)} days before ${a.label.replace(/ ·.*/, '')}.` }) }
   return out
 }
