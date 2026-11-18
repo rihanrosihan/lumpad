@@ -6,6 +6,7 @@ import { WEEKS } from './lib/calendar.js'
 import { BarChart } from './charts.jsx'
 import { mean } from './lib/stats.js'
 import { useState } from 'react'
+import { simulate, fmtHMS, heatPenalty } from './lib/pacing.js'
 import { useStore } from './store.js'
 import { Icon } from './ui.jsx'
 
@@ -44,6 +45,28 @@ function Cutoffs() {
     <p className="muted">Slowest average pace that still clears every point: <b>{pace(tight.need)}/km</b> (tightest at {tight.name}). Finish cut-off {JRF.cutoffMin / 60} hours after the gun ({JRF.gun.replace(':', '.')} → 09.00 WIB); finishing later = DNF with no medal/jersey.</p>
     <p className="banner" role="note">COPs are measured by clock time (time of day), not chip time. If you cross the start line a few minutes after the gun, the margin (+minutes) in the table shrinks by that much. The runners' gate closes exactly at {JRF.gun.replace(':', '.')} WIB — late = DNS.</p>
     <Evidence>[calc] Max average pace = (closing time − {JRF.gun.replace(':', '.')}) ÷ km. Arrival time = constant average pace (sub-4 5:41/km; 4:30 ≈ {pace(runs[1][1])}/km). COPs are from the 2026 edition; the 2027 route is the same but COP times may change — update when the organiser publishes.</Evidence>
+  </Card>
+}
+
+const PRESETS = [['Even 5:41, cool day', { run: 341, walk: 600, runM: 60, walkS: 0, wbgt: 10 }], ['Run-walk 4:1, warm', { run: 320, walk: 600, runM: 4, walkS: 60, wbgt: 22 }], ['Hot day, even', { run: 341, walk: 600, runM: 60, walkS: 0, wbgt: 29 }]]
+// Thermal (WBGT) and run-walk what-if simulator for the A-race. A calculator, not a prediction: the heat penalty is a rough interpolation of Ely 2007.
+function PacingSim() {
+  const [v, setV] = useState(PRESETS[0][1]), s = simulate({ runPace: v.run, walkPace: v.walk, runS: v.runM * 60, walkS: v.walkS, wbgt: v.wbgt, gunMin: tod(JRF.gun), cops: JRF.cops })
+  const mmss = (x) => `${Math.floor(x / 60)}:${String(Math.round(x % 60)).padStart(2, '0')}`
+  const set = (k) => (e) => setV({ ...v, [k]: +e.target.value })
+  const Slider = ({ k, label, min, max, step = 1, show }) => <label className="fld"><span>{label}: <b>{show(v[k])}</b></span><input type="range" min={min} max={max} step={step} value={v[k]} onChange={set(k)} aria-label={label} /></label>
+  return <Card title="Pacing simulator · heat & run-walk" right={<Chip>MODEL</Chip>}>
+    <div className="chiprow" role="group" aria-label="Presets">{PRESETS.map(([n, p]) => <button key={n} aria-pressed={JSON.stringify(v) === JSON.stringify(p)} onClick={() => setV(p)}>{n}</button>)}</div>
+    <Slider k="wbgt" label="Race-day WBGT (°C)" min={0} max={34} show={(x) => `${x} °C (+${(heatPenalty(x) * 100).toFixed(1)}% slower)`} />
+    <Slider k="run" label="Running pace (/km)" min={290} max={420} show={(x) => mmss(x)} />
+    <Slider k="runM" label="Run segment (minutes, 60 = continuous)" min={1} max={60} show={(x) => (x >= 60 ? 'continuous' : x + ' min')} />
+    {v.runM < 60 && <><Slider k="walkS" label="Walk segment (seconds)" min={0} max={180} step={5} show={(x) => x + ' s'} /><Slider k="walk" label="Walking pace (/km)" min={480} max={900} step={10} show={(x) => mmss(x)} /></>}
+    {s && <>
+      <div className="score-grid two" role="group" aria-label="Simulation result"><div><small>Finish time</small><b>{fmtHMS(s.finish)}</b><em>{s.vsGoalS <= 0 ? `${Math.abs(Math.round(s.vsGoalS / 60))} min under 4:00` : `${Math.round(s.vsGoalS / 60)} min over 4:00`}</em></div><div><small>Average pace</small><b>{mmss(s.pace)}</b><em>/km incl. heat{v.runM < 60 && v.walkS ? ' and walking' : ''}</em></div></div>
+      <div className="scroll" tabIndex={0} role="region" aria-label="Simulated COP margins (scroll)"><table className="zm"><thead><tr><th>Point</th><th>KM</th><th>Closes</th><th>Arrive</th><th>Margin</th></tr></thead>
+        <tbody>{s.points.map((p) => <tr key={p.name}><td>{p.name}</td><td>{p.km}</td><td>{p.closes.replace(':', '.')}</td><td>{clock(p.arrivesMin)}</td><td className={p.marginMin < 0 ? 'cmp-bad' : p.marginMin < 15 ? '' : 'cmp-good'}>{p.marginMin >= 0 ? '+' : ''}{p.marginMin}′</td></tr>)}</tbody></table></div>
+      <p className={s.allClear ? 'muted' : 'banner'}>{s.allClear ? 'Clears every cut-off in this scenario.' : 'This scenario misses at least one cut-off.'}</p></>}
+    <Evidence>[MODEL] Heat penalty = 0.25% per °C WBGT above 8 °C (cap 8%), a rough interpolation of the Ely 2007 range (PMID 17473775: ~+4.5% for slower runners between 5 and 25 °C). Run-walk pace = cycle time ÷ cycle distance. Walking breaks and heat are what-ifs, not validated predictions for you. COPs are the 2026 edition.</Evidence>
   </Card>
 }
 
@@ -116,6 +139,7 @@ export default function Race({ vdot, results, settings, go }) {
     </Card>
 
     <Cutoffs />
+    <PacingSim />
 
     <Card title="Marathon time projection" right={<Chip>HYPOTHESIS n=2</Chip>}>
       <dl className="kv">

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Card, Chip, Screen, Sheet } from './ui.jsx'
+import LagExplorer from './LagExplorer.jsx'
 import { useApi, fmtDur, fmtPaceS } from './api.js'
 import { fmtShort, today } from './lib/calendar.js'
 
@@ -139,7 +140,7 @@ export default function Coach() {
     <div className="seg3" role="tablist" aria-label="Coach sections">{VIEWS.map(([k, l]) => <button key={k} role="tab" aria-selected={v === k} onClick={() => setV(k)}>{l}</button>)}</div>
     {v === 'coach' && <><Ask st={st.data} /><Recent /><Status st={st.data} /></>}
     {v === 'dur' && <Durability />}
-    {v === 'twin' && <Twin />}
+    {v === 'twin' && <><Twin /><LagExplorer /></>}
     {v === 'mem' && <Memory />}
   </Screen>
 }

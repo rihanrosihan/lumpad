@@ -64,6 +64,24 @@ export default function Activity({ vdot, focus, go }) {
   </Screen>
 }
 
+
+// Pinned side-by-side comparison of this run against a chosen benchmark (previous same-type run, longest run, best EF, or any recent run).
+function RunCompare({ a, id, history }) {
+  const [pick, setPick] = useState('prev')
+  const kind = typeOf(a), runs = history.filter((h) => h.sport_class === 'run' && !h.ids?.includes(id) && (h.distance_m || 0) >= 1000 && h.date <= a.date).sort((x, y) => y.date.localeCompare(x.date))
+  const same = runs.filter((h) => kind && typeOf(h) === kind)
+  const bench = pick === 'prev' ? same[0] : pick === 'longest' ? [...runs].sort((x, y) => (y.distance_m || 0) - (x.distance_m || 0))[0] : pick === 'bestEF' ? [...same].filter((h) => efOf(h)).sort((x, y) => efOf(y) - efOf(x))[0] : runs.find((h) => h.ids?.[0] === pick || h.id === pick)
+  const rows = [['Distance (km)', (a.distance_m || 0) / 1000, (bench?.distance_m || 0) / 1000, 2, 'neutral'], ['Avg pace (s/km)', a.avg_pace_s_km, bench?.avg_pace_s_km, 0, 'lower'], ['Avg HR (bpm)', a.avg_hr, bench?.avg_hr, 0, 'lower'], ['EF', efOf(a), bench ? efOf(bench) : null, 3, 'higher'], ['Training load', a.training_load, bench?.training_load, 0, 'neutral']]
+  const fmt = (label, v, d) => (v == null ? '—' : label.startsWith('Avg pace') ? fmtPaceS(v) : (+v).toFixed(d))
+  return <Card title="Compare with a benchmark" right={<select aria-label="Benchmark run" value={pick} onChange={(e) => setPick(e.target.value)}><option value="prev">Previous {kind || 'run'}</option><option value="longest">Longest run</option><option value="bestEF">Best EF{kind ? ` (${kind})` : ''}</option>{runs.slice(0, 20).map((h) => <option key={h.ids?.[0] || h.id} value={h.ids?.[0] || h.id}>{h.date.slice(5)} · {((h.distance_m || 0) / 1000).toFixed(1)} km</option>)}</select>}>
+    {!bench ? <p className="muted">No earlier run to compare with yet.</p> : <>
+      <p className="muted">vs <b>{bench.name}</b> · {bench.date}</p>
+      <table className="lapt"><thead><tr><th>Metric</th><th>This run</th><th>Benchmark</th><th>Δ</th></tr></thead><tbody>{rows.map(([label, v, b, d, good]) => { const dv = v != null && b != null ? v - b : null, tone = dv == null || good === 'neutral' || Math.abs(dv) < 1e-9 ? '' : (good === 'lower' ? dv < 0 : dv > 0) ? 'cmp-good' : 'cmp-bad'
+        return <tr key={label}><td>{label}</td><td>{fmt(label, v, d)}</td><td>{fmt(label, b, d)}</td><td className={tone}>{dv == null ? '—' : (dv > 0 ? '+' : '') + (label.startsWith('Avg pace') ? Math.round(dv) + ' s' : dv.toFixed(d))}</td></tr> })}</tbody></table>
+      <p className="src-note">Deltas are descriptive: different weather, route and fatigue make single-run comparisons noisy. Pace and HR: lower is green; EF: higher is green.</p></>}
+  </Card>
+}
+
 const ZC = { E: 'var(--green)', M: 'var(--c-long)', T: 'var(--yellow)', I: 'var(--c-quality)', R: 'var(--red)' }
 function ZoneBars({ title, rows }) { const tot = rows.reduce((a, r) => a + r.s, 0) || 1; return <div className="zbars"><h3>{title}</h3>{rows.map((r) => <div key={r.k} className="zrow"><span>{r.k}</span><div className="tb"><i style={{ width: (r.s / tot) * 100 + '%', background: r.c }} /></div><b>{Math.round((r.s / tot) * 100)}%</b></div>)}</div> }
 
@@ -101,6 +119,7 @@ function Detail({ id, gear, vdot, history, go }) {
       {a.sport_class === 'run' && <FitPanel id={a.ids?.[0] || id} />}
       {a.sport_class === 'run' && (a.distance_m || 0) >= 16000 && <LongRunContext label={String(a.ids?.[0] || id).replace(/^coros:/, '')} go={go} />}
       {a.sport_class === 'run' && (a.distance_m || 0) >= 5000 && <ActivityCoach id={a.ids?.[0] || id} label={String(a.ids?.[0] || id).replace(/^coros:/, '')} />}
+      {a.sport_class === 'run' && <RunCompare a={a} id={id} history={history} />}
       {laps.length > 1 && <Card title="Per-lap telemetry"><MultiTrack laps={laps} tracks={[{ key: 'avg_pace_s_km', label: 'Pace', color: 'var(--c-long)', invert: true, fmt: fmtPaceS }, { key: 'avg_hr', label: 'HR', color: 'var(--red)' }, { key: 'cadence', label: 'Cadence', color: 'var(--c-quality)' }, { key: 'power', label: 'Power', color: 'var(--c-tt)' }, { key: 'stride_m', label: 'Stride', color: 'var(--c-social)' }]} />
         <Evidence>1 km per lap resolution — the COROS MCP gives no per-second data. Drag to read values.</Evidence></Card>}
       {laps.length > 0 && <Card title="Splits per km">

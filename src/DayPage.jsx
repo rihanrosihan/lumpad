@@ -8,13 +8,14 @@ import { BY_DATE, today, addDays, fmtLong, diffDays, KIND, PHASE_NAME } from './
 import { Card, Chip, Screen, StrengthChips, Icon } from './ui.jsx'
 import { useApi, fmtDur, fmtPaceS } from './api.js'
 import { StepChart } from './charts2.jsx'
+import { effectiveDay } from './lib/scaler.js'
 
 const RULES = ['Sleep HR ≤ 67 bpm for hard sessions', 'Sleep HRV not Reduced for quality / TT', 'Pain while running < 2/10 (≥ 2 = durability event)', 'Tibia not tender before Lower', 'Meal buffer ≥ 90 min for hard sessions']
 const cpOf = (d) => d?.tags.find((t) => /^CP\d+$/.test(t))
 
 // One full page per training day: prescription, structure, pre-workout gate, shoe, what was actually run.
 export default function DayPage({ date, vdot, settings, go }) {
-  const T = today(), d = BY_DATE[date], p = paces(vdot.v)
+  const T = today(), [scale] = useStore('lumpad.scale', {}), d = effectiveDay(BY_DATE[date], scale.items?.[date], T), p = paces(vdot.v)
   const [f] = useStore('lumpad.daily.' + date, EMPTY_DAY), [regs] = useStore('lumpad.registrations', {})
   const G = useApi('/api/gear'), A = useApi(`/api/activities/merged?from=${date}&to=${date}`)
   if (!d) return <Screen title="Day Plan" sub={fmtLong(date)}><div className="card empty"><b>This date is outside the 2027 plan</b>Pick a day from the calendar.</div><button className="btn" onClick={() => go('calendar')}>Go to Calendar</button></Screen>
@@ -32,7 +33,7 @@ export default function DayPage({ date, vdot, settings, go }) {
     <div className="dgrid">
       <div className="dmain">
         <Card className={`sess k-${d.kind}`}>
-          <div className="sess-top"><Chip kind={d.kind}>{KIND[d.kind].label}</Chip>{cp && <Chip tone="cp">{cp}</Chip>}{reg && <Chip tone="green">registered ✓{reg.bib ? ` · BIB ${reg.bib}` : ''}</Chip>}<StrengthChips day={d} /></div>
+          <div className="sess-top"><Chip kind={d.kind}>{KIND[d.kind].label}</Chip>{cp && <Chip tone="cp">{cp}</Chip>}{reg && <Chip tone="green">registered ✓{reg.bib ? ` · BIB ${reg.bib}` : ''}</Chip>}<StrengthChips day={d} />{d.scaled && <Chip tone="yellow">auto-scaled · was {d.plannedLabel}{d.plannedKm ? ` ${d.plannedKm} km` : ''}</Chip>}</div>
           <h2 className="sess-title">{d.label || KIND[d.kind].label}</h2>
           {d.km > 0 ? <div className="bigkm"><b>{d.km}</b><span>km</span></div> : <p className="muted">{d.kind === 'gym' ? 'Gym day — no running.' : 'Rest day.'}</p>}
           {d.note && <p className="note">{d.note}</p>}

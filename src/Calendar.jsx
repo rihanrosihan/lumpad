@@ -7,6 +7,7 @@ import { useApi } from './api.js'
 import Checkpoints from './Checkpoints.jsx'
 import Race from './Race.jsx'
 import { Gantt, Combo } from './charts2.jsx'
+import { effectiveDay } from './lib/scaler.js'
 import { compliance } from './lib/analysis.js'
 import { dailyLoadSeries, pmc } from './lib/load.js'
 import { PLAN } from './lib/calendar.js'
@@ -31,7 +32,7 @@ function Season({ month, setMonth, T }) {
 }
 
 function MonthView({ vdot, focus, raceDate, onOpen }) {
-  const T = today(), p = paces(vdot.v)
+  const T = today(), p = paces(vdot.v), [scale] = useStore('lumpad.scale', {})
   const inPlan = T >= PLAN_START && T <= '2027-12-31'
   const [month, setMonth] = useState(inPlan ? parse(T).getMonth() : 0)
   useEffect(() => { if (focus && BY_DATE[focus]) setMonth(+focus.slice(5, 7) - 1) }, [focus])
@@ -77,7 +78,7 @@ function MonthView({ vdot, focus, raceDate, onOpen }) {
       <div className="calh" aria-hidden="true"><span title="Week and total km">Wk</span>{['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((x) => <span key={x}>{x}</span>)}</div>
       {weeks.map((wk, i) => { const w = weekOf(wk.find((x) => BY_DATE[x]) || ''); return <div className="calw" key={i}>
         <button className="wl" onClick={() => w && setWsel(mondayOf(wk[0]) === wsel ? null : mondayOf(wk[0]))} aria-label={w ? `Week ${w.id.slice(1)}, planned ${Math.round(w.km)} km. Week summary` : undefined}><b>{w?.id || ''}</b><small>{w ? Math.round(w.km) : ''}</small></button>
-        {wk.map((s) => { const x = BY_DATE[s], inm = +s.slice(5, 7) === month + 1, c = cpOf(x)
+        {wk.map((s) => { const x = effectiveDay(BY_DATE[s], scale.items?.[s], T), inm = +s.slice(5, 7) === month + 1, c = cpOf(x)
           return <button key={s} disabled={!x} aria-label={describe(s, x) + (done[s] ? `, already ran ${done[s].toFixed(1)} km` : '')} aria-current={s === T ? 'date' : undefined}
             className={`cell ${x ? 'k-' + x.kind : 'k-none'} ${x ? 'cmp-' + compliance(x.km, done[s] || 0, s < T) : ''} ${inm ? '' : 'out'} ${s === T ? 'today' : ''} ${s === raceDate ? 'raceday' : ''}`} onClick={() => onOpen(s)}>
             <i>{+s.slice(8)}</i>{done[s] ? <span className="done" aria-hidden="true">✓</span> : null}<b>{x && x.km ? x.km : ''}</b>{c && <em>{c}</em>}{!c && x && <u>{KIND[x.kind].short}</u>}</button> })}

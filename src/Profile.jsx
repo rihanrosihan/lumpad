@@ -11,6 +11,7 @@ import { Card, Screen, Chip, Evidence } from './ui.jsx'
 import { GLOSSARY } from './lib/glossary.js'
 import StravaCard from './StravaCard.jsx'
 import CoachConfig from './CoachConfig.jsx'
+import ShoeDegradation from './ShoeDegradation.jsx'
 import { useSyncStatus2, wib, ago } from './sync.js'
 import { useApi } from './api.js'
 import { BandLine, Donut, GroupedBars } from './charts2.jsx'
@@ -102,6 +103,7 @@ export default function Profile({ vdot, results, settings, setSettings }) {
       <div className="row2">{[['30 days', 'km30'], ['90 days', 'km90']].map(([l, k]) => <div key={k}><h3>{l}</h3><Donut parts={shoeRows.filter((g) => g.st[k] > 0).map((g) => ({ k: g.name.split(' ').slice(1).join(' ') || g.name, v: g.st[k], c: g.c }))} label={`Km per shoe ${l}`} /></div>)}</div>
       <Evidence>Malisoux 2015: using more than one shoe in parallel = a protective factor (HR 0.61) in 264 recreational runners.</Evidence>
     </Card>
+    <ShoeDegradation />
     <Card title="Default shoe rules">
       {RULES.map(([t, r]) => { const s = active.filter((g) => settings.shoeRoles?.[g.id] === r); return <div key={t} className="prow"><span>{t}</span><b>{s.length ? s.map((x) => x.name).join(', ') : '—'}</b><small>role: {ROLES.find((x) => x[0] === r)[1]}</small></div> })}
       <p className="muted">Home picks the shoe with a matching role that has gone unused the longest (encouraging rotation).</p>

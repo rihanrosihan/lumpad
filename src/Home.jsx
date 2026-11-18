@@ -16,6 +16,7 @@ import { BarChart } from './charts.jsx'
 import FuelCard from './FuelCard.jsx'
 import { HomeCoach } from './Coach.jsx'
 import { pickShoe } from './lib/shoes.js'
+import { effectiveDay } from './lib/scaler.js'
 
 export const thresholds = (c) => { const d = cpDistance(c); return d && c.line ? { G: fmtTime(raceTime(c.line - 0.5, d)), R: fmtTime(raceTime(c.line - 1.5, d)) } : null }
 const sign = (n) => (n == null ? '—' : (n > 0 ? '+' : '') + n)
@@ -23,7 +24,7 @@ const TIER_TONE = { prime: 'green', optimal: 'teal', compromised: 'yellow', depl
 
 // Home: the 3-second morning glance — can I run, what, with what, and how is the week going.
 export default function Home({ vdot, settings, results, go, M: Mprop }) {
-  const T = today(), day = BY_DATE[T], p = paces(vdot.v), G = useApi('/api/gear')
+  const T = today(), [scale] = useStore('lumpad.scale', {}), day = effectiveDay(BY_DATE[T], scale.items?.[T], T), p = paces(vdot.v), G = useApi('/api/gear')
   const [f] = useStore('lumpad.daily.' + T, EMPTY_DAY), [ov] = useStore('lumpad.muscle.' + T, {}), M = Mprop || useModel(T, settings, vdot, f, ov)
   const sync = useSyncStatus2(), g = evaluate(f, day), checked = hasInput(f), rd = M.readiness, tier = rd.tier
   const toRace = diffDays(settings.raceDate, T), wk = day ? weekOf(T) : null, mon = mondayOf(T)
@@ -79,7 +80,7 @@ export default function Home({ vdot, settings, results, go, M: Mprop }) {
           </div>
         </button>
         {day && <Card className={`sess g-sess k-${day.kind}`}>
-      <div className="sess-top"><Chip kind={day.kind}>{KIND[day.kind].label}</Chip><span className="muted">{wk?.id} · {PHASE_NAME[day.phase] || day.phase}</span></div>
+      <div className="sess-top"><Chip kind={day.kind}>{KIND[day.kind].label}</Chip>{day.scaled && <Chip tone="yellow">auto-scaled · was {day.plannedLabel}{day.plannedKm ? ` ${day.plannedKm} km` : ''}</Chip>}<span className="muted">{wk?.id} · {PHASE_NAME[day.phase] || day.phase}</span></div>
       <h2 className="sess-title">{day.label || KIND[day.kind].label}</h2>
       {adjusted && <Chip tone="yellow">{adjusted}</Chip>}
       {day.km > 0 ? <>

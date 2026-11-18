@@ -8,6 +8,7 @@ import { formZone, progressionBand } from './lib/load.js'
 import { quadrantLabel } from './lib/hrv.js'
 import { mean, r1 } from './lib/stats.js'
 import { Card, Chip, Screen, Icon, Info, Evidence } from './ui.jsx'
+import ScaleCard from './ScaleCard.jsx'
 import { useHealthDay, hrvLow, ago } from './sync.js'
 import { hm } from './api.js'
 import { useModel } from './model.js'
@@ -85,6 +86,8 @@ export default function Readiness({ vdot, settings, focus }) {
       </div>}
       {(needsMod && g.level !== 'green' && has) && <input className="ovr" aria-label="Override reason" placeholder="Going ahead anyway? Write why (saved)" value={f.override} onChange={(e) => set({ override: e.target.value })} />}
     </div>
+
+    {date === T && <ScaleCard rd={rd} M={M} T={T} />}
 
     {/* ---- Morning check-in: 1 tap on a normal day (Feel). Sleep HR / HRV come from COROS automatically; pain defaults to 0 ---- */}
     <Card title="Morning check-in" className="coros" right={<span className="saved" aria-live="polite">{has ? 'saved' : ''}</span>}>
