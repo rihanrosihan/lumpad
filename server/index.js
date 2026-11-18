@@ -69,6 +69,7 @@ const routes = {
   'GET /api/kv': async (q) => { const k = kvKey(q), e = load('kv', {})[k]; return e ? { found: true, ...e } : { found: false } },
   'PUT /api/kv': async (q, req) => {
     const k = kvKey(q), body = JSON.parse((await readBody(req, 1e6)).toString()), kv = load('kv', {})
+    if (body.value === undefined) throw Object.assign(new Error('value required'), { status: 400 }) // never wipe a stored value with an empty write
     kv[k] = { value: body.value, updatedAt: new Date().toISOString() }; save('kv', kv); return { ok: true, updatedAt: kv[k].updatedAt }
   },
   'GET /api/health': async () => ({ ok: true }),

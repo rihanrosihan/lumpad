@@ -6,6 +6,10 @@ const num = (x) => (x === '' || x == null ? null : Number(x))
 const okDate = (d) => /^\d{4}-\d{2}-\d{2}$/.test(d) && !Number.isNaN(Date.parse(d))
 const within = (v, a, b) => v != null && Number.isFinite(v) && v >= a && v <= b
 
+// optional body-composition details (percentages per segment, visceral rating) from a body-composition scale
+const BC_KEYS = ['sub', 'subTrunk', 'subArms', 'subLegs', 'mus', 'musTrunk', 'musArms', 'musLegs', 'visc']
+const cleanBc = (b) => { if (!b || typeof b !== 'object') return null; const o = {}; for (const k of BC_KEYS) { const v = num(b[k]); if (v != null && v >= 0 && v <= 100) o[k] = v } return Object.keys(o).length ? o : null }
+
 // → { ok:true, entry } | { ok:false, error }
 export function validate(type, raw) {
   const d = raw.d
@@ -15,7 +19,7 @@ export function validate(type, raw) {
     if (!within(kg, 30, 200)) return { ok: false, error: 'Weight must be 30–200 kg' }
     if (bf != null && !within(bf, 3, 60)) return { ok: false, error: 'Body fat must be 3–60 %' }
     if (lbm != null && !within(lbm, 20, 150)) return { ok: false, error: 'Lean mass must be 20–150 kg' }
-    return { ok: true, entry: { d, kg, ...(bf != null ? { bf } : {}), ...(lbm != null ? { lbm } : {}) } }
+    return { ok: true, entry: { d, kg, ...(bf != null ? { bf } : {}), ...(lbm != null ? { lbm } : {}), ...(cleanBc(raw.bc) ? { bc: cleanBc(raw.bc) } : {}) } }
   }
   if (type === 'bp') {
     const sys = num(raw.sys), dia = num(raw.dia), pulse = num(raw.pulse)
@@ -34,7 +38,7 @@ export function validate(type, raw) {
     const name = String(raw.name || '').trim().slice(0, 60), value = String(raw.value ?? '').trim().slice(0, 30), unit = String(raw.unit || '').trim().slice(0, 20), ref = String(raw.ref || '').trim().slice(0, 40)
     if (!name) return { ok: false, error: 'Test name is required' }
     if (!value) return { ok: false, error: 'Value is required' }
-    return { ok: true, entry: { d, name, value, ...(unit ? { unit } : {}), ...(ref ? { ref } : {}) } }
+    return { ok: true, entry: { d, name, value, ...(unit ? { unit } : {}), ...(ref ? { ref } : {}), ...(['high', 'low', 'normal'].includes(raw.flag) ? { flag: raw.flag } : {}) } }
   }
   return { ok: false, error: 'Unknown data type' }
 }

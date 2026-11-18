@@ -23,11 +23,16 @@ function schedulePut(key, value) {
   pending[key] = value; clearTimeout(timers[key]); setStatus('saving')
   timers[key] = setTimeout(flush, 500)
 }
-async function flush() {
+// One flush at a time: several keys saved in the same 500 ms window each arm a timer; concurrent flushes used to read a key another
+// flush had just sent and deleted (→ PUT with no value, which wiped the stored value).
+let chain = Promise.resolve()
+const flush = () => (chain = chain.then(run).catch(() => {}))
+async function run() {
   clearTimeout(retry)
   const keys = Object.keys(pending); if (!keys.length) return setStatus('ok')
   let failed = false
   for (const key of keys) {
+    if (!(key in pending)) continue
     const value = pending[key]
     try {
       const r = await fetch('/api/kv?key=' + encodeURIComponent(key), { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ value }) })
