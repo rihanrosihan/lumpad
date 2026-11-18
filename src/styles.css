@@ -742,3 +742,15 @@ nav.tabbar {
 :root[data-theme=dark] .gs.ph-BASE{color:#111}
 .strip .sc.today{background:#3f4fc8!important;border-color:#3f4fc8}
 @media(min-width:1100px){.bt small{max-width:300px}}
+/* type scale floor: nothing below ~11px on screen */
+.g-sub{font-size:13px!important}
+.rml-km span{font-size:.75rem}
+.pchart .cm-kt,.pchart text.cm-kt{font-size:11px}
+.b-load .gt,.bento4 .gt{font-size:14px}
+.chip.t-sport{font-size:.75rem}
+.tlb2{font-size:.78rem}
+.gt{font-size:12px}.gt.tiny{font-size:11.5px}.pc-lab{font-size:11px;font-weight:700}
+.zl span,.kmb span{font-size:.75rem}
+.g-num.sm{font-size:19px}.bbars small{font-size:.74rem}.rstats small{font-size:.74rem}
+.b-vol .g-num.sm{font-size:26px!important}
+svg.chart[data-fit]{max-width:720px;margin-left:auto;margin-right:auto}

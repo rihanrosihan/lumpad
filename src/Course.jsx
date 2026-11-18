@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
+import { useBoxW } from './useBoxW.js'
 import { ROUTES } from './CourseMap.jsx'
 import { splits, clock, runWalk, hms, mss, parseHMS, compass, segmentAt, FM } from './lib/courseplan.js'
 import { makeProfile } from './lib/profile.js'
@@ -21,13 +22,13 @@ const toMin = (s) => { const m = String(s || '').match(/^(\d{1,2}):(\d{2})$/); r
 
 // Elevation profile: coloured by gradient, climbs shaded, selection and cursor; flat (from 0 m) or detail scale
 function ProfileChart({ P, climbs, km, setKm, sel, setSel, hl, detail, tall = false }) {
-  const VW = 600, VH = tall ? 280 : 170, L = 34, Rt = 8, T = 10, B = 22, ref = useRef(null)
+  const ref = useRef(null), VW = useBoxW(ref, 600, 240), VH = tall ? 280 : 170, L = 36, Rt = 8, T = 10, B = 22
   const lo = detail ? Math.floor(Math.min(...P.s) - 1) : 0, hi = Math.ceil(Math.max(...P.s) + (detail ? 1 : 6)), X = (k) => L + (k / P.total) * (VW - L - Rt), Y = (e) => T + (1 - (e - lo) / (hi - lo)) * (VH - T - B)
   const pts = useMemo(() => { const out = []; for (let k = 0; k <= P.total + 1e-9; k += 0.15) out.push([k, P.at(Math.min(k, P.total))]); return out }, [P])
   const area = `M${X(0)},${Y(lo)}` + pts.map(([k, e]) => `L${X(k).toFixed(1)},${Y(e).toFixed(1)}`).join('') + `L${X(P.total)},${Y(lo)}Z`
   const kmOf = (e) => { const r = ref.current.getBoundingClientRect(), x = ((e.clientX - r.left) / r.width) * VW; return Math.max(0, Math.min(P.total, ((x - L) / (VW - L - Rt)) * P.total)) }
   const drag = useRef(false), ticks = [lo, Math.round((lo + hi) / 2), hi]
-  return <svg ref={ref} viewBox={`0 0 ${VW} ${VH}`} className="pchart" role="img" aria-label="Elevation profile, estimated. Touch or drag to move the point on the map." style={{ touchAction: 'none' }}
+  return <svg ref={ref} data-fit viewBox={`0 0 ${VW} ${VH}`} className="pchart" role="img" aria-label="Elevation profile, estimated. Touch or drag to move the point on the map." style={{ touchAction: 'none' }}
     onPointerDown={(e) => { e.currentTarget.setPointerCapture?.(e.pointerId); drag.current = true; setKm(kmOf(e)) }} onPointerMove={(e) => drag.current && setKm(kmOf(e))} onPointerUp={() => { drag.current = false }}>
     {ticks.map((t) => <g key={t}><line x1={L} x2={VW - Rt} y1={Y(t)} y2={Y(t)} className="gl" /><text x={L - 4} y={Y(t) + 3} className="gt" textAnchor="end">{t} m</text></g>)}
     {[0, 5, 10, 15, 20, 25, 30, 35, 40].map((k) => <text key={k} x={X(k)} y={VH - 6} className="gt" textAnchor="middle">{k}</text>)}
@@ -43,10 +44,11 @@ function ProfileChart({ P, climbs, km, setKm, sel, setSel, hl, detail, tall = fa
 
 // Jakim 2026, kilometre by kilometre: bar = speed (taller = faster; green faster than the plan pace, yellow ≤ 9:00/km, red slower), line = heart rate
 function LastChart({ L, plan, lthr, km, setKm }) {
-  const VW = 600, VH = 190, Lm = 30, Rm = 30, T = 10, B = 22, parts = L.per, X = (k) => Lm + (k / 42.195) * (VW - Lm - Rm), maxV = 3600 / 330
+  const boxRef = useRef(null), VWm = useBoxW(boxRef, 600, 240)
+  const VW = VWm, VH = 190, Lm = 32, Rm = 32, T = 10, B = 22, parts = L.per, X = (k) => Lm + (k / 42.195) * (VW - Lm - Rm), maxV = 3600 / 330
   const Yv = (pace) => T + (1 - Math.min(maxV, 3600 / pace) / maxV) * (VH - T - B), Yh = (h) => T + (1 - (h - 100) / 90) * (VH - T - B), planPace = plan ? plan.sp[0] : 426
   const hr = parts.filter((p) => !p.partial).map((p) => `${X(p.km - 0.5).toFixed(1)},${Yh(p.hr).toFixed(1)}`).join(' ')
-  return <svg viewBox={`0 0 ${VW} ${VH}`} className="pchart" role="img" aria-label="Your pace and heart rate for every kilometre of Jakim 2026" onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); setKm(Math.max(0, Math.min(42.195, (((e.clientX - r.left) / r.width) * VW - Lm) / (VW - Lm - Rm) * 42.195))) }}>
+  return <svg ref={boxRef} data-fit viewBox={`0 0 ${VW} ${VH}`} className="pchart" role="img" aria-label="Your pace and heart rate for every kilometre of Jakim 2026" onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); setKm(Math.max(0, Math.min(42.195, (((e.clientX - r.left) / r.width) * VW - Lm) / (VW - Lm - Rm) * 42.195))) }}>
     {[7, 9, 11, 13].map((m) => <g key={m}><line x1={Lm} x2={VW - Rm} y1={Yv(m * 60)} y2={Yv(m * 60)} className="gl" /><text x={Lm - 3} y={Yv(m * 60) + 3} textAnchor="end" className="gt">{m}:00</text></g>)}
     {[120, 150, 180].map((h) => <text key={h} x={VW - Rm + 3} y={Yh(h) + 3} className="gt">{h}</text>)}
     {[0, 5, 10, 15, 20, 25, 30, 35, 40].map((k) => <text key={k} x={X(k)} y={VH - 6} textAnchor="middle" className="gt">{k}</text>)}

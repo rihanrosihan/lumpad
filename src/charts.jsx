@@ -1,4 +1,6 @@
+import { useRef } from 'react'
 import { ACWR_ZONES } from './lib/metrics.js'
+import { useBoxW } from './useBoxW.js'
 
 const W = 340
 // Line chart: several series over dates. Colours are design tokens; the summary is exposed via aria-label (values also appear as text next to the chart).
@@ -19,8 +21,9 @@ export function Legend({ items }) { return <div className="legend">{items.map((l
 
 // Bars (daily load, weekly km). Today/last bar highlighted; optional plan marker per bar.
 export function BarChart({ data, height = 110, label, unit = '', mark }) {
+  const ref = useRef(null), W = useBoxW(ref, 340, 100)
   const max = Math.max(1, ...data.map((d) => Math.max(d.value || 0, d.plan || 0))), bw = (W - 8) / data.length
-  return <svg viewBox={`0 0 ${W} ${height + 18}`} className="chart" role="img" aria-label={label}>
+  return <svg ref={ref} data-fit viewBox={`0 0 ${W} ${height + 18}`} className="chart" role="img" aria-label={label}>
     {data.map((d, i) => { const h = ((d.value || 0) / max) * (height - 6), x = 4 + i * bw
       return <g key={d.date + i}><rect x={x + 1} y={height - h} width={Math.max(2, bw - 3)} height={Math.max(h, d.value ? 2 : 0)} rx="2" className={'bar-r ' + (i === data.length - 1 ? 'cur' : '')} />
         {d.plan != null && <line x1={x} x2={x + bw - 1} y1={height - (d.plan / max) * (height - 6)} y2={height - (d.plan / max) * (height - 6)} className="plan-l" />}

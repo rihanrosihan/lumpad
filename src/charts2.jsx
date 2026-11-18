@@ -1,5 +1,6 @@
 // Spec visuals (docs/readiness-model.md). Inline SVG, design tokens only, every chart has a text equivalent via aria-label.
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import { useBoxW } from './useBoxW.js'
 import { REGIONS } from './lib/analysis.js'
 
 const W = 340
@@ -165,7 +166,8 @@ export function Bullet({ value, bands, unit = '', label }) { // horizontal bulle
     <div className="zl">{bands.slice(1).map((b) => <span key={b.from} style={{ left: p(b.from) + '%' }}>{b.from}{unit}</span>)}</div></div>
 }
 export function GroupedBars({ groups, series, label, fmt }) {
+  const ref = useRef(null), W = useBoxW(ref, 340, 160)
   const H = 130, max = Math.max(...groups.flatMap((g) => series.map((s) => g[s.key] || 0))) || 1, gw = (W - 10) / groups.length, bw = (gw - 8) / series.length
-  return <svg viewBox={`0 0 ${W} ${H + 30}`} className="chart" role="img" aria-label={label}>{groups.map((g, gi) => <g key={g.label}>{series.map((s, si) => g[s.key] != null && <g key={s.key}><rect x={5 + gi * gw + 4 + si * bw} y={H - (g[s.key] / max) * (H - 18)} width={bw - 2} height={(g[s.key] / max) * (H - 18)} rx="2" style={{ fill: s.color }} /><text x={5 + gi * gw + 4 + si * bw + bw / 2 - 1} y={H - (g[s.key] / max) * (H - 18) - 3} className="gt tiny" textAnchor="middle">{fmt ? fmt(g[s.key], g.label) : g[s.key]}</text></g>)}<text x={5 + gi * gw + gw / 2} y={H + 14} className="gt" textAnchor="middle">{g.label}</text></g>)}</svg>
+  return <svg ref={ref} data-fit viewBox={`0 -14 ${W} ${H + 44}`} className="chart" role="img" aria-label={label}>{groups.map((g, gi) => <g key={g.label}>{series.map((s, si) => g[s.key] != null && <g key={s.key}><rect x={5 + gi * gw + 4 + si * bw} y={H - (g[s.key] / max) * (H - 18)} width={bw - 2} height={(g[s.key] / max) * (H - 18)} rx="2" style={{ fill: s.color }} /><text x={5 + gi * gw + 4 + si * bw + bw / 2 - 1} y={H - (g[s.key] / max) * (H - 18) - 3 - (bw < 28 && si % 2 ? 12 : 0)} className="gt tiny" textAnchor="middle">{fmt ? fmt(g[s.key], g.label) : g[s.key]}</text></g>)}<text x={5 + gi * gw + gw / 2} y={H + 14} className="gt" textAnchor="middle">{g.label}</text></g>)}</svg>
 }
 export const TwinBars = ({ a, b }) => <div className="twin">{[a, b].map((x) => <div key={x.label}><span>{x.label}</span><div className="tb"><i style={{ width: (x.v ?? 0) + '%' }} className={x.v == null ? '' : x.v >= 70 ? 'ok' : x.v >= 45 ? 'mid' : 'low'} /></div><b>{x.v == null ? '—' : x.v + '%'}</b></div>)}</div>

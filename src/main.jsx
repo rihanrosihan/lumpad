@@ -12,4 +12,18 @@ window.fetch = (input, init = {}) => {
   if (m !== 'GET' && m !== 'HEAD' && (url.startsWith('/') || url.startsWith(location.origin))) { const h = new Headers(init.headers || (typeof input !== 'string' ? input.headers : undefined)); h.set('X-Lumpad', '1'); init = { ...init, headers: h } }
   return _fetch(input, init)
 }
+
+// Charts are drawn in a ~300–640 unit viewBox and scale with their card. On a wide desktop card that blew the axis text up to 20–37 px
+// (Race prediction, Fitness path, ...). Cap each text-bearing chart at 1.3x its drawing width and centre it, so text stays 10–16 px.
+function capCharts() {
+  for (const svg of document.querySelectorAll('svg[viewBox]')) {
+    if (svg.hasAttribute('width') || svg.hasAttribute('data-fit') || svg.closest('.bsq-side,.rml,.leaflet-container') || !svg.querySelector('text')) continue
+    const vw = svg.viewBox.baseVal && svg.viewBox.baseVal.width
+    if (!vw || vw < 200) continue
+    const cap = Math.round(vw * 1.3) + 'px'
+    if (svg.style.maxWidth !== cap) { svg.style.maxWidth = cap; svg.style.marginLeft = 'auto'; svg.style.marginRight = 'auto' }
+  }
+}
+let capQ = 0
+new MutationObserver(() => { cancelAnimationFrame(capQ); capQ = requestAnimationFrame(capCharts) }).observe(document.documentElement, { childList: true, subtree: true })
 createRoot(document.getElementById('root')).render(<App />)
