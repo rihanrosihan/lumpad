@@ -20,8 +20,8 @@ const hm = (m) => { m = ((Math.round(m) % 1440) + 1440) % 1440; return `${String
 const toMin = (s) => { const m = String(s || '').match(/^(\d{1,2}):(\d{2})$/); return m ? +m[1] * 60 + +m[2] : null }
 
 // Elevation profile: coloured by gradient, climbs shaded, selection and cursor; flat (from 0 m) or detail scale
-function ProfileChart({ P, climbs, km, setKm, sel, setSel, hl, detail }) {
-  const VW = 600, VH = 170, L = 34, Rt = 8, T = 10, B = 22, ref = useRef(null)
+function ProfileChart({ P, climbs, km, setKm, sel, setSel, hl, detail, tall = false }) {
+  const VW = 600, VH = tall ? 280 : 170, L = 34, Rt = 8, T = 10, B = 22, ref = useRef(null)
   const lo = detail ? Math.floor(Math.min(...P.s) - 1) : 0, hi = Math.ceil(Math.max(...P.s) + (detail ? 1 : 6)), X = (k) => L + (k / P.total) * (VW - L - Rt), Y = (e) => T + (1 - (e - lo) / (hi - lo)) * (VH - T - B)
   const pts = useMemo(() => { const out = []; for (let k = 0; k <= P.total + 1e-9; k += 0.15) out.push([k, P.at(Math.min(k, P.total))]); return out }, [P])
   const area = `M${X(0)},${Y(lo)}` + pts.map(([k, e]) => `L${X(k).toFixed(1)},${Y(e).toFixed(1)}`).join('') + `L${X(P.total)},${Y(lo)}Z`
@@ -92,12 +92,16 @@ export default function Course({ go, settings }) {
     </Card>
 
     <Card title="B · Map and elevation profile"><div id="s-map" />
-      <RouteMapLeaflet R={R} P={P} km={km} setKm={setKm} sel={sel} hl={hl} />
-      {P && <ProfileChart P={P} climbs={climbs} km={km} setKm={setKm} sel={sel} setSel={setSel} hl={hl} detail={detail} />}
-      <div className="rstats"><div><small>km</small><b>{f1(km)}</b></div><div><small>elevation</small><b>{P ? f0(P.at(km)) : '—'} m</b></div><div><small>grade (300 m)</small><b>{P ? sgn(P.grade(km)) : '—'}%</b></div><div><small>clock</small><b>{plan ? hms(clockAtKm(km)) : '—'}</b></div></div>
-      <input type="range" min="0" max={FM} step="0.1" value={km} onChange={(e) => setKm(+e.target.value)} aria-label="Move along the course" />
-      <p><b>{seg.what}</b> · heading {compass(R.kmHeadings[Math.min(42, Math.floor(km))] ?? 0)} · you passed here in 2026 at <b>{hms(L.clockAt(km))}</b></p>
-      <div className="legend">{comp.map((c) => <span key={c.id}><i className="kdot" style={{ background: GR[c.id] }} />{c.label}</span>)}<button className="link" onClick={() => setDetail(!detail)}>{detail ? 'Flat scale (from 0 m)' : 'Detail scale'}</button></div>
+      <div className="bsq">
+        <div className="bsq-map"><RouteMapLeaflet R={R} P={P} km={km} setKm={setKm} sel={sel} hl={hl} height="100%" /></div>
+        <div className="bsq-side">
+          {P && <ProfileChart P={P} climbs={climbs} km={km} setKm={setKm} sel={sel} setSel={setSel} hl={hl} detail={detail} tall />}
+        <div className="rstats"><div><small>km</small><b>{f1(km)}</b></div><div><small>elevation</small><b>{P ? f0(P.at(km)) : '—'} m</b></div><div><small>grade (300 m)</small><b>{P ? sgn(P.grade(km)) : '—'}%</b></div><div><small>clock</small><b>{plan ? hms(clockAtKm(km)) : '—'}</b></div></div>
+        <input type="range" min="0" max={FM} step="0.1" value={km} onChange={(e) => setKm(+e.target.value)} aria-label="Move along the course" />
+        </div>
+      </div>
+    <p><b>{seg.what}</b> · heading {compass(R.kmHeadings[Math.min(42, Math.floor(km))] ?? 0)} · you passed here in 2026 at <b>{hms(L.clockAt(km))}</b></p>
+    <div className="legend">{comp.map((c) => <span key={c.id}><i className="kdot" style={{ background: GR[c.id] }} />{c.label}</span>)}<button className="link" onClick={() => setDetail(!detail)}>{detail ? 'Flat scale (from 0 m)' : 'Detail scale'}</button></div>
       <p className="muted">Press Move map to pan and zoom (so the page still scrolls normally), tap a km marker, tap the line or touch the profile. Line colour = grade; shaded bands = climbs T1–T4 (tap one to select it); yellow dots = U-turns.</p>
     </Card>
 
