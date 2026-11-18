@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
+import { getJson } from './net.js'
 // Sync status + synced health rows (COROS via the daily routine). Everything shows its source and pull time.
 export function useSyncStatus2() {
   const [s, setS] = useState(undefined) // undefined = loading, null = unavailable
-  useEffect(() => { fetch('/api/sync/status').then((r) => (r.ok ? r.json() : null)).then(setS).catch(() => setS(null)) }, [])
+  useEffect(() => { getJson('/api/sync/status').then(setS).catch(() => setS(null)) }, [])
   return s
 }
 // state: 'loading' | 'none' (no row for that day) | 'error' (server unreachable) | 'ok'
@@ -10,7 +11,7 @@ export function useHealthDay(date) {
   const [h, setH] = useState({ state: 'loading', row: null })
   useEffect(() => {
     let dead = false; setH({ state: 'loading', row: null })
-    fetch(`/api/health/range?from=${date}&to=${date}`).then((r) => { if (!r.ok) throw new Error(r.status); return r.json() })
+    getJson(`/api/health/range?from=${date}&to=${date}`)
       .then((a) => !dead && setH(a[0] ? { state: 'ok', row: a[0] } : { state: 'none', row: null })).catch(() => !dead && setH({ state: 'error', row: null }))
     return () => { dead = true }
   }, [date])

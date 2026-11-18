@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { getJson } from './net.js'
 
 // Sync status shown in the header: 'ok' | 'saving' | 'offline'
 let status = 'ok'; const subs = new Set()
@@ -52,7 +53,7 @@ export function useStore(key, init) {
   useEffect(() => {
     let dead = false; keyRef.current = key
     const local = readLocal(key, init); ref.current = local; setV(local)
-    fetch('/api/kv?key=' + encodeURIComponent(key)).then((r) => r.json()).then((r) => {
+    getJson('/api/kv?key=' + encodeURIComponent(key)).then((r) => {
       if (dead) return
       setStatus('ok')
       if (isDirty(key) && hasLocal(key)) put(key, readLocal(key, init)) // unsent local edit wins

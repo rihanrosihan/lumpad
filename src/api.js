@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
-// GET helper: {data, state: 'loading'|'ok'|'error'}. Never invents data: callers show "belum ditarik" for empty results.
+import { getJson } from './net.js'
+// GET helper: {data, state: 'loading'|'ok'|'error'}. Never invents data: callers show "not pulled yet" for empty results.
 export function useApi(path, enabled = true) {
   const [s, setS] = useState({ data: null, state: enabled ? 'loading' : 'idle' })
   useEffect(() => {
     if (!enabled || !path) return
     let dead = false; setS((x) => ({ data: x.data, state: 'loading' }))
-    fetch(path).then((r) => { if (!r.ok) throw new Error(r.status); return r.json() }).then((d) => !dead && setS({ data: d, state: 'ok' })).catch(() => !dead && setS({ data: null, state: 'error' }))
+    getJson(path).then((d) => !dead && setS({ data: d, state: 'ok' })).catch(() => !dead && setS({ data: null, state: 'error' }))
     return () => { dead = true }
   }, [path, enabled])
   return s
