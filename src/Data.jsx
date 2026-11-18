@@ -36,7 +36,7 @@ export default function Data() {
       <form onSubmit={(e) => { e.preventDefault(); run(async () => setHits(await api('/pubmed/search?q=' + encodeURIComponent(q)))) }} className="row"><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="e.g. strength training running economy" /><button>Search PubMed</button></form>
       {hits.map((h) => <p key={h.pmid}><a href={h.url} target="_blank" rel="noreferrer">{h.title}</a><br /><span className="muted">{h.authors} · {h.journal} {h.year} · PMID {h.pmid}</span> <button onClick={() => add(h)}>Save</button></p>)}
       <h3>Library ({lib.length})</h3>
-      {lib.map((l) => <p key={l.id}><span className="tag">{l.tag}</span> <a href={l.url} target="_blank" rel="noreferrer">{l.title}</a> <span className="muted">{l.source}{l.pmid ? ' · PMID ' + l.pmid : ''}</span> <button onClick={() => run(async () => setLib(await api('/library?id=' + l.id, { method: 'DELETE' })))}>×</button></p>)}
+      {lib.map((l) => <p key={l.id}><span className="tag">{l.tag}</span> <a href={/^https?:\/\//i.test(l.url) ? l.url : undefined} target="_blank" rel="noreferrer">{l.title}</a> <span className="muted">{l.source}{l.pmid ? ' · PMID ' + l.pmid : ''}</span> <button onClick={() => run(async () => setLib(await api('/library?id=' + l.id, { method: 'DELETE' })))}>×</button></p>)}
       <h3>Add manually (e.g. Consensus)</h3>
       <div className="grid"><input placeholder="Title" value={m.title} onChange={(e) => setM({ ...m, title: e.target.value })} /><input placeholder="URL" value={m.url} onChange={(e) => setM({ ...m, url: e.target.value })} /></div>
       <button onClick={() => { add({ ...m, source: 'consensus-manual' }); setM({ title: '', url: '', note: '' }) }}>Save</button>
