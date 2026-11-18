@@ -20,6 +20,8 @@ const TIER_TONE = { prime: 'green', optimal: 'teal', compromised: 'yellow', depl
 const Pill5 = ({ label, value, onChange, lo, hi }) => <div className="fld" style={{ gridColumn: 'span 2' }}><span>{label} <small className="muted">(1 = {lo} · 5 = {hi})</small></span>
   <div className="pill5" role="group" aria-label={label}>{[1, 2, 3, 4, 5].map((n) => <button key={n} aria-pressed={value === n} onClick={() => onChange(value === n ? '' : n)}>{n}</button>)}</div></div>
 
+const SITES = [['vmo_l', 'VMO kiri (paha)'], ['achilles', 'Achilles'], ['plantar', 'Telapak kaki'], ['tibia', 'Tibia'], ['other', 'Lain']]
+
 export default function Readiness({ vdot, settings, focus }) {
   const T = today(), [date, setDate] = useState(T)
   const [f, setF] = useStore('lumpad.daily.' + date, EMPTY_DAY), [ov, setOv] = useStore('lumpad.muscle.' + date, {})
@@ -27,6 +29,7 @@ export default function Readiness({ vdot, settings, focus }) {
   useEffect(() => { if (focus?.mode === 'pagi' || focus?.mode === 'analisis') setMode(focus.mode) }, [focus]) // eslint-disable-line
   const [hist, setHist] = useState({}), [range, setRange] = useState(42), [acwrMode, setAcwrMode] = useState('ewma')
   const hd = useHealthDay(date), row = hd.row, M = useModel(date, settings, vdot, f, ov)
+  const [painOpen, setPainOpen] = useState(false)
   useEffect(() => { fetch('/api/kv/prefix?prefix=lumpad.daily.').then((r) => r.json()).then(setHist).catch(() => {}) }, [])
   const topRef = useRef(), [stuck, setStuck] = useState(false)
   useEffect(() => { if (mode !== 'pagi' || !topRef.current) { setStuck(false); return } const o = new IntersectionObserver(([e]) => setStuck(!e.isIntersecting)); o.observe(topRef.current); return () => o.disconnect() }, [mode])
@@ -35,7 +38,10 @@ export default function Readiness({ vdot, settings, focus }) {
   const easy = `${fmtPace(p.E[1])}–${fmtPace(p.E[0])} /km`
   const set = (patch) => setF({ ...f, ...patch }), num = (k) => (e) => set({ [k]: e.target.value === '' ? '' : +e.target.value })
   const shrErr = f.sleepHR !== '' && (f.sleepHR < 30 || f.sleepHR > 130) ? 'Biasanya 40–80 bpm — cek lagi' : ''
-  const useCoros = () => set({ ...(row.sleep_hr_avg != null ? { sleepHR: Math.round(row.sleep_hr_avg) } : {}), ...(row.hrv_status ? { hrv: hrvLow(row.hrv_status) ? 'reduced' : 'normal' } : {}) })
+  // minimal check-in: COROS values are applied silently the first time a day with data is opened; one tap on "Rasa badan" completes a normal day
+  useEffect(() => { if (row && f.sleepHR === '' && f.hrv === '' && (row.sleep_hr_avg != null || row.hrv_status)) setF({ ...f, ...(row.sleep_hr_avg != null ? { sleepHR: Math.round(row.sleep_hr_avg) } : {}), ...(row.hrv_status ? { hrv: hrvLow(row.hrv_status) ? 'reduced' : 'normal' } : {}) }) }, [row?.date, row?.pulled_at]) // eslint-disable-line
+  const feel = (v) => set({ energy: v, ...(v !== '' && f.pain === '' ? { pain: 0, tibia: false } : {}) })
+  const setSite = (k, n) => { const ps = { ...(f.painSites || {}), [k]: n }; const worst = Math.max(0, ...Object.values(ps)); set({ painSites: ps, pain: worst, tibia: (ps.tibia || 0) > 0 }) }
   const days7 = Array.from({ length: 7 }, (_, i) => addDays(date, i - 6)), rec = (d) => (d === date ? f : hist['lumpad.daily.' + d] || null), wg = weeklyGate(days7.map(rec).filter(Boolean))
   const label = rd.score != null ? `${tier.label} · ${rd.score}` : has ? { green: 'Jalankan', yellow: 'Turunkan', red: 'Ganti easy / istirahat' }[g.level] : 'Menunggu data pagi'
   const hard = sess && HARD.has(sess.kind), needsMod = hard && (tier?.id === 'compromised' || tier?.id === 'depleted' || g.level !== 'green')
@@ -80,24 +86,23 @@ export default function Readiness({ vdot, settings, focus }) {
       {(needsMod && g.level !== 'green' && has) && <input className="ovr" aria-label="Alasan override" placeholder="Tetap lanjut? Tulis alasannya (disimpan)" value={f.override} onChange={(e) => set({ override: e.target.value })} />}
     </div>
 
-    {/* ---- Morning check-in (incl. 5-second subjective sliders) ---- */}
-    <Card title="Check-in pagi" className="coros" right={<span className="saved" aria-live="polite">{has ? 'tersimpan otomatis' : ''}</span>}>
-      {hd.state === 'none' && <p className="muted">Data COROS belum ditarik untuk tanggal ini — isi manual.</p>}
-      {row && <><p className="muted">COROS ({ago(row.pulled_at)}): Sleep HR {row.sleep_hr_avg ?? '—'} · HRV {row.hrv_avg ?? '—'} ms {row.hrv_status ? `(${row.hrv_status})` : ''}</p>
-        <button className="btn primary" onClick={useCoros}>Pakai data COROS</button></>}
-      <div className="form" style={{ marginTop: 14 }}>
+    {/* ---- Morning check-in: 1 tap on a normal day (Feel). Sleep HR / HRV come from COROS automatically; pain defaults to 0 ---- */}
+    <Card title="Check-in pagi" className="coros" right={<span className="saved" aria-live="polite">{has ? 'tersimpan' : ''}</span>}>
+      {hd.state === 'none' && <p className="muted">Data COROS belum ditarik untuk tanggal ini — isi Sleep HR manual di “Detail”.</p>}
+      {row && <p className="muted">COROS terbaca otomatis · Sleep HR {row.sleep_hr_avg ?? '—'} · HRV {row.hrv_avg ?? '—'} ms {row.hrv_status ? `(${row.hrv_status})` : ''}</p>}
+      <Pill5 label="Rasa badan hari ini" value={f.energy} onChange={feel} lo="habis" hi="segar" />
+      <div className="seg" role="group" aria-label="Nyeri" style={{ marginTop: 10 }}>
+        <button aria-pressed={!painOpen && !(f.pain >= 1)} className={!painOpen && !(f.pain >= 1) ? 'on' : ''} onClick={() => { setPainOpen(false); set({ pain: f.energy !== '' || f.pain !== '' ? 0 : '', tibia: false, painSites: {} }) }}>Tidak ada nyeri</button>
+        <button aria-pressed={painOpen || f.pain >= 1} className={painOpen || f.pain >= 1 ? 'on' : ''} onClick={() => setPainOpen(true)}>Ada nyeri</button>
+      </div>
+      {(painOpen || f.pain >= 1) && <div className="painsites">{SITES.map(([k, l]) => <div key={k} className="fld"><span>{l}</span>
+        <div className="pain" role="group" aria-label={`Nyeri ${l}`}>{[0, 1, 2, 3, 4, 5, 6].map((n) => <button key={n} aria-pressed={(f.painSites?.[k] || 0) === n} className={n >= 2 ? 'hi' : ''} onClick={() => setSite(k, n)}>{n === 6 ? '6+' : n}</button>)}</div></div>)}
+        <small className="muted">≥ 2/10 = durability event (aturan): sesi diturunkan otomatis.</small></div>}
+      <details className="more"><summary>Detail (opsional)</summary><div className="form">
         <Field label="Sleep HR (bpm)" hint="> 67 = tanpa lari keras" err={shrErr}><input inputMode="numeric" type="number" value={f.sleepHR} aria-invalid={!!shrErr} onChange={num('sleepHR')} /></Field>
         <Field label="HRV tidur"><div className="seg" role="group" aria-label="HRV">{[['normal', 'Normal'], ['reduced', 'Reduced']].map(([v, l]) => <button key={v} aria-pressed={f.hrv === v} className={f.hrv === v ? 'on ' + v : ''} onClick={() => set({ hrv: f.hrv === v ? '' : v })}>{l}</button>)}</div></Field>
-        <div className="fld" style={{ gridColumn: 'span 2' }}><span id="painl">Nyeri saat lari (0–10) — ≥ 2 = durability event</span>
-          <div className="pain" role="group" aria-labelledby="painl">{[0, 1, 2, 3, 4, 5, 6].map((n) => <button key={n} aria-pressed={f.pain === n} className={n >= 2 ? 'hi' : ''} onClick={() => set({ pain: f.pain === n ? '' : n })}>{n === 6 ? '6+' : n}</button>)}</div></div>
-        <label className="sw"><input type="checkbox" checked={f.tibia} onChange={(e) => set({ tibia: e.target.checked })} /><span>Tibia nyeri tekan</span></label>
-      </div>
-      <details className="more"><summary>Rasa tubuh (opsional) · Energi {f.energy || '—'} · Pegal {f.doms || '—'} · Hidrasi {f.hydration || '—'}</summary><div className="form">
-        <Pill5 label="Energi" value={f.energy} onChange={(v) => set({ energy: v })} lo="habis" hi="segar" />
         <Pill5 label="Pegal otot" value={f.doms} onChange={(v) => set({ doms: v })} lo="sangat pegal" hi="tidak pegal" />
         <Pill5 label="Hidrasi / makan" value={f.hydration} onChange={(v) => set({ hydration: v })} lo="kurang" hi="baik" />
-      </div></details>
-      <details className="more"><summary>Data tambahan (opsional)</summary><div className="form">
         <Field label="TE kemarin"><input inputMode="decimal" type="number" step="0.1" value={f.te} onChange={num('te')} /></Field>
         <Field label="Buffer makan (menit)" hint="≥ 90 sebelum lari"><input inputMode="numeric" type="number" value={f.mealBufferMin} onChange={num('mealBufferMin')} /></Field>
         <Field label="Durasi rencana (menit)"><input inputMode="numeric" type="number" value={f.plannedMin} onChange={num('plannedMin')} /></Field>

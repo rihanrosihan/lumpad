@@ -25,12 +25,10 @@ const has = (v) => v !== '' && v != null
 export function computeReadiness({ f = {}, hrv = {}, rhr = {}, sleep = {}, pmcPoint = null, monotony = null, progression = null, muscleMax = null, phase, hard = false, sleepHR = null }) {
   const w = weightsFor(phase)
   const msk = pillarScore([
-    { id: 'pain', label: 'Nyeri saat lari', max: 10, value: has(f.pain) ? f.pain + '/10' : null, pts: has(f.pain) ? (f.pain >= 2 ? 0 : f.pain === 1 ? 6 : 10) : null },
-    { id: 'tibia', label: 'Tibia nyeri tekan', max: 5, value: f.tibia === true ? 'ya' : f.tibia === false && (has(f.pain) || has(f.energy)) ? 'tidak' : null, pts: f.tibia === true ? 0 : f.tibia === false && (has(f.pain) || has(f.energy)) ? 5 : null },
-    { id: 'energy', label: 'Energi / rasa lelah', max: 6, value: has(f.energy) ? f.energy + '/5' : null, pts: has(f.energy) ? lin(f.energy, 1, 0, 5, 6) : null },
-    { id: 'doms', label: 'Pegal otot (DOMS)', max: 4, value: has(f.doms) ? f.doms + '/5' : null, pts: has(f.doms) ? lin(f.doms, 1, 0, 5, 4) : null },
-    { id: 'hydration', label: 'Hidrasi / fuelling', max: 2, value: has(f.hydration) ? f.hydration + '/5' : null, pts: has(f.hydration) ? lin(f.hydration, 1, 0, 5, 2) : null },
-    { id: 'muscle', label: 'Beban otot (peta tubuh)', max: 3, value: muscleMax == null ? null : muscleMax.toFixed(1) + '/3', pts: muscleMax == null ? null : clamp(3 - muscleMax, 0, 3) },
+    // v1.3 minimal check-in: pain (worst site) 15 + one "feel" item 12 + muscular load 3 = 30. Tibia is a pain site (cap below); soreness/hydration are optional and not scored.
+    { id: 'pain', label: 'Nyeri saat lari (titik terburuk)', max: 15, value: has(f.pain) ? f.pain + '/10' : null, pts: has(f.pain) ? (f.pain >= 2 ? 0 : f.pain === 1 ? 9 : 15) : null },
+    { id: 'energy', label: 'Rasa badan hari ini', max: 12, value: has(f.energy) ? f.energy + '/5' : null, pts: has(f.energy) ? lin(f.energy, 1, 0, 5, 12) : null },
+    { id: 'muscle', label: 'Beban otot (dari strength)', max: 3, value: muscleMax == null ? null : muscleMax.toFixed(1) + '/3', pts: muscleMax == null ? null : clamp(3 - muscleMax, 0, 3) },
   ], w.msk)
   const ans = pillarScore([
     { id: 'hrv7', label: 'HRV 7 hari vs baseline', max: 16, value: hrv.enough ? `z ${hrv.z7}` : null, pts: hrv.enough ? lin(hrv.z7, -2, 0, -0.5, 16) : null },

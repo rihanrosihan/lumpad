@@ -6,7 +6,16 @@ import * as lib from './library.js'
 import { load, save } from './db.js'
 import * as corosAuth from './coros/oauth.js'
 import { withCoros } from './coros/mcp.js'
-import { startJob, recentJobs, isRunning, startScheduler } from './jobs.js'
+import { startJob, recentJobs, isRunning, startScheduler, hooks } from './jobs.js'
+import { idb, mdb } from './intel/db.js'
+import { latestTwin, twinDiff } from './intel/twin.js'
+import { listEdges } from './intel/corr.js'
+import { listMemory, setStatus, getMemory } from './intel/memory.js'
+import { runIntel, recentIntelJobs, afterSync } from './intel/run.js'
+import { startIntelScheduler } from './intel/schedule.js'
+import { runCoach, recentRuns, getRun, newRun, finishRun } from './intel/coach.js'
+import { retrieveRunnerContext, renderPrompt, TASKS, OUTPUT_SCHEMA } from './intel/context.js'
+import { guardStatus, resolveModel } from './intel/llm.js'
 import { status as archiveStatus } from './coros/archive.js'
 import { listMerged, activityDetail, gearList, readinessData, lapsInRange, exportRows, toCsv } from './activities.js'
 import { applyIngest, checkToken, syncStatus, healthRange, activitiesRange, lapsOf, validDate } from './ingest.js'
@@ -69,6 +78,29 @@ const routes = {
   'GET /api/strava/activities': async (q) => strava.activities(q.get('after')),
   'GET /api/strava/streams': async (q) => strava.streams(+q.get('id')),
   'GET /api/strava/gear': async (q) => strava.gear(q.get('id')),
+  // --- intelligence layer (docs/plan-intelligence-layer.md)
+  'GET /api/twin': async (q) => latestTwin(+q.get('version') || null),
+  'GET /api/twin/history': async () => idb.prepare('SELECT version, as_of, created_at, trigger, json_extract(state, \'$.readiness.score\') AS readiness, json_extract(state, \'$.load.ctl\') AS ctl, json_extract(state, \'$.aerobic.hr_at_800.value\') AS hr800 FROM twin_state ORDER BY version DESC LIMIT 90').all(),
+  'GET /api/twin/diff': async (q) => ({ diff: twinDiff(+q.get('a'), +q.get('b')) }),
+  'GET /api/intel/status': async () => ({ jobs: recentIntelJobs(5), busy: (await import('./intel/run.js')).isBusy(), guard: guardStatus(), model: load('deepseek_model', null), key: !!process.env.DEEPSEEK_API_KEY,
+    counts: { fit_sessions: idb.prepare('SELECT COUNT(*) n FROM fit_session').get().n, weather: idb.prepare('SELECT COUNT(*) n FROM run_weather WHERE indoor=0').get().n, daily_log: idb.prepare('SELECT COUNT(*) n FROM daily_log').get().n, kb_docs: idb.prepare('SELECT COUNT(*) n FROM kb_docs').get().n,
+      memory: mdb.prepare('SELECT tier, status, COUNT(*) n FROM memory GROUP BY tier, status').all(), edges: idb.prepare('SELECT status, COUNT(*) n FROM corr_edge GROUP BY status').all() }, coach_runs: recentRuns(6) }),
+  'POST /api/intel/run': async (_q, req) => { const b = JSON.parse((await readBody(req, 1e4)).toString() || '{}'), kind = b.kind === 'quick' ? 'quick' : 'full'; runIntel(kind, { trigger: 'manual' }).catch((e) => console.error('intel', e.message)); return { started: kind } },
+  'GET /api/intel/session': async (q) => { const id = String(q.get('id') || '').replace(/^coros:/, ''), s = idb.prepare('SELECT * FROM fit_session WHERE label_id=? OR activity_id=?').get(id, q.get('id')); if (!s) return { found: false }
+    return { found: true, ...s, metrics: JSON.parse(s.metrics), km: JSON.parse(s.km), features: undefined, weather: idb.prepare('SELECT temp_c, dew_c, rh, wind_ms, rad_wm2, wbgt, indoor FROM run_weather WHERE label_id=?').get(s.label_id) || null } },
+  'GET /api/intel/longruns': async () => idb.prepare('SELECT s.label_id, s.activity_id, s.date, s.distance_m, s.elapsed_s, s.run_share, s.ef, s.drift_pahr, s.run_drift, s.gct_fade, s.stride_fade, s.onset_km, s.mech_abs_km, s.hr800, s.run_hr, s.gain_m, w.wbgt, w.temp_c FROM fit_session s LEFT JOIN run_weather w ON w.label_id=s.label_id WHERE s.distance_m >= 16000 ORDER BY s.date DESC LIMIT 40').all(),
+  'GET /api/intel/edges': async (q) => listEdges(q.get('status') || undefined),
+  'GET /api/memory': async (q) => listMemory({ tier: q.get('tier') || undefined, status: q.get('status') || undefined, kind: q.get('kind') || undefined, limit: Math.min(+q.get('limit') || 100, 300) }),
+  'GET /api/memory/item': async (q) => getMemory(+q.get('id')) || { error: 'not found' },
+  'POST /api/memory/action': async (_q, req) => { const b = JSON.parse((await readBody(req, 1e4)).toString()), to = { approve: 'active', retract: 'retracted', archive: 'archived' }[b.action]; if (!to) throw Object.assign(new Error('bad action'), { status: 400 }); return setStatus(+b.id, to, 'athlete') },
+  'POST /api/coach/run': async (_q, req) => { const b = JSON.parse((await readBody(req, 2e4)).toString() || '{}'); if (!TASKS[b.intent || 'daily_brief']) throw Object.assign(new Error('bad intent'), { status: 400 }); return runCoach({ intent: b.intent || 'daily_brief', question: String(b.question || '').slice(0, 1000), activityId: b.activity_id || null }) },
+  'GET /api/coach/runs': async () => recentRuns(20),
+  'GET /api/coach/run': async (q) => getRun(+q.get('id')) || { error: 'not found' },
+  // pull mode for a Claude routine / Claude Code: context out, answer back (same validation + write-back hook as DeepSeek)
+  'GET /api/coach/context': async (q, req) => { checkToken(req); const intent = TASKS[q.get('intent')] ? q.get('intent') : 'daily_brief', ctx = retrieveRunnerContext({ intent, question: q.get('question') || '', activityId: q.get('activity') || null }), prompt = renderPrompt(ctx, TASKS[intent])
+    return { run_id: newRun({ intent, provider: 'claude-code', ctx, prompt, question: q.get('question') }), ...prompt, output_schema: OUTPUT_SCHEMA, item_ids: ctx.item_ids } },
+  'POST /api/coach/writeback': async (_q, req) => { checkToken(req); const b = JSON.parse((await readBody(req, 2e5)).toString()); return finishRun(+b.run_id, b.answer, { provider: 'claude-code', raw: JSON.stringify(b.answer) }) },
+  'POST /api/strava/sync-shoes': async () => strava.syncShoes(),
   'GET /api/pubmed/search': async (q) => pubmed.search(q.get('q') || '', Math.min(+q.get('max') || 8, 20)),
   'POST /api/coros/fit': async (_q, req) => { const a = await coros.parseFit(await readBody(req)); save('coros_acts', [a, ...load('coros_acts', [])].slice(0, 500)); return a },
   'GET /api/coros/activities': async () => load('coros_acts', []),
@@ -85,4 +117,4 @@ http.createServer(async (req, res) => {
   if (req.method !== 'GET' && u.pathname !== '/api/ingest' && req.headers['x-lumpad'] !== '1') return send(res, 403, { error: 'missing X-Lumpad header' })
   try { const out = await h(u.searchParams, req, res); if (out !== null) send(res, 200, out) }
   catch (e) { send(res, e.status || 500, { error: e.message }) }
-}).listen(process.env.PORT || 8787, '127.0.0.1', () => { console.log('lumpad api :' + (process.env.PORT || 8787)); if (process.env.SCHEDULER !== 'off') startScheduler() })
+}).listen(process.env.PORT || 8787, '127.0.0.1', () => { console.log('lumpad api :' + (process.env.PORT || 8787)); if (process.env.SCHEDULER !== 'off') { startScheduler(); startIntelScheduler(); hooks.afterJob = () => afterSync() } })

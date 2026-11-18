@@ -6,9 +6,10 @@ import Readiness from './Readiness.jsx'
 import Calendar from './Calendar.jsx'
 import Activity from './Activity.jsx'
 import Profile from './Profile.jsx'
+import Coach from './Coach.jsx'
 import { CHECKPOINTS, TARGET } from './lib/plan.js'
 
-const TABS = [['home', 'Home', 'home'], ['ready', 'Readiness', 'ready'], ['activity', 'Aktivitas', 'run'], ['calendar', 'Kalender', 'cal'], ['profile', 'Profil', 'user']]
+const TABS = [['home', 'Home', 'home'], ['ready', 'Readiness', 'ready'], ['activity', 'Aktivitas', 'run'], ['coach', 'Coach', 'coach'], ['calendar', 'Kalender', 'cal'], ['profile', 'Profil', 'user']]
 const fromHash = () => { const t = location.hash.replace('#/', ''); return TABS.some((x) => x[0] === t) ? t : 'home' }
 
 function latestVdot(results) {
@@ -37,6 +38,7 @@ export default function App() {
       {tab === 'home' && <Home vdot={vdot} settings={settings} results={results} go={go} />}
       {tab === 'ready' && <Readiness vdot={vdot} settings={settings} focus={focus} />}
       {tab === 'activity' && <Activity vdot={vdot} focus={focus} />}
+      {tab === 'coach' && <Coach />}
       {tab === 'calendar' && <Calendar vdot={vdot} results={results} setResults={setResults} focus={focus} settings={settings} go={go} />}
       {tab === 'profile' && <Profile vdot={vdot} results={results} settings={settings} setSettings={setSettings} />}
     </main>

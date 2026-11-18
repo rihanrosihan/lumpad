@@ -7,8 +7,11 @@
     "dev": "vite --host",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node --test src/lib/*.test.js server/*.test.js server/coros/*.test.js",
-    "server": "node server/index.js"
+    "test": "node --test src/lib/*.test.js server/*.test.js server/coros/*.test.js server/intel/*.test.js",
+    "server": "node server/index.js",
+    "intel": "node --env-file=.env server/intel/cli.js run",
+    "coach:context": "node --env-file=.env server/intel/cli.js context",
+    "coach:writeback": "node --env-file=.env server/intel/cli.js writeback"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.32.1",

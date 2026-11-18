@@ -9,6 +9,7 @@ import Data from './Data.jsx'
 import CorosCard from './CorosCard.jsx'
 import { Card, Screen, Chip, Evidence } from './ui.jsx'
 import { GLOSSARY } from './lib/glossary.js'
+import StravaCard from './StravaCard.jsx'
 import { useSyncStatus2, wib, ago } from './sync.js'
 import { useApi } from './api.js'
 import { BandLine, Donut, GroupedBars } from './charts2.jsx'
@@ -130,6 +131,7 @@ export default function Profile({ vdot, results, settings, setSettings }) {
       <Evidence>{Dv.data?.found ? `Dari COROS, ${ago(Dv.data.value.at)}.` : 'Dari sesi pertama; diperbarui setiap sync langsung.'} COROS MCP tidak memberi status baterai.</Evidence>
     </Card>
     <CorosCard />
+    <StravaCard />
     <Card title="Pipeline data">
       {[['COROS (langsung)', 'lihat kartu di atas', null], ['Strava', ss?.activities?.n ? `${ss.activities.n} aktivitas · terakhir ${ss.activities.last}` : 'belum', ss?.activities?.n ? 'on' : 'off'], ['Sync harian', ss?.lastRun ? `${wib(ss.lastRun.received_at)} WIB · ${ago(ss.lastRun.received_at)}` : 'belum ada', ss?.lastRun ? (ss.lastRun.ok ? 'on' : 'warn') : 'off'], ['Apple Health / Health Connect', 'tidak terhubung', 'off'], ['Garmin Connect', 'tidak dipakai', 'off']]
         .filter((x) => x[2]).map(([n, d, s]) => <div key={n} className="apipill"><i className={'dot2 ' + s} /><span>{n}</span><small className="muted">{d}</small></div>)}

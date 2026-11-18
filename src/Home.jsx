@@ -13,6 +13,8 @@ import { useApi, hm, fmtDur, fmtPaceS } from './api.js'
 import { useModel, plannedLoad } from './model.js'
 import { RadialGauge, Ring, Stacked100, StepChart, Sparkline } from './charts2.jsx'
 import { BarChart } from './charts.jsx'
+import FuelCard from './FuelCard.jsx'
+import { HomeCoach } from './Coach.jsx'
 
 export const thresholds = (c) => { const d = cpDistance(c); return d && c.line ? { G: fmtTime(raceTime(c.line - 0.5, d)), R: fmtTime(raceTime(c.line - 1.5, d)) } : null }
 const sign = (n) => (n == null ? '—' : (n > 0 ? '+' : '') + n)
@@ -44,6 +46,9 @@ export default function Home({ vdot, settings, results, go }) {
     <button className={`fresh ${sync === null ? 'warn' : sync?.lastRun ? (sync.lastRun.ok ? 'ok' : 'warn') : 'none'}`} onClick={() => go('profile')}>
       <i />{sync === undefined ? 'Memeriksa sync…' : sync === null ? 'Status sync tidak terjangkau — data bisa usang' : sync?.lastRun ? <>Sync {ago(sync.lastRun.received_at)} · {wib(sync.lastRun.received_at)} WIB</> : 'Belum ada sync — data COROS/Strava belum masuk'}
     </button>
+
+    <FuelCard last={last} today={T} />
+    <HomeCoach go={go} />
 
     {/* 1. readiness hero */}
     <button className="card hero-btn" onClick={() => go('ready')} aria-label={`Readiness ${rd.score ?? 'belum ada'}. Buka detail`}>
