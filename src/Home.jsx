@@ -66,8 +66,6 @@ export default function Home({ vdot, settings, results, go, M: Mprop }) {
       <p className="h4-sum">{rd.score != null ? <><b>{tier.label}</b> — {tier.advice} </> : null}<span>{summary}</span></p>
       <div className="h4-tiles">
         {near && <button className="cd g" onClick={() => go('race')} aria-label={`Nearest race ${near.label}, ${diffDays(near.date, T)} days`}><small>NEAREST RACE ({(RACE_BY_DATE[near.date]?.cls || 'C')}-RACE)</small><b>D-{diffDays(near.date, T)}</b><span>{near.label.split(' · ')[0]} · {fmtShort(near.date)}</span></button>}
-        <button className="cd r" onClick={() => go('race')} aria-label={`A-race JRF, ${toRace} days`}><small>PRIMARY GOAL (A-RACE)</small><b>D-{Math.max(0, toRace)}</b><span>JRF Sub-4 · {fmtShort(aRace)}</span></button>
-        <button className="cd h" onClick={() => go('biometrics')} aria-label="Health dictionary: body composition, blood pressure, glucose"><small>HEALTH DICT</small><span><b>Comp · BP · Glu</b> <Icon n="chev" size={16} /></span></button>
         {nextCp && <button className="cd n" onClick={() => go('calendar', { view: 'cp', id: nextCp.id })}><small>NEXT CHECKPOINT ({diffDays(nextCp.date, T)}D)</small><span><b>CP{nextCp.id} · {nextCp.name}</b> <Icon n="chev" size={16} /></span></button>}
       </div>
     </div>
