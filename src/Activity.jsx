@@ -6,6 +6,7 @@ import { mean } from './lib/stats.js'
 import { useStore } from './store.js'
 import { Card, Chip, Screen, Icon, Evidence, Info } from './ui.jsx'
 import { useApi, fmtDur, fmtPaceS } from './api.js'
+import { cfgOf, hrRange, paceRange, zoneSeconds, ZONES } from './lib/zones.js'
 import { BandLine, MultiTrack, Sparkline } from './charts2.jsx'
 import { FitPanel } from './FitPanel.jsx'
 import ActivityCoach from './ActivityCoach.jsx'
@@ -20,7 +21,7 @@ const monthRange = (ym) => { const [y, m] = ym.split('-').map(Number); return [`
 const shiftMonth = (ym, n) => { const [y, m] = ym.split('-').map(Number), d = new Date(y, m - 1 + n, 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` }
 const SPORT_LABEL = { run: 'Run', walk: 'Walk', strength: 'Gym' }
 
-export default function Activity({ vdot, focus, go }) {
+export default function Activity({ vdot, focus, go, settings }) {
   const T = today(), [ym, setYm] = useState(T.slice(0, 7)), [sport, setSport] = useState('all'), [type, setType] = useState('all'), sel = focus?.id || null
   const [from, to] = monthRange(ym), prevYm = shiftMonth(ym, -1), [pf] = monthRange(prevYm)
   const A = useApi(`/api/activities/merged?from=${pf}&to=${to}`), G = useApi('/api/gear'), Hist = useApi(`/api/activities/merged?from=${addDays(T, -180)}&to=${T}`)
@@ -38,7 +39,7 @@ export default function Activity({ vdot, focus, go }) {
       <div className="snav"><button onClick={() => older && go('activity', { id: older.ids[0] })} disabled={!older} aria-label={older ? `Previous session: ${older.name}` : 'Previous session'}><Icon n="left" /></button><p>{at >= 0 ? `${flat[at].date} · session ${flat.length - at} of ${flat.length}` : 'Session detail'}</p><button onClick={() => newer && go('activity', { id: newer.ids[0] })} disabled={!newer} aria-label={newer ? `Next session: ${newer.name}` : 'Next session'} className="flip"><Icon n="left" /></button></div>
     </div>
     <nav className="chipjump" aria-label="Jump to section">{[['KPIs', null], ['Per-second FIT', 'Per-second analysis'], ['Long-run comparison', 'Long-run comparison'], ['AI analysis', 'Coach analysis'], ['Per-lap telemetry', 'Per-lap telemetry'], ['Laps', 'Splits per km']].map(([l, h]) => <button key={l} onClick={() => { const el = h ? [...document.querySelectorAll('.card h2')].find((x) => x.textContent.includes(h)) : document.querySelector('.screen'); el?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}>{l}</button>)}</nav>
-    <Detail id={sel} page gear={gear} vdot={vdot} history={Hist.data || []} go={go} />
+    <Detail id={sel} page gear={gear} vdot={vdot} history={Hist.data || []} go={go} settings={settings} />
   </Screen>
 
   const prevKm = cumPrev.at(-1)?.km ?? 0, curKm = cum.at(-1)?.km ?? 0, dKm = prevKm ? Math.round(((curKm - prevKm) / prevKm) * 1000) / 10 : null
@@ -97,10 +98,12 @@ function RunCompare({ a, id, history }) {
   </Card>
 }
 
+const ZCOL = ['var(--c-rest)', 'var(--c-easy)', 'var(--green)', 'var(--c-long)', 'var(--yellow)', 'var(--c-quality)', 'var(--red)']
+const ZROWS = (cfg, kind) => [kind === 'hr' ? `<Z1 (<${Math.round(cfg.lthr * 0.65)} bpm)` : 'Slower than Z1', ...[1, 2, 3, 4, 5, 6].map((z) => { const r = kind === 'hr' ? hrRange(z, cfg) : paceRange(z, cfg); return kind === 'hr' ? `Z${z} ${ZONES[z].name} · ${z === 6 ? r[0] + '+' : r[0] + '–' + r[1]} bpm` : `Z${z} ${ZONES[z].name} · ${fmtPaceS(r[0])}–${fmtPaceS(r[1])}` })].map((k, i) => ({ k, c: ZCOL[i] }))
 const ZC = { E: 'var(--green)', M: 'var(--c-long)', T: 'var(--yellow)', I: 'var(--c-quality)', R: 'var(--red)' }
 function ZoneBars({ title, rows }) { const tot = rows.reduce((a, r) => a + r.s, 0) || 1; return <div className="zbars"><h3>{title}</h3>{rows.map((r) => <div key={r.k} className="zrow"><span>{r.k}</span><div className="tb"><i style={{ width: (r.s / tot) * 100 + '%', background: r.c }} /></div><b>{Math.round((r.s / tot) * 100)}%</b></div>)}</div> }
 
-function Detail({ id, gear, vdot, history, go }) {
+function Detail({ id, gear, vdot, history, go, settings }) {
   const D = useApi(id ? `/api/activities/detail?id=${encodeURIComponent(id)}` : '', !!id), a = D.data
   const [ctx, setCtx] = useStore('lumpad.act.' + (id || 'none').replace(/[^A-Za-z0-9._-]/g, '_'), { rpe: '', gels: '', cho_g: '', note: '' })
   const p = paces(vdot.v), plan = a ? BY_DATE[a.date] : null, laps = a?.laps || []
@@ -108,7 +111,7 @@ function Detail({ id, gear, vdot, history, go }) {
   const efHist = a && kind ? history.filter((h) => typeOf(h) === kind && h.date <= a.date && efOf(h)).sort((x, y) => x.date.localeCompare(y.date)).slice(-10).map(efOf) : []
   const dc = decoupling(laps), steady = kind === 'easy' || kind === 'long'
   const hrmax = Math.max(0, ...history.map((h) => h.max_hr || 0), a?.max_hr || 0, ...laps.map((l) => l.max_hr || 0)) || null
-  const pz = laps.length ? zoneTime(laps, p) : null, hz = laps.length ? hrZoneTime(laps, hrmax) : null
+  const zcfg = cfgOf(settings || {}), zs = laps.length ? zoneSeconds(laps, zcfg) : null, pz = zs && zs.pace.some((x) => x > 0), hz = zs && zs.hr.some((x) => x > 0)
   const maxPace = Math.max(...laps.map((l) => l.avg_pace_s_km || 0)), minPace = Math.min(...laps.filter((l) => l.distance_m >= 900).map((l) => l.avg_pace_s_km))
   const dyn = (k) => { const v = mean(laps.map((l) => l[k])); return v == null ? null : Math.round(v * 100) / 100 }
   const E = [p.E[1], p.E[0]]
@@ -142,8 +145,9 @@ function Detail({ id, gear, vdot, history, go }) {
           {laps.map((l) => <tr key={l.idx}><td>{l.idx}{l.distance_m < 990 ? <small className="muted"> ({(l.distance_m / 1000).toFixed(2)})</small> : ''}</td><td className={'pbar-td ' + (l.avg_pace_s_km === minPace ? 'fast' : '')}><i style={{ width: (maxPace ? (l.avg_pace_s_km / maxPace) * 100 : 0) + '%' }} /><span>{fmtPaceS(l.avg_pace_s_km)}</span></td><td>{l.avg_hr ?? '—'}</td><td>{l.cadence ?? '—'}</td><td>{l.gct_ms ?? '—'}</td></tr>)}
         </tbody></table></Card>}
       {(pz || hz) && <Card title="Zone distribution">
-        {pz && <ZoneBars title="VDOT pace zones" rows={['E', 'M', 'T', 'I', 'R'].map((k) => ({ k, s: pz[k], c: ZC[k] }))} />}
-        {hz && <ZoneBars title={`HR zones (% of max HR ${hrmax})`} rows={['Z1 <60%', 'Z2 60–70', 'Z3 70–80', 'Z4 80–90', 'Z5 >90'].map((k, i) => ({ k, s: hz[i], c: ['var(--c-rest)', 'var(--green)', 'var(--c-long)', 'var(--c-quality)', 'var(--red)'][i] }))} />}
+        {hz && <ZoneBars title={`HR zones (% of lactate-threshold HR ${zcfg.lthr} bpm)`} rows={ZROWS(zcfg, 'hr').map((r, i) => ({ ...r, s: zs.hr[i] }))} />}
+        {pz && <ZoneBars title={`Pace zones (% of threshold pace ${fmtPaceS(zcfg.tpace)}/km)`} rows={ZROWS(zcfg, 'pace').map((r, i) => ({ ...r, s: zs.pace[i] }))} />}
+        {hz && pz && (() => { const top = (arr) => arr.indexOf(Math.max(...arr)), dh = top(zs.hr), dp = top(zs.pace); return dh - dp >= 2 ? <p className="banner">Heart rate sat {dh - dp} zones higher than pace (mostly HR Z{dh}, pace {dp ? 'Z' + dp : 'below Z1'}): heat, cardiac drift, fatigue or walk breaks. Judge this session by heart rate, not pace.</p> : null })()}
         <Evidence>[calc] Per lap. Max HR = the highest ever recorded in your laps (an estimate, not a lab test).</Evidence></Card>}
       <Card title="Running dynamics & context">
         <div className="score-grid"><div><small>GCT</small><b>{dyn('gct_ms') ?? '—'}</b><em>ms</em></div><div><small>Vertical oscillation</small><b>{dyn('vo_cm') ?? '—'}</b><em>cm</em></div><div><small>Vertical ratio</small><b>{dyn('vratio_pct') ?? '—'}</b><em>%</em></div>

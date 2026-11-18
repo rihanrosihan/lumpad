@@ -47,3 +47,14 @@ export function summary(steps) {
     : s.t === 'free' ? 'free run' : `${s.m ? (s.m >= 1000 ? +(s.m / 1000).toFixed(2) + ' km' : s.m + ' m') : Math.round(s.sec / 60) + '′'}${s.pace ? ' @' + fmtPace((s.pace[0] + s.pace[1]) / 2) : s.z ? ' Z' + s.z : ''}`
   return steps.map((s) => (s.rep ? `${s.rep}× (${s.steps.map(one).join(' + ')})` : one(s))).join(' · ')
 }
+
+// ---- which zone a lap / second falls in (same 6 zones the plan and the watch use) ----
+// index 0 = below Z1 (HR < 65 % LTHR, or pace slower than Z1: walking / standing), 1..6 = Z1..Z6
+export const hrZoneOf = (hr, cfg = ZONE_DEFAULTS) => { if (!hr) return null; const f = hr / cfg.lthr; return f < 0.65 ? 0 : f < 0.85 ? 1 : f < 0.9 ? 2 : f < 0.95 ? 3 : f < 1.0 ? 4 : f < 1.03 ? 5 : 6 }
+export const paceZoneOf = (pace, cfg = ZONE_DEFAULTS) => { if (!pace) return null; const r = pace / cfg.tpace; return r > 1.45 ? 0 : r > 1.295 ? 1 : r > 1.135 ? 2 : r > 1.055 ? 3 : r > 1.005 ? 4 : r > 0.965 ? 5 : 6 }
+// seconds per zone (index 0..6) from per-km laps, time-weighted
+export function zoneSeconds(laps, cfg = ZONE_DEFAULTS) {
+  const hr = Array(7).fill(0), pace = Array(7).fill(0)
+  for (const l of laps || []) { const d = l.duration_s || 0, h = hrZoneOf(l.avg_hr, cfg), q = paceZoneOf(l.avg_pace_s_km, cfg); if (h != null) hr[h] += d; if (q != null) pace[q] += d }
+  return { hr, pace }
+}

@@ -124,7 +124,7 @@ export default function App() {
         <main id="main" ref={mainRef} tabIndex={-1}>
           {tab === 'home' && <Home vdot={vdot} settings={settings} results={results} go={go} M={M} />}
           {tab === 'ready' && <Readiness vdot={vdot} settings={settings} focus={focus} />}
-          {tab === 'activity' && <Activity vdot={vdot} focus={focus} go={go} />}
+          {tab === 'activity' && <Activity vdot={vdot} focus={focus} go={go} settings={settings} />}
           {tab === 'coach' && <Coach go={go} />}
           {tab === 'calendar' && <Calendar view="month" vdot={vdot} results={results} setResults={setResults} focus={null} settings={settings} go={go} />}
           {tab === 'plan' && <PlanSync go={go} />}

@@ -757,3 +757,5 @@ svg.chart[data-fit]{max-width:720px;margin-left:auto;margin-right:auto}
 .errline{color:var(--red-t);font-weight:600}
 .coachtop{align-items:start}.coachtop>.card{margin:0}
 .md-code{font-size:max(.85em,11.5px)}
+.zrow{grid-template-columns:minmax(120px,34%) 1fr 42px;font-size:.78rem}.zrow span{line-height:1.2}
+@media(max-width:520px){.zrow{grid-template-columns:1fr 42px}.zrow span{grid-column:1/-1}.zrow .tb{grid-column:1}}
