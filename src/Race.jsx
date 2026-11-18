@@ -5,7 +5,9 @@ import { useApi } from './api.js'
 import { WEEKS } from './lib/calendar.js'
 import { BarChart } from './charts.jsx'
 import { mean } from './lib/stats.js'
+import { useState } from 'react'
 import { useStore } from './store.js'
+import { Icon } from './ui.jsx'
 
 const RATE = 0.74 // best observed VDOT/month (n=2) — hypothesis, shown as such
 const FM = 42195, RATIO = 0.95 // FM time = time for VDOT (ratio × fitness), as in the project plan; checked: 38.2 → 4:08:41 (doc 4:08:32)
@@ -63,7 +65,28 @@ function Registration({ date, r, setBib, go }) {
   </Card>
 }
 
+const C_RULES = ['Run-walk, target < 6:00, finish-first — bukan tes VDOT.', 'Pace dan HR cap dari easy, bukan dari VDOT race.', 'Nyeri ≥ 2/10 = durability event: stop atau jalan, jangan dipaksa.', 'Setelah race: 7 hari easy, quality pertama hanya kalau Sleep HR ≤ 67 dan HRV normal.']
+function CRace({ date, label, regs, go }) {
+  const T = today(), x = BY_DATE[date], reg = regs?.[date], lead = Array.from({ length: 7 }, (_, i) => addDays(date, i - 6)).map((d) => BY_DATE[d]).filter(Boolean)
+  const gate = date === '2027-06-20' ? "G-MJM (Rab 16 Jun): jog 20′, nyeri 0/10, Sleep HR ≤ 67, HRV tidak Reduced. MJM hanya dilari kalau gate ini lolos." : null
+  return <>
+    <Card className="sess k-race">
+      <div className="sess-top"><Chip kind="race">C-race</Chip>{reg ? <Chip tone="green">terdaftar ✓</Chip> : <Chip tone="yellow">belum daftar</Chip>}</div>
+      <h2 className="sess-title">{label}</h2>
+      <p className="muted">{fmtLong(date)}</p>
+      <div className="bigkm"><b>{Math.max(0, diffDays(date, T))}</b><span>hari lagi</span></div>
+      <ul className="rules">{C_RULES.map((r) => <li key={r}>{r}</li>)}</ul>
+      {gate && <p className="banner" role="note">{gate}</p>}
+      <button className="btn sm full" onClick={() => go('calendar', date)}>Buka Day Plan hari-H</button>
+    </Card>
+    <Card title="Seminggu menuju race">
+      {lead.map((d) => <button key={d.date} className="rowbtn" onClick={() => go('calendar', d.date)}><span className={`kdot k-${d.kind}`} /><span><b>{d.label || KIND[d.kind].label}</b><small>{fmtLong(d.date)}{d.km ? ` · ${d.km} km` : ''}</small></span><Icon n="chev" size={18} /></button>)}
+    </Card>
+  </>
+}
+
 export default function Race({ vdot, results, settings, go }) {
+  const [selDate, setSelDate] = useState(null)
   const [regs, setRegs] = useStore('lumpad.registrations', {})
   const T = today(), race = settings.raceDate, left = diffDays(race, T)
   const lastTT = Object.entries(results).filter(([, r]) => r?.vdot != null).map(([id, r]) => ({ id: +id, v: r.vdot, date: PLAN.find((d) => d.tags.includes('CP' + id))?.date })).filter((x) => x.date).sort((a, b) => a.date.localeCompare(b.date)).at(-1)
@@ -75,7 +98,12 @@ export default function Race({ vdot, results, settings, go }) {
   const W = useApi(`/api/activities/merged?from=${addDays(T, -60)}&to=${T}`), wx = (W.data || []).filter((a) => a.sport_class === 'run' && a.temp_c != null)
   const peak = Math.max(...WEEKS.map((w) => w.km)), taper = WEEKS.filter((w) => ['W38', 'W39', 'W40', 'W41', 'W42'].includes(w.id)).map((w) => ({ date: w.id, value: Math.round((w.km / peak) * 100), tick: w.id }))
   const kg = +settings.bodyMassKg || 75.3
+  const hub = PLAN.filter((d) => d.kind === 'race' && /FM|Full/.test(d.label || '')).map((d) => ({ date: d.date, label: d.label.replace(/ · .*/, ''), a: d.date === '2027-10-24' })).sort((a, b) => a.date.localeCompare(b.date))
+  const nearest = (hub.find((r) => r.date >= T) || hub.at(-1)).date, cur = selDate || nearest, isA = cur === '2027-10-24', curRace = hub.find((r) => r.date === cur)
   return <>
+    <div className="racebar" role="group" aria-label="Pilih race (terdekat dulu)">{hub.map((r) => <button key={r.date} aria-pressed={cur === r.date} onClick={() => setSelDate(r.date)}><b>{r.label}</b><small>{fmtShort(r.date)} · D-{Math.max(0, diffDays(r.date, T))}{r.a ? ' · A-race' : ' · C-race'}</small></button>)}</div>
+    {!isA && <CRace date={cur} label={curRace.label} regs={regs} go={go} />}
+    {isA && <>
     <Card className="sess k-race">
       <div className="sess-top"><Chip kind="race">A-race</Chip>{settings.raceConfirmed ? <Chip tone="green">tanggal resmi</Chip> : <Chip tone="yellow">tanggal belum resmi</Chip>}</div>
       <h2 className="sess-title">JRF Full Marathon</h2>
@@ -116,6 +144,8 @@ export default function Race({ vdot, results, settings, go }) {
       <button className="btn sm full" onClick={() => go('calendar', { view: 'cp', id: 18 })}>Gate CP18 (Kam 21 Okt)</button>
     </Card>
 
+    </>}
+
     {Object.entries(regs || {}).filter(([d]) => d !== race).sort(([a], [b]) => a.localeCompare(b)).map(([d, r]) => <Registration key={d} date={d} r={r} go={go} setBib={(bib) => setRegs((x) => ({ ...x, [d]: { ...x[d], bib } }))} />)}
 
     <Card title="Race lain di 2027">
@@ -123,6 +153,6 @@ export default function Race({ vdot, results, settings, go }) {
       <p className="muted">Jakim 13 Jun dan MJM 20 Jun = C-race (run-walk, &lt;6:00, finish-first), bukan tes VDOT. MJM hanya dilari kalau gate G-MJM (Rab 16 Jun: jog 20&apos; nyeri 0/10, Sleep HR ≤67, HRV tidak Reduced) lolos.</p>
     </Card>
 
-    <Card title="Aturan hari-H"><ul className="rules">{RULES.map((r) => <li key={r}>{r}</li>)}</ul></Card>
+    {isA && <Card title="Aturan hari-H"><ul className="rules">{RULES.map((r) => <li key={r}>{r}</li>)}</ul></Card>}
   </>
 }

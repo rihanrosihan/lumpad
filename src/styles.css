@@ -337,7 +337,7 @@ nav.tabbar{left:16px;right:16px;bottom:calc(14px + env(safe-area-inset-bottom));
 .chipjump{top:56px;background:color-mix(in srgb,var(--bg) 86%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 
 /* ===== design v4: SUB 4 COACH performance OS (rose · indigo · emerald · amber on slate) ===== */
-:root{--bg:#f8fafc;--surface:#fff;--surface2:#f1f5f9;--text:#0f172a;--muted:#526077;--line:#e2e8f0;--accent:#e11d48;--accent-bg:#e11d48;--cobalt:#4f46e5;--cobalt-t:#4338ca;--amber:#f59e0b;--amber-t:#92400e;--crimson:#e11d48;--carbon:#0f172a;--r:1rem;--red-t:#be123c;--green-t:#047857;--yellow-t:#92400e;--shadow:0 1px 2px rgba(15,23,42,.05),0 6px 18px -10px rgba(15,23,42,.18)}
+:root{--bg:#f8fafc;--surface:#fff;--surface2:#f1f5f9;--text:#0f172a;--muted:#526077;--line:#e2e8f0;--accent:#e11d48;--accent-bg:#e11d48;--cobalt:#4f46e5;--cobalt-t:#4338ca;--amber:#f59e0b;--amber-t:#92400e;--crimson:#e11d48;--carbon:#0f172a;--r:1rem;--red-t:#be123c;--green-t:#065f46;--yellow-t:#92400e;--shadow:0 1px 2px rgba(15,23,42,.05),0 6px 18px -10px rgba(15,23,42,.18)}
 @media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#020617;--surface:#0f172a;--surface2:#1e293b;--line:#1e293b;--accent:#fb7185;--accent-bg:#e11d48;--cobalt:#4f46e5;--cobalt-t:#a5b4fc;--amber-t:#fbbf24;--red-t:#fda4af;--green-t:#6ee7b7;--yellow-t:#fcd34d;--shadow:none}}
 :root[data-theme=dark]{--bg:#020617;--surface:#0f172a;--surface2:#1e293b;--line:#1e293b;--accent:#fb7185;--accent-bg:#e11d48;--cobalt:#4f46e5;--cobalt-t:#a5b4fc;--amber-t:#fbbf24;--red-t:#fda4af;--green-t:#6ee7b7;--yellow-t:#fcd34d;--shadow:none}
 body,:root[data-theme=dark] body{background-image:none!important}
@@ -413,3 +413,21 @@ button.rp:hover{background:var(--surface)}.rp b.am{color:var(--amber-t)}.rp b.co
 @media(prefers-color-scheme:dark){:root:not([data-theme=light]){--accent:#fb7185}}
 :root[data-theme=dark]{--accent:#fb7185}
 .seg3 button[aria-selected=true]{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+/* Day Plan page */
+.dbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:14px}.dbar .snav{flex:1;min-width:220px;margin:0}.dbar .btn.sm{display:inline-flex;align-items:center;gap:6px}
+.dgrid{display:grid;gap:0 16px}.dmain,.dside{min-width:0}
+@media(min-width:1024px){.dgrid{grid-template-columns:minmax(0,8fr) minmax(0,4fr)}}
+@media(min-width:1100px){.detail-page{column-count:2;column-gap:16px}.detail-page>*{break-inside:avoid}.detail-page>p.muted:first-child,.detail-page>h2.sess-title,.detail-page>.chips,.detail-page>.score-grid{column-span:all}}
+.racebar{display:flex;gap:8px;overflow-x:auto;padding:2px 0 12px;margin-bottom:4px}
+.racebar button{flex:1 0 140px;display:flex;flex-direction:column;gap:2px;min-height:56px;padding:8px 14px;border-radius:14px;background:var(--surface);border:1px solid var(--line);color:var(--text)}
+.racebar button small{color:var(--muted);font-size:.75rem;font-family:var(--f-mono)}.racebar button[aria-pressed=true]{background:var(--carbon)!important;color:#fff;border-color:var(--carbon)}.racebar button[aria-pressed=true] small{color:#cbd5e1}
+/* Biometrics */
+.bio-intro{border-left:4px solid var(--cobalt)}.bio-intro p{margin-top:4px}
+.bgrid{display:grid;gap:0 16px}.bmain,.bside{min-width:0}@media(min-width:1024px){.bgrid{grid-template-columns:minmax(0,8fr) minmax(0,4fr)}.bside{position:sticky;top:80px;align-self:start}}
+.bio-kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}@media(min-width:700px){.bio-kpis{grid-template-columns:repeat(4,1fr)}}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px;display:grid;gap:4px;align-content:start}.kpi small{color:var(--muted);font-weight:650;font-size:.8rem}.kpi b{font:800 1.5rem/1.1 var(--f-display)}.kpi .u{font:500 .8rem Inter,sans-serif;color:var(--muted)}.kpi em{font-style:normal;color:var(--muted);font-size:.78rem;line-height:1.35}
+.seg3.wrap{flex-wrap:wrap}.seg3.wrap button{flex:1 1 auto;padding:0 10px}
+.logs{display:grid}.logs li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}.logs li:last-child{border:0}.logs small{display:block;color:var(--muted);font-size:.78rem}
+.iconbtn{width:44px;height:44px;display:grid;place-items:center;border-radius:12px;color:var(--muted)}.iconbtn:hover{background:var(--surface2);color:var(--red-t)}
+.rp b.gr{color:var(--green-t)}.bdg.b-biometrics{background:#d1fae5;color:#065f46}
+.bmain .chart{max-width:640px;margin:0 auto;display:block}.bside .form>.fld:first-child{grid-column:1/-1}

@@ -15,11 +15,11 @@ import { RadialGauge, Ring, Stacked100, StepChart, Sparkline } from './charts2.j
 import { BarChart } from './charts.jsx'
 import FuelCard from './FuelCard.jsx'
 import { HomeCoach } from './Coach.jsx'
+import { pickShoe } from './lib/shoes.js'
 
 export const thresholds = (c) => { const d = cpDistance(c); return d && c.line ? { G: fmtTime(raceTime(c.line - 0.5, d)), R: fmtTime(raceTime(c.line - 1.5, d)) } : null }
 const sign = (n) => (n == null ? '—' : (n > 0 ? '+' : '') + n)
 const TIER_TONE = { prime: 'green', optimal: 'teal', compromised: 'yellow', depleted: 'red' }
-const ROLE_FOR = { quality: ['plated', 'daily'], tt: ['plated', 'short', 'daily'], race: ['plated'], long: ['daily', 'plated', 'easy'], speed: ['short', 'daily'], easy: ['easy', 'daily'], social: ['easy', 'daily'] }
 
 // Home: the 3-second morning glance — can I run, what, with what, and how is the week going.
 export default function Home({ vdot, settings, results, go, M: Mprop }) {
@@ -31,8 +31,7 @@ export default function Home({ vdot, settings, results, go, M: Mprop }) {
   const hv = M.hrv, hrv7 = M.health.filter((h) => h.date > addDays(T, -7) && h.hrv_avg != null).map((h) => h.hrv_avg), sl = M.sleep, fz = formZone(M.cur?.tsbPct)
   // session + shoe
   const steps = sessionSteps(day), adjusted = f.adjust === 'easy' ? 'Disesuaikan: easy' : f.adjust === 'cut' && day?.km ? `Disesuaikan: dipotong ke ${r1(day.km * 0.75)} km` : null
-  const active = (G.data || []).filter((s) => !s.retired), roles = settings.shoeRoles || {}
-  const shoe = (() => { if (!day?.km) return null; for (const r of ROLE_FOR[day.kind] || ['daily']) { const c = active.filter((s) => roles[s.id] === r).sort((a, b) => (a.last_used || '').localeCompare(b.last_used || '')); if (c.length) return c[0] } return null })()
+  const shoe = pickShoe(day, G.data, settings.shoeRoles)
   // bento
   const actWeek = M.acts.filter((a) => a.sport_class === 'run' && a.date >= mon && a.date <= T).reduce((s, a) => s + (a.distance_m || 0) / 1000, 0)
   const actPrev = M.acts.filter((a) => a.sport_class === 'run' && a.date >= addDays(mon, -7) && a.date <= addDays(T, -7)).reduce((s, a) => s + (a.distance_m || 0) / 1000, 0)

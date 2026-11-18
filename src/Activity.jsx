@@ -4,7 +4,7 @@ import { BY_DATE, today, addDays, fmtLong, MONTHS } from './lib/calendar.js'
 import { efOf, decoupling, zoneTime, hrZoneTime, cumulativeKm } from './lib/analysis.js'
 import { mean } from './lib/stats.js'
 import { useStore } from './store.js'
-import { Card, Chip, Screen, Sheet, Icon, Evidence, Info } from './ui.jsx'
+import { Card, Chip, Screen, Icon, Evidence, Info } from './ui.jsx'
 import { useApi, fmtDur, fmtPaceS } from './api.js'
 import { BandLine, MultiTrack, Sparkline } from './charts2.jsx'
 import { FitPanel } from './FitPanel.jsx'
@@ -18,18 +18,27 @@ const monthRange = (ym) => { const [y, m] = ym.split('-').map(Number); return [`
 const shiftMonth = (ym, n) => { const [y, m] = ym.split('-').map(Number), d = new Date(y, m - 1 + n, 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` }
 const SPORT_LABEL = { run: 'Lari', walk: 'Jalan', strength: 'Gym' }
 
-export default function Activity({ vdot, focus }) {
-  const T = today(), [ym, setYm] = useState(T.slice(0, 7)), [sport, setSport] = useState('all'), [type, setType] = useState('all'), [sel, setSel] = useState(null)
+export default function Activity({ vdot, focus, go }) {
+  const T = today(), [ym, setYm] = useState(T.slice(0, 7)), [sport, setSport] = useState('all'), [type, setType] = useState('all'), sel = focus?.id || null
   const [from, to] = monthRange(ym), prevYm = shiftMonth(ym, -1), [pf] = monthRange(prevYm)
   const A = useApi(`/api/activities/merged?from=${pf}&to=${to}`), G = useApi('/api/gear'), Hist = useApi(`/api/activities/merged?from=${addDays(T, -180)}&to=${T}`)
   const gear = useMemo(() => Object.fromEntries((G.data || []).map((g) => [g.id, g.name])), [G.data])
-  useEffect(() => { if (focus?.id) setSel(focus.id) }, [focus])
   const all = (A.data || []).filter((a) => a.date >= from), list = all.filter((a) => (sport === 'all' || a.sport_class === sport) && (type === 'all' || typeOf(a) === type))
   const cum = cumulativeKm(all, ym), cumPrev = cumulativeKm(A.data || [], prevYm)
   const curve = cum.map((c, i) => ({ date: `${ym}-${String(c.day).padStart(2, '0')}`, cur: ym === T.slice(0, 7) && c.day > +T.slice(8) ? null : c.km, prev: cumPrev[i]?.km ?? cumPrev.at(-1)?.km }))
   const tot = { n: list.length, km: list.filter((a) => a.sport_class === 'run').reduce((s, a) => s + (a.distance_m || 0), 0) / 1000, time: list.reduce((s, a) => s + (a.duration_s || 0), 0), tl: list.reduce((s, a) => s + (a.training_load || 0), 0) }
 
-  return <Screen title="Aktivitas" sub="Log eksekusi & telemetri · COROS + Strava digabung">
+  const flat = [...(A.data || [])].sort((x, y) => (y.date + (y.start_ts || '')).localeCompare(x.date + (x.start_ts || ''))), at = sel ? flat.findIndex((a) => a.ids.includes(sel)) : -1
+  const older = at >= 0 ? flat[at + 1] : null, newer = at > 0 ? flat[at - 1] : null
+  if (sel) return <Screen title="Run Analysis" sub="Telemetri sesi · COROS + Strava digabung">
+    <div className="dbar">
+      <button className="btn sm" onClick={() => go('activity')}><Icon n="left" size={16} />Activities</button>
+      <div className="snav"><button onClick={() => older && go('activity', { id: older.ids[0] })} disabled={!older} aria-label={older ? `Sesi sebelumnya: ${older.name}` : 'Sesi sebelumnya'}><Icon n="left" /></button><p>{at >= 0 ? `${flat[at].date} · sesi ${flat.length - at} dari ${flat.length}` : 'Detail sesi'}</p><button onClick={() => newer && go('activity', { id: newer.ids[0] })} disabled={!newer} aria-label={newer ? `Sesi berikutnya: ${newer.name}` : 'Sesi berikutnya'} className="flip"><Icon n="left" /></button></div>
+    </div>
+    <Detail id={sel} page gear={gear} vdot={vdot} history={Hist.data || []} go={go} />
+  </Screen>
+
+  return <Screen title="Activities" sub="Log eksekusi & telemetri · COROS + Strava digabung">
     <div className="monthbar">
       <button onClick={() => setYm(shiftMonth(ym, -1))} aria-label="Bulan sebelumnya"><Icon n="left" /></button>
       <div className="mid"><h2 aria-live="polite">{MONTHS[+ym.slice(5) - 1]} {ym.slice(0, 4)}</h2>{ym !== T.slice(0, 7) && <button onClick={() => setYm(T.slice(0, 7))}>Ke bulan ini</button>}</div>
@@ -46,18 +55,17 @@ export default function Activity({ vdot, focus }) {
     {A.state === 'loading' && <><div className="skel" style={{ height: 72 }} /><div className="skel" style={{ height: 72 }} /></>}
     {A.state === 'error' && <div className="card empty"><b>Gagal memuat</b>Server tidak terjangkau.</div>}
     {A.state === 'ok' && !list.length && <div className="card empty"><b>{all.length ? 'Tidak ada aktivitas untuk filter ini' : 'Belum ada aktivitas bulan ini'}</b>{all.length ? 'Coba “Semua”.' : 'Data masuk lewat sync COROS/Strava — cek Profil › Koneksi.'}</div>}
-    <div className="alist">{list.map((a) => <button key={a.id} className={`arow ${CLS(a)}`} onClick={() => setSel(a.ids[0])} aria-label={`${fmtLong(a.date)}: ${a.name}, ${a.distance_m ? km(a.distance_m) + ' km, ' : ''}${fmtDur(a.duration_s)}`}>
+    <div className="alist">{list.map((a) => <button key={a.id} className={`arow ${CLS(a)}`} onClick={() => go('activity', { id: a.ids[0] })} aria-label={`${fmtLong(a.date)}: ${a.name}, ${a.distance_m ? km(a.distance_m) + ' km, ' : ''}${fmtDur(a.duration_s)}`}>
       <div className="t"><b>{a.name || SPORT_LABEL[a.sport_class] || a.sport}</b><small>{a.date.slice(5)} · {SPORT_LABEL[a.sport_class] || a.sport}{typeOf(a) ? ' · ' + TYPES.find((t) => t[0] === typeOf(a))[1] : ''}{a.gear_id && gear[a.gear_id] ? ' · ' + gear[a.gear_id] : ''}</small></div>
       <div className="n"><b>{a.distance_m ? km(a.distance_m) + ' km' : fmtDur(a.duration_s)}</b><small>{a.avg_pace_s_km && a.sport_class === 'run' ? fmtPaceS(a.avg_pace_s_km) + '/km' : a.avg_hr ? a.avg_hr + ' bpm' : ''}</small>{a.training_load ? <span className="tlb2">TL {a.training_load}</span> : null}</div>
     </button>)}</div>
-    <Detail id={sel} onClose={() => setSel(null)} gear={gear} vdot={vdot} history={Hist.data || []} />
   </Screen>
 }
 
 const ZC = { E: 'var(--green)', M: 'var(--c-long)', T: 'var(--yellow)', I: 'var(--c-quality)', R: 'var(--red)' }
 function ZoneBars({ title, rows }) { const tot = rows.reduce((a, r) => a + r.s, 0) || 1; return <div className="zbars"><h3>{title}</h3>{rows.map((r) => <div key={r.k} className="zrow"><span>{r.k}</span><div className="tb"><i style={{ width: (r.s / tot) * 100 + '%', background: r.c }} /></div><b>{Math.round((r.s / tot) * 100)}%</b></div>)}</div> }
 
-function Detail({ id, onClose, gear, vdot, history }) {
+function Detail({ id, gear, vdot, history, go }) {
   const D = useApi(id ? `/api/activities/detail?id=${encodeURIComponent(id)}` : '', !!id), a = D.data
   const [ctx, setCtx] = useStore('lumpad.act.' + (id || 'none').replace(/[^A-Za-z0-9._-]/g, '_'), { rpe: '', gels: '', cho_g: '', note: '' })
   const p = paces(vdot.v), plan = a ? BY_DATE[a.date] : null, laps = a?.laps || []
@@ -71,7 +79,7 @@ function Detail({ id, onClose, gear, vdot, history }) {
   const E = [p.E[1], p.E[0]]
   const verdict = a && a.sport_class === 'run' && a.avg_pace_s_km && plan && ['easy', 'social', 'long', 'speed'].includes(plan.kind) ? (a.avg_pace_s_km < E[0] - 3 ? ['yellow', `Lebih cepat dari easy (${fmtPace(E[0])}–${fmtPace(E[1])})`] : a.avg_pace_s_km > E[1] + 3 ? ['yellow', 'Lebih lambat dari rentang easy'] : ['green', 'Dalam rentang easy']) : null
   const setC = (patch) => setCtx({ ...ctx, ...patch })
-  return <Sheet open={!!id} onClose={onClose} label={a?.name || 'Detail aktivitas'}>
+  return <div className="detail-page" role="region" aria-label={a?.name || 'Detail aktivitas'}>
     {D.state === 'loading' && <div className="skel" style={{ height: 120 }} />}
     {D.state === 'error' && <p className="muted">Gagal memuat detail.</p>}
     {a && <>
@@ -109,5 +117,5 @@ function Detail({ id, onClose, gear, vdot, history }) {
         <Evidence>Log meminta asupan aktual — tidak diisi dari rencana.</Evidence>
       </Card>
     </>}
-  </Sheet>
+  </div>
 }

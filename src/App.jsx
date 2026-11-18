@@ -7,6 +7,9 @@ import Calendar from './Calendar.jsx'
 import Activity from './Activity.jsx'
 import Profile from './Profile.jsx'
 import Coach from './Coach.jsx'
+import DayPage from './DayPage.jsx'
+import Biometrics from './Biometrics.jsx'
+import { EMPTY_BIO, latest, classifyBP } from './lib/bio.js'
 import { CHECKPOINTS, TARGET } from './lib/plan.js'
 import { paces, fmtPace } from './lib/vdot.js'
 import { today, diffDays, PLAN, fmtShort } from './lib/calendar.js'
@@ -18,9 +21,9 @@ import { useModel } from './model.js'
 const PAGES = {
   home: { label: 'Home', icon: 'home' }, ready: { label: 'Readiness', icon: 'ready', short: 'Ready' }, activity: { label: 'Activities', icon: 'run', short: 'Activity' },
   calendar: { label: 'Calendar', icon: 'cal' }, day: { label: 'Day Plan', icon: 'day' }, checkpoint: { label: 'Checkpoints', icon: 'bars' }, race: { label: 'Races', icon: 'flag' },
-  coach: { label: 'AI Coach', icon: 'coach', short: 'Coach' }, profile: { label: 'Profile', icon: 'user' },
+  coach: { label: 'AI Coach', icon: 'coach', short: 'Coach' }, biometrics: { label: 'Biometrics', icon: 'heart' }, profile: { label: 'Profile', icon: 'user' },
 }
-const GROUPS = [['Daily', ['home', 'ready', 'activity']], ['Planning', ['calendar', 'day', 'checkpoint', 'race']], ['Intelligence', ['coach', 'profile']]]
+const GROUPS = [['Daily', ['home', 'ready', 'activity']], ['Planning', ['calendar', 'day', 'checkpoint', 'race']], ['Intelligence', ['coach', 'biometrics', 'profile']]]
 const BOTTOM = ['home', 'ready', 'activity', 'calendar', 'coach', 'profile']
 const ROUTES = Object.keys(PAGES)
 const RACES = PLAN.filter((d) => d.kind === 'race' && /FM|Full/.test(d.label || ''))
@@ -41,7 +44,8 @@ export default function App() {
   const init = useMemo(parse, [])
   const [tab, setTab] = useState(init.tab), [focus, setFocus] = useState(init.focus), [menu, setMenu] = useState(false)
   const [results, setResults] = useStore('lumpad.results', {})
-  const [theme, setTheme] = useStore('lumpad.theme', 'auto')
+  const [theme, setTheme] = useStore('lumpad.theme', 'auto'), [bio] = useStore('lumpad.bio', EMPTY_BIO)
+  const lbp = latest(bio.bp || []), lgl = latest(bio.glu || [])
   const [settings, setSettings] = useSettings()
   const T = today(), [fS] = useStore('lumpad.daily.' + T, EMPTY_DAY), [ovS] = useStore('lumpad.muscle.' + T, {})
   // another screen may have edited today's check-in: re-read the local copy whenever the page changes
@@ -71,7 +75,7 @@ export default function App() {
   const weekKm = (() => { const mon = new Date(T + 'T00:00:00Z'); const d = (mon.getUTCDay() + 6) % 7; const m = new Date(mon - d * 864e5).toISOString().slice(0, 10); return M.acts.filter((a) => a.sport_class === 'run' && a.date >= m && a.date <= T).reduce((s, a) => s + (a.distance_m || 0) / 1000, 0) })()
   const BADGE = {
     home: nextRace ? 'D-' + dNext : null, ready: rd.score != null ? `${rd.score} · ${rd.caps.length ? 'GATE' : rd.tier.label.toUpperCase().slice(0, 4)}` : null, activity: `${Math.round(weekKm * 10) / 10} km`,
-    checkpoint: nextCp ? 'CP' + nextCp.id : null, race: nextRace ? 'D-' + dNext : null, coach: 'AI',
+    checkpoint: nextCp ? 'CP' + nextCp.id : null, biometrics: (bio.bp?.length || 0) + (bio.glu?.length || 0) + (bio.weight?.length || 0) + (bio.lab?.length || 0) ? 'LOGS' : null, race: nextRace ? 'D-' + dNext : null, coach: 'AI',
   }
   const cur = tab === 'activity' && focus?.id ? 'activity-detail' : tab
   const subOf = { day: 'calendar' }
@@ -93,6 +97,7 @@ export default function App() {
           <button className="rp" onClick={jump('profile')}>VDOT<b className="am">{vdot.v.toFixed(1)}</b>→<b>{TARGET.vdotNeeded}</b></button>
           <button className="rp" onClick={jump('profile')}>T-Pace<b className="co">{fmtPace(p.T)}/km</b></button>
           <button className="rp" onClick={jump('ready')}>TSB<b className={M.cur?.tsb < -30 ? 'cr' : ''}>{M.cur?.tsb ?? '—'}</b></button>
+          {(lbp || lgl) && <button className="rp" onClick={jump('biometrics')}>BP · Glu<b className={lbp && classifyBP(lbp.sys, lbp.dia).tone === 'green' ? 'gr' : ''}>{lbp ? `${lbp.sys}/${lbp.dia}` : '—'} · {lgl ? lgl.mgdl : '—'}</b></button>}
           {nextRace && <button className="rp" onClick={jump('race')}>Next: {nextRace.label.split(' ')[0]}<b className="dn">D-{dNext}</b></button>}
         </Ribbon>
         <button className="btn syncbtn" onClick={syncNow} disabled={busy === 'run'} aria-label="Sync COROS sekarang"><Icon n="sync" size={16} /><span>{busy === 'run' ? 'Memulai…' : busy === 'ok' ? 'Sync dimulai' : busy === 'err' ? 'Gagal' : 'Sync COROS'}</span></button>
@@ -111,9 +116,11 @@ export default function App() {
           {tab === 'ready' && <Readiness vdot={vdot} settings={settings} focus={focus} />}
           {tab === 'activity' && <Activity vdot={vdot} focus={focus} go={go} />}
           {tab === 'coach' && <Coach />}
-          {(tab === 'calendar' || tab === 'day') && <Calendar view="month" vdot={vdot} results={results} setResults={setResults} focus={tab === 'day' ? focus || T : null} settings={settings} go={go} />}
+          {tab === 'calendar' && <Calendar view="month" vdot={vdot} results={results} setResults={setResults} focus={null} settings={settings} go={go} />}
+          {tab === 'day' && <DayPage date={focus || T} vdot={vdot} settings={settings} go={go} />}
           {tab === 'checkpoint' && <Calendar view="cp" vdot={vdot} results={results} setResults={setResults} focus={focus} settings={settings} go={go} />}
           {tab === 'race' && <Calendar view="race" vdot={vdot} results={results} setResults={setResults} focus={focus} settings={settings} go={go} />}
+          {tab === 'biometrics' && <Biometrics settings={settings} setSettings={setSettings} />}
           {tab === 'profile' && <Profile vdot={vdot} results={results} settings={settings} setSettings={setSettings} />}
         </main>
       </div>
