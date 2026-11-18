@@ -70,5 +70,5 @@ export function useStore(key, init) {
 }
 
 // App settings (synced like every other key): race date and whether the organiser has confirmed it, shoe roles.
-export const DEFAULT_SETTINGS = { raceDate: '2027-10-24', raceConfirmed: true, shoeRoles: {}, sleepNeedMin: 480, bodyMassKg: 75.3, bodyFatPct: '', shoeLife: {} }
+export const DEFAULT_SETTINGS = { raceDate: '2027-10-24', raceConfirmed: true, shoeRoles: {}, sleepNeedMin: 480, bodyMassKg: 75.3, bodyFatPct: '', shoeLife: {}, lthr: '', tpace: '' }
 export const useSettings = () => { const [s, set] = useStore('lumpad.settings', DEFAULT_SETTINGS); return [{ ...DEFAULT_SETTINGS, ...s }, set] }

@@ -1,13 +1,11 @@
 import { useStore } from './store.js'
 import { paces } from './lib/vdot.js'
-import { sessionPaces } from './lib/pace.js'
 import { evaluate, EMPTY_DAY, hasInput, HARD } from './lib/gate.js'
-import { sessionSteps } from './lib/analysis.js'
 import { pickShoe } from './lib/shoes.js'
 import { BY_DATE, today, addDays, fmtLong, diffDays, KIND, PHASE_NAME } from './lib/calendar.js'
 import { Card, Chip, Screen, StrengthChips, Icon } from './ui.jsx'
 import { useApi, fmtDur, fmtPaceS } from './api.js'
-import { StepChart } from './charts2.jsx'
+import { WorkoutDetail, stepsFor } from './Workout.jsx'
 import { effectiveDay } from './lib/scaler.js'
 import { useCorosPlan } from './useCoros.js'
 import { labelOf, fmtHM } from './lib/corosplan.js'
@@ -22,15 +20,15 @@ export default function DayPage({ date, vdot, settings, go }) {
   const CP = useCorosPlan(), G = useApi('/api/gear'), A = useApi(`/api/activities/merged?from=${date}&to=${date}`)
   if (!d) return <Screen title="Day Plan" sub={fmtLong(date)}><div className="card empty"><b>This date is outside the season plan</b>Pick a day from the calendar.</div><button className="btn" onClick={() => go('calendar')}>Go to Calendar</button></Screen>
   const prev = BY_DATE[addDays(date, -1)] ? addDays(date, -1) : null, next = BY_DATE[addDays(date, 1)] ? addDays(date, 1) : null
-  const cp = cpOf(d), reg = regs?.[date], steps = sessionSteps(d), pace = sessionPaces(d, p), hard = HARD.has(d.kind)
+  const cp = cpOf(d), reg = regs?.[date], hard = HARD.has(d.kind)
   const g = evaluate(f, d), checked = hasInput(f), isToday = date === T, past = date < T
   const shoe = pickShoe(d, G.data, settings.shoeRoles), acts = (A.data || []).filter((a) => a.sport_class === 'run')
   const away = diffDays(date, T), cr = CP.map[date], inCoros = CP.rows.length && date >= CP.rows[0].date && date <= CP.rows.at(-1).date
   const corosCard = inCoros ? <Card title="On your COROS watch" right={<Chip tone={CP.live ? 'green' : undefined}>{CP.live ? 'live' : 'snapshot'}</Chip>}>
+    {d.src === 'coros' && d.from && d.from !== date && <p className="muted">The season runs the COROS plan A session originally scheduled for {fmtLong(d.from)} on this date (re-timed so the cycle ends on the real race). The watch currently has:</p>}
     {cr ? <>
       <p><b>{labelOf(cr)}</b>{cr.km ? ` · ${cr.km} km` : ' · no distance target'}{cr.sec ? ` · ${fmtHM(cr.sec)}` : ''}{cr.tl ? ` · ${cr.tl} TL` : ''}</p>
-      {d.src === 'coros' && d.from && d.from !== date ? <p className="muted">This is the COROS session scheduled for {fmtLong(d.from)}, moved here so its cycle ends on the real race.</p>
-        : cr.km !== d.km ? <p className="muted">Season plan {d.km || 0} km, watch {cr.km || 0} km ({(cr.km || 0) - d.km >= 0 ? '+' : ''}{Math.round(((cr.km || 0) - d.km) * 10) / 10} km).</p> : <p className="muted">Same as the season plan.</p>}
+      {cr.km !== d.km ? <p className="muted">Season plan {d.km || 0} km, watch {cr.km || 0} km ({(cr.km || 0) - d.km >= 0 ? '+' : ''}{Math.round(((cr.km || 0) - d.km) * 10) / 10} km).</p> : <p className="muted">Same as the season plan.</p>}
     </> : <p className="muted">{d.km > 0 ? `The watch has no workout on this day (season plan: ${d.km} km).` : 'No COROS workout — rest in both plans.'}</p>}
     {(CP.all[date] || []).filter((x) => x.type === 'strength').map((x, i) => <p key={i} className="muted">+ {labelOf(x)} · {fmtHM(x.sec)} (COROS)</p>)}
   </Card> : null
@@ -50,10 +48,8 @@ export default function DayPage({ date, vdot, settings, go }) {
           {d.event && <p className="note">♥ {d.event}</p>}
           {reg && <p className="note">{reg.event} · {reg.distance} · {reg.category}{reg.start ? ` · ${reg.start} → ${reg.finish}` : ''}</p>}
         </Card>
-        {d.km > 0 && <Card title="Prescription & structure" right={<Chip>VDOT {vdot.v.toFixed(1)}</Chip>}>
-          {steps.length > 1 && <StepChart steps={steps} />}
-          {pace.length > 0 ? <dl className="pace">{pace.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl> : <p className="muted">No pace target for this session.</p>}
-          <p className="src">Pace from {vdot.src} · structure from the plan label (WU 2 / CD 1 km) [calc]</p>
+        {stepsFor(d).length > 0 && <Card title="Workout" right={<Chip>{PHASE_NAME[d.phase] || d.phase}</Chip>}>
+          <WorkoutDetail day={d} settings={settings} />
         </Card>}
         {corosCard}
         <Card title={past || isToday ? 'Plan vs actual' : 'Actual'}>

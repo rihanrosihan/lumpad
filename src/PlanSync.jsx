@@ -17,11 +17,11 @@ export default function PlanSync({ go }) {
   return <Screen title="Plan Sync" sub="Season plan vs the COROS watch">
     <Card title="How the season is built" right={<Chip tone={C.live ? 'green' : undefined}>{C.live ? 'COROS live' : 'COROS snapshot'}</Chip>}>
       <ul className="rules">
-        <li><b>Volume and structure come from COROS</b> (the highest-mileage option, with its detailed workouts). Lumpad adds the races, checkpoints, phases and the readiness gate.</li>
-        <li><b>Races:</b> {RACES.map((r) => `${r.name} ${fmtShort(r.date)}`).join(' · ')}. Every COROS cycle is moved by whole weeks so its race week lands on a real race; phases follow from those dates.</li>
+        <li><b>Built on COROS plan A</b> — its weekly pattern (easy · threshold intervals · easy · rest · steady Z3 · easy · long), its 3-up/1-down volume waves up to 96 km and its exact workout structures, every session with HR and pace targets. Lumpad adds the races, checkpoints, phases and the readiness gate.</li>
+        <li><b>Races:</b> {RACES.map((r) => `${r.name} ${fmtShort(r.date)}`).join(' · ')}. Each block of plan A weeks is placed so its race week is a real race; phases follow from those dates. Season volume and load are above the COROS plans (see findings).</li>
         <li><b>Read-only:</b> Lumpad never writes to COROS. The watch still shows the original plan dates until the plans are recreated there (see the first finding).</li>
       </ul>
-      <div className="psync" role="group" aria-label="Season segments">{SEGMENTS.map((g) => <div key={g.id} className="pseg"><b>{fmtShort(g.from)} → {fmtShort(g.to)}</b><span>{g.what}</span></div>)}</div>
+      <div className="psync" role="group" aria-label="Season segments">{SEGMENTS.map((g) => <div key={g.from} className="pseg"><b>{g.weeks} · {fmtShort(g.from)} → {fmtShort(g.to)}</b><span>{g.what}</span></div>)}</div>
       <p className="muted">{C.live && C.at ? `Last COROS plan sync: ${C.at.slice(0, 16).replace('T', ' ')} UTC. ` : 'Showing the COROS schedule as it was on 18 Nov 2026; the live copy replaces it after the next COROS sync. '}{C.rows.length} COROS workouts until {last ? fmtShort(last) : '—'}. COROS plans: {COROS_PLANS.map((p) => `${p.id} ${fmtShort(p.from)}→${fmtShort(p.to)}`).join(' · ')}.</p>
     </Card>
     <Card title={`Findings (${F.length})`}>

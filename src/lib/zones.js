@@ -1,0 +1,49 @@
+// Training zones (6 zones, threshold model — the same zone numbers COROS uses on the watch).
+// HR zones are % of lactate-threshold HR; pace zones are % of threshold pace (time per km, so >100% = slower).
+// Defaults: threshold pace 5:56/km = COROS fitness assessment (18 Nov 2026); LTHR 170 bpm = ESTIMATE from recent runs.
+// Both are editable in Profile › Training zones — copy the values from the COROS app (Profile › Zones) when they differ.
+export const ZONE_DEFAULTS = { lthr: 170, tpace: 356, src: { lthr: 'estimate', tpace: 'COROS 18 Nov 2026' } }
+export const ZONES = [
+  null,
+  { z: 1, name: 'Recovery', hr: [0, 0.84], pace: [1.3, 1.45] },
+  { z: 2, name: 'Aerobic Endurance', hr: [0.85, 0.89], pace: [1.14, 1.29] },
+  { z: 3, name: 'Aerobic Power', hr: [0.9, 0.94], pace: [1.06, 1.13] },
+  { z: 4, name: 'Threshold', hr: [0.95, 0.99], pace: [1.01, 1.05] },
+  { z: 5, name: 'Anaerobic Endurance', hr: [1.0, 1.02], pace: [0.97, 1.0] },
+  { z: 6, name: 'Anaerobic Power', hr: [1.03, 1.06], pace: [0.9, 0.96] },
+]
+// pace COROS uses for its time estimates (fits its own estimates for this plan within ~2%) and training load per minute
+const EST = { 1: 1.36, 2: 1.28, 3: 1.12, 4: 1.025, 5: 0.985, 6: 0.93 }
+const TL_MIN = { 0: 0, 1: 1.2, 2: 1.68, 3: 2.74, 4: 3.86, 5: 5.0, 6: 6.0 }
+
+export const cfgOf = (settings = {}) => ({ lthr: +settings.lthr || ZONE_DEFAULTS.lthr, tpace: +settings.tpace || ZONE_DEFAULTS.tpace })
+export const hrRange = (z, cfg = ZONE_DEFAULTS) => { const Z = ZONES[z]; return Z ? [z === 1 ? Math.round(cfg.lthr * 0.65) : Math.round(cfg.lthr * Z.hr[0]), Math.round(cfg.lthr * Z.hr[1])] : null }
+export const paceRange = (z, cfg = ZONE_DEFAULTS) => { const Z = ZONES[z]; return Z ? [Math.round(cfg.tpace * Z.pace[0]), Math.round(cfg.tpace * Z.pace[1])] : null } // [fast, slow] s/km
+export const fmtPace = (s) => (s == null ? '—' : `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`)
+export const fmtDur = (s) => { if (s == null) return '—'; s = Math.round(s); const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60; return h ? `${h}:${String(m).padStart(2, '0')}:${String(x).padStart(2, '0')}` : `${m}:${String(x).padStart(2, '0')}` }
+
+// Steps: { t: 'wu'|'cd'|'run'|'rec'|'tt'|'race'|'free', sec?, m?, z?, pace?: [fast, slow] s/km, note? } or { rep, steps: [...] }
+export const flat = (steps) => steps.flatMap((s) => (s.rep ? Array.from({ length: s.rep }, () => s.steps).flat() : [s]))
+export const stepKm = (steps) => Math.round(flat(steps).reduce((a, s) => a + (s.m || 0), 0) / 10) / 100 // distance sections only (COROS counts warm-up/cool-down time separately)
+const secOf = (s, cfg) => s.sec ?? (s.m ? (s.m / 1000) * (s.pace ? (s.pace[0] + s.pace[1]) / 2 : cfg.tpace * (EST[s.z || 2])) : 0)
+// estimated duration and COROS-style training load (calibrated on the COROS estimates of this plan)
+export function estimate(steps, cfg = ZONE_DEFAULTS) {
+  let sec = 0, tl = 0
+  for (const s of flat(steps)) { const d = secOf(s, cfg); sec += d; if (s.t !== 'wu' && s.t !== 'cd') tl += (d / 60) * TL_MIN[s.z ?? (s.t === 'free' ? 2 : 0)] }
+  return { sec: Math.round(sec), tl: Math.round(tl) }
+}
+// one line per step for the UI: { what, dose, z, hr: [lo,hi], pace: [fast,slow], note }
+export function describe(steps, cfg = ZONE_DEFAULTS) {
+  const one = (s) => {
+    const what = { wu: 'Warm-up', cd: 'Cool-down', run: s.z ? ZONES[s.z].name : 'Run', rec: 'Recovery', tt: 'Time trial', race: 'Race', free: 'Free run' }[s.t]
+    const dose = s.m ? (s.m >= 1000 ? `${+(s.m / 1000).toFixed(2)} km` : `${s.m} m`) : s.sec ? fmtDur(s.sec) : 'open (lap button)'
+    return { what, dose, z: s.z || null, hr: s.hr || (s.z ? hrRange(s.z, cfg) : null), pace: s.pace || (s.z ? paceRange(s.z, cfg) : null), note: s.note || null }
+  }
+  return steps.map((s) => (s.rep ? { rep: s.rep, steps: s.steps.map(one) } : one(s)))
+}
+// compact one-liner: "WU 5′ · 3 km Z2 · 10 km Z3 · CD 5′"
+export function summary(steps) {
+  const one = (s) => s.t === 'wu' ? `WU ${s.sec ? Math.round(s.sec / 60) + '′' : (s.m / 1000) + ' km'}` : s.t === 'cd' ? `CD ${s.sec ? Math.round(s.sec / 60) + '′' : (s.m / 1000) + ' km'}`
+    : s.t === 'free' ? 'free run' : `${s.m ? (s.m >= 1000 ? +(s.m / 1000).toFixed(2) + ' km' : s.m + ' m') : Math.round(s.sec / 60) + '′'}${s.pace ? ' @' + fmtPace((s.pace[0] + s.pace[1]) / 2) : s.z ? ' Z' + s.z : ''}`
+  return steps.map((s) => (s.rep ? `${s.rep}× (${s.steps.map(one).join(' + ')})` : one(s))).join(' · ')
+}

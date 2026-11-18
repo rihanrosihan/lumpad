@@ -21,6 +21,6 @@ export const GLOSSARY = {
   MTSS: ['MTSS', 'Medial Tibial Stress Syndrome (shin splints): shin-bone pain from repeated loading.'],
   DOMS: ['DOMS', 'Delayed Onset Muscle Soreness: soreness that shows up 1–2 days after training.'],
   VO2max: ['VO2max', 'Estimated maximal aerobic capacity from COROS (algorithm, not a lab test).'],
-  LTHR: ['LTHR', 'Lactate Threshold Heart Rate: HR at the lactate threshold. Not yet available from COROS data.'],
+  LTHR: ['LTHR', 'Lactate Threshold Heart Rate: HR at the lactate threshold; the anchor of the HR zones. Set it in Profile › Training zones (copy from the COROS app).'],
 }
 export const GLOSSARY_KEYS = Object.keys(GLOSSARY)

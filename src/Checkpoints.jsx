@@ -7,20 +7,20 @@ import { thresholds } from './Home.jsx'
 import { Card, Chip, Screen, Icon } from './ui.jsx'
 
 const KIND_LABEL = { tt: 'Time trial', lr: 'Long run', race: 'Race', ratio: 'HM ratio', gate: 'Gate' }
-const T0 = '2027-01-16', DAYS = diffDays(RACE_DATE, T0)
+const T0 = CHECKPOINTS[0].date, CP3 = CHECKPOINTS.find((c) => c.id === 3), DAYS = diffDays(RACE_DATE, T0)
 
 function PathChart({ results }) {
   const W = 340, H = 170, L = 30, R = 8, Tp = 8, B = 22, y0 = 30, y1 = 41
   const X = (d) => L + (diffDays(d, T0) / DAYS) * (W - L - R), Y = (v) => Tp + (1 - (v - y0) / (y1 - y0)) * (H - Tp - B)
   const req = CHECKPOINTS.filter((c) => c.line && c.kind === 'tt').map((c) => [X(c.date), Y(c.line)]), reqEnd = [X(RACE_DATE), Y(TARGET.vdotNeeded)]
-  const mo = (d) => diffDays(d, '2027-03-23') / 30.44
+  const mo = (d) => diffDays(d, CP3.date) / 30.44
   const best = (d) => 33.0 + 0.74 * mo(d)
   const pts = CHECKPOINTS.filter((c) => results[c.id]?.vdot != null).map((c) => ({ x: X(c.date), y: Y(results[c.id].vdot), t: tone(results[c.id].vdot, c.line), id: c.id }))
   const path = (a) => a.map((q, i) => (i ? 'L' : 'M') + q[0].toFixed(1) + ' ' + q[1].toFixed(1)).join(' ')
   return <svg viewBox={`0 0 ${W} ${H}`} className="chart" role="img" aria-label="Fitness path: required line, best observed pace and TT results">
     {[32, 34, 36, 38, 40].map((v) => <g key={v}><line x1={L} x2={W - R} y1={Y(v)} y2={Y(v)} className="gl" /><text x={L - 5} y={Y(v) + 3} className="gt" textAnchor="end">{v}</text></g>)}
-    {['2027-02-01', '2027-04-01', '2027-06-01', '2027-08-01', '2027-10-01'].map((d) => <text key={d} x={X(d)} y={H - 6} className="gt" textAnchor="middle">{fmtShort(d).split(' ')[0]}</text>)}
-    <path d={path([[X('2027-03-23'), Y(33.0)], [X(RACE_DATE), Y(best(RACE_DATE))]])} className="ln best" />
+    {['2027-01-01', '2027-03-01', '2027-05-01', '2027-07-01', '2027-09-01'].map((d) => <text key={d} x={X(d)} y={H - 6} className="gt" textAnchor="middle">{fmtShort(d).split(' ')[0]}</text>)}
+    <path d={path([[X(CP3.date), Y(CP3.line)], [X(RACE_DATE), Y(best(RACE_DATE))]])} className="ln best" />
     <path d={path([...req, reqEnd])} className="ln req" />
     <line x1={X(RACE_DATE)} x2={X(RACE_DATE)} y1={Tp} y2={H - B} className="racel" />
     <circle cx={reqEnd[0]} cy={reqEnd[1]} r="3.5" className="tgt" />

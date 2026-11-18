@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { paces } from './lib/vdot.js'
-import { sessionPaces } from './lib/pace.js'
-import { BY_DATE, WEEKS, weekOf, today, parse, iso, addDays, mondayOf, MONTHS, MON3, fmtLong, KIND, PHASE_NAME, PLAN_START, PLAN_END, PLAN_KM, PLAN_MONTHS, monthLabel } from './lib/calendar.js'
+import { BY_DATE, WEEKS, weekOf, today, parse, iso, addDays, mondayOf, MONTHS, MON3, DAYS3, fmtShort, fmtLong, KIND, PHASE_NAME, PLAN_START, PLAN_END, PLAN_KM, PLAN_MONTHS, monthLabel } from './lib/calendar.js'
 import { Chip, Screen, Icon } from './ui.jsx'
 import { useApi } from './api.js'
 import Checkpoints from './Checkpoints.jsx'
@@ -12,6 +11,8 @@ import { compliance } from './lib/analysis.js'
 import { dailyLoadSeries, pmc } from './lib/load.js'
 import { PLAN } from './lib/calendar.js'
 import { useStore } from './store.js'
+import { WorkoutLine, mainTarget, metaFor } from './Workout.jsx'
+import { cfgOf, fmtDur } from './lib/zones.js'
 
 const monthKm = (key) => Math.round(Object.values(BY_DATE).filter((d) => d.date.startsWith(key)).reduce((a, d) => a + d.km, 0))
 const monthOfWeek = (w) => w.days[Math.floor(w.days.length / 2)].date.slice(0, 7)
@@ -94,10 +95,50 @@ function MonthView({ vdot, focus, raceDate, onOpen }) {
   </>
 }
 
+// COROS-style week view: weekly totals, load trend across the season, and every day with its structure and main target
+const weekTotals = (w, cfg) => w.days.reduce((a, d) => { const m = metaFor(d, cfg); return { km: a.km + d.km, sec: a.sec + (m?.sec || 0), tl: a.tl + (m?.tl || 0), runs: a.runs + (d.km > 0 ? 1 : 0) } }, { km: 0, sec: 0, tl: 0, runs: 0 })
+function Trend({ sel, setSel, T, cfg }) {
+  const tot = useMemo(() => WEEKS.map((w) => ({ id: w.id, ...weekTotals(w, cfg), phase: w.phase })), [cfg])
+  const W = 640, H = 120, maxT = Math.max(...tot.map((x) => x.tl)), maxK = Math.max(...tot.map((x) => x.km)), bw = W / tot.length, cur = weekOf(T)?.id
+  const line = tot.map((x, i) => `${i ? 'L' : 'M'}${(i + 0.5) * bw},${H - 16 - (x.km / maxK) * (H - 30)}`).join('')
+  return <figure className="trend"><svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Season trend: weekly training load (bars) and distance (line)">
+    {tot.map((x, i) => <rect key={x.id} x={i * bw + 1} y={H - 16 - (x.tl / maxT) * (H - 30)} width={bw - 2} height={(x.tl / maxT) * (H - 30)} className={`trb ph-${x.phase.replace(/[^A-Z]/g, '')} ${x.id === sel ? 'on' : ''} ${x.id === cur ? 'cur' : ''}`} onClick={() => setSel(x.id)} />)}
+    <path d={line} className="tl" />
+    {WEEKS.filter((w, i) => i % 8 === 0).map((w) => <text key={w.id} x={(WEEKS.indexOf(w) + 0.5) * bw} y={H - 3} className="gt" textAnchor="middle">{fmtShort(w.days[0].date)}</text>)}
+  </svg><figcaption className="legend"><span><i className="kdot" style={{ background: 'var(--c-quality)' }} />Training load / week (colour = phase)</span><span><i className="ll" style={{ borderColor: 'var(--text)' }} />Distance</span><span>Tap a bar to open that week</span></figcaption></figure>
+}
+function WeekView({ T, settings, onOpen }) {
+  const cfg = cfgOf(settings), [sel, setSel] = useState(() => weekOf(T)?.id || WEEKS[0].id), i = Math.max(0, WEEKS.findIndex((w) => w.id === sel)), w = WEEKS[i]
+  const t = weekTotals(w, cfg), p = i > 0 ? weekTotals(WEEKS[i - 1], cfg) : null, pct = (a, b) => (b ? `${a >= b ? '+' : ''}${Math.round((a / b - 1) * 100)}%` : '')
+  return <>
+    <Trend sel={sel} setSel={setSel} T={T} cfg={cfg} />
+    <div className="monthbar">
+      <button disabled={i === 0} onClick={() => setSel(WEEKS[i - 1].id)} aria-label="Previous week"><Icon n="left" /></button>
+      <div className="mid"><h2 aria-live="polite">{w.id} · {fmtShort(w.days[0].date)} – {fmtShort(w.days.at(-1).date)}</h2><small className="muted">{PHASE_NAME[w.phase] || w.phase}</small>{weekOf(T) && <button onClick={() => setSel(weekOf(T).id)}>This week</button>}</div>
+      <button disabled={i === WEEKS.length - 1} onClick={() => setSel(WEEKS[i + 1].id)} aria-label="Next week" className="flip"><Icon n="left" /></button>
+    </div>
+    <div className="wmeta wk4"><div><small>Distance</small><b>{Math.round(t.km * 10) / 10}</b><em>km {p ? pct(t.km, p.km) : ''}</em></div><div><small>Duration</small><b>{fmtDur(t.sec)}</b><em>est.</em></div><div><small>Training load</small><b>{t.tl}</b><em>TL {p ? pct(t.tl, p.tl) : ''}</em></div><div><small>Runs</small><b>{t.runs}</b><em>days</em></div></div>
+    <div className="wlist">{w.days.map((d) => { const m = metaFor(d, cfg), cp = cpOf(d), mt = mainTarget(d, cfg); return <button key={d.date} className={`wday ${d.date === T ? 'today' : ''}`} onClick={() => onOpen(d.date)} aria-label={describe(d.date, d)}>
+      <span className="wdd"><b>{DAYS3[(new Date(d.date + 'T12:00:00').getDay())]}</b><small>{+d.date.slice(8)}</small></span>
+      <span className={`kbar k-${d.kind}`} aria-hidden="true" />
+      <span className="wdm"><b>{d.label || KIND[d.kind].label}{cp && <Chip tone="cp">{cp}</Chip>}</b>
+        {d.km > 0 ? <small>{d.km} km · {fmtDur(m?.sec)} · {m?.tl} TL</small> : <small>{d.kind === 'gym' ? 'strength / no running' : d.note && d.note !== 'REST DAY' ? d.note : 'rest'}</small>}
+        <WorkoutLine day={d} />{mt && <small className="wtg">{mt}</small>}</span>
+      <Icon n="chev" size={18} /></button> })}</div>
+  </>
+}
+
+function CalSwitch({ vdot, focus, settings, go }) {
+  const [mode, setMode] = useStore('lumpad.calmode', 'week'), T = today()
+  return <>
+    <div className="seg" role="group" aria-label="Calendar view">{[['week', 'Week'], ['month', 'Month']].map(([k, l]) => <button key={k} className={mode === k ? 'on' : ''} aria-pressed={mode === k} onClick={() => setMode(k)}>{l}</button>)}</div>
+    {mode === 'week' ? <WeekView T={T} settings={settings} onOpen={(d) => go('calendar', d)} /> : <MonthView vdot={vdot} focus={focus} raceDate={settings.raceDate} onOpen={(d) => go('calendar', d)} />}
+  </>
+}
 const TITLES = { month: ['Calendar', 'Season plan from 23 Nov 2026 — tap a day for its prescription'], cp: ['Checkpoints', 'CP1–CP20: tests, gates and the VDOT path'], race: ['Races', 'From the nearest race to the sub-4 JRF'] }
 export default function Calendar({ view = 'month', vdot, results, setResults, focus, settings, go }) {
   return <Screen title={TITLES[view][0]} sub={TITLES[view][1]}>
-    {view === 'month' && <MonthView vdot={vdot} focus={typeof focus === 'string' ? focus : null} raceDate={settings.raceDate} onOpen={(d) => go('calendar', d)} />}
+    {view === 'month' && <CalSwitch vdot={vdot} focus={typeof focus === 'string' ? focus : null} settings={settings} go={go} />}
     {view === 'cp' && <Checkpoints vdot={vdot} results={results} setResults={setResults} focus={focus?.id} />}
     {view === 'race' && <Race vdot={vdot} results={results} settings={settings} go={go} />}
   </Screen>

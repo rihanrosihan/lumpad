@@ -1,6 +1,7 @@
 import { raceTime, fmtTime } from './lib/vdot.js'
 import { PLAN, BY_DATE, today, diffDays, addDays, fmtLong, fmtShort, KIND } from './lib/calendar.js'
 import { RACE_BY_DATE, REG_LABEL } from './lib/season.js'
+import { CHECKPOINTS } from './lib/plan.js'
 import { Card, Chip, Evidence } from './ui.jsx'
 import { useApi } from './api.js'
 import { WEEKS } from './lib/calendar.js'
@@ -115,7 +116,7 @@ export default function Race({ vdot, results, settings, go }) {
   const [regs, setRegs] = useStore('lumpad.registrations', {})
   const T = today(), race = settings.raceDate, left = diffDays(race, T)
   const lastTT = Object.entries(results).filter(([, r]) => r?.vdot != null).map(([id, r]) => ({ id: +id, v: r.vdot, date: PLAN.find((d) => d.tags.includes('CP' + id))?.date })).filter((x) => x.date).sort((a, b) => a.date.localeCompare(b.date)).at(-1)
-  const anchor = lastTT ? { v: lastTT.v, date: lastTT.date, src: `CP${lastTT.id}` } : { v: 33.0, date: '2027-03-23', src: 'CP3 line (no TT yet)' }
+  const anchor = lastTT ? { v: lastTT.v, date: lastTT.date, src: `CP${lastTT.id}` } : { v: CHECKPOINTS.find((c) => c.id === 3).line, date: CHECKPOINTS.find((c) => c.id === 3).date, src: 'CP3 line (no TT yet)' }
   const best = anchor.v + RATE * months(race, anchor.date), req = 39.9
   const gap = raceTime(best * RATIO, FM) - 14400
   const races = PLAN.filter((d) => d.kind === 'race').map((d) => d.date)

@@ -71,9 +71,10 @@ export function findings(plan, coros, { actualAvg4 = null } = {}) {
   // Ramadan
   const ram = W.filter((w) => w.phase === 'RAMADAN' && w.lumpad >= 80)
   if (ram.length) out.push({ id: 'ramadan', tone: 'yellow', title: `${ram.length} weeks of ≥80 km fall in Ramadan`, body: `${ram.map((w) => `${w.mon.slice(5)}: ${w.lumpad} km`).join(', ')}. The COROS plan does not know about fasting; plan fuel, hydration and the gate for those weeks.` })
-  // checkpoints sitting on hard COROS days
-  const cps = plan.filter((d) => d.tags.some((t) => /^CP\d+$/.test(t)) && d.src === 'coros' && (d.kind === 'long' || d.kind === 'quality') && d.km > 0)
-  if (cps.length) out.push({ id: 'cp-collide', tone: 'yellow', title: `${cps.length} checkpoints sit on long or quality COROS days`, body: `${cps.slice(0, 4).map((d) => `${d.tags.find((t) => /^CP\d+$/.test(t))} on ${d.date.slice(5)} (${d.km} km ${d.kind})`).join(', ')}${cps.length > 4 ? ', …' : ''}. Checkpoints keep their original dates for now; they were set for the lower-volume plan.` })
+  // season vs the COROS plans: distance and load (the season must not be lighter)
+  const last = coros.at(-1)?.date, sp = plan.filter((d) => d.date <= last), skm = sp.reduce((a, d) => a + d.km, 0), ckm = coros.reduce((a, r) => a + (r.km || 0), 0)
+  const stl = sp.reduce((a, d) => a + (d.tl || 0), 0), ctl = coros.reduce((a, r) => a + (r.tl || 0), 0)
+  if (ckm) out.push({ id: 'volume', tone: skm >= ckm && stl >= ctl ? 'green' : 'yellow', title: 'Season volume and load vs the COROS plans', body: `Up to ${last}: season ${Math.round(skm)} km / ${stl.toLocaleString('en-US')} TL, COROS plans ${Math.round(ckm)} km / ${ctl.toLocaleString('en-US')} TL (${skm >= ckm ? '+' : ''}${Math.round((skm / ckm - 1) * 100)}% distance, ${stl >= ctl ? '+' : ''}${Math.round((stl / ctl - 1) * 100)}% load).` })
   // last long run before the A race
   const a = plan.find((d) => d.kind === 'race' && /A-RACE/.test(d.label))
   if (a) { const lr = plan.filter((d) => d.date < a.date && d.date >= addDays(a.date, -28) && d.km >= 25).at(-1)

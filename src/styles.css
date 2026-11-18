@@ -450,3 +450,24 @@ button.rp:hover{background:var(--surface)}.rp b.am{color:var(--amber-t)}.rp b.co
 .psb{display:flex;flex-direction:column;gap:2px;min-width:0}.psb i{display:block;height:5px;border-radius:3px;min-width:2px}.psb small{color:var(--muted);font-size:.72rem}
 .psd{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}.psd.big{color:var(--red-t);font-weight:700}
 .pseg{display:flex;flex-direction:column;padding:7px 0;border-top:1px solid var(--line);font-size:.82rem}.pseg span{color:var(--muted)}
+
+/* Structured workouts */
+.wout{display:flex;flex-direction:column;gap:10px}.wmeta{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.wmeta div{background:var(--surface2);border-radius:12px;padding:8px 10px}.wmeta small{display:block;color:var(--muted);font-size:.72rem}.wmeta b{font-family:var(--f-display);font-weight:800;font-size:1.15rem}.wmeta em{font-style:normal;color:var(--muted);font-size:.72rem;margin-left:4px}
+.wprof{display:flex;align-items:flex-end;gap:2px;height:56px;padding:4px;background:var(--surface2);border-radius:10px}.wprof i{display:block;border-radius:3px 3px 0 0;min-width:2px}
+.z0,.wprof .z0{background:var(--line)}.z1{background:#7c8ba1}.z2{background:#3fb37f}.z3{background:#e2b93b}.z4{background:#f08a3c}.z5{background:#c2343a}.z6{background:#8e2456}.wz.z5,.wz.z6{color:#fff}
+.wsteps,.wsteps ol{list-style:none;margin:0;padding:0}.wstep{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.wstep .wd small,.wstep .wt small{display:block;color:var(--muted);font-size:.75rem}.wstep .wt{text-align:right;font-variant-numeric:tabular-nums}.wstep .wt b{font-size:.9rem}
+.wz{display:grid;place-items:center;height:26px;border-radius:8px;font-size:.75rem;font-weight:800;color:#111}.wz.z0{color:var(--muted);background:var(--surface2)}
+.wrep{border-top:1px solid var(--line);padding:6px 0 0}.wrep>p{margin:2px 0 2px;font-size:.8rem;color:var(--muted)}.wrep ol{border-left:3px solid var(--line);padding-left:8px}
+.wline{display:block;font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.trend{margin:10px 0 4px}.trend svg{width:100%;height:auto;display:block}.trend .trb{fill:var(--c-quality);opacity:.55;cursor:pointer}.trend .trb.on{opacity:1;stroke:var(--text);stroke-width:1.5}.trend .trb.cur{opacity:.9}
+.trend .trb.ph-BASE{fill:var(--c-easy)}.trend .trb.ph-RAMADAN{fill:#8b5e34}.trend .trb.ph-BUILD{fill:var(--c-quality)}.trend .trb.ph-PEAK{fill:var(--c-race)}.trend .trb.ph-TAPER{fill:var(--c-tt)}.trend .trb.ph-RACEWEEK{fill:#b8860b}.trend .trb.ph-RECOVERY{fill:var(--c-social)}
+.trend .tl{fill:none;stroke:var(--text);stroke-width:1.5;opacity:.8}
+.wmeta.wk4{grid-template-columns:repeat(4,1fr);margin:6px 0 10px}
+.wlist{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:4px 12px}
+.wday{display:grid;grid-template-columns:40px 5px 1fr 18px;gap:10px;align-items:center;text-align:left;padding:10px 0;border-top:1px solid var(--line);min-height:56px}.wday:first-child{border-top:0}.wday.today{background:color-mix(in srgb,var(--accent) 8%,transparent);border-radius:10px}
+.wdd{display:flex;flex-direction:column;align-items:center}.wdd small{color:var(--muted)}.kbar{align-self:stretch;border-radius:3px}.kbar.k-easy{background:var(--c-easy)}.kbar.k-long{background:var(--c-long)}.kbar.k-quality{background:var(--c-quality)}.kbar.k-tt{background:var(--c-tt)}.kbar.k-race{background:var(--c-race)}.kbar.k-rest,.kbar.k-gym{background:var(--line)}.kbar.k-speed{background:var(--c-speed,var(--c-quality))}.kbar.k-social{background:var(--c-social)}
+.wdm{min-width:0;display:flex;flex-direction:column;gap:2px}.wdm b{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.wdm small{color:var(--muted);font-size:.78rem}.wdm .wtg{color:var(--text);font-weight:600}
+.wtarget{margin:4px 0 8px;font-size:.9rem}
+@media (max-width:420px){.wmeta.wk4{grid-template-columns:repeat(2,1fr)}}
+.form.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}@media (max-width:420px){.form.two{grid-template-columns:1fr}}

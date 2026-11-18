@@ -1,12 +1,11 @@
 import { useStore } from './store.js'
 import { paces, raceTime, fmtTime, fmtPace } from './lib/vdot.js'
-import { sessionPaces } from './lib/pace.js'
 import { evaluate, EMPTY_DAY, hasInput } from './lib/gate.js'
 import { RACE_BY_DATE } from './lib/season.js'
 import { BY_DATE, today, diffDays, fmtLong, fmtShort, addDays, mondayOf, weekOf, KIND, PHASE_NAME, PLAN_START, DAYS3, PLAN } from './lib/calendar.js'
 import { CHECKPOINTS, TARGET, cpDistance, tone } from './lib/plan.js'
 import { formZone } from './lib/load.js'
-import { decoupling, sessionSteps } from './lib/analysis.js'
+import { decoupling } from './lib/analysis.js'
 import { r1 } from './lib/stats.js'
 import { Card, Chip, StrengthChips, Icon } from './ui.jsx'
 import { useSyncStatus2, wib, ago } from './sync.js'
@@ -17,6 +16,8 @@ import { BarChart } from './charts.jsx'
 import FuelCard from './FuelCard.jsx'
 import { HomeCoach } from './Coach.jsx'
 import { pickShoe } from './lib/shoes.js'
+import { WorkoutDetail, WorkoutLine, mainTarget } from './Workout.jsx'
+import { cfgOf } from './lib/zones.js'
 import { effectiveDay } from './lib/scaler.js'
 
 export const thresholds = (c) => { const d = cpDistance(c); return d && c.line ? { G: fmtTime(raceTime(c.line - 0.5, d)), R: fmtTime(raceTime(c.line - 1.5, d)) } : null }
@@ -32,7 +33,7 @@ export default function Home({ vdot, settings, results, go, M: Mprop }) {
   // hero pills
   const hv = M.hrv, hrv7 = M.health.filter((h) => h.date > addDays(T, -7) && h.hrv_avg != null).map((h) => h.hrv_avg), sl = M.sleep, fz = formZone(M.cur?.tsbPct)
   // session + shoe
-  const steps = sessionSteps(day), adjusted = f.adjust === 'easy' ? 'Adjusted: easy' : f.adjust === 'cut' && day?.km ? `Adjusted: cut to ${r1(day.km * 0.75)} km` : null
+  const adjusted = f.adjust === 'easy' ? 'Adjusted: easy' : f.adjust === 'cut' && day?.km ? `Adjusted: cut to ${r1(day.km * 0.75)} km` : null
   const shoe = pickShoe(day, G.data, settings.shoeRoles)
   // bento
   const actWeek = M.acts.filter((a) => a.sport_class === 'run' && a.date >= mon && a.date <= T).reduce((s, a) => s + (a.distance_m || 0) / 1000, 0)
@@ -86,10 +87,10 @@ export default function Home({ vdot, settings, results, go, M: Mprop }) {
       {adjusted && <Chip tone="yellow">{adjusted}</Chip>}
       {day.km > 0 ? <>
         <div className="bigkm"><b>{day.km}</b><span>km</span></div>
-        {steps.length > 1 && <StepChart steps={steps} />}
-        {sessionPaces(day, p).length > 0 && <dl className="pace">{sessionPaces(day, p).map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>}
+        <WorkoutLine day={day} />
+        {mainTarget(day, cfgOf(settings)) && <p className="wtarget"><b>{mainTarget(day, cfgOf(settings))}</b></p>}
+        <WorkoutDetail day={day} settings={settings} />
         <dl className="pace"><div><dt>Shoe</dt><dd>{shoe ? shoe.name : <button className="link" onClick={() => go('profile')}>Set shoe roles in Profile</button>}</dd></div></dl>
-        <p className="src">Pace from VDOT {vdot.v.toFixed(1)} · structure from the plan label (WU 2 / CD 1 km) [calc]</p>
       </> : <>
         <p className="muted">{day.kind === 'gym' ? 'Gym day — no running.' : 'Rest day.'} Recovery checklist:</p>
         <ul className="rules">{[...(day.tags || []).filter((t) => /Upper|Lower|Full|FB/.test(t)).map((t) => `Gym: ${t} (as planned)`), '10 minutes of mobility + check tibia and pain', `Sleep target ≥ ${hm(settings.sleepNeedMin || 480)}`, 'Easy 20–30 minute walk (optional)', 'Drink enough; eat normal carbs + protein'].map((x) => <li key={x}>{x}</li>)}</ul>

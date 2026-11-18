@@ -2,7 +2,7 @@ import { useMemo, useRef } from 'react'
 import { useStore, useSyncStatus } from './store.js'
 import { TARGET, CHECKPOINTS, tone } from './lib/plan.js'
 import { paces, fmtPace, fmtTime, raceTime } from './lib/vdot.js'
-import { fmtLong, today, diffDays, addDays, PLAN } from './lib/calendar.js'
+import { fmtLong, fmtShort, today, diffDays, addDays, PLAN } from './lib/calendar.js'
 import { tandaMarathon, trainingIndices, prs, shoeStats, SHOE_LIFE } from './lib/analysis.js'
 import { mean, r1 } from './lib/stats.js'
 import Data from './Data.jsx'
@@ -24,6 +24,8 @@ const SHOE_C = ['var(--c-long)', 'var(--c-quality)', 'var(--c-tt)', 'var(--green
 const GROUPS = [['vdot', 'VDOT & zones'], ['shoe', 'Shoes'], ['race', 'Race & body'], ['conn', 'Devices & connections'], ['athlete', 'Athlete & settings']]
 const Group = ({ id, title, open, setOpen, children }) => <details className="pgroup" id={'g-' + id} open={!!open} onToggle={(e) => { if (e.currentTarget.open !== !!open) setOpen(id, e.currentTarget.open) }}><summary>{title}</summary><div className="gbody">{children}</div></details>
 const km = (m) => (m == null ? '—' : Math.round(m / 100) / 10)
+
+import { ZONES, ZONE_DEFAULTS, cfgOf, hrRange, paceRange, fmtPace as fmtZPace } from './lib/zones.js'
 
 export default function Profile({ vdot, results, settings, setSettings }) {
   const T = today(), [theme, setTheme] = useStore('lumpad.theme', 'auto')
@@ -56,13 +58,24 @@ export default function Profile({ vdot, results, settings, setSettings }) {
       <div className="score-grid">
         <div><small>VDOT</small><b>{vdot.v.toFixed(1)}</b><em>target {TARGET.vdotNeeded}</em></div>
         <div><small>T-pace</small><b>{fmtPace(p.T)}</b><em>{fit?.threshold_pace_s_km ? `COROS ${fmtPace(fit.threshold_pace_s_km)}` : '/km'}</em></div>
-        <div><small>LTHR</small><b>—</b><em>no source yet</em></div>
-        <div><small>HR maks</small><b>{hrmax ?? '—'}</b><em>tertinggi tercatat</em></div>
+        <div><small>LTHR</small><b>{settings.lthr || ZONE_DEFAULTS.lthr}</b><em>{settings.lthr ? 'set by you' : 'estimate'}</em></div>
+        <div><small>Max HR</small><b>{hrmax ?? '—'}</b><em>highest recorded</em></div>
         <div><small>RHR baseline</small><b>{rhrBase ? r1(rhrBase) : '—'}</b><em>30 days</em></div>
         <div><small>VO2max</small><b>{fit?.vo2max ?? '—'}</b><em>[COROS]</em></div>
       </div>
-      <h3>Progres VDOT</h3>
-      {vhist.length > 1 ? <BandLine data={vhist.map((h) => ({ date: h.date, v: h.v, need: null }))} keys={[{ key: 'v', color: 'var(--c-long)' }]} height={110} label={'VDOT progress: ' + vhist.map((h) => `${h.date} ${h.v}`).join(', ')} /> : <p className="muted">Baseline {TARGET.baseline} — the curve fills in after the first TT (CP1, 16 Jan).</p>}
+      <h3>VDOT progress</h3>
+      {vhist.length > 1 ? <BandLine data={vhist.map((h) => ({ date: h.date, v: h.v, need: null }))} keys={[{ key: 'v', color: 'var(--c-long)' }]} height={110} label={'VDOT progress: ' + vhist.map((h) => `${h.date} ${h.v}`).join(', ')} /> : <p className="muted">Baseline {TARGET.baseline} — the curve fills in after the first TT (CP1, {fmtShort(CHECKPOINTS[0].date)}).</p>}
+    </Card>
+
+    <Card title="Training zones (watch)" right={<Chip>{settings.lthr ? 'your values' : 'LTHR estimated'}</Chip>}>
+      <div className="form two">
+        <label className="fld"><span>Lactate-threshold HR (bpm)</span><input inputMode="numeric" type="number" min="120" max="210" placeholder={String(ZONE_DEFAULTS.lthr)} value={settings.lthr || ''} onChange={(e) => set({ lthr: e.target.value ? +e.target.value : '' })} /></label>
+        <label className="fld"><span>Threshold pace (min:sec /km)</span><input inputMode="numeric" placeholder={fmtZPace(ZONE_DEFAULTS.tpace)} defaultValue={settings.tpace ? fmtZPace(settings.tpace) : ''} onBlur={(e) => { const m = e.target.value.trim().match(/^(\d{1,2}):(\d{2})$/); set({ tpace: m ? +m[1] * 60 + +m[2] : '' }) }} /></label>
+      </div>
+      <div className="scroll" tabIndex={0} role="region" aria-label="Zone table"><table className="zm"><thead><tr><th>Zone</th><th>HR (bpm)</th><th>Pace (/km)</th></tr></thead><tbody>
+        {ZONES.slice(1).map((Z) => { const c = cfgOf(settings), h = hrRange(Z.z, c), pr = paceRange(Z.z, c); return <tr key={Z.z}><td><span className={'wz z' + Z.z} style={{ display: 'inline-grid', width: 30, marginRight: 6 }}>Z{Z.z}</span>{Z.name}</td><td>{h[0]}–{h[1]}</td><td>{fmtZPace(pr[0])}–{fmtZPace(pr[1])}</td></tr> })}</tbody></table></div>
+      <p className="muted">Every planned session uses these: the COROS plan runs on HR zones, the pace column is the matching range. Copy LTHR and threshold pace from the COROS app (Profile › Zones / Fitness) — threshold pace {fmtZPace(ZONE_DEFAULTS.tpace)} comes from your COROS fitness assessment; the LTHR {ZONE_DEFAULTS.lthr} default is an estimate.</p>
+      <Evidence>HR zones = % of LTHR (Z1 &lt;85, Z2 85–89, Z3 90–94, Z4 95–99, Z5 100–102, Z6 ≥103). Pace zones = % of threshold pace (Z2 114–129 %, Z3 106–113 %, Z4 101–105 %, Z5 97–100 %). At 5:56/km these reproduce the COROS time estimates of this plan within ~2 %.</Evidence>
     </Card>
 
     <Card title="Training zone matrix">
