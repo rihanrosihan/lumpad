@@ -471,3 +471,5 @@ button.rp:hover{background:var(--surface)}.rp b.am{color:var(--amber-t)}.rp b.co
 .wtarget{margin:4px 0 8px;font-size:.9rem}
 @media (max-width:420px){.wmeta.wk4{grid-template-columns:repeat(2,1fr)}}
 .form.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}@media (max-width:420px){.form.two{grid-template-columns:1fr}}
+.planb .wline{color:rgba(255,255,255,.85);font-size:.82rem}.planb .wtarget{margin:8px 0 6px;color:#fff}.planb .muted{color:rgba(255,255,255,.88)}.planb-row{display:flex;gap:8px;flex-wrap:wrap}.planb-row .planb-btn{margin-top:10px}
+.h4-warn{margin:8px 0 0;font-size:.88rem;line-height:1.5;color:#fde68a;max-width:62ch}

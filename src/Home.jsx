@@ -16,8 +16,8 @@ import { BarChart } from './charts.jsx'
 import FuelCard from './FuelCard.jsx'
 import { HomeCoach } from './Coach.jsx'
 import { pickShoe } from './lib/shoes.js'
-import { WorkoutDetail, WorkoutLine, mainTarget } from './Workout.jsx'
-import { cfgOf } from './lib/zones.js'
+import { WorkoutDetail, WorkoutLine, mainTarget, metaFor } from './Workout.jsx'
+import { cfgOf, hrRange } from './lib/zones.js'
 import { effectiveDay } from './lib/scaler.js'
 
 export const thresholds = (c) => { const d = cpDistance(c); return d && c.line ? { G: fmtTime(raceTime(c.line - 0.5, d)), R: fmtTime(raceTime(c.line - 1.5, d)) } : null }
@@ -44,8 +44,12 @@ export default function Home({ vdot, settings, results, go, M: Mprop }) {
   const last = M.acts.filter((a) => a.sport_class === 'run')[0] || M.acts[0], dc = last ? decoupling(M.lapsById[last.id] || []) : null
   const lastSteady = last && ['easy', 'long', 'social'].includes(BY_DATE[last.date]?.kind)
 
+  const pre = !day && T < PLAN_START, first = BY_DATE[PLAN_START], fmon = mondayOf(PLAN_START), stripMon = pre ? fmon : mon, cfg = cfgOf(settings)
+  const w1 = pre ? Array.from({ length: 7 }, (_, i) => BY_DATE[addDays(fmon, i)]).filter(Boolean).reduce((a, d) => ({ km: a.km + d.km, tl: a.tl + (metaFor(d, cfg)?.tl || 0), runs: a.runs + (d.km > 0 ? 1 : 0) }), { km: 0, tl: 0, runs: 0 }) : null
+  const recent = pre ? M.acts.filter((a) => a.sport_class === 'run' && a.date >= addDays(T, -14) && (a.distance_m || 0) >= 30000)[0] : null
+  const heavy = M.cur && (M.cur.tsb < -30 || (M.cur.acwr != null && M.cur.acwr > 1.3))
   const DAYN = fmtLong(T).split(',')[0], rh = M.rhr, acwr = M.cur?.acwr, hvPct = hv.enough && hv.roll7 ? Math.round(((hv.today - hv.roll7) / hv.roll7) * 100) : null
-  const headline = day ? `${DAYN} — ${day.label || KIND[day.kind].label}${day.km ? ' · ' + day.km + ' km' : ''}` : T < PLAN_START ? `${DAYN} — Easy Focus, Volume Guard & Rehab` : `${DAYN} — No session`
+  const headline = day ? `${DAYN} — ${day.label || KIND[day.kind].label}${day.km ? ' · ' + day.km + ' km' : ''}` : T < PLAN_START ? `${DAYN} — Recover, then the season starts ${DAYS3[(new Date(PLAN_START + 'T12:00:00').getDay())]} ${fmtShort(PLAN_START)}` : `${DAYN} — No session`
   const summary = [hv.enough && `HRV ${hv.today} ms (${sign(hvPct)}% vs 7 d)`, rh.value != null && `RHR ${rh.value} bpm`, M.cur && `TSB ${sign(M.cur.tsb)}${fz ? ` (${fz.label})` : ''}`, acwr != null && `ACWR ${acwr}`].filter(Boolean).join(' · ')
   const RACES = PLAN.filter((d) => d.kind === 'race' && /FM|Full/.test(d.label || '')), near = RACES.find((d) => d.date >= T), aRace = settings.raceDate
   return <section className="screen home">
@@ -55,6 +59,7 @@ export default function Home({ vdot, settings, results, go, M: Mprop }) {
       <i />{sync === undefined ? 'Checking sync…' : sync === null ? 'Sync status unreachable — data may be stale' : sync?.lastRun ? <>Sync {ago(sync.lastRun.received_at)} · {wib(sync.lastRun.received_at)} WIB</> : 'No sync yet — no COROS/Strava data has arrived'}
     </button>
       <h1>{headline}</h1>
+      {heavy && <p className="h4-warn" role="note"><Chip tone="yellow">High load</Chip> TSB {sign(M.cur.tsb)}{acwr != null ? ` · ACWR ${acwr}` : ''} — keep hard sessions out until it comes down{recent ? ` (${recent.name || 'long run'}, ${(recent.distance_m / 1000).toFixed(1)} km on ${fmtShort(recent.date)})` : ''}.</p>}
       <p className="h4-sum">{rd.score != null ? <><b>{tier.label}</b> — {tier.advice} </> : null}<span>{summary}</span></p>
       <div className="h4-tiles">
         {near && <button className="cd g" onClick={() => go('race')} aria-label={`Nearest race ${near.label}, ${diffDays(near.date, T)} days`}><small>NEAREST RACE ({(RACE_BY_DATE[near.date]?.cls || 'C')}-RACE)</small><b>D-{diffDays(near.date, T)}</b><span>{near.label.split(' · ')[0]} · {fmtShort(near.date)}</span></button>}
@@ -71,7 +76,7 @@ export default function Home({ vdot, settings, results, go, M: Mprop }) {
           <div className="hero">
             <RadialGauge value={rd.score} tone={tier ? TIER_TONE[tier.id] : 'none'} label="Readiness" size={112} sub={rd.score == null ? 'not enough data' : '/ 100'} />
             <div className="hx"><span className={'tierc ' + (tier ? 'tier-' + tier.id : '')}>{tier ? tier.label : checked ? { green: 'Go', yellow: 'Scale down', red: 'Rest' }[g.level] : 'No check-in yet'}</span>
-              <h2>{rd.caps[0] ? 'Gate active: ' + rd.caps[0].why : tier ? tier.advice : checked ? (g.reasons[0]?.msg || 'No red flags') : 'Tap to check in (±15 seconds)'}</h2>
+              <h2>{rd.caps[0] ? 'Gate active: ' + rd.caps[0].why : tier ? (day ? tier.advice : heavy ? 'No session planned. Load is high — easy running or rest only.' : 'No session planned today. Easy run or rest.') : checked ? (g.reasons[0]?.msg || 'No red flags') : 'Tap to check in (±15 seconds)'}</h2>
               <p className="muted">Data {rd.coverage}/100 pts{M.recov?.recovery_hours != null ? ` · full recovery ±${M.recov.recovery_hours} h` : ''}</p></div>
           </div>
           <div className="pills four">
@@ -100,14 +105,22 @@ export default function Home({ vdot, settings, results, go, M: Mprop }) {
       </div>
       <div className="hr">
         <HomeCoach go={go} />
-        {!day && <div className="planb">
-          <span className="planb-chip">{T < PLAN_START ? `Base & rehab block · ${diffDays(PLAN_START, T)} days to the plan` : 'Outside the plan'}</span>
-          <h2>{T < PLAN_START ? 'The season has not started' : 'No session scheduled'}</h2>
-          <p>{T < PLAN_START ? `First day: ${fmtLong(PLAN_START)} (COROS plan week 1). Until then: easy runs, hold volume, rehab.` : 'Check the calendar for the next session.'}</p>
+        {pre && first && <div className="planb">
+          <span className="planb-chip">Season starts in {diffDays(PLAN_START, T)} days · {fmtLong(PLAN_START)}</span>
+          <h2>{first.label || KIND[first.kind].label} · {first.km} km</h2>
+          <WorkoutLine day={first} />
+          {mainTarget(first, cfg) && <p className="wtarget"><b>{mainTarget(first, cfg)}</b></p>}
+          <p className="muted">Week 1: {Math.round(w1.km * 10) / 10} km · {w1.runs} runs · {w1.tl} TL. Until then: easy runs only (≤ 6 km, HR zone 1–2, under {hrRange(2, cfg)[1]} bpm) or rest — arrive fresh.</p>
+          <div className="planb-row"><button className="planb-btn" onClick={() => go('calendar', PLAN_START)}>Open the first session</button><button className="planb-btn" onClick={() => go('calendar', { view: 'cp' })}>Checkpoint roadmap</button></div>
+        </div>}
+        {!day && !pre && <div className="planb">
+          <span className="planb-chip">Outside the plan</span>
+          <h2>No session scheduled</h2>
+          <p>Check the calendar for the next session.</p>
           <button className="planb-btn" onClick={() => go('calendar', { view: 'cp' })}>Checkpoint roadmap</button>
         </div>}
-        <div className="b-week"><Card title="This week" className="tight" right={<button className="link" onClick={() => go('calendar')}>Calendar</button>}>
-      <div className="strip">{Array.from({ length: 7 }, (_, i) => addDays(mon, i)).map((sd, i) => { const d = BY_DATE[sd], ran = M.acts.filter((a) => a.sport_class === 'run' && a.date === sd).reduce((t, a) => t + (a.distance_m || 0) / 1000, 0)
+        <div className="b-week"><Card title={pre ? `First week · from ${fmtShort(fmon)}` : 'This week'} className="tight" right={<button className="link" onClick={() => go('calendar')}>Calendar</button>}>
+      <div className="strip">{Array.from({ length: 7 }, (_, i) => addDays(stripMon, i)).map((sd, i) => { const d = BY_DATE[sd], ran = M.acts.filter((a) => a.sport_class === 'run' && a.date === sd).reduce((t, a) => t + (a.distance_m || 0) / 1000, 0)
         return <button key={sd} aria-current={sd === T ? 'date' : undefined} aria-label={`${fmtLong(sd)}: ${d ? (d.label || KIND[d.kind].label) + (d.km ? ', planned ' + d.km + ' km' : '') : 'no session'}${ran ? ', already ran ' + ran.toFixed(1) + ' km' : ''}`} className={`sc ${sd === T ? 'today' : ''} ${d ? 'k-' + d.kind : 'k-none'}`} onClick={() => go('calendar', sd)}>
           <small>{DAYS3[(i + 1) % 7]}</small><b>{d && d.km ? d.km : '–'}</b><i>{ran ? '✓ ' + r1(ran) : d ? KIND[d.kind].short : ''}</i></button> })}</div>
     </Card></div>
