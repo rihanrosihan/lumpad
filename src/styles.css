@@ -439,3 +439,7 @@ button.rp:hover{background:var(--surface)}.rp b.am{color:var(--amber-t)}.rp b.co
 @media(max-width:560px){.pill10{grid-template-columns:repeat(5,minmax(0,1fr))}.row2:has(.donut){grid-template-columns:1fr}}
 .donut{flex-wrap:wrap;min-width:0}.legend.col{min-width:0;overflow-wrap:anywhere}.donut svg{flex:none}
 .row2>*{min-width:0}
+/* QA: reflow at 320px */
+.score-grid>div,.mgrid>div,.prs>div,.sumrow>div{min-width:0}.score-grid em,.score-grid b,.score-grid small{overflow-wrap:anywhere}
+.score-grid.two{grid-template-columns:repeat(auto-fit,minmax(132px,1fr))}
+.score-grid small{flex-wrap:wrap}
