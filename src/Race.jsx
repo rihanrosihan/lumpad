@@ -34,7 +34,7 @@ function Cutoffs() {
   })
   const tight = rows.reduce((a, r) => (r.need < a.need ? r : a))
   return <Card title="Cut-off (COP)" right={<Chip tone="yellow">basis COP 2026</Chip>}>
-    <div className="scroll"><table className="zm">
+    <div className="scroll" tabIndex={0} role="region" aria-label="Tabel (geser untuk melihat semua kolom)"><table className="zm">
       <thead><tr><th>Titik</th><th>KM</th><th>Tutup</th><th>Pace maks</th><th>Tiba @sub-4</th><th>Tiba @4:30</th></tr></thead>
       <tbody>{rows.map((r) => <tr key={r.name}><td>{r.name}</td><td>{r.km}</td><td>{r.close.replace(':', '.')}</td><td>{pace(r.need)}/km</td>
         {r.at.map((t, i) => <td key={i}>{clock(t)} <small className="muted">(+{Math.round(r.margin[i])}′)</small></td>)}</tr>)}</tbody>

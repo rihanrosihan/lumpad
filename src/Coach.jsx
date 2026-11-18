@@ -131,7 +131,7 @@ const VIEWS = [['coach', 'Coach'], ['dur', 'Ketahanan'], ['twin', 'Twin'], ['mem
 export default function Coach() {
   const [v, setV] = useState('coach'), st = useApi('/api/intel/status')
   return <Screen title="Coach" sub="Monitoring · analisis · arahan menuju sub-4:00">
-    <div className="seg3" role="tablist" aria-label="Bagian coach">{VIEWS.map(([k, l]) => <button key={k} role="tab" aria-selected={v === k} aria-pressed={v === k} onClick={() => setV(k)}>{l}</button>)}</div>
+    <div className="seg3" role="tablist" aria-label="Bagian coach">{VIEWS.map(([k, l]) => <button key={k} role="tab" aria-selected={v === k} onClick={() => setV(k)}>{l}</button>)}</div>
     {v === 'coach' && <><Ask st={st.data} /><Recent /><Status st={st.data} /></>}
     {v === 'dur' && <Durability />}
     {v === 'twin' && <Twin />}

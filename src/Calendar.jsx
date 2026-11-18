@@ -113,11 +113,9 @@ function MonthView({ vdot, focus, raceDate }) {
   </>
 }
 
-export default function Calendar({ vdot, results, setResults, focus, settings, go }) {
-  const [view, setView] = useState('month')
-  useEffect(() => { if (focus && typeof focus === 'object') setView(focus.view === 'cp' ? 'cp' : focus.view === 'race' ? 'race' : 'month'); else if (focus) setView('month') }, [focus])
-  return <Screen title="Kalender" sub="Rencana 2027, checkpoint dan race">
-    <div className="seg3" role="group" aria-label="Tampilan kalender">{[['month', 'Kalender'], ['cp', 'Checkpoint'], ['race', 'Race']].map(([k, l]) => <button key={k} aria-pressed={view === k} onClick={() => setView(k)}>{l}</button>)}</div>
+const TITLES = { month: ['Calendar', 'Rencana 2027, ketuk hari untuk preskripsi'], cp: ['Checkpoints', 'CP1–CP20: tes, gate, dan jalur VDOT'], race: ['Races', 'Dari race terdekat sampai JRF sub-4'] }
+export default function Calendar({ view = 'month', vdot, results, setResults, focus, settings, go }) {
+  return <Screen title={TITLES[view][0]} sub={TITLES[view][1]}>
     {view === 'month' && <MonthView vdot={vdot} focus={typeof focus === 'string' ? focus : null} raceDate={settings.raceDate} />}
     {view === 'cp' && <Checkpoints vdot={vdot} results={results} setResults={setResults} focus={focus?.id} />}
     {view === 'race' && <Race vdot={vdot} results={results} settings={settings} go={go} />}

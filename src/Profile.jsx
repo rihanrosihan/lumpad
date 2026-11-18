@@ -64,7 +64,7 @@ export default function Profile({ vdot, results, settings, setSettings }) {
     </Card>
 
     <Card title="Matriks zona latihan">
-      <div className="scroll"><table className="zm"><thead><tr><th>Zona</th><th>Pace sekarang</th><th>Pace target</th><th>HR (% maks)</th></tr></thead><tbody>
+      <div className="scroll" tabIndex={0} role="region" aria-label="Tabel (geser untuk melihat semua kolom)"><table className="zm"><thead><tr><th>Zona</th><th>Pace sekarang</th><th>Pace target</th><th>HR (% maks)</th></tr></thead><tbody>
         {[['E · Easy', `${fmtPace(p.E[1])}–${fmtPace(p.E[0])}`, `${fmtPace(pt.E[1])}–${fmtPace(pt.E[0])}`, [0.6, 0.79], 'var(--green)'], ['M · Marathon', fmtPace(p.M), fmtPace(pt.M), [0.8, 0.86], 'var(--c-long)'], ['T · Threshold', fmtPace(p.T), fmtPace(pt.T), [0.87, 0.92], 'var(--yellow)'], ['I · Interval', fmtPace(p.I), fmtPace(pt.I), [0.93, 1], 'var(--c-quality)'], ['R · Repetition', fmtPace(p.R), fmtPace(pt.R), null, 'var(--red)']]
           .map(([z, a, b, hr, c]) => <tr key={z}><td><i className="zc" style={{ background: c }} />{z}</td><td>{a}</td><td>{b}</td><td>{hr && hrmax ? `${Math.round(hr[0] * hrmax)}–${Math.round(hr[1] * hrmax)}` : hr ? `${hr[0] * 100}–${hr[1] * 100}%` : '—'}</td></tr>)}</tbody></table></div>
       <Evidence>Pace: Daniels–Gilbert [ALGORITHMIC]; target = VDOT {TARGET.vdotNeeded}. HR: rentang %HR maks gaya Daniels × HR maks tercatat (estimasi, bukan tes lab).</Evidence>
