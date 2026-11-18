@@ -17,6 +17,6 @@ export function useHealthDay(date) {
   return h
 }
 // "2026-11-11T01:02:03Z" → "08:02" in Jakarta
-export const wib = (iso) => iso ? new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(iso)).replace('.', ':') : ''
-export const ago = (iso) => { if (!iso) return ''; const m = Math.round((Date.now() - new Date(iso)) / 60000); return m < 90 ? `${m} mnt lalu` : m < 2880 ? `${Math.round(m / 60)} jam lalu` : `${Math.round(m / 1440)} hari lalu` }
-export const hrvLow = (status) => /below|low|rendah|reduced/i.test(status || '')
+export const wib = (iso) => iso ? new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(iso)).replace('.', ':') : ''
+export const ago = (iso) => { if (!iso) return ''; const m = Math.round((Date.now() - new Date(iso)) / 60000); return m < 90 ? `${m} min ago` : m < 2880 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} d ago` }
+export const hrvLow = (status) => /below|low|reduced/i.test(status || '')

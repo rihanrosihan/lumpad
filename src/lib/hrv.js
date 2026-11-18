@@ -38,4 +38,4 @@ export function quadrant(health, date) {
   for (let i = 6; i >= 0; i--) { const d = addDays(date, -i), h = hrvState(health, d), r = rhrState(health, d); if (h.enough && h.zToday != null && r.enough && r.z != null) pts.push({ date: d, x: r.z, y: h.zToday }) }
   return pts
 }
-export const quadrantLabel = (x, y) => (y >= 0 && x <= 0 ? ['green', 'Parasimpatis dominan · siap'] : y < 0 && x > 0 ? ['red', 'Stres simpatis / sakit / overload'] : y < 0 && x <= 0 ? ['purple', 'HRV tertekan + RHR rendah (pola saturasi / lelah kronis)'] : ['yellow', 'Adaptasi aktif / dehidrasi ringan'])
+export const quadrantLabel = (x, y) => (y >= 0 && x <= 0 ? ['green', 'Parasympathetic dominant · ready'] : y < 0 && x > 0 ? ['red', 'Sympathetic stress / illness / overload'] : y < 0 && x <= 0 ? ['purple', 'HRV suppressed + low RHR (saturation / chronic fatigue pattern)'] : ['yellow', 'Active adaptation / mild dehydration'])

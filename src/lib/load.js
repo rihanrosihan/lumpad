@@ -25,8 +25,8 @@ export function monotonyStrain(series) { // Foster 1998, last 7 days
   return { monotony: r1(m / s, 2), strain: Math.round(total * (m / s)), weekLoad: total }
 }
 export const FORM_ZONES = [ // relative to CTL — scale-free version of the spec's TSS bands [convention, scaled]
-  { id: 'overload', max: -30, label: 'Overload' }, { id: 'productive', max: -10, label: 'Produktif' }, { id: 'grey', max: 5, label: 'Netral' },
-  { id: 'fresh', max: 25, label: 'Segar / peak' }, { id: 'transition', max: Infinity, label: 'Transisi / detraining' },
+  { id: 'overload', max: -30, label: 'Overload' }, { id: 'productive', max: -10, label: 'Productive' }, { id: 'grey', max: 5, label: 'Neutral' },
+  { id: 'fresh', max: 25, label: 'Fresh / peak' }, { id: 'transition', max: Infinity, label: 'Transition / detraining' },
 ]
 export const formZone = (pct) => (pct == null ? null : FORM_ZONES.find((z) => pct <= z.max))
 export const ctlRamp = (p) => (p.length > 7 ? r1(p.at(-1).ctl - p.at(-8).ctl) : null)

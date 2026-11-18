@@ -11,7 +11,7 @@ async function ncbi(url) {
     if (r.ok) { try { return await r.json() } catch {} }
     await new Promise((r) => setTimeout(r, 1000))
   }
-  throw Object.assign(new Error('PubMed sedang membatasi/gagal, coba lagi'), { status: 502 })
+  throw Object.assign(new Error('PubMed is rate-limiting or failing, try again'), { status: 502 })
 }
 export async function search(term, max = 8) {
   const k = term + max; if (cache.has(k)) return cache.get(k)

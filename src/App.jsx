@@ -37,7 +37,7 @@ function parse() {
 function latestVdot(results) {
   const done = CHECKPOINTS.filter((c) => results[c.id]?.vdot != null && (c.kind === 'tt'))
   const last = done[done.length - 1]
-  return last ? { v: results[last.id].vdot, src: `CP${last.id} (${last.date})` } : { v: TARGET.baseline, src: 'baseline 10K resmi 1:00:55 (CP1 belum dilari)' }
+  return last ? { v: results[last.id].vdot, src: `CP${last.id} (${last.date})` } : { v: TARGET.baseline, src: 'official 10K baseline 1:00:55 (CP1 not run yet)' }
 }
 
 export default function App() {
@@ -82,16 +82,16 @@ export default function App() {
   const navBtn = (k, cls) => <button key={k} className={`${cls} ${tab === k ? 'on' : ''} ${subOf[k] ? 'sub' : ''}`} aria-current={tab === k ? 'page' : undefined}
     onClick={() => go(k, k === 'day' ? T : null)}><Icon n={PAGES[k].icon} size={cls === 'rb' ? 18 : 22} /><span>{cls === 'nb' ? PAGES[k].short || PAGES[k].label : PAGES[k].label}</span>{cls !== 'nb' && BADGE[k] && <em className={'bdg b-' + k}>{BADGE[k]}</em>}</button>
   const grouped = (cls) => GROUPS.map(([g, ks]) => <div key={g} className="ngroup"><p className="ngl">{g}</p>{ks.map((k) => navBtn(k, cls))}</div>)
-  const gate = rd.score == null ? ['none', 'NO DATA', 'Belum cukup data untuk skor hari ini.'] : rd.caps.length ? ['caution', 'CAUTION', rd.caps[0].why] : ['ok', rd.tier.label.toUpperCase(), rd.tier.advice]
+  const gate = rd.score == null ? ['none', 'NO DATA', 'Not enough data for today\'s score yet.'] : rd.caps.length ? ['caution', 'CAUTION', rd.caps[0].why] : ['ok', rd.tier.label.toUpperCase(), rd.tier.advice]
   const Ribbon = ({ children }) => <div className="ribbon">{children}</div>
   const jump = (t) => () => go(t)
 
   return <>
-    <a className="skip" href="#main" onClick={(e) => { e.preventDefault(); mainRef.current?.focus() }}>Lewati ke konten</a>
+    <a className="skip" href="#main" onClick={(e) => { e.preventDefault(); mainRef.current?.focus() }}>Skip to content</a>
     <header className="appbar">
       <div className="appbar-in">
-        <button className="menubtn" onClick={() => setMenu(true)} aria-label="Buka menu"><Icon n="menu" size={20} /></button>
-        <button className="brand" onClick={jump('home')} aria-label="LUMPAD — ke Home"><span className="logo" aria-hidden="true"><i>SUB 4</i><small>COACH</small></span><span className="bt"><b>LUMPAD</b><small>{PAGES[tab]?.label}{cur === 'activity-detail' ? ' · Run Analysis' : ''}</small></span></button>
+        <button className="menubtn" onClick={() => setMenu(true)} aria-label="Open menu"><Icon n="menu" size={20} /></button>
+        <button className="brand" onClick={jump('home')} aria-label="LUMPAD — go Home"><span className="logo" aria-hidden="true"><i>SUB 4</i><small>COACH</small></span><span className="bt"><b>LUMPAD</b><small>{PAGES[tab]?.label}{cur === 'activity-detail' ? ' · Run Analysis' : ''}</small></span></button>
         <Ribbon>
           <span className="rp"><i className={'dot ' + (last?.ok ? 'ok' : 'warn')} />COROS<b>{last ? wib(last.received_at) + ' WIB' : '—'}</b></span>
           <button className="rp" onClick={jump('profile')}>VDOT<b className="am">{vdot.v.toFixed(1)}</b>→<b>{TARGET.vdotNeeded}</b></button>
@@ -100,17 +100,17 @@ export default function App() {
           {(lbp || lgl) && <button className="rp" onClick={jump('biometrics')}>BP · Glu<b className={lbp && classifyBP(lbp.sys, lbp.dia).tone === 'green' ? 'gr' : ''}>{lbp ? `${lbp.sys}/${lbp.dia}` : '—'} · {lgl ? lgl.mgdl : '—'}</b></button>}
           {nextRace && <button className="rp" onClick={jump('race')}>Next: {nextRace.label.split(' ')[0]}<b className="dn">D-{dNext}</b></button>}
         </Ribbon>
-        <button className="btn syncbtn" onClick={syncNow} disabled={busy === 'run'} aria-label="Sync COROS sekarang"><Icon n="sync" size={16} /><span>{busy === 'run' ? 'Memulai…' : busy === 'ok' ? 'Sync dimulai' : busy === 'err' ? 'Gagal' : 'Sync COROS'}</span></button>
-        <button className="themebtn" onClick={cycleTheme} aria-label={`Tema: ${{ auto: 'otomatis', light: 'terang', dark: 'gelap' }[theme]}. Ketuk untuk mengganti`}><Icon n={theme === 'dark' ? 'moon' : 'sun'} size={18} /></button>
+        <button className="btn syncbtn" onClick={syncNow} disabled={busy === 'run'} aria-label="Sync COROS now"><Icon n="sync" size={16} /><span>{busy === 'run' ? 'Starting…' : busy === 'ok' ? 'Sync started' : busy === 'err' ? 'Failed' : 'Sync COROS'}</span></button>
+        <button className="themebtn" onClick={cycleTheme} aria-label={`Theme: ${{ auto: 'auto', light: 'light', dark: 'dark' }[theme]}. Tap to change`}><Icon n={theme === 'dark' ? 'moon' : 'sun'} size={18} /></button>
       </div>
     </header>
     <div className="shell">
       <aside className="rail">
-        <nav aria-label="Menu samping">{grouped('rb')}</nav>
+        <nav aria-label="Side menu">{grouped('rb')}</nav>
         <div className={'gatecard g-' + gate[0]}><p className="ngl">Daily gate status</p><b><i />{gate[1]}</b><span>{gate[2]}</span></div>
       </aside>
       <div className="app">
-        {sync === 'offline' && <div className="offbar" role="status">Offline — perubahan tersimpan hanya di browser ini dan akan dikirim saat tersambung</div>}
+        {sync === 'offline' && <div className="offbar" role="status">Offline — changes are saved only in this browser and will be sent when you are back online</div>}
         <main id="main" ref={mainRef} tabIndex={-1}>
           {tab === 'home' && <Home vdot={vdot} settings={settings} results={results} go={go} M={M} />}
           {tab === 'ready' && <Readiness vdot={vdot} settings={settings} focus={focus} />}
@@ -125,8 +125,8 @@ export default function App() {
         </main>
       </div>
     </div>
-    <nav className="tabbar" aria-label="Menu utama">{BOTTOM.map((k) => navBtn(k, 'nb'))}</nav>
-    <Sheet open={menu} onClose={() => setMenu(false)} label="Menu"><nav className="drawer" aria-label="Semua halaman">{grouped('rb')}</nav>
+    <nav className="tabbar" aria-label="Main menu">{BOTTOM.map((k) => navBtn(k, 'nb'))}</nav>
+    <Sheet open={menu} onClose={() => setMenu(false)} label="Menu"><nav className="drawer" aria-label="All pages">{grouped('rb')}</nav>
       <div className={'gatecard g-' + gate[0]}><p className="ngl">Daily gate status</p><b><i />{gate[1]}</b><span>{gate[2]}</span></div></Sheet>
   </>
 }

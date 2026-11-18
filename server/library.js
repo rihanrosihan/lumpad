@@ -1,6 +1,6 @@
 // Citation library. Consensus has no verified programmatic access → entries are added manually (paste URL/title) and tagged.
 import { load, save } from './db.js'
-export const consensusStatus = () => ({ api: 'unverified', note: 'Consensus belum punya akses programatik terverifikasi. Tambahkan sitasi manual; PubMed otomatis.' })
+export const consensusStatus = () => ({ api: 'unverified', note: 'Consensus has no verified programmatic access yet. Add citations manually; PubMed is automatic.' })
 export const list = () => load('library', [])
 export function add(e) {
   const lib = list()

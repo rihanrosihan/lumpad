@@ -1,7 +1,7 @@
 // COROS: no verified public API for individual developers (open item 9). Fallback = FIT file import.
 // Units per COROS docs in project: distance 0.01 m, time s — FIT gives metres/seconds directly.
 import FitParser from 'fit-file-parser'
-export const status = () => ({ api: 'unverified', fallback: 'FIT import', note: 'Ekspor FIT dari COROS app, atau URL unduhan dari tool COROS di sesi coach.' })
+export const status = () => ({ api: 'unverified', fallback: 'FIT import', note: 'Export FIT from the COROS app, or a download URL from the COROS tool in a coach session.' })
 export function parseFit(buf) {
   return new Promise((resolve, reject) => {
     new FitParser({ force: true, speedUnit: 'm/s', lengthUnit: 'm', mode: 'list' }).parse(buf, (err, d) => {

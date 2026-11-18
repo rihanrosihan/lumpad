@@ -46,14 +46,14 @@ export function Sheet({ open, onClose, label, children }) {
   }, [open, onClose])
   if (!open) return null
   return <div className="sheet-wrap" onClick={onClose}><div ref={ref} className="sheet" role="dialog" aria-modal="true" aria-label={label} onClick={(e) => e.stopPropagation()}>
-    <div className="grab" aria-hidden="true" /><button ref={closeRef} className="x" onClick={onClose} aria-label="Tutup"><Icon n="x" size={20} /></button>{children}</div></div>
+    <div className="grab" aria-hidden="true" /><button ref={closeRef} className="x" onClick={onClose} aria-label="Close"><Icon n="x" size={20} /></button>{children}</div></div>
 }
 
 // "?" next to a metric: opens a one-sentence definition. The button keeps a 44px target but takes little room (negative margins).
 export function Info({ k }) {
   const [open, setOpen] = useState(false), g = GLOSSARY[k]; if (!g) return null
-  return <><button className="info" onClick={() => setOpen(true)} aria-label={`Apa itu ${g[0]}?`}><span aria-hidden="true">?</span></button>
+  return <><button className="info" onClick={() => setOpen(true)} aria-label={`What is ${g[0]}?`}><span aria-hidden="true">?</span></button>
     <Sheet open={open} onClose={() => setOpen(false)} label={g[0]}><h2 className="sess-title">{g[0]}</h2><p>{g[1]}</p></Sheet></>
 }
 // evidence / source notes stay available but collapsed so numbers, not paragraphs, lead
-export const Evidence = ({ children }) => <details className="evid"><summary>Dasar bukti</summary><p className="src-note">{children}</p></details>
+export const Evidence = ({ children }) => <details className="evid"><summary>Evidence</summary><p className="src-note">{children}</p></details>

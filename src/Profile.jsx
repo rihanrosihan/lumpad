@@ -15,12 +15,12 @@ import { useSyncStatus2, wib, ago } from './sync.js'
 import { useApi } from './api.js'
 import { BandLine, Donut, GroupedBars } from './charts2.jsx'
 
-const ROLES = [['', 'Belum ditentukan'], ['easy', 'Easy / recovery'], ['daily', 'Daily trainer'], ['plated', 'Plated — quality / long / race'], ['short', 'Interval pendek']]
-const RULES = [['Race & TT', 'plated'], ['Tempo / threshold', 'plated'], ['Long run', 'daily'], ['Interval pendek / strides', 'short'], ['Easy / recovery', 'easy']]
-const LOCKED = ['Sen Upper · Sel quality + Lower · Rab easy · Kam speed ringan + Lower ringan · Jum easy · Sab LR + full body · Min social/race', 'Lower terakhir Sel 12 Okt · tibialis posisi 1 di setiap Lower · lari ≥6 jam sebelum Lower', 'Sleep HR > 67 = tanpa lari keras · nyeri ≥2/10 = durability event']
+const ROLES = [['', 'Not set'], ['easy', 'Easy / recovery'], ['daily', 'Daily trainer'], ['plated', 'Plated — quality / long / race'], ['short', 'Short intervals']]
+const RULES = [['Race & TT', 'plated'], ['Tempo / threshold', 'plated'], ['Long run', 'daily'], ['Short intervals / strides', 'short'], ['Easy / recovery', 'easy']]
+const LOCKED = ['Mon Upper · Tue quality + Lower · Wed easy · Thu light speed + light Lower · Fri easy · Sat LR + full body · Sun social/race', 'Last Lower Tue 12 Oct · tibialis position 1 in every Lower · run ≥6 h before Lower', 'Sleep HR > 67 = no hard running · pain ≥2/10 = durability event']
 const SHOE_C = ['var(--c-long)', 'var(--c-quality)', 'var(--c-tt)', 'var(--green)', 'var(--c-social)', 'var(--c-rest)']
-// collapsible groups with jump chips; open state is remembered (synced like other settings), only Koneksi opens by default
-const GROUPS = [['vdot', 'VDOT & zona'], ['shoe', 'Sepatu'], ['race', 'Race & tubuh'], ['conn', 'Perangkat & koneksi'], ['athlete', 'Atlet & pengaturan']]
+// collapsible groups with jump chips; open state is remembered (synced like other settings), only Connections opens by default
+const GROUPS = [['vdot', 'VDOT & zones'], ['shoe', 'Shoes'], ['race', 'Race & body'], ['conn', 'Devices & connections'], ['athlete', 'Athlete & settings']]
 const Group = ({ id, title, open, setOpen, children }) => <details className="pgroup" id={'g-' + id} open={!!open} onToggle={(e) => { if (e.currentTarget.open !== !!open) setOpen(id, e.currentTarget.open) }}><summary>{title}</summary><div className="gbody">{children}</div></details>
 const km = (m) => (m == null ? '—' : Math.round(m / 100) / 10)
 
@@ -47,108 +47,108 @@ export default function Profile({ vdot, results, settings, setSettings }) {
 
   const [openG, setOpenG] = useStore('lumpad.profile.open', { conn: true }), setOpen = (id, v) => setOpenG((o) => ({ ...o, [id]: v }))
   const jump = (id) => { setOpen(id, true); setTimeout(() => { const el = document.getElementById('g-' + id); el?.scrollIntoView({ behavior: 'smooth', block: 'start' }); el?.querySelector('summary')?.focus({ preventScroll: true }) }, 60) }
-  return <Screen title="Profil" sub="Mesin atlet, garasi sepatu, koneksi">
-    <nav className="chipjump" aria-label="Lompat ke bagian">{GROUPS.map(([id, t]) => <button key={id} onClick={() => jump(id)}>{t}</button>)}</nav>
-    <Group id="vdot" title="VDOT & zona" open={openG.vdot} setOpen={setOpen}>
+  return <Screen title="Profile" sub="Athlete engine, shoe garage, connections">
+    <nav className="chipjump" aria-label="Jump to section">{GROUPS.map(([id, t]) => <button key={id} onClick={() => jump(id)}>{t}</button>)}</nav>
+    <Group id="vdot" title="VDOT & zones" open={openG.vdot} setOpen={setOpen}>
     {/* 1. VDOT & thresholds */}
-    <Card title="VDOT & ambang" right={<Chip>{vdot.src.split(' ')[0]}</Chip>}>
+    <Card title="VDOT & thresholds" right={<Chip>{vdot.src.split(' ')[0]}</Chip>}>
       <div className="score-grid">
         <div><small>VDOT</small><b>{vdot.v.toFixed(1)}</b><em>target {TARGET.vdotNeeded}</em></div>
         <div><small>T-pace</small><b>{fmtPace(p.T)}</b><em>{fit?.threshold_pace_s_km ? `COROS ${fmtPace(fit.threshold_pace_s_km)}` : '/km'}</em></div>
-        <div><small>LTHR</small><b>—</b><em>belum ada sumber</em></div>
+        <div><small>LTHR</small><b>—</b><em>no source yet</em></div>
         <div><small>HR maks</small><b>{hrmax ?? '—'}</b><em>tertinggi tercatat</em></div>
-        <div><small>RHR baseline</small><b>{rhrBase ? r1(rhrBase) : '—'}</b><em>30 hari</em></div>
+        <div><small>RHR baseline</small><b>{rhrBase ? r1(rhrBase) : '—'}</b><em>30 days</em></div>
         <div><small>VO2max</small><b>{fit?.vo2max ?? '—'}</b><em>[COROS]</em></div>
       </div>
       <h3>Progres VDOT</h3>
-      {vhist.length > 1 ? <BandLine data={vhist.map((h) => ({ date: h.date, v: h.v, need: null }))} keys={[{ key: 'v', color: 'var(--c-long)' }]} height={110} label={'Progres VDOT: ' + vhist.map((h) => `${h.date} ${h.v}`).join(', ')} /> : <p className="muted">Baseline {TARGET.baseline} — kurva terisi setelah TT pertama (CP1, 16 Jan).</p>}
+      {vhist.length > 1 ? <BandLine data={vhist.map((h) => ({ date: h.date, v: h.v, need: null }))} keys={[{ key: 'v', color: 'var(--c-long)' }]} height={110} label={'VDOT progress: ' + vhist.map((h) => `${h.date} ${h.v}`).join(', ')} /> : <p className="muted">Baseline {TARGET.baseline} — the curve fills in after the first TT (CP1, 16 Jan).</p>}
     </Card>
 
-    <Card title="Matriks zona latihan">
-      <div className="scroll" tabIndex={0} role="region" aria-label="Tabel (geser untuk melihat semua kolom)"><table className="zm"><thead><tr><th>Zona</th><th>Pace sekarang</th><th>Pace target</th><th>HR (% maks)</th></tr></thead><tbody>
+    <Card title="Training zone matrix">
+      <div className="scroll" tabIndex={0} role="region" aria-label="Table (scroll to see all columns)"><table className="zm"><thead><tr><th>Zone</th><th>Pace now</th><th>Target pace</th><th>HR (% max)</th></tr></thead><tbody>
         {[['E · Easy', `${fmtPace(p.E[1])}–${fmtPace(p.E[0])}`, `${fmtPace(pt.E[1])}–${fmtPace(pt.E[0])}`, [0.6, 0.79], 'var(--green)'], ['M · Marathon', fmtPace(p.M), fmtPace(pt.M), [0.8, 0.86], 'var(--c-long)'], ['T · Threshold', fmtPace(p.T), fmtPace(pt.T), [0.87, 0.92], 'var(--yellow)'], ['I · Interval', fmtPace(p.I), fmtPace(pt.I), [0.93, 1], 'var(--c-quality)'], ['R · Repetition', fmtPace(p.R), fmtPace(pt.R), null, 'var(--red)']]
           .map(([z, a, b, hr, c]) => <tr key={z}><td><i className="zc" style={{ background: c }} />{z}</td><td>{a}</td><td>{b}</td><td>{hr && hrmax ? `${Math.round(hr[0] * hrmax)}–${Math.round(hr[1] * hrmax)}` : hr ? `${hr[0] * 100}–${hr[1] * 100}%` : '—'}</td></tr>)}</tbody></table></div>
-      <Evidence>Pace: Daniels–Gilbert [ALGORITHMIC]; target = VDOT {TARGET.vdotNeeded}. HR: rentang %HR maks gaya Daniels × HR maks tercatat (estimasi, bukan tes lab).</Evidence>
+      <Evidence>Pace: Daniels–Gilbert [ALGORITHMIC]; target = VDOT {TARGET.vdotNeeded}. HR: Daniels-style %HRmax ranges × recorded max HR (an estimate, not a lab test).</Evidence>
     </Card>
 
-    <Card title="Prediksi race: kecepatan vs daya tahan">
-      <GroupedBars groups={eq} series={[{ key: 'vdot', color: 'var(--c-long)' }, { key: 'endur', color: 'var(--c-quality)' }, { key: 'coros', color: 'var(--c-rest)' }]} fmt={(v) => (v >= 60 ? `${Math.floor(v / 60)}:${String(v % 60).padStart(2, '0')}` : v + "'")} label={'Prediksi menit: ' + eq.map((e) => `${e.label} VDOT ${e.vdot}, daya tahan ${e.endur ?? '-'}, COROS ${e.coros ?? '-'}`).join('; ')} />
-      <div className="legend"><span><i className="kdot" style={{ background: 'var(--c-long)' }} />VDOT teoretis</span><span><i className="kdot" style={{ background: 'var(--c-quality)' }} />Disesuaikan daya tahan (FM)</span><span><i className="kdot" style={{ background: 'var(--c-rest)' }} />COROS</span></div>
-      {tanda && <p className={tanda * 60 > raceTime(vdot.v, 42195) + 300 ? 'banner' : 'muted'}>FM: VDOT {fmtTime(raceTime(vdot.v, 42195))} vs volume-latihanmu {fmtTime(tanda * 60)} → {tanda * 60 > raceTime(vdot.v, 42195) + 300 ? 'pembatasnya daya tahan (volume), bukan kecepatan.' : 'kecepatan dan daya tahan seimbang.'}</p>}
-      <Evidence>Tanda & Knechtle 2013 (PMID 24379719; r = 0,81; valid 165–266 menit): K = {ti.K ?? '—'} km/mgg, P = {ti.P ? fmtPace(ti.P) : '—'} /km (8 minggu, {ti.runs} lari){settings.bodyFatPct === '' ? '; tanpa lemak tubuh — isi di bawah untuk rumus lengkap' : `; lemak tubuh ${settings.bodyFatPct}%`}. Hanya marathon; tidak ada model sebanding untuk 5K–HM.</Evidence>
+    <Card title="Race prediction: speed vs endurance">
+      <GroupedBars groups={eq} series={[{ key: 'vdot', color: 'var(--c-long)' }, { key: 'endur', color: 'var(--c-quality)' }, { key: 'coros', color: 'var(--c-rest)' }]} fmt={(v) => (v >= 60 ? `${Math.floor(v / 60)}:${String(v % 60).padStart(2, '0')}` : v + "'")} label={'Predicted minutes: ' + eq.map((e) => `${e.label} VDOT ${e.vdot}, endurance ${e.endur ?? '-'}, COROS ${e.coros ?? '-'}`).join('; ')} />
+      <div className="legend"><span><i className="kdot" style={{ background: 'var(--c-long)' }} />Theoretical VDOT</span><span><i className="kdot" style={{ background: 'var(--c-quality)' }} />Endurance-adjusted (FM)</span><span><i className="kdot" style={{ background: 'var(--c-rest)' }} />COROS</span></div>
+      {tanda && <p className={tanda * 60 > raceTime(vdot.v, 42195) + 300 ? 'banner' : 'muted'}>FM: VDOT {fmtTime(raceTime(vdot.v, 42195))} vs your training volume {fmtTime(tanda * 60)} → {tanda * 60 > raceTime(vdot.v, 42195) + 300 ? 'the limiter is endurance (volume), not speed.' : 'speed and endurance are balanced.'}</p>}
+      <Evidence>Tanda & Knechtle 2013 (PMID 24379719; r = 0.81; valid 165–266 minutes): K = {ti.K ?? '—'} km/week, P = {ti.P ? fmtPace(ti.P) : '—'} /km (8 weeks, {ti.runs} runs){settings.bodyFatPct === '' ? '; no body fat — fill it in below for the full formula' : `; body fat ${settings.bodyFatPct}%`}. Marathon only; there is no comparable model for 5K–HM.</Evidence>
     </Card>
 
-    <Card title="Rekor pribadi">
-      <div className="prs">{[['1K', 1000], ['5K'], ['10K'], ['Half'], ['Marathon']].map(([k]) => <div key={k}><small>{k}</small><b>{pr[k] ? fmtTime(pr[k].time) : '—'}</b><small>{pr[k]?.date ? pr[k].date.slice(2) : 'belum ada'}</small></div>)}
-        {['400m', 'Mile', '15K', '10 mil', '20K'].map((k) => <div key={k}><small>{k}</small><b>—</b><small>butuh data per detik</small></div>)}</div>
-      <Evidence>Dari data yang benar-benar ada: 1K = lap 1 km tercepat; 5K–FM = aktivitas utuh dengan jarak ±2%. Jarak lain butuh stream detik (belum ditarik).</Evidence>
+    <Card title="Personal records">
+      <div className="prs">{[['1K', 1000], ['5K'], ['10K'], ['Half'], ['Marathon']].map(([k]) => <div key={k}><small>{k}</small><b>{pr[k] ? fmtTime(pr[k].time) : '—'}</b><small>{pr[k]?.date ? pr[k].date.slice(2) : 'none yet'}</small></div>)}
+        {['400m', 'Mile', '15K', '10 mil', '20K'].map((k) => <div key={k}><small>{k}</small><b>—</b><small>needs per-second data</small></div>)}</div>
+      <Evidence>From data that actually exists: 1K = fastest 1 km lap; 5K–FM = whole activity within ±2% of the distance. Other distances need per-second streams (not pulled yet).</Evidence>
     </Card>
 
     {/* 2. Shoe garage */}
     </Group>
-    <Group id="shoe" title="Sepatu" open={openG.shoe} setOpen={setOpen}>
-    <Card title="Umur pakai" right={<span className="muted">{active.length} aktif</span>}>
-      {G.state === 'ok' && !gear.length && <p className="muted">Belum ditarik — sepatu datang dari Strava.</p>}
+    <Group id="shoe" title="Shoes" open={openG.shoe} setOpen={setOpen}>
+    <Card title="Shoe mileage" right={<span className="muted">{active.length} active</span>}>
+      {G.state === 'ok' && !gear.length && <p className="muted">Not pulled yet — shoes come from Strava.</p>}
       {shoeRows.map((g) => <div className="shoe" key={g.id}><div style={{ flex: 1, minWidth: 0 }}>
-        <b>{g.name}</b><small>{ROLES.find((r) => r[0] === g.role)?.[1]} · {g.st.runs} lari tercatat{g.st.avgPace ? ` · rata-rata ${fmtPace(g.st.avgPace)}/km` : ''}</small>
-        <div className="life" role="img" aria-label={`${Math.round(g.used)} dari ${g.life} km`}><i className={g.f > 0.9 ? 'hi' : g.f > 0.7 ? 'mid' : 'ok'} style={{ width: Math.min(100, g.f * 100) + '%' }} /></div>
-        <div className="form" style={{ marginTop: 6 }}><label className="fld"><span className="muted">Peran</span><select value={g.role} onChange={(e) => set({ shoeRoles: { ...settings.shoeRoles, [g.id]: e.target.value } })}>{ROLES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
-          <label className="fld"><span className="muted">Target umur (km)</span><input inputMode="numeric" type="number" value={settings.shoeLife?.[g.id] ?? ''} placeholder={String(SHOE_LIFE[g.role] || SHOE_LIFE[''])} onChange={(e) => set({ shoeLife: { ...settings.shoeLife, [g.id]: e.target.value } })} /></label></div></div>
+        <b>{g.name}</b><small>{ROLES.find((r) => r[0] === g.role)?.[1]} · {g.st.runs} runs logged{g.st.avgPace ? ` · avg ${fmtPace(g.st.avgPace)}/km` : ''}</small>
+        <div className="life" role="img" aria-label={`${Math.round(g.used)} of ${g.life} km`}><i className={g.f > 0.9 ? 'hi' : g.f > 0.7 ? 'mid' : 'ok'} style={{ width: Math.min(100, g.f * 100) + '%' }} /></div>
+        <div className="form" style={{ marginTop: 6 }}><label className="fld"><span className="muted">Role</span><select value={g.role} onChange={(e) => set({ shoeRoles: { ...settings.shoeRoles, [g.id]: e.target.value } })}>{ROLES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
+          <label className="fld"><span className="muted">Life target (km)</span><input inputMode="numeric" type="number" value={settings.shoeLife?.[g.id] ?? ''} placeholder={String(SHOE_LIFE[g.role] || SHOE_LIFE[''])} onChange={(e) => set({ shoeLife: { ...settings.shoeLife, [g.id]: e.target.value } })} /></label></div></div>
         <div className="km">{Math.round(g.used)}<small style={{ display: 'block', fontWeight: 400 }}>/ {g.life} km</small></div></div>)}
-      {retired.length > 0 && <details className="more"><summary>Pensiun ({retired.length})</summary>{retired.map((g) => <div className="shoe" key={g.id}><div><b>{g.name}</b></div><div className="km">{km(g.lifetime_m)} km</div></div>)}</details>}
-      <Evidence>Hijau &lt; 70% · kuning 70–90% · merah &gt; 90% dari target umur. Target umur = konvensi yang bisa diubah: tidak ada umur sepatu yang tervalidasi dalam km.</Evidence>
+      {retired.length > 0 && <details className="more"><summary>Retired ({retired.length})</summary>{retired.map((g) => <div className="shoe" key={g.id}><div><b>{g.name}</b></div><div className="km">{km(g.lifetime_m)} km</div></div>)}</details>}
+      <Evidence>Green &lt; 70% · yellow 70–90% · red &gt; 90% of the life target. The life target is an editable convention: no validated shoe lifespan in km exists.</Evidence>
     </Card>
-    <Card title="Rotasi 30 / 90 hari">
-      <div className="row2">{[['30 hari', 'km30'], ['90 hari', 'km90']].map(([l, k]) => <div key={k}><h3>{l}</h3><Donut parts={shoeRows.filter((g) => g.st[k] > 0).map((g) => ({ k: g.name.split(' ').slice(1).join(' ') || g.name, v: g.st[k], c: g.c }))} label={`Km per sepatu ${l}`} /></div>)}</div>
-      <Evidence>Malisoux 2015: memakai lebih dari satu sepatu secara paralel = faktor pelindung (HR 0,61) pada 264 pelari rekreasi.</Evidence>
+    <Card title="30 / 90-day rotation">
+      <div className="row2">{[['30 days', 'km30'], ['90 days', 'km90']].map(([l, k]) => <div key={k}><h3>{l}</h3><Donut parts={shoeRows.filter((g) => g.st[k] > 0).map((g) => ({ k: g.name.split(' ').slice(1).join(' ') || g.name, v: g.st[k], c: g.c }))} label={`Km per shoe ${l}`} /></div>)}</div>
+      <Evidence>Malisoux 2015: using more than one shoe in parallel = a protective factor (HR 0.61) in 264 recreational runners.</Evidence>
     </Card>
-    <Card title="Aturan sepatu default">
-      {RULES.map(([t, r]) => { const s = active.filter((g) => settings.shoeRoles?.[g.id] === r); return <div key={t} className="prow"><span>{t}</span><b>{s.length ? s.map((x) => x.name).join(', ') : '—'}</b><small>peran: {ROLES.find((x) => x[0] === r)[1]}</small></div> })}
-      <p className="muted">Home memilih sepatu dengan peran yang cocok dan paling lama tidak dipakai (mendorong rotasi).</p>
+    <Card title="Default shoe rules">
+      {RULES.map(([t, r]) => { const s = active.filter((g) => settings.shoeRoles?.[g.id] === r); return <div key={t} className="prow"><span>{t}</span><b>{s.length ? s.map((x) => x.name).join(', ') : '—'}</b><small>role: {ROLES.find((x) => x[0] === r)[1]}</small></div> })}
+      <p className="muted">Home picks the shoe with a matching role that has gone unused the longest (encouraging rotation).</p>
     </Card>
 
     {/* 3. Race & personal settings */}
     </Group>
-    <Group id="race" title="Race & tubuh" open={openG.race} setOpen={setOpen}>
-    <Card title="Tanggal race A">
+    <Group id="race" title="Race & body" open={openG.race} setOpen={setOpen}>
+    <Card title="A-race date">
       <label className="fld"><span>JRF Full Marathon</span><input type="date" value={settings.raceDate} onChange={(e) => e.target.value && set({ raceDate: e.target.value })} /></label>
-      <label className="sw"><input type="checkbox" checked={settings.raceConfirmed} onChange={(e) => set({ raceConfirmed: e.target.checked })} /><span>Tanggal sudah resmi dari panitia</span></label>
-      <p className="muted">{fmtLong(settings.raceDate)} · {toRace} hari lagi. {settings.raceDate !== '2027-10-24' && 'Plan dan checkpoint tetap disusun untuk 24 Okt.'}</p>
+      <label className="sw"><input type="checkbox" checked={settings.raceConfirmed} onChange={(e) => set({ raceConfirmed: e.target.checked })} /><span>Date confirmed by the organiser</span></label>
+      <p className="muted">{fmtLong(settings.raceDate)} · {toRace} days to go. {settings.raceDate !== '2027-10-24' && 'The plan and checkpoints are still built for 24 Oct.'}</p>
     </Card>
-    <Card title="Tubuh & tidur">
+    <Card title="Body & sleep">
       <div className="form">
-        <label className="fld"><span>Kebutuhan tidur (jam)</span><input inputMode="decimal" type="number" step="0.25" value={(settings.sleepNeedMin || 480) / 60} onChange={(e) => e.target.value && set({ sleepNeedMin: Math.round(+e.target.value * 60) })} /><small>Walsh 2021: individual, bukan 7–9 jam untuk semua</small></label>
-        <label className="fld"><span>Berat badan (kg)</span><input inputMode="decimal" type="number" step="0.1" value={settings.bodyMassKg} onChange={(e) => set({ bodyMassKg: e.target.value })} /><small>untuk carb-loading</small></label>
-        <label className="fld"><span>Lemak tubuh (%) — opsional</span><input inputMode="decimal" type="number" step="0.5" value={settings.bodyFatPct} onChange={(e) => set({ bodyFatPct: e.target.value })} /><small>untuk prediksi Tanda</small></label>
+        <label className="fld"><span>Sleep need (hours)</span><input inputMode="decimal" type="number" step="0.25" value={(settings.sleepNeedMin || 480) / 60} onChange={(e) => e.target.value && set({ sleepNeedMin: Math.round(+e.target.value * 60) })} /><small>Walsh 2021: individual, not 7–9 h for everyone</small></label>
+        <label className="fld"><span>Body weight (kg)</span><input inputMode="decimal" type="number" step="0.1" value={settings.bodyMassKg} onChange={(e) => set({ bodyMassKg: e.target.value })} /><small>for carb-loading</small></label>
+        <label className="fld"><span>Body fat (%) — optional</span><input inputMode="decimal" type="number" step="0.5" value={settings.bodyFatPct} onChange={(e) => set({ bodyFatPct: e.target.value })} /><small>for the Tanda prediction</small></label>
       </div>
-      <div className="banner">Konflik data berat: Strava 86,0 kg vs COROS/Omron 75,3 kg — default 75,3 kg sampai ditimbang ulang.</div>
+      <div className="banner">Weight data conflict: Strava 86.0 kg vs COROS/Omron 75.3 kg — default 75.3 kg until re-weighed.</div>
     </Card>
 
     {/* 4. Hardware & pipelines */}
     </Group>
-    <Group id="conn" title="Perangkat & koneksi" open={openG.conn} setOpen={setOpen}>
-    <Card title="Perangkat">
-      {(Dv.data?.value?.devices || ['COROS APEX 4 42mm', 'COROS POD 2']).map((d) => <div key={d} className="apipill"><i className="dot2 on" /><span>{d}</span><small className="muted">baterai: tidak tersedia</small></div>)}
-      <Evidence>{Dv.data?.found ? `Dari COROS, ${ago(Dv.data.value.at)}.` : 'Dari sesi pertama; diperbarui setiap sync langsung.'} COROS MCP tidak memberi status baterai.</Evidence>
+    <Group id="conn" title="Devices & connections" open={openG.conn} setOpen={setOpen}>
+    <Card title="Devices">
+      {(Dv.data?.value?.devices || ['COROS APEX 4 42mm', 'COROS POD 2']).map((d) => <div key={d} className="apipill"><i className="dot2 on" /><span>{d}</span><small className="muted">battery: unavailable</small></div>)}
+      <Evidence>{Dv.data?.found ? `From COROS, ${ago(Dv.data.value.at)}.` : 'From the first session; updated on every live sync.'} The COROS MCP does not report battery status.</Evidence>
     </Card>
     <CorosCard />
     <StravaCard />
     <CoachConfig />
-    <Card title="Pipeline data">
-      {[['COROS (langsung)', 'lihat kartu di atas', null], ['Strava', ss?.activities?.n ? `${ss.activities.n} aktivitas · terakhir ${ss.activities.last}` : 'belum', ss?.activities?.n ? 'on' : 'off'], ['Sync harian', ss?.lastRun ? `${wib(ss.lastRun.received_at)} WIB · ${ago(ss.lastRun.received_at)}` : 'belum ada', ss?.lastRun ? (ss.lastRun.ok ? 'on' : 'warn') : 'off'], ['Apple Health / Health Connect', 'tidak terhubung', 'off'], ['Garmin Connect', 'tidak dipakai', 'off']]
+    <Card title="Data pipeline">
+      {[['COROS (direct)', 'see the card above', null], ['Strava', ss?.activities?.n ? `${ss.activities.n} activities · latest ${ss.activities.last}` : 'not yet', ss?.activities?.n ? 'on' : 'off'], ['Daily sync', ss?.lastRun ? `${wib(ss.lastRun.received_at)} WIB · ${ago(ss.lastRun.received_at)}` : 'none yet', ss?.lastRun ? (ss.lastRun.ok ? 'on' : 'warn') : 'off'], ['Apple Health / Health Connect', 'not connected', 'off'], ['Garmin Connect', 'not used', 'off']]
         .filter((x) => x[2]).map(([n, d, s]) => <div key={n} className="apipill"><i className={'dot2 ' + s} /><span>{n}</span><small className="muted">{d}</small></div>)}
-      <h3>Ekspor data</h3>
-      <div className="row2"><a className="btn sm" href={exp('activities', 'csv')}>Aktivitas CSV</a><a className="btn sm" href={exp('activities', 'json')}>Aktivitas JSON</a><a className="btn sm" href={exp('health', 'csv')}>Kesehatan CSV</a><a className="btn sm" href={exp('health', 'json')}>Kesehatan JSON</a></div>
+      <h3>Data export</h3>
+      <div className="row2"><a className="btn sm" href={exp('activities', 'csv')}>Activities CSV</a><a className="btn sm" href={exp('activities', 'json')}>Activities JSON</a><a className="btn sm" href={exp('health', 'csv')}>Health CSV</a><a className="btn sm" href={exp('health', 'json')}>Health JSON</a></div>
     </Card>
-    <details className="card fold"><summary>Alat cadangan: Strava API, impor FIT, literatur</summary><Data /></details>
+    <details className="card fold"><summary>Backup tools: Strava API, FIT import, literature</summary><Data /></details>
 
     </Group>
-    <Group id="athlete" title="Atlet & pengaturan" open={openG.athlete} setOpen={setOpen}>
-    <Card title="Atlet"><div className="ath"><span className="avatar">R</span><div><b>Rihan</b><p className="muted">31 th · 178 cm · Bekasi · UESCA-certified</p></div></div></Card>
-    <Card title="Aturan terkunci"><ul className="rules">{LOCKED.map((x) => <li key={x}>{x}</li>)}</ul></Card>
-    <Card title="Tampilan"><div className="seg wide">{[['auto', 'Otomatis'], ['light', 'Terang'], ['dark', 'Gelap']].map(([k, l]) => <button key={k} aria-pressed={theme === k} className={theme === k ? 'on' : ''} onClick={() => setTheme(k)}>{l}</button>)}</div></Card>
-    <Card title="Istilah & singkatan"><details className="more"><summary>{Object.keys(GLOSSARY).length} istilah</summary><dl className="gloss">{Object.values(GLOSSARY).map(([t, d]) => <div key={t}><dt>{t}</dt><dd>{d}</dd></div>)}</dl></details></Card>
-    <Card title="Sistem"><dl className="kv"><div><dt>Sinkron</dt><dd>{{ ok: 'Tersimpan di server', saving: 'Menyimpan…', offline: 'Offline (hanya di browser ini)' }[sync]}</dd></div><div><dt>Backup</dt><dd>Harian 03:15 · 30 hari</dd></div><div><dt>Model readiness</dt><dd>docs/readiness-model.md</dd></div></dl></Card>
+    <Group id="athlete" title="Athlete & settings" open={openG.athlete} setOpen={setOpen}>
+    <Card title="Athlete"><div className="ath"><span className="avatar">R</span><div><b>Rihan</b><p className="muted">31 y · 178 cm · Bekasi · UESCA-certified</p></div></div></Card>
+    <Card title="Locked rules"><ul className="rules">{LOCKED.map((x) => <li key={x}>{x}</li>)}</ul></Card>
+    <Card title="Appearance"><div className="seg wide">{[['auto', 'Auto'], ['light', 'Light'], ['dark', 'Dark']].map(([k, l]) => <button key={k} aria-pressed={theme === k} className={theme === k ? 'on' : ''} onClick={() => setTheme(k)}>{l}</button>)}</div></Card>
+    <Card title="Glossary & abbreviations"><details className="more"><summary>{Object.keys(GLOSSARY).length} terms</summary><dl className="gloss">{Object.values(GLOSSARY).map(([t, d]) => <div key={t}><dt>{t}</dt><dd>{d}</dd></div>)}</dl></details></Card>
+    <Card title="System"><dl className="kv"><div><dt>Sync</dt><dd>{{ ok: 'Saved on the server', saving: 'Saving…', offline: 'Offline (this browser only)' }[sync]}</dd></div><div><dt>Backup</dt><dd>Daily 03:15 · 30 days</dd></div><div><dt>Readiness model</dt><dd>docs/readiness-model.md</dd></div></dl></Card>
     </Group>
   </Screen>
 }

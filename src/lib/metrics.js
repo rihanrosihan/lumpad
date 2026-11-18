@@ -4,8 +4,8 @@
 import { addDays, diffDays } from './dates.js'
 
 export const ACWR_ZONES = [ // Gabbett 2016 (BJSM, PMID 26758673) used 0.8–1.3 "sweet spot", >1.5 "danger zone"; a prior, not a gate
-  { id: 'under', max: 0.8, label: 'Di bawah beban biasa' }, { id: 'sweet', max: 1.3, label: 'Sweet spot' },
-  { id: 'caution', max: 1.5, label: 'Waspada' }, { id: 'high', max: Infinity, label: 'Tinggi' },
+  { id: 'under', max: 0.8, label: 'Below usual load' }, { id: 'sweet', max: 1.3, label: 'Sweet spot' },
+  { id: 'caution', max: 1.5, label: 'Caution' }, { id: 'high', max: Infinity, label: 'High' },
 ]
 export const acwrZone = (r) => (r == null ? null : ACWR_ZONES.find((z) => r <= z.max || z.max === Infinity))
 const mean = (a) => { const v = a.filter((x) => x != null && !Number.isNaN(x)); return v.length ? v.reduce((s, x) => s + x, 0) / v.length : null }

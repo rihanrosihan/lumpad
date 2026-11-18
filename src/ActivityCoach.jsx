@@ -12,11 +12,11 @@ export default function ActivityCoach({ id, label }) {
   const g = st.data?.guard, noKey = st.data && !st.data.key, paused = g?.level === 'paused'
   const run = () => { setBusy(true); setErr(''); post('/api/coach/run', { intent: 'session_review', question: q, activity_id: id }).then(setFresh).catch((e) => setErr(e.message)).finally(() => setBusy(false)) }
   if (p) return <Result p={p} res={fresh || { model: D.data?.model, cost_cny: D.data?.cost_cny }} />
-  return <Card title="Analisis Coach untuk sesi ini" right={st.data?.model && <Chip>{st.data.model.name}</Chip>}>
-    <p className="muted">Coach membaca sesi ini bersama beban, cuaca, dan memori durability-mu, lalu memberi ringkasan dan rekomendasi. Hasil tersimpan dan muncul lagi di sini.</p>
-    {noKey && <p className="muted">DEEPSEEK_API_KEY belum diisi di server, jadi analisis otomatis belum aktif.</p>}
-    {paused && <p className="muted">Batas bulanan coach tercapai — kembali tanggal 1.</p>}
+  return <Card title="Coach analysis for this session" right={st.data?.model && <Chip>{st.data.model.name}</Chip>}>
+    <p className="muted">The coach reads this session together with your load, weather and durability memory, then returns a summary and recommendations. The result is saved and shown here again.</p>
+    {noKey && <p className="muted">DEEPSEEK_API_KEY is not set on the server, so automatic analysis is not active.</p>}
+    {paused && <p className="muted">Monthly coach cap reached — back on the 1st.</p>}
     {err && <p className="err" role="alert">{err}</p>}
-    <button className="btn primary" disabled={busy || noKey || paused} onClick={run}>{busy ? 'Coach menganalisis… (±30–90 dtk)' : 'Analisis sesi ini'}</button>
+    <button className="btn primary" disabled={busy || noKey || paused} onClick={run}>{busy ? 'Coach is analysing… (±30–90 s)' : 'Analyse this session'}</button>
   </Card>
 }

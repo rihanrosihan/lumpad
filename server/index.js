@@ -29,7 +29,7 @@ const kvKey = (q) => { const k = q.get('key') || ''; if (!KEY.test(k)) throw Obj
 const PREFIX = /^lumpad\.[A-Za-z0-9._-]{0,60}$/
 const range = (q) => { const from = q.get('from'), to = q.get('to') || from; if (!validDate(from) || !validDate(to)) throw Object.assign(new Error('bad date range'), { status: 400 }); return [from, to] }
 const baseUrl = (req) => process.env.PUBLIC_URL || `https://${req.headers.host}`
-const needCoros = () => { if (!corosAuth.status().connected) throw Object.assign(new Error('COROS belum terhubung — hubungkan dulu di Profil'), { status: 409 }) }
+const needCoros = () => { if (!corosAuth.status().connected) throw Object.assign(new Error('COROS is not connected — connect it first in Profile'), { status: 409 }) }
 const jobView = () => ({ running: isRunning(), jobs: recentJobs(8) })
 const routes = {
   // --- direct COROS connection (OAuth + PKCE, tokens sealed at rest)

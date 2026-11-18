@@ -36,7 +36,7 @@ export function compliance(planKm, actualKm, isPast) {
   const dev = Math.abs(actualKm - planKm) / planKm; return dev <= 0.1 ? 'ok' : dev <= 0.3 ? 'modified' : 'off'
 }
 // muscular load decay map (heuristic; manual override possible). regions: quads, hams, glutes, calves, achilles, shins, back
-export const REGIONS = [['quads', 'Paha depan / VMO'], ['hams', 'Hamstring'], ['glutes', 'Glutes'], ['calves', 'Betis / soleus'], ['achilles', 'Achilles / ankle'], ['shins', 'Tulang kering / tibialis'], ['back', 'Punggung bawah / core']]
+export const REGIONS = [['quads', 'Quads / VMO'], ['hams', 'Hamstring'], ['glutes', 'Glutes'], ['calves', 'Calves / soleus'], ['achilles', 'Achilles / ankle'], ['shins', 'Shins / tibialis'], ['back', 'Lower back / core']]
 const STIM = { // stimulus per session type: [regions, peak 0–3, half-life hours]
   lower: [['quads', 'glutes', 'hams', 'calves'], 2.5, 30], unilateral: [['quads', 'glutes', 'hams'], 2, 30], plyo: [['calves', 'achilles', 'shins'], 2, 30],
   quality: [['calves', 'achilles', 'hams'], 1.8, 24], tt: [['calves', 'achilles', 'hams', 'quads'], 2.2, 24], long: [['quads', 'calves', 'shins'], 2, 30], race: [['quads', 'calves', 'shins', 'hams'], 3, 36], speed: [['calves', 'achilles'], 1.2, 20], easy: [['calves'], 0.5, 12],

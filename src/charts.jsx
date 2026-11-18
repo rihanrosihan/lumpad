@@ -3,7 +3,7 @@ import { ACWR_ZONES } from './lib/metrics.js'
 const W = 340
 // Line chart: several series over dates. Colours are design tokens; the summary is exposed via aria-label (values also appear as text next to the chart).
 export function LineChart({ data, lines, height = 150, label }) {
-  if (!data.length) return <p className="muted">Belum ada data.</p>
+  if (!data.length) return <p className="muted">No data yet.</p>
   const vals = data.flatMap((d) => lines.map((l) => d[l.key])).filter((v) => v != null), lo = Math.min(...vals), hi = Math.max(...vals), pad = (hi - lo || 1) * 0.12
   const L = 30, R = 8, T = 8, B = 20, X = (i) => L + (i / Math.max(1, data.length - 1)) * (W - L - R), Y = (v) => T + (1 - (v - (lo - pad)) / (hi - lo + 2 * pad)) * (height - T - B)
   const ticks = [lo, (lo + hi) / 2, hi].map((v) => Math.round(v))
@@ -30,7 +30,7 @@ export function BarChart({ data, height = 110, label, unit = '', mark }) {
 // ACWR zone bar 0–2.0 with a marker
 export function ZoneBar({ value }) {
   const MAX = 2, pc = (v) => Math.min(100, (v / MAX) * 100), cuts = [0, 0.8, 1.3, 1.5, 2], marker = value == null ? null : pc(value)
-  return <div className="zonebar" role="img" aria-label={value == null ? 'ACWR belum ada' : `ACWR ${value}`}>
+  return <div className="zonebar" role="img" aria-label={value == null ? 'ACWR not available' : `ACWR ${value}`}>
     <div className="zones">{ACWR_ZONES.map((z, i) => <i key={z.id} className={'z-' + z.id} style={{ width: pc(cuts[i + 1]) - pc(cuts[i]) + '%' }} />)}</div>
     {marker != null && <b className="mk" style={{ left: marker + '%' }} />}
     <div className="zl"><span>0</span><span style={{ left: pc(0.8) + '%' }}>0,8</span><span style={{ left: pc(1.3) + '%' }}>1,3</span><span style={{ left: pc(1.5) + '%' }}>1,5</span></div>
@@ -46,5 +46,5 @@ export function StageBar({ deep, rem, light, awake }) {
 export function RangeBar({ lo, hi, value, baseline }) {
   if (lo == null || hi == null) return null
   const a = Math.max(0, lo - (hi - lo) * 0.4), b = hi + (hi - lo) * 0.4, p = (v) => Math.min(100, Math.max(0, ((v - a) / (b - a)) * 100))
-  return <div className="rangebar" role="img" aria-label={`HRV ${value} ms, rentang normal ${lo} sampai ${hi}`}><i className="rg" style={{ left: p(lo) + '%', width: p(hi) - p(lo) + '%' }} />{baseline != null && <u style={{ left: p(baseline) + '%' }} title={`baseline ${baseline}`} />}<b className="mk" style={{ left: p(value) + '%' }} /></div>
+  return <div className="rangebar" role="img" aria-label={`HRV ${value} ms, normal range ${lo} to ${hi}`}><i className="rg" style={{ left: p(lo) + '%', width: p(hi) - p(lo) + '%' }} />{baseline != null && <u style={{ left: p(baseline) + '%' }} title={`baseline ${baseline}`} />}<b className="mk" style={{ left: p(value) + '%' }} /></div>
 }

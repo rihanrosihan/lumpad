@@ -9,7 +9,7 @@ const TONE = { green: 'var(--green)', teal: 'var(--c-social)', yellow: 'var(--ye
 // 0–100 radial gauge (Home hero / Readiness dial)
 export function RadialGauge({ value, tone = 'none', label, size = 132, sub }) {
   const r = 52, a0 = Math.PI * 0.75, a1 = Math.PI * 2.25, v = value == null ? 0 : Math.max(0, Math.min(100, value))
-  return <svg viewBox="0 0 132 132" width={size} height={size} role="img" aria-label={`${label}: ${value == null ? 'belum ada' : value} dari 100`}>
+  return <svg viewBox="0 0 132 132" width={size} height={size} role="img" aria-label={`${label}: ${value == null ? 'not available' : value} of 100`}>
     <path d={arc(66, 70, r, a0, a1)} className="g-track" />
     {value != null && <path d={arc(66, 70, r, a0, a0 + (a1 - a0) * (v / 100) + 0.0001)} style={{ stroke: TONE[tone] }} className="g-val" />}
     <text x="66" y="72" textAnchor="middle" className="g-num">{value ?? '—'}</text>
@@ -35,7 +35,7 @@ export function Stacked100({ parts, marker, label }) {
 export function StepChart({ steps }) {
   const tot = steps.reduce((a, s) => a + s[1], 0) || 1, H = 56
   let x = 0
-  return <svg viewBox={`0 0 ${W} ${H + 16}`} className="chart" role="img" aria-label={'Struktur sesi: ' + steps.map((s) => `${s[0]} ${s[1].toFixed(1)} km`).join(', ')}>
+  return <svg viewBox={`0 0 ${W} ${H + 16}`} className="chart" role="img" aria-label={'Session structure: ' + steps.map((s) => `${s[0]} ${s[1].toFixed(1)} km`).join(', ')}>
     {steps.map((s, i) => { const w = (s[1] / tot) * W, h = (s[2] / 4) * H, el = <g key={i}><rect x={x + 0.5} y={H - h} width={Math.max(1, w - 1)} height={h} rx="2" className={'step i' + s[2]} />{w > 34 && <text x={x + w / 2} y={H + 12} className="gt" textAnchor="middle">{s[0].length > 10 ? s[0].slice(0, 9) + '…' : s[0]}</text>}</g>; x += w; return el })}
   </svg>
 }
@@ -48,7 +48,7 @@ export function Sparkline({ data, w = 80, h = 22, label }) {
 export function Speedometer({ value }) {
   const MAX = 2, a = (v) => Math.PI + (Math.min(MAX, Math.max(0, v)) / MAX) * Math.PI, segs = [[0, 0.8, 'z-under'], [0.8, 1.3, 'z-sweet'], [1.3, 1.5, 'z-caution'], [1.5, 2, 'z-high']]
   const nv = value == null ? null : a(value)
-  return <svg viewBox="0 0 200 118" className="speedo" role="img" aria-label={value == null ? 'ACWR belum ada' : `ACWR ${value}`}>
+  return <svg viewBox="0 0 200 118" className="speedo" role="img" aria-label={value == null ? 'ACWR not available' : `ACWR ${value}`}>
     {segs.map(([s, e, c]) => <path key={c} d={arc(100, 100, 80, a(s), a(e))} className={'seg ' + c} />)}
     {nv != null && <line x1="100" y1="100" x2={100 + 66 * Math.cos(nv)} y2={100 + 66 * Math.sin(nv)} className="needle" />}<circle cx="100" cy="100" r="6" className="hub" />
     {[0, 0.8, 1.3, 1.5, 2].map((t) => <text key={t} x={100 + 94 * Math.cos(a(t))} y={104 + 94 * Math.sin(a(t))} textAnchor="middle" className="gt">{String(t).replace('.', ',')}</text>)}
@@ -57,7 +57,7 @@ export function Speedometer({ value }) {
 }
 // generic line chart with optional shaded band [lo, hi] and reference band (e.g. ACWR 0.8–1.3)
 export function BandLine({ data, keys, band, refBand, height = 140, label, dots }) {
-  if (data.length < 2) return <p className="muted">Belum cukup data.</p>
+  if (data.length < 2) return <p className="muted">Not enough data.</p>
   const vals = data.flatMap((d) => [...keys.map((k) => d[k.key]), band ? d[band[0]] : null, band ? d[band[1]] : null, dots ? d[dots.key] : null]).concat(refBand || []).filter((v) => v != null)
   const lo = Math.min(...vals), hi = Math.max(...vals), pad = (hi - lo || 1) * 0.1, L = 30, R = 6, T = 6, B = 18
   const X = (i) => L + (i / (data.length - 1)) * (W - L - R), Y = (v) => T + (1 - (v - lo + pad) / (hi - lo + 2 * pad)) * (height - T - B)
@@ -75,7 +75,7 @@ export function BandLine({ data, keys, band, refBand, height = 140, label, dots 
 // Performance-management chart: top pane CTL area + ATL line + daily load bars (+ dashed projection); bottom pane TSB with relative zones
 export function PMCChart({ data, proj = [], label }) {
   const all = [...data, ...proj], H1 = 130, H2 = 70, L = 36, R = 6
-  if (all.length < 2) return <p className="muted">Belum cukup data beban.</p>
+  if (all.length < 2) return <p className="muted">Not enough load data.</p>
   const maxY = Math.max(...all.map((d) => Math.max(d.ctl || 0, d.atl || 0)), ...data.map((d) => d.load || 0)) * 1.08 || 1
   const X = (i) => L + (i / (all.length - 1)) * (W - L - R), Y = (v) => 6 + (1 - v / maxY) * (H1 - 12)
   const ctlArea = 'M' + data.map((d, i) => `${X(i)} ${Y(d.ctl)}`).join(' L') + ` L${X(data.length - 1)} ${Y(0)} L${X(0)} ${Y(0)} Z`
@@ -95,9 +95,9 @@ export function PMCChart({ data, proj = [], label }) {
 }
 export function Quadrant({ points }) {
   const S = 200, C = S / 2, sc = (v) => C + Math.max(-2.5, Math.min(2.5, v)) * (C / 2.6)
-  return <svg viewBox={`0 0 ${S} ${S}`} className="quad" role="img" aria-label={'Kuadran otonom 7 hari: ' + points.map((p) => `${p.date.slice(5)} HRV z ${p.y}, RHR z ${p.x}`).join('; ')}>
+  return <svg viewBox={`0 0 ${S} ${S}`} className="quad" role="img" aria-label={'Autonomic quadrant, 7 days: ' + points.map((p) => `${p.date.slice(5)} HRV z ${p.y}, RHR z ${p.x}`).join('; ')}>
     <rect x="0" y="0" width={C} height={C} className="q-tl" /><rect x={C} y="0" width={C} height={C} className="q-tr" /><rect x="0" y={C} width={C} height={C} className="q-bl" /><rect x={C} y={C} width={C} height={C} className="q-br" />
-    <text x="6" y="14" className="gt">Siap</text><text x={S - 6} y="14" className="gt" textAnchor="end">Adaptasi</text><text x="6" y={S - 6} className="gt">Lelah kronis?</text><text x={S - 6} y={S - 6} className="gt" textAnchor="end">Stres/sakit</text>
+    <text x="6" y="14" className="gt">Ready</text><text x={S - 6} y="14" className="gt" textAnchor="end">Adapting</text><text x="6" y={S - 6} className="gt">Chronic fatigue?</text><text x={S - 6} y={S - 6} className="gt" textAnchor="end">Stress/illness</text>
     <text x={C} y={S - 4} className="gt" textAnchor="middle">RHR ↑</text><text x="4" y={C - 4} className="gt">HRV ↑</text>
     {points.map((p, i) => <circle key={p.date} cx={sc(p.x)} cy={S - sc(p.y)} r={i === points.length - 1 ? 6 : 3.5} className={i === points.length - 1 ? 'qd last' : 'qd'} style={{ opacity: 0.35 + (i / Math.max(1, points.length - 1)) * 0.65 }} />)}
   </svg>
@@ -120,18 +120,18 @@ const SHAPES = { // front: quads, shins; back: hams, glutes, calves, achilles, b
 }
 export function BodyMap({ load, overrides = {}, onTap }) {
   const lv = (k) => overrides[k] ?? load[k] ?? 0, cls = (v) => (v >= 2 ? 'bm-hi' : v >= 1 ? 'bm-mid' : v > 0.3 ? 'bm-lo' : 'bm-0')
-  return <div className="bodymap"><svg viewBox="0 0 280 230" role="img" aria-label={'Beban otot: ' + REGIONS.map(([k, n]) => `${n} ${lv(k).toFixed(1)}`).join(', ')}>
+  return <div className="bodymap"><svg viewBox="0 0 280 230" role="img" aria-label={'Muscle load: ' + REGIONS.map(([k, n]) => `${n} ${lv(k).toFixed(1)}`).join(', ')}>
     <text x="70" y="14" textAnchor="middle" className="gt">Depan</text><text x="212" y="14" textAnchor="middle" className="gt">Belakang</text>
     <ellipse cx="70" cy="40" rx="14" ry="16" className="bm-body" /><rect x="48" y="58" width="44" height="40" rx="8" className="bm-body" /><ellipse cx="212" cy="40" rx="14" ry="16" className="bm-body" />
     {Object.entries(SHAPES).map(([k, rs]) => rs.map((r, i) => <rect key={k + i} x={r[0]} y={r[1]} width={r[2]} height={r[3]} rx="6" className={'bm ' + cls(lv(k)) + (overrides[k] != null ? ' ov' : '')} onClick={() => onTap?.(k)} />))}
   </svg>
-  <div className="bm-list">{REGIONS.map(([k, n]) => <button key={k} className={'bm-row ' + cls(lv(k))} onClick={() => onTap?.(k)} aria-label={`${n}: ${lv(k).toFixed(1)} dari 3${overrides[k] != null ? ' (diubah manual)' : ''}. Ketuk untuk ubah.`}><i />{n}<b>{lv(k).toFixed(1)}{overrides[k] != null ? '*' : ''}</b></button>)}</div></div>
+  <div className="bm-list">{REGIONS.map(([k, n]) => <button key={k} className={'bm-row ' + cls(lv(k))} onClick={() => onTap?.(k)} aria-label={`${n}: ${lv(k).toFixed(1)} of 3${overrides[k] != null ? ' (set manually)' : ''}. Tap to change.`}><i />{n}<b>{lv(k).toFixed(1)}{overrides[k] != null ? '*' : ''}</b></button>)}</div></div>
 }
 // multi-track lap telemetry with a shared x axis and tap/drag crosshair
 export function MultiTrack({ laps, tracks }) {
   const [sel, setSel] = useState(laps.length - 1), n = laps.length, L = 6, R = 6, X = (i) => L + ((i + 0.5) / n) * (W - L - R), TH = 44
   const pick = (e) => { const r = e.currentTarget.getBoundingClientRect(); setSel(Math.max(0, Math.min(n - 1, Math.floor(((e.clientX - r.left) / r.width) * n)))) }
-  return <div className="mtrack"><svg viewBox={`0 0 ${W} ${tracks.length * (TH + 14)}`} className="chart" role="img" aria-label={`Telemetri per lap, ${n} lap`} onPointerDown={pick} onPointerMove={(e) => e.buttons && pick(e)}>
+  return <div className="mtrack"><svg viewBox={`0 0 ${W} ${tracks.length * (TH + 14)}`} className="chart" role="img" aria-label={`Per-lap telemetry, ${n} laps`} onPointerDown={pick} onPointerMove={(e) => e.buttons && pick(e)}>
     {tracks.map((t, ti) => { const v = laps.map((l) => l[t.key]).filter((x) => x != null); if (v.length < 2) return null; const lo = Math.min(...v), hi = Math.max(...v), y0 = ti * (TH + 14) + 12, Y = (x) => y0 + (t.invert ? (x - lo) / (hi - lo || 1) : 1 - (x - lo) / (hi - lo || 1)) * (TH - 4) + 2
       return <g key={t.key}><text x="2" y={y0 - 2} className="gt">{t.label}</text><path d={laps.map((l, i) => (l[t.key] == null ? '' : `${i && laps[i - 1][t.key] != null ? 'L' : 'M'}${X(i).toFixed(1)} ${Y(l[t.key]).toFixed(1)}`)).join(' ')} className="ln" style={{ stroke: t.color }} />
         {laps[sel]?.[t.key] != null && <circle cx={X(sel)} cy={Y(laps[sel][t.key])} r="3.5" style={{ fill: t.color }} />}</g> })}

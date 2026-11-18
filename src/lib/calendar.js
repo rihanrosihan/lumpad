@@ -12,16 +12,16 @@ export const dow = (s) => parse(s).getDay() // 0 = Sunday
 export const mondayOf = (s) => addDays(s, -((dow(s) + 6) % 7))
 // ?today=2027-03-23 previews any date (handy for testing)
 export function today() { const q = new URLSearchParams(location.search).get('today'); return /^\d{4}-\d{2}-\d{2}$/.test(q || '') ? q : iso(new Date()) }
-export const DAYS = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
-export const DAYS3 = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
-export const MONTHS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
+export const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+export const DAYS3 = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+export const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 export const MON3 = MONTHS.map((m) => m.slice(0, 3))
-export const fmtLong = (s) => { const d = parse(s); return `${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}` }
-export const fmtShort = (s) => { const d = parse(s); return `${d.getDate()} ${MON3[d.getMonth()]}` }
+export const fmtLong = (s) => { const d = parse(s); return `${DAYS[d.getDay()]}, ${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}` }
+export const fmtShort = (s) => { const d = parse(s); return `${MON3[d.getMonth()]} ${d.getDate()}` }
 
 export const KIND = {
   easy: { label: 'Easy', short: 'E' }, social: { label: 'Social / easy', short: 'S' }, long: { label: 'Long run', short: 'L' },
-  quality: { label: 'Quality', short: 'Q' }, speed: { label: 'Speed ringan', short: 'Sp' }, tt: { label: 'Time trial', short: 'TT' },
+  quality: { label: 'Quality', short: 'Q' }, speed: { label: 'Light speed', short: 'Sp' }, tt: { label: 'Time trial', short: 'TT' },
   race: { label: 'Race', short: 'R' }, rest: { label: 'Rest', short: '–' }, gym: { label: 'Gym only', short: 'G' },
 }
 export const RACE_DATE = '2027-10-24'
