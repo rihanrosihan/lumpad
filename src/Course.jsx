@@ -2,13 +2,16 @@ import { useMemo, useRef, useState } from 'react'
 import { ROUTES } from './CourseMap.jsx'
 import { splits, clock, runWalk, hms, mss, parseHMS, compass, segmentAt, FM } from './lib/courseplan.js'
 import { makeProfile } from './lib/profile.js'
+import LOG26 from './data/races/jakim2026.json'
+import { makeLog } from './lib/racelog.js'
+import { cfgOf } from './lib/zones.js'
 import { RACES, RACE_BY_DATE } from './lib/season.js'
 import { useStore } from './store.js'
 import { Card, Chip, Evidence, Screen } from './ui.jsx'
 
 const W = 300, H = 400, PAD = 14, GR = { down: 'var(--c-tt)', flat: 'var(--green)', gentle: 'var(--yellow)', rise: 'var(--c-quality)' }
 const STRAT = [['even', 'Even pace'], ['negative', 'Negative split'], ['runwalk', 'Run–walk']]
-const NAV = [['s-sum', 'Summary'], ['s-map', 'Map'], ['s-seg', 'Segment'], ['s-climb', 'Climbs'], ['s-terr', 'Terrain'], ['s-km', 'Per km'], ['s-cot', 'Cut-offs'], ['s-arr', 'Arrival'], ['s-sec', 'Sections'], ['s-data', 'Data']]
+const NAV = [['s-sum', 'Summary'], ['s-map', 'Map'], ['s-seg', 'Segment'], ['s-climb', 'Climbs'], ['s-terr', 'Terrain'], ['s-km', 'Per km'], ['s-cot', 'Cut-offs'], ['s-arr', 'Arrival'], ['s-last', '2026'], ['s-sec', 'Sections'], ['s-data', 'Data']]
 const f1 = (x) => (Math.round(x * 10) / 10).toFixed(1), f0 = (x) => Math.round(x)
 const sgn = (x, d = 1) => (x > 0 ? '+' : '') + x.toFixed(d)
 const hm = (m) => { m = ((Math.round(m) % 1440) + 1440) % 1440; return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}` }
@@ -62,9 +65,26 @@ function ProfileChart({ P, climbs, km, setKm, sel, setSel, hl, detail }) {
   </svg>
 }
 
-export default function Course({ go }) {
-  const R = ROUTES.jakim, race = RACES.find((r) => r.route === 'jakim'), E = R.elevation
-  const P = useMemo(() => (E ? makeProfile(E.ele, E.stepKm, R.officialKm) : null), [E, R])
+
+// Jakim 2026, kilometre by kilometre: bar = speed (taller = faster; green faster than the plan pace, yellow ≤ 9:00/km, red slower), line = heart rate
+function LastChart({ L, plan, lthr, km, setKm }) {
+  const VW = 600, VH = 190, Lm = 30, Rm = 30, T = 10, B = 22, parts = L.per, X = (k) => Lm + (k / 42.195) * (VW - Lm - Rm), maxV = 3600 / 330
+  const Yv = (pace) => T + (1 - Math.min(maxV, 3600 / pace) / maxV) * (VH - T - B), Yh = (h) => T + (1 - (h - 100) / 90) * (VH - T - B), planPace = plan ? plan.sp[0] : 426
+  const hr = parts.filter((p) => !p.partial).map((p) => `${X(p.km - 0.5).toFixed(1)},${Yh(p.hr).toFixed(1)}`).join(' ')
+  return <svg viewBox={`0 0 ${VW} ${VH}`} className="pchart" role="img" aria-label="Your pace and heart rate for every kilometre of Jakim 2026" onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); setKm(Math.max(0, Math.min(42.195, (((e.clientX - r.left) / r.width) * VW - Lm) / (VW - Lm - Rm) * 42.195))) }}>
+    {[7, 9, 11, 13].map((m) => <g key={m}><line x1={Lm} x2={VW - Rm} y1={Yv(m * 60)} y2={Yv(m * 60)} className="gl" /><text x={Lm - 3} y={Yv(m * 60) + 3} textAnchor="end" className="gt">{m}:00</text></g>)}
+    {[120, 150, 180].map((h) => <text key={h} x={VW - Rm + 3} y={Yh(h) + 3} className="gt">{h}</text>)}
+    {[0, 5, 10, 15, 20, 25, 30, 35, 40].map((k) => <text key={k} x={X(k)} y={VH - 6} textAnchor="middle" className="gt">{k}</text>)}
+    {parts.map((p) => { const w = (X(p.km) - X(p.km - (p.partial ? 0.27 : 0.975))) - 1, y = Yv(p.pace); return <rect key={p.i} x={X(p.km - (p.partial ? 0.27 : 0.975)) + 0.5} y={y} width={Math.max(1, w)} height={VH - B - y} style={{ fill: p.pace <= planPace ? 'var(--green)' : p.pace <= 540 ? 'var(--yellow)' : 'var(--red)', opacity: 0.85 }}><title>{`km ${p.km.toFixed(1)}: ${mss(p.pace)}/km · HR ${p.hr}`}</title></rect> })}
+    <polyline points={hr} className="hr-line" /><line x1={Lm} x2={VW - Rm} y1={Yh(lthr)} y2={Yh(lthr)} className="hr-lthr" /><text x={Lm + 3} y={Yh(lthr) - 3} className="gt">LTHR {lthr}</text>
+    <line x1={X(km)} x2={X(km)} y1={T} y2={VH - B} className="pc-cur" />
+  </svg>
+}
+
+export default function Course({ go, settings }) {
+  const R = ROUTES.jakim, race = RACES.find((r) => r.route === 'jakim'), E = R.elevation, L = useMemo(() => makeLog(LOG26), []), cfg = cfgOf(settings)
+  const [esrc, setEsrc] = useState(E?.watch ? 'watch' : 'model')
+  const P = useMemo(() => (E ? makeProfile(esrc === 'watch' && E.watch ? E.watch.ele : E.ele, E.stepKm, R.officialKm) : null), [E, R, esrc])
   const climbs = useMemo(() => (P ? P.climbs() : []), [P]), comp = useMemo(() => (P ? P.composition() : []), [P]), perKm = useMemo(() => (P ? P.perKm() : []), [P])
   const [km, setKm] = useState(0), [sel, setSelRaw] = useState([0, 10]), [hl, setHl] = useState(null), [detail, setDetail] = useState(false), [kmSel, setKmSel] = useState(null), [allKm, setAllKm] = useState(false)
   const setSel = (r) => setSelRaw(r[0] > r[1] ? [r[1], r[0]] : r)
@@ -86,14 +106,14 @@ export default function Course({ go }) {
     <div className="jnav" role="navigation" aria-label="Sections">{NAV.map(([id, l]) => <button key={id} onClick={() => scroll(id)}>{l}</button>)}</div>
 
     <Card title="A · Summary in 30 seconds"><div id="s-sum" />
-      <div className="wmeta wk4"><div><small>Total climb (est.)</small><b>{all ? f0(all.gain) : '—'}</b><em>m</em></div><div><small>Highest point (est.)</small><b>{all ? f0(all.max) : '—'}</b><em>m</em></div><div><small>Lowest point (est.)</small><b>{all ? f0(all.min) : '—'}</b><em>m</em></div><div><small>Main climbs</small><b>{climbs.length}</b><em>gentle</em></div></div>
+      <div className="wmeta wk4"><div><small>Total climb ({esrc === 'watch' ? 'watch' : 'est.'})</small><b>{all ? f0(all.gain) : '—'}</b><em>m</em></div><div><small>Highest point ({esrc === 'watch' ? 'watch' : 'est.'})</small><b>{all ? f0(all.max) : '—'}</b><em>m</em></div><div><small>Lowest point ({esrc === 'watch' ? 'watch' : 'est.'})</small><b>{all ? f0(all.min) : '—'}</b><em>m</em></div><div><small>Main climbs</small><b>{climbs.length}</b><em>gentle</em></div></div>
       <ul className="rules">
         <li><b>Flat course.</b> {comp.find((c) => c.id === 'flat') ? `${f0(comp.find((c) => c.id === 'flat').pct)}% of the distance is within ±0.5% grade` : ''}; the steepest 300 m is {steepest ? `${sgn(steepest.g)}% around km ${f1(steepest.k)}` : '—'}.</li>
         <li><b>Out and back.</b> The route turns around {R.turns.length} times (km {R.turns.map((t) => t.km).join(', ')}): Mampang is the southernmost point, Sisingamangaraja the westernmost.</li>
         <li><b>{climbs[0] ? `${climbs[0].id}: km ${f1(climbs[0].a)}–${f1(climbs[0].b)}` : 'Longest rise'}</b>{climbs[0] ? ` is the longest rise, about +${f0(climbs[0].gain)} m over ${f1(climbs[0].len)} km, from the Monas lowland up to Mampang.` : ''}</li>
         <li><b>Cut-offs:</b> not published for 2027 yet (see section G, you can enter them).</li>
       </ul>
-      <p className="muted">Elevation is estimated from a terrain model (the official GPX has none), so treat metres as indicative: see section J. Facts only, no pacing advice here except the plan you choose in section H.</p>
+      <p className="muted">Elevation: <button className="link" onClick={() => setEsrc(esrc === 'watch' ? 'model' : 'watch')}>{esrc === 'watch' ? 'from your watch at Jakim 2026 (barometer)' : 'estimated from a terrain model'} · switch</button>. The official GPX has none, so treat metres as indicative: see section J. Facts only, no pacing advice here except the plan you choose in section H.</p>
     </Card>
 
     <Card title="B · Map and elevation profile"><div id="s-map" />
@@ -101,7 +121,7 @@ export default function Course({ go }) {
       {P && <ProfileChart P={P} climbs={climbs} km={km} setKm={setKm} sel={sel} setSel={setSel} hl={hl} detail={detail} />}
       <div className="rstats"><div><small>km</small><b>{f1(km)}</b></div><div><small>elevation</small><b>{P ? f0(P.at(km)) : '—'} m</b></div><div><small>grade (300 m)</small><b>{P ? sgn(P.grade(km)) : '—'}%</b></div><div><small>clock</small><b>{plan ? hms(clockAtKm(km)) : '—'}</b></div></div>
       <input type="range" min="0" max={FM} step="0.1" value={km} onChange={(e) => setKm(+e.target.value)} aria-label="Move along the course" />
-      <p><b>{seg.what}</b> · heading {compass(R.kmHeadings[Math.min(42, Math.floor(km))] ?? 0)}</p>
+      <p><b>{seg.what}</b> · heading {compass(R.kmHeadings[Math.min(42, Math.floor(km))] ?? 0)} · you passed here in 2026 at <b>{hms(L.clockAt(km))}</b></p>
       <div className="legend">{comp.map((c) => <span key={c.id}><i className="kdot" style={{ background: GR[c.id] }} />{c.label}</span>)}<button className="link" onClick={() => setDetail(!detail)}>{detail ? 'Flat scale (from 0 m)' : 'Detail scale'}</button></div>
       <p className="muted">Drag the map, + / − to zoom, tap a km marker or touch the profile. Line colour = grade; shaded bands = climbs T1–T4 (tap one to select it); yellow dots = U-turns.</p>
     </Card>
@@ -148,10 +168,25 @@ export default function Course({ go }) {
       {plan && <p><b>{mss(total / FM)}/km</b> average{strategy === 'negative' ? <> · first half {mss(plan.sp[0])}, second half {mss(plan.sp[41])}/km</> : null}{plan.rw ? <> · run <b>{mss(plan.rw.runPace)}/km</b> for {runMin}′, walk {walkMin}′ at {mss(plan.rw.walkPace)}/km</> : null}{strategy === 'runwalk' && !plan.rw ? <span className="err"> That walk is too long for this goal.</span> : null}</p>}
       {plan && startMin != null && <p>Finish clock: <b>{hm(arrive(FM))}</b> ({hms(total + stops * 60)} on the clock incl. stops, gun {cot.start}, queue {queue} min).</p>}
       {plan && cot.cuts.length > 0 && <div className="scroll" tabIndex={0} role="region" aria-label="Arrival versus cut-offs"><table className="zm"><thead><tr><th>Point</th><th>Arrive</th><th>Closes</th><th>Margin</th></tr></thead><tbody>{cot.cuts.map((c, i) => { const a = arrive(c.km), cl = toMin(c.clock), mg = a != null && cl != null ? cl - a : null; return <tr key={i}><td>{c.name} <small className="muted">km {c.km}</small></td><td>{a != null ? hm(a) : '—'}</td><td>{c.clock}</td><td><Chip tone={mg == null ? undefined : mg < 0 ? 'red' : mg < 20 ? 'yellow' : 'green'}>{mg == null ? '—' : mg < 0 ? `${-f0(mg)} min late` : `${f0(mg)} min`}</Chip></td></tr> })}</tbody></table></div>}
-      {plan && <><div className="scroll" tabIndex={0} role="region" aria-label="Kilometre splits"><table className="zm"><thead><tr><th>km</th><th>Split</th><th>Clock</th><th>Where</th></tr></thead><tbody>
-        {shown.map((r) => <tr key={r.k}><td><b>{r.k === 42.195 ? '42.2' : r.k}</b></td><td>{mss(r.split)}</td><td>{hms(r.clock)}</td><td>{r.seg.what.split(',')[0]} <small className="muted">{r.dir}</small></td></tr>)}</tbody></table></div>
+      {plan && <><div className="scroll" tabIndex={0} role="region" aria-label="Kilometre splits"><table className="zm"><thead><tr><th>km</th><th>Split</th><th>Clock</th><th>2026</th><th>Where</th></tr></thead><tbody>
+        {shown.map((r) => <tr key={r.k}><td><b>{r.k === 42.195 ? '42.2' : r.k}</b></td><td>{mss(r.split)}</td><td>{hms(r.clock)}</td><td>{hms(L.clockAt(r.k))}</td><td>{r.seg.what.split(',')[0]} <small className="muted">{r.dir}</small></td></tr>)}</tbody></table></div>
         <button className="btn sm" onClick={() => setAllKm(!allKm)}>{allKm ? 'Show every 5 km' : 'Show every km'}</button> <button className="btn sm" onClick={csv}>Download splits (.csv)</button></>}
       <Evidence>Plain arithmetic: the finish time is split by distance (the elevation, weather and your condition are not modelled), then matched against the cut-off clock times. Negative split = first half 1.5% slower than average. Run–walk walks at {mss(630)}/km. Stops are spread evenly over the distance.</Evidence>
+    </Card>
+
+
+    <Card title="K · Your Jakim 2026" right={<Chip>{hms(L.total)} watch time</Chip>}><div id="s-last" />
+      <div className="wmeta wk4"><div><small>Watch distance</small><b>{f1(LOG26.gpsKm)}</b><em>km (GPS)</em></div><div><small>Moving time</small><b>{hms(L.moving)}</b><em>{f0(L.stopped / 60)} min stopped</em></div><div><small>Average HR</small><b>{LOG26.avgHr}</b><em>max {LOG26.maxHr}</em></div><div><small>Climb (watch)</small><b>+{LOG26.gain}</b><em>m</em></div></div>
+      <LastChart L={L} plan={plan} lthr={cfg.lthr} km={km} setKm={setKm} />
+      <div className="legend"><span><i className="kdot" style={{ background: 'var(--green)' }} />faster than plan pace</span><span><i className="kdot" style={{ background: 'var(--yellow)' }} />up to 9:00/km</span><span><i className="kdot" style={{ background: 'var(--red)' }} />slower (walking, queues)</span><span><i className="ll" style={{ borderColor: 'var(--text)' }} />heart rate</span></div>
+      <ul className="rules">
+        <li><b>First 10 km:</b> {mss(L.avgPace(0, 10))}/km at an average heart rate of {f0(L.avgHr(0, 10))} bpm ({f0((L.avgHr(0, 10) / cfg.lthr) * 100)}% of LTHR {cfg.lthr}).</li>
+        <li><b>10–21 km:</b> {mss(L.avgPace(10, 21.0975))}/km, HR {f0(L.avgHr(10, 21.0975))}. Half-way in <b>{hms(L.clockAt(21.0975))}</b>{plan ? ` (plan ${hms(plan.cl[20] + (plan.sp[21] || 0) * 0.0975)})` : ''}.</li>
+        <li><b>21–30 km:</b> {mss(L.avgPace(21.0975, 30))}/km, HR {f0(L.avgHr(21.0975, 30))}. <b>30–42.2 km:</b> {mss(L.avgPace(30, 42.195))}/km, HR {f0(L.avgHr(30, 42.2))}.</li>
+        <li><b>Walking and stops:</b> {L.slow(540)} of 42 km were slower than 9:00/km and {L.slow(720)} slower than 12:00/km; the watch was running {f0(L.stopped / 60)} min longer than it was moving.</li>
+        <li><b>Target now:</b> sub-5:00 needs {mss(18000 / FM)}/km on average, {mss(18000 / FM - L.avgPace(0, 42.195))} {18000 / FM < L.avgPace(0, 42.195) ? 'faster' : 'slower'} than your 2026 average of {mss(L.avgPace(0, 42.195))}/km on the official distance.</li>
+      </ul>
+      <p className="muted">From your COROS recording of {LOG26.date} (1 km laps); distances are scaled from {f1(LOG26.gpsKm)} km on the watch to the official {FM} km. Facts only: what to do with them is for your plan and coach.</p>
     </Card>
 
     <Card title="I · Profile by section"><div id="s-sec" />
@@ -163,6 +198,7 @@ export default function Course({ go }) {
 
     <Card title="J · Data and questions"><div id="s-data" />
       <details className="more" open><summary>Where do the numbers come from?</summary>
+        <p className="muted"><b>Your 2026 race:</b> the COROS recording (1 km laps) and its Strava copy (barometric altitude). The watch read {f1(LOG26.gpsKm)} km, scaled to {FM} km. {E?.watch ? `Its altitude curve is aligned to the terrain model on average (barometer offset ${E.watch.shiftM} m); only the shape and the climb are compared.` : ''}</p>
         <p className="muted"><b>Route:</b> {R.source} The track is {R.trackKm} km as drawn and is scaled to the certified 42.195 km so the km markers match the boards.</p>
         <p className="muted"><b>Elevation:</b> the official GPX has no elevation. It is estimated from a global terrain model ({E?.source}), sampled every 50 m along the track. The model is a 90 m grid in whole metres and a surface model (roofs and flyovers appear as spikes; those were removed, e.g. the stadium at the finish), then smoothed over ±500 m. Expect errors of several metres: use it for the shape, not for exact climb figures.</p>
         <p className="muted"><b>Grade:</b> average over 300 m windows. A real watch with a barometer will read differently.</p></details>

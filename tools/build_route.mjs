@@ -53,6 +53,14 @@ const turns = [[2.1, 'Monas east turn'], [12.4, 'Mampang U-turn (southernmost po
 // elevation: tools/fetch_elevation.py (the official GPX has none) → samples every 50 m of official distance, whole metres
 let elevation = null
 if (fs.existsSync(U('./data/jakim-elev.json'))) { const e = JSON.parse(fs.readFileSync(U('./data/jakim-elev.json'), 'utf8')); elevation = { source: e.source, stepKm: 0.05, ele: e.ele } }
+// elevation measured by the watch at Jakim 2026 (barometric altitude, Strava stream of the COROS recording): resampled to the same 50 m steps of official distance
+if (elevation && fs.existsSync(U('./data/jakim-2026-altitude.json'))) {
+  const w = JSON.parse(fs.readFileSync(U('./data/jakim-2026-altitude.json'), 'utf8')), n = elevation.ele.length, N = w.alt.length
+  const at = (f) => { const x = Math.max(0, Math.min(N - 1, f * (N - 1))), i = Math.floor(x), j = Math.min(N - 1, i + 1); return w.alt[i] + (w.alt[j] - w.alt[i]) * (x - i) }
+  const raw = elevation.ele.map((_, i) => at((i === n - 1 ? 42.195 : i * 0.05) / 42.195))
+  const mean = (a) => a.reduce((x, y) => x + y, 0) / a.length, shift = mean(elevation.ele) - mean(raw) // barometer offset that day: the two curves are aligned on average, only their shape and gain are compared
+  elevation.watch = { source: w.source, shiftM: +shift.toFixed(1), ele: raw.map((x) => +(x + shift).toFixed(1)) }
+}
 const out = { id: 'jakim', name: 'Jakarta International Marathon · BTN Jakim', source: 'Official BTN Jakim 2026 marathon GPX; the 2027 course map shows the same route.', trackKm: +(trackM / 1000).toFixed(2), officialKm: 42.195,
   elevation, corners, kmHeadings, bbox: [Math.min(...lat), Math.min(...lon), Math.max(...lat), Math.max(...lon)].map((x) => +x.toFixed(5)), start: at(0), finish: at(42.195), line, marks, turns, segments, gpx: 'routes/jakim-2026.gpx' }
 fs.writeFileSync(U('../src/data/routes/jakim.json'), JSON.stringify(out) + '\n')

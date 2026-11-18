@@ -120,7 +120,7 @@ export default function App() {
           {tab === 'coach' && <Coach />}
           {tab === 'calendar' && <Calendar view="month" vdot={vdot} results={results} setResults={setResults} focus={null} settings={settings} go={go} />}
           {tab === 'plan' && <PlanSync go={go} />}
-          {tab === 'route' && <Course go={go} />}
+          {tab === 'route' && <Course go={go} settings={settings} />}
           {tab === 'day' && <DayPage date={focus || T} vdot={vdot} settings={settings} go={go} />}
           {tab === 'checkpoint' && <Calendar view="cp" vdot={vdot} results={results} setResults={setResults} focus={focus} settings={settings} go={go} />}
           {tab === 'race' && <Calendar view="race" vdot={vdot} results={results} setResults={setResults} focus={focus} settings={settings} go={go} />}
