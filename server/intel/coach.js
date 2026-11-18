@@ -1,9 +1,11 @@
 // Orchestrates one coach run: context → provider → schema validation (+1 repair) → write-back → coach_run row.
-import { mdb } from './db.js'
+import { mdb, idb } from './db.js'
 import { retrieveRunnerContext, renderPrompt, TASKS, OUTPUT_SCHEMA } from './context.js'
 import { validate } from './schema.js'
 import { complete as deepseek } from './llm.js'
 import { applyWriteback } from './writeback.js'
+import { audit } from './memory.js'
+import { redFlags, checkinFlags, referralFor, gateFromTwin, gateCheck, diagnosisWording } from './safety.js'
 
 const EFFORT = { daily_brief: 'low', question: 'high', session_review: 'high', weekly_review: 'high', race_plan: 'high' }
 const now = () => new Date().toISOString()
@@ -23,7 +25,20 @@ export function finishRun(runId, parsed, { provider, usage = null, model = null,
 const FLAG_TYPES = new Set(['gate', 'injury', 'load', 'heat', 'data_gap', 'rule', 'other'])
 // cosmetic normalisation only (flag category labels); anything that affects advice or memory stays strictly validated
 export const normalize = (j) => { if (j && Array.isArray(j.flags)) for (const f of j.flags) if (f && typeof f === 'object' && !FLAG_TYPES.has(f.type)) f.type = 'other'; return j }
+// Safety pre-check: a reported red-flag symptom (in the question, or severe pain in the last two check-ins) gets a referral and NO model call.
+function safetyPre(question) {
+  const flags = redFlags(question), log = idb.prepare("SELECT pain FROM daily_log WHERE pain IS NOT NULL ORDER BY date DESC LIMIT 2").all()
+  for (const l of log) { const w = Math.max(0, ...Object.values(JSON.parse(l.pain || '{}'))); flags.push(...checkinFlags({ pain: w })) }
+  return [...new Map(flags.map((f) => [f.id, f])).values()]
+}
 export async function runCoach({ intent = 'daily_brief', question = '', date, activityId = null, fetchFn } = {}) {
+  const red = safetyPre(question)
+  if (red.length) {
+    const parsed = referralFor(red), id = Number(mdb.prepare('INSERT INTO coach_run (created_at, intent, provider, effort, question, context_ids, context_tokens, request, response, parsed, model, cost_cny, ok) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,1)')
+      .run(now(), intent, 'safety', null, question || null, '[]', 0, JSON.stringify({ system: 'safety rules', user: '' }), JSON.stringify(parsed), JSON.stringify(parsed), 'safety-rules', 0).lastInsertRowid)
+    audit('safety:referral', null, { ids: red.map((f) => f.id) }, id)
+    return { runId: id, ok: true, parsed, model: 'safety-rules', cost_cny: 0, safety: true }
+  }
   const ctx = retrieveRunnerContext({ intent, question, date, activityId }), prompt = renderPrompt(ctx, TASKS[intent] || TASKS.question), runId = newRun({ intent, provider: 'deepseek', ctx, prompt, question })
   try {
     let r = await deepseek({ ...prompt, effort: EFFORT[intent], intent, fetchFn }), errs = r.json ? validate(normalize(r.json), OUTPUT_SCHEMA) : ['not valid JSON']
@@ -32,7 +47,11 @@ export async function runCoach({ intent = 'daily_brief', question = '', date, ac
       const r2 = await deepseek({ messages: msgs, effort: 'low', intent, fetchFn }); r = { ...r2, cost_cny: (r.cost_cny || 0) + (r2.cost_cny || 0) }; errs = r.json ? validate(normalize(r.json), OUTPUT_SCHEMA) : ['not valid JSON']
     }
     if (errs.length) { mdb.prepare('UPDATE coach_run SET ok=0, error=?, response=?, usage=?, cost_cny=?, model=? WHERE id=?').run('schema after repair: ' + errs.slice(0, 5).join('; ') + ' — memory writes dropped', r.text, JSON.stringify(r.usage), r.cost_cny, r.model, runId); return { runId, ok: false, text: r.text, errors: errs } }
-    const fin = finishRun(runId, r.json, { provider: 'deepseek', usage: r.usage, model: r.model, cost: r.cost_cny, raw: r.text })
+    // gate check: while a validated gate is active no hard session may be recommended; diagnosis / clearance wording is flagged
+    const gc = gateCheck(r.json, gateFromTwin(ctx.volatile.twin)), dx = diagnosisWording(gc.parsed)
+    if (dx.length) gc.parsed = { ...gc.parsed, flags: [...(gc.parsed.flags || []), { type: 'rule', text: 'The coach does not diagnose or clear you to train; treat "' + dx[0] + '" as a question for a clinician.' }] }
+    if (gc.removed.length || dx.length) audit('safety:answer-adjusted', null, { removed: gc.removed.map((x) => x.action), diagnosis: dx }, runId)
+    const fin = finishRun(runId, gc.parsed, { provider: 'deepseek', usage: r.usage, model: r.model, cost: r.cost_cny, raw: r.text })
     return { runId, ok: fin.ok, model: r.model, cost_cny: r.cost_cny, ...fin }
   } catch (e) { mdb.prepare('UPDATE coach_run SET ok=0, error=? WHERE id=?').run(String(e.message).slice(0, 300), runId); throw e }
 }

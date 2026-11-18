@@ -5,6 +5,7 @@ import { idb, mdb } from './db.js'
 import { intelTick, isBusy } from './run.js'
 import { runCoach } from './coach.js'
 import { guard } from './llm.js'
+import { canRun, jobKey, recordFailure, recordSuccess } from './jobledger.js'
 
 const wibNow = () => new Date(Date.now() + 7 * 3600e3)
 const today = () => wibNow().toISOString().slice(0, 10)
@@ -21,8 +22,12 @@ export async function coachTick() {
     if (s) job = { intent: 'session_review', activityId: s.activity_id || s.label_id, question: 'session ' + s.label_id }
   }
   if (!job || !guard(job.intent).ok) return null
+  // one ledger key per job and day: failures are retried at most twice, 30 min then 2 h apart, then left alone until tomorrow
+  const key = jobKey(job.intent, job.question, day), gate = canRun(key)
+  if (!gate.run) return null
   coaching = true
-  try { return await runCoach(job) } catch (e) { console.error('coach', job.intent, e.message) } finally { coaching = false }
+  try { const r = await runCoach(job); if (r?.ok === false) recordFailure(key, job.intent, (r.errors || ['invalid answer'])[0]); else recordSuccess(key, job.intent); return r }
+  catch (e) { console.error('coach', job.intent, e.message); recordFailure(key, job.intent, e.message) } finally { coaching = false }
 }
 export function startIntelScheduler() {
   const safe = (f) => { try { Promise.resolve(f()).catch((e) => console.error('intel scheduler', e.message)) } catch (e) { console.error('intel scheduler', e.message) } }

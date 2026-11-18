@@ -57,6 +57,7 @@ export const LOCKED_RULES = [
   ['Fuel and GI protocol', '≥ 90 min between eating and running; any snack < 90 min is low-fibre/liquid; 0.7 km GI-flush shakeout jog before races.', 'KB'],
   ['No new product on race day', 'Nothing untested on race day: gels, caffeine, salt capsules, breakfast format. (Broken at Borobudur 2026.)', 'KB'],
   ['Load guard', 'Weekly running km ≤ +10 % vs the previous 4-week average; a long run ≤ 110 % of the longest run in the previous 30 days; any pain ≥ 2/10 freezes progression for 7 days; change only one variable per step (duration or run/walk ratio).', 'KB'],
+  ['Red-flag symptoms → stop and see a clinician', 'Chest pain or pressure, fainting or near-fainting, palpitations, breathlessness out of proportion, fever or acute illness, numbness or weakness, swelling, worsening or severe pain (≥ 4/10 or rising 3 days), blood pressure ≥ 180/120: no training advice; tell the athlete to stop and see a clinician (emergency services if severe). Never diagnose, never clear the athlete to train.', 'VALIDATED'],
   ['Evidence discipline', 'Never write a number that was not pulled from data; plan is not execution; literature never overrides this athlete\'s own measured data; "belum ditarik" = unknown, not estimated.', 'KB'],
 ]
 export function seedRules() {

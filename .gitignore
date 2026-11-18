@@ -6,3 +6,4 @@ Running_project_export.zip
 .ssh
 .npm
 *.snapshot.db
+tools/golden/out/

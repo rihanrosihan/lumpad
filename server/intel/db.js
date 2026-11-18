@@ -59,4 +59,7 @@ CREATE TABLE memory_vec (id INTEGER PRIMARY KEY REFERENCES memory(id) ON DELETE 
 CREATE TABLE coach_run (id INTEGER PRIMARY KEY AUTOINCREMENT, created_at TEXT NOT NULL, intent TEXT NOT NULL, provider TEXT NOT NULL, model TEXT, effort TEXT, question TEXT, context_ids TEXT, context_tokens INTEGER, request TEXT, response TEXT, parsed TEXT, ok INTEGER NOT NULL, error TEXT, usage TEXT, cost_cny REAL);
 CREATE TABLE memory_audit (id INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT NOT NULL, run_id INTEGER, action TEXT NOT NULL, memory_id INTEGER, detail TEXT);
 CREATE TABLE balance_snap (id INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT NOT NULL, month TEXT NOT NULL, balance_cny REAL NOT NULL);
+`, `
+-- job ledger for scheduled coach runs: one row per (intent + target + day); caps attempts and spaces retries (Phase 0 hotfix)
+CREATE TABLE coach_job (key TEXT PRIMARY KEY, intent TEXT NOT NULL, attempts INTEGER NOT NULL DEFAULT 0, next_try TEXT, last_error TEXT, status TEXT NOT NULL DEFAULT 'pending', updated_at TEXT NOT NULL);
 `])

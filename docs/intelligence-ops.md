@@ -35,3 +35,10 @@ fingerprint (cosine kNN) over the FIT features — DeepSeek has no embedding API
 | Runtime prompt: twin snapshot & anomaly check, correlations, historical mirroring, precise prescription; optional `twin_state_patch` (shown, never auto-applied); English or Bahasa Indonesia | `context.js` `renderPrompt`, Profile › AI Coach |
 
 After deploying, the next nightly job (or Profile › “Run analysis now”) re-parses every FIT file at parser v2 and rebuilds cards, twin and edges.
+
+## Phase 0 (redesign) — safety net before the rebuild
+- **Retry ledger** (`jobledger.js`, table `coach_job`): a scheduled coach run is attempted at most twice per job and day, 30 min then 2 h apart; then it is left alone until the next day. Inspect: `sqlite3 memory.db "select * from coach_job order by updated_at desc limit 10"`.
+- **Safety layer** (`safety.js`): red-flag symptoms in a question or severe pain in the last two check-ins → referral, no model call, cost 0, logged as `safety:referral`. When a validated gate is active, hard-session recommendations are removed from answers (`safety:answer-adjusted`). Diagnosis/clearance wording is flagged. New locked rule "Red-flag symptoms".
+- **Eval suite** (`server/intel/eval/`, in `npm test`): 15 safety, 6 gate, 3 wording, 3 number-verifier scenarios + an end-to-end referral run. Prints `EVAL BASELINE {...}`. Add a scenario for every coaching mistake found.
+- **Golden fixtures** (`tools/export_golden.mjs`): `DATA_DIR=server/data node tools/export_golden.mjs` writes every session's metrics, the twin, matrices and edges to `tools/golden/out/` (gitignored: health data). `GOLDEN_FIT_DIR=server/data/fit node --test src/lib/golden.test.js` re-parses the FIT files and must reproduce them; the Go engine is diffed against the same files (gate G2).
+- **Contract test** (`src/lib/contract.test.js`): every `/api` path and write method used by the UI must exist on the server.
