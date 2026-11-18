@@ -5953,8 +5953,8 @@
   "tags": [],
   "km": 3,
   "label": "G-MJM gate jog 20′",
-  "kind": "race",
-  "note": "",
+  "kind": "easy",
+  "note": "Gate for MJM, not a race: pain 0/10, Sleep HR ≤ 67, HRV not Reduced. Fail = MJM is skipped.",
   "src": "lumpad",
   "steps": [
    {
@@ -9611,9 +9611,9 @@
   "event": null,
   "tags": [],
   "km": 3,
-  "label": "JRF Half · bib jog",
+  "label": "Pre-race shakeout",
   "kind": "easy",
-  "note": "≤3 km easy, then stop — the full is tomorrow",
+  "note": "≤ 3 km easy, then stop — the full marathon is tomorrow (the JRF half is not run)",
   "src": "coros",
   "steps": [
    {

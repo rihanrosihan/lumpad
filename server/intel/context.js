@@ -5,6 +5,7 @@ import { ftsSearch, rrf, mmr, sortByEvidence, getMemory } from './memory.js'
 import { latestTwin } from './twin.js'
 import { listEdges } from './corr.js'
 import { zMatrix, cosine, FEATURES } from './card.js'
+import { RACE_CALENDAR, RACE_CALENDAR_TEXT } from './racecal.js'
 
 export const SCHEMA = 'context/1', EST = (s) => Math.ceil(String(s).length / 3.6)
 const wibDate = () => new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10)
@@ -16,6 +17,8 @@ export function redact(t) {
     .replace(/https?:\/\/\S+/g, '[url]').replace(/\b(?:sk|pk)-[A-Za-z0-9]{16,}\b/g, '[secret]').replace(/\b[0-9a-f]{32,}\b/gi, '[secret]').replace(/\b(?:\+?62|0)8\d{8,11}\b/g, '[phone]')
 }
 const STABLE_ATHLETE = {
+  race_calendar_2027: RACE_CALENDAR,
+  race_calendar_note: 'Authoritative and current: older knowledge-base notes about the Jakim race class or pacing (for example C-race, run-walk from km 1, < 6:00/km) are superseded. The G-MJM jog is a gate, not a race. JRF half marathon: cancelled.',
   goal: 'Sub-4:00 marathon at JRF (Jakarta) on 24 Oct 2027 (MP 5:41/km). Needs fitness VDOT ≈ 39.9 at realization ratio 0.95; baseline VDOT 31.7 (10K 1:00:55, Jul 2026).',
   facts: ['Male, 31 y, 178 cm, ~75 kg; Jakarta-area tropical heat; pre-dawn running; wrist optical HR only (no chest strap); COROS Apex 4 + Pod 2', 'HRmax 189, LTHR 170, threshold pace ≈ 5:50–5:56/km (algorithmic, possibly optimistic)', 'HR at 8:00/km baseline 143.1 ± 5.0 bpm (Jan–Sep 2026, n=26); pace at HR≈150 ≈ 7:56',
     'Marathon history: Jakim 14 Jun 2026 6:53:03 (realization ratio 0.59, n=1); JRF FM 25 Oct 2026 DNF km 9.16 (pain 2/10); Borobudur FM 15 Nov 2026 DNF by black flag at ~35 km (heat), run-walk from km 5, nausea from km 25', 'Injury sites: left VMO (Oct 2026), Achilles (Oct 2026), plantar (Jakim 2026), tibia/MTSS history', 'Main limiter found in the data: DURABILITY (share of time spent running after km 20), not running economy; opening too hot; heat; GI trouble in heat; poor readiness before races'],

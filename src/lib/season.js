@@ -69,7 +69,7 @@ export function buildSeason(rows, orig) {
     let d, wk = null, from = null, coros = null
     if (src === 'MJM') {
       if (o.kind === 'race' && o.km >= 40) wk = null
-      else if (/G-MJM/.test(o.label)) wk = { kind: 'race', name: 'G-MJM gate jog 20′', steps: [{ t: 'run', m: 3000, z: 1, note: '≈20 min · gate: pain 0/10, Sleep HR ≤ 67, HRV not Reduced' }] }
+      else if (/G-MJM/.test(o.label)) wk = { kind: 'easy', name: 'G-MJM gate jog 20′', steps: [{ t: 'run', m: 3000, z: 1, note: '≈20 min · gate: pain 0/10, Sleep HR ≤ 67, HRV not Reduced' }] }
       else if (o.kind === 'gym' || o.kind === 'rest') d = { ...base, km: 0, label: o.kind === 'gym' ? 'Strength · upper body (light)' : '', kind: o.kind, note: o.note, src: 'lumpad' }
       else if (/Shakeout/.test(o.label)) wk = { ...easy(3, 'Shakeout'), steps: [{ t: 'run', m: 3000, z: 1, note: 'include 4 × 20 s relaxed strides' }] }
       else wk = recovery(o.km || 5)
@@ -86,8 +86,8 @@ export function buildSeason(rows, orig) {
     if (!d) {
       if (wk) {
         const est = estimate(wk.steps), km = wk.steps.some((s) => s.t === 'free') ? 0 : stepKm(wk.steps)
-        const label = R ? (R.cls === 'A' ? 'JRF Full · A-RACE' : `${R.name} · ${R.cls}-race`) : t === '2027-10-23' ? 'JRF Half · bib jog' : wk.name
-        d = { ...base, km, label, kind: R ? 'race' : wk.kind, note: R ? R.note : cp ? `${cp.name} · ${cp.note}` : t === '2027-10-23' ? '≤3 km easy, then stop — the full is tomorrow' : NOTE[wk.kind] || '',
+        const label = R ? (R.cls === 'A' ? 'JRF Full · A-RACE' : `${R.name} · ${R.cls}-race`) : t === '2027-10-23' ? 'Pre-race shakeout' : wk.name
+        d = { ...base, km, label, kind: R ? 'race' : wk.kind, note: R ? R.note : cp ? `${cp.name} · ${cp.note}` : t === '2027-10-23' ? '≤ 3 km easy, then stop — the full marathon is tomorrow (the JRF half is not run)' : /G-MJM/.test(wk.name) ? 'Gate for MJM, not a race: pain 0/10, Sleep HR ≤ 67, HRV not Reduced. Fail = MJM is skipped.' : NOTE[wk.kind] || '',
           src: coros ? 'coros' : 'lumpad', steps: wk.steps, sec: coros?.sec ?? est.sec, tl: coros?.tl ?? est.tl }
         if (coros) Object.assign(d, { from, code: coros.code })
       } else if (src === 'MJM' && o.kind === 'race') d = { ...base, km: 42.2, label: 'MJM FM · D-race', kind: 'race', note: RACE_BY_DATE['2027-06-20'].note, src: 'lumpad' }

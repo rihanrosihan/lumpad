@@ -6,6 +6,7 @@ import LOG26 from './data/races/jakim2026.json'
 import { makeLog } from './lib/racelog.js'
 import { cfgOf } from './lib/zones.js'
 import JakimBenchmark from './JakimBenchmark.jsx'
+import RouteMapLeaflet from './RouteMapLeaflet.jsx'
 import { RACES, RACE_BY_DATE } from './lib/season.js'
 import { useStore } from './store.js'
 import { Card, Chip, Evidence, Screen } from './ui.jsx'
@@ -17,33 +18,6 @@ const f1 = (x) => (Math.round(x * 10) / 10).toFixed(1), f0 = (x) => Math.round(x
 const sgn = (x, d = 1) => (x > 0 ? '+' : '') + x.toFixed(d)
 const hm = (m) => { m = ((Math.round(m) % 1440) + 1440) % 1440; return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}` }
 const toMin = (s) => { const m = String(s || '').match(/^(\d{1,2}):(\d{2})$/); return m ? +m[1] * 60 + +m[2] : null }
-
-// Map: drag to pan, wheel / buttons to zoom; line coloured by gradient class; selected stretch highlighted
-function RouteMap({ R, P, km, setKm, sel, hl }) {
-  const proj = useMemo(() => { const [la0, lo0, la1, lo1] = R.bbox, k = Math.cos(((la0 + la1) / 2) * Math.PI / 180), w = (lo1 - lo0) * k, h = la1 - la0, s = Math.min((W - 2 * PAD) / w, (H - 2 * PAD) / h), ox = (W - w * s) / 2, oy = (H - h * s) / 2; return ([la, lo]) => [ox + (lo - lo0) * k * s, oy + (la1 - la) * s] }, [R])
-  const segs = useMemo(() => R.line.slice(1).map((q, i) => { const p = R.line[i], [x0, y0] = proj(p), [x1, y1] = proj(q); return { d: `M${x0.toFixed(1)},${y0.toFixed(1)}L${x1.toFixed(1)},${y1.toFixed(1)}`, c: P ? P.classOf(P.grade((p[2] + q[2]) / 2)) : 'flat', a: p[2], b: q[2] } }), [R, P, proj])
-  const selPath = useMemo(() => { const [a, b] = sel, pts = R.line.filter((p) => p[2] >= a && p[2] <= b); return pts.map((p, i) => { const [x, y] = proj(p); return `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}` }).join('') }, [R, proj, sel])
-  const [v, setV] = useState({ x: 0, y: 0, w: W, h: H }), drag = useRef(null), ref = useRef(null), z = W / v.w
-  const clamp = (n) => ({ ...n, x: Math.max(-W * 0.2, Math.min(W * 1.2 - n.w, n.x)), y: Math.max(-H * 0.2, Math.min(H * 1.2 - n.h, n.y)) })
-  const zoom = (f, cx = v.x + v.w / 2, cy = v.y + v.h / 2) => setV((o) => { const w = Math.max(W / 12, Math.min(W, o.w / f)), h = w * (H / W); return clamp({ x: cx - ((cx - o.x) / o.w) * w, y: cy - ((cy - o.y) / o.h) * h, w, h }) })
-  const toSvg = (e) => { const r = ref.current.getBoundingClientRect(); return [v.x + ((e.clientX - r.left) / r.width) * v.w, v.y + ((e.clientY - r.top) / r.height) * v.h] }
-  const pos = useMemo(() => { const l = R.line; let i = l.findIndex((p) => p[2] >= km); if (i < 1) i = i === 0 ? 1 : l.length - 1; const a = l[i - 1], b = l[i], f = (km - a[2]) / Math.max(1e-9, b[2] - a[2]); return proj([a[0] + f * (b[0] - a[0]), a[1] + f * (b[1] - a[1])]) }, [R, proj, km])
-  const marks = R.marks.filter((m) => (z >= 2.2 ? true : m.km % 5 === 0)), every = z >= 3.5 ? 1 : z >= 2.2 ? 2 : 5, r0 = 1 / Math.sqrt(z)
-  const [sx, sy] = proj(R.start), [fx, fy] = proj(R.finish)
-  return <div className="rmap">
-    <svg ref={ref} viewBox={`${v.x} ${v.y} ${v.w} ${v.h}`} role="img" aria-label="Interactive course map. Drag to move, use the buttons to zoom." style={{ touchAction: 'none' }}
-      onPointerDown={(e) => { e.currentTarget.setPointerCapture?.(e.pointerId); drag.current = { x: e.clientX, y: e.clientY, v } }}
-      onPointerMove={(e) => { const d = drag.current; if (!d) return; const r = ref.current.getBoundingClientRect(); setV(clamp({ ...d.v, x: d.v.x - ((e.clientX - d.x) / r.width) * d.v.w, y: d.v.y - ((e.clientY - d.y) / r.height) * d.v.h })) }}
-      onPointerUp={() => { drag.current = null }} onPointerCancel={() => { drag.current = null }} onWheel={(e) => { const [cx, cy] = toSvg(e); zoom(e.deltaY < 0 ? 1.25 : 0.8, cx, cy) }}>
-      {selPath && <path d={selPath} className="rm-sel" style={{ strokeWidth: 9 * r0 }} />}
-      {segs.map((s, i) => <path key={i} d={s.d} className="rm-seg" style={{ stroke: GR[s.c], strokeWidth: 3 * r0, opacity: hl && hl !== s.c ? 0.18 : 1 }} />)}
-      {R.turns.map((t) => { const [x, y] = proj(t.ll); return <circle key={t.km} cx={x} cy={y} r={3.5 * r0} className="cm-turn"><title>{`${t.name} · km ${t.km}`}</title></circle> })}
-      {marks.map((m) => { const [x, y] = proj(m.ll); return <g key={m.km} onClick={() => setKm(m.km)} style={{ cursor: 'pointer' }}><circle cx={x} cy={y} r={8 * r0} className="cm-k" />{m.km % every === 0 && <text x={x} y={y + 3 * r0} textAnchor="middle" className="cm-kt" style={{ fontSize: 8 * r0 }}>{m.km}</text>}</g> })}
-      <circle cx={sx} cy={sy} r={6 * r0} className="cm-start" /><rect x={fx - 5 * r0} y={fy - 5 * r0} width={10 * r0} height={10 * r0} className="cm-fin" /><circle cx={pos[0]} cy={pos[1]} r={6 * r0} className="cm-pos" style={{ strokeWidth: 3 * r0 }} />
-    </svg>
-    <div className="rzoom"><button onClick={() => zoom(1.6)} aria-label="Zoom in">+</button><button onClick={() => zoom(1 / 1.6)} aria-label="Zoom out">−</button><button onClick={() => setV({ x: 0, y: 0, w: W, h: H })} aria-label="Reset view">⟲</button></div>
-  </div>
-}
 
 // Elevation profile: coloured by gradient, climbs shaded, selection and cursor; flat (from 0 m) or detail scale
 function ProfileChart({ P, climbs, km, setKm, sel, setSel, hl, detail }) {
@@ -118,13 +92,13 @@ export default function Course({ go, settings }) {
     </Card>
 
     <Card title="B · Map and elevation profile"><div id="s-map" />
-      <RouteMap R={R} P={P} km={km} setKm={setKm} sel={sel} hl={hl} />
+      <RouteMapLeaflet R={R} P={P} km={km} setKm={setKm} sel={sel} hl={hl} />
       {P && <ProfileChart P={P} climbs={climbs} km={km} setKm={setKm} sel={sel} setSel={setSel} hl={hl} detail={detail} />}
       <div className="rstats"><div><small>km</small><b>{f1(km)}</b></div><div><small>elevation</small><b>{P ? f0(P.at(km)) : '—'} m</b></div><div><small>grade (300 m)</small><b>{P ? sgn(P.grade(km)) : '—'}%</b></div><div><small>clock</small><b>{plan ? hms(clockAtKm(km)) : '—'}</b></div></div>
       <input type="range" min="0" max={FM} step="0.1" value={km} onChange={(e) => setKm(+e.target.value)} aria-label="Move along the course" />
       <p><b>{seg.what}</b> · heading {compass(R.kmHeadings[Math.min(42, Math.floor(km))] ?? 0)} · you passed here in 2026 at <b>{hms(L.clockAt(km))}</b></p>
       <div className="legend">{comp.map((c) => <span key={c.id}><i className="kdot" style={{ background: GR[c.id] }} />{c.label}</span>)}<button className="link" onClick={() => setDetail(!detail)}>{detail ? 'Flat scale (from 0 m)' : 'Detail scale'}</button></div>
-      <p className="muted">Drag the map, + / − to zoom, tap a km marker or touch the profile. Line colour = grade; shaded bands = climbs T1–T4 (tap one to select it); yellow dots = U-turns.</p>
+      <p className="muted">Press Move map to pan and zoom (so the page still scrolls normally), tap a km marker, tap the line or touch the profile. Line colour = grade; shaded bands = climbs T1–T4 (tap one to select it); yellow dots = U-turns.</p>
     </Card>
 
     <Card title="C · Pick your own segment"><div id="s-seg" />

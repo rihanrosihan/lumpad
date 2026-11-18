@@ -2,6 +2,7 @@
 // Retrieval: FTS5 BM25 + numeric fingerprints (+ optional text vectors) fused with Reciprocal Rank Fusion. Everything the LLM writes arrives as a CANDIDATE.
 import crypto from 'node:crypto'
 import { mdb, tx } from './db.js'
+import { RACE_CALENDAR_TEXT } from './racecal.js'
 
 export const EVIDENCE_ORDER = ['VALIDATED', 'MEASURED', 'CALCULATED', 'CLINICIAN', 'KB', 'REPORTED', 'LITERATURE', 'HYPOTHESIS']
 const rankOf = (t) => { const i = EVIDENCE_ORDER.indexOf(t); return i < 0 ? EVIDENCE_ORDER.length : i }
@@ -48,6 +49,7 @@ export const sortByEvidence = (a, b) => rankOf(a.evidence_tag) - rankOf(b.eviden
 
 // ---- procedural rules that can never be changed by the LLM (immutable; the athlete changes them here, in code review)
 export const LOCKED_RULES = [
+  ['Race calendar 2027', RACE_CALENDAR_TEXT, 'CALCULATED'],
   ['Sleep HR > 67 = no hard running', 'If the previous night\'s Sleep HR average is above 67 bpm, do not run hard (quality, long run at effort, race effort). Validated on 103+ nights.', 'VALIDATED'],
   ['Pain ≥ 2/10 while running = durability event', 'Mechanical pain of 2/10 or more during running is a durability event: shorten or stop, do not "monitor". Probe runs stop at 1/10. Pain sites seen so far: left VMO (Oct 2026), Achilles (Oct 2026), plantar (Jakim 2026), tibia (MTSS history).', 'CLINICIAN'],
   ['HRV Reduced + quality session = downgrade', 'If sleep HRV status is Reduced and today is a quality/long/race session, downgrade the session (overreach risk 2–3 days).', 'VALIDATED'],

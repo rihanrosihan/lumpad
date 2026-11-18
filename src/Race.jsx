@@ -24,11 +24,11 @@ const RULES = [
   'Hold the first 5 km by HR cap — not by pace.',
   'Race pace 5:41/km is used only after CP14 and CP16 are clean; before that, pace comes from the latest benchmark slot.',
   'Pain ≥ 2/10 during the race = durability event: short strides, run-walk, finish-first right then.',
-  'Last Lower on Tue 12 Oct (12 days before the FM). Race week: Tue 2×1 km @MP · Thu CP18 gate · Fri light physio · Sat Half = bib jog ≤5 km or DNS.',
+  'Last Lower on Tue 12 Oct (12 days before the FM). Race week: Tue 2×1 km @MP · Thu CP18 gate · Fri light physio · Sat shakeout ≤ 3 km (no half marathon).',
 ]
 
 // JRF course facts (organiser). COPs are the 2026 edition: same route in 2027, cut-off times may change.
-const JRF = { place: 'Gelora Bung Karno Sports Complex, Jakarta', gun: '04:00', cutoffMin: 300, half: '2027-10-23',
+const JRF = { place: 'Gelora Bung Karno Sports Complex, Jakarta', gun: '04:00', cutoffMin: 300,
   cops: [['COP 1', 18, '06:10'], ['COP 2', 28, '07:20'], ['COP 3', 31.8, '07:45'], ['COP 4', 36.8, '08:20'], ['Finish', 42.195, '09:00']] }
 const tod = (s) => +s.slice(0, 2) * 60 + +s.slice(3, 5) // minutes since midnight
 const clock = (m) => `${String(Math.floor(m / 60) % 24).padStart(2, '0')}.${String(Math.round(m % 60)).padStart(2, '0')}`
@@ -140,7 +140,7 @@ export default function Race({ vdot, results, settings, go }) {
       <p className="muted">{fmtLong(race)} · start {JRF.gun.replace(':', '.')} WIB · {JRF.place}</p>
       <div className="bigkm"><b>{left > 0 ? left : 0}</b><span>days to go</span></div>
       <dl className="pace"><div><dt>Target</dt><dd>sub-4:00 · 5:41 /km</dd></div><div><dt>Fallback (kill gate)</dt><dd>4:15 · 4:30 · finish-first</dd></div></dl>
-      <p className="muted">Half marathon: {fmtLong(JRF.half)} (the day before) — in the plan it is only a bib jog ≤5 km or a DNS.</p>
+      <p className="muted">Full marathon only: the JRF half marathon (Sat 23 Oct) is not run. Saturday is a ≤ 3 km shakeout.</p>
       {race !== '2027-10-24' && <p className="banner" role="note">The race date was changed from the plan (24 Oct). The calendar and checkpoints still follow 24 Oct — rebuild the plan if the date really moves.</p>}
       <p className="src">Change the date in Profile › Race.</p>
     </Card>
