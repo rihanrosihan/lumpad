@@ -101,7 +101,7 @@ function Detail({ id, gear, vdot, history, go }) {
   const setC = (patch) => setCtx({ ...ctx, ...patch })
   return <div className="detail-page" role="region" aria-label={a?.name || 'Activity detail'}>
     {D.state === 'loading' && <div className="skel" style={{ height: 120 }} />}
-    {D.state === 'error' && <p className="muted">Failed to load details.</p>}
+    {D.state === 'error' && <p className="muted">Could not load this activity — it may not exist, or the server is unreachable.</p>}
     {a && <>
       <p className="muted">{fmtLong(a.date)}</p><h2 className="sess-title">{a.name}</h2>
       <div className="chips"><Chip>{SPORT_LABEL[a.sport_class] || a.sport}</Chip>{a.sources.map((s) => <Chip key={s}>{s}</Chip>)}{a.training_focus && <Chip tone="str">{a.training_focus}</Chip>}</div>

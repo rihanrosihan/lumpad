@@ -21,7 +21,7 @@ import { listMerged, activityDetail, gearList, readinessData, lapsInRange, expor
 import { applyIngest, checkToken, syncStatus, coverage, healthRange, activitiesRange, lapsOf, validDate } from './ingest.js'
 
 const send = (res, code, body, headers = {}) => { res.writeHead(code, { 'content-type': 'application/json', ...headers }); res.end(JSON.stringify(body)) }
-const readBody = (req, max = 20e6) => new Promise((ok, no) => { const c = []; let n = 0; req.on('data', (d) => { n += d.length; if (n > max) { no(new Error('too large')); req.destroy() } else c.push(d) }); req.on('end', () => ok(Buffer.concat(c))) })
+const readBody = (req, max = 20e6) => new Promise((ok, no) => { const c = []; let n = 0; req.on('data', (d) => { n += d.length; if (n > max) { no(Object.assign(new Error('payload too large'), { status: 413 })); req.destroy() } else c.push(d) }); req.on('end', () => ok(Buffer.concat(c))) })
 
 const KEY = /^lumpad\.[A-Za-z0-9._-]{1,80}$/
 const kvKey = (q) => { const k = q.get('key') || ''; if (!KEY.test(k)) throw Object.assign(new Error('bad key'), { status: 400 }); return k }

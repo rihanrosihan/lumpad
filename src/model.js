@@ -22,7 +22,7 @@ export function useModel(T, settings, vdot, f = EMPTY_DAY, ov = {}) {
   const R = useApi(`/api/readiness?from=${from}&to=${T}`), A = useApi(`/api/activities/merged?from=${from}&to=${addDays(T, 1)}`), Lp = useApi(`/api/laps?from=${addDays(T, -28)}&to=${T}`)
   return useMemo(() => {
     const health = R.data?.health || [], acts = (A.data || []).filter((a) => a.date <= T), lapsById = Lp.data || {}, sess = BY_DATE[T]
-    const series = dailyLoadSeries(R.data?.loads || [], from, T), P = pmc(series), cur = P.at(-1) || null
+    const series = dailyLoadSeries(R.data?.loads || [], from, T), P = pmc(series), cur = (R.data?.loads?.length && P.at(-1)) || null   // no synced load at all ≠ "form 0"
     const ratios = tlRatios(acts.filter((a) => a.date > addDays(T, -42)))
     const planned14 = Array.from({ length: 14 }, (_, i) => { const d = addDays(T, i + 1); return { date: d, load: plannedLoad(BY_DATE[d], ratios) } })
     const proj = cur && R.data?.loads?.length ? project(cur, planned14) : []

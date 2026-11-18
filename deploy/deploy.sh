@@ -21,8 +21,12 @@ fi
 grep -q '^PUBLIC_URL=https://' .env || echo ">> PERINGATAN: PUBLIC_URL di .env belum https://… (dipakai untuk callback COROS)"
 chown lumpad:lumpad .env; chmod 600 .env
 
-# Caddy: ensure the ingest bypass exists (idempotent)
-grep -q '@istatus' /etc/caddy/Caddyfile || bash /opt/lumpad/deploy/update-caddy.sh
+# Caddy: re-render when the template changed (or the ingest bypass is missing). update-caddy.sh validates first and keeps a backup;
+# a failure here is a warning, not a failed deploy.
+CADDY_SUM=$(md5sum deploy/Caddyfile | cut -d' ' -f1)
+if [ "$(cat /etc/caddy/.lumpad-template.md5 2>/dev/null || true)" != "$CADDY_SUM" ] || ! grep -q '@istatus' /etc/caddy/Caddyfile; then
+  bash /opt/lumpad/deploy/update-caddy.sh && echo "$CADDY_SUM" > /etc/caddy/.lumpad-template.md5 || echo ">> PERINGATAN: update Caddy gagal — konfigurasi lama dipertahankan"
+fi
 
 cp deploy/lumpad.service /etc/systemd/system/lumpad.service && systemctl daemon-reload
 [ -f /etc/cron.d/lumpad-backup ] || echo '15 3 * * * root /opt/lumpad/deploy/backup.sh' > /etc/cron.d/lumpad-backup

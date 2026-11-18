@@ -1,6 +1,17 @@
 __DOMAIN__ {
 	encode gzip
 
+	# Security headers for every response (the app loads only its own scripts, styles and self-hosted fonts)
+	header {
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "no-referrer"
+		Strict-Transport-Security "max-age=31536000"
+		Permissions-Policy "geolocation=(), camera=(), microphone=()"
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'"
+		-Server
+	}
+
 	# Machine-to-machine sync: bypasses the web login but is protected by a bearer token
 	# checked in the app (constant-time compare, throttled). POST only, exact path.
 	@ingest {
