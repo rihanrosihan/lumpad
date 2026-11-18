@@ -10,7 +10,7 @@ import { raceTime } from './vdot.js'
 export const SEASON_START = '2026-11-23', SEASON_END = '2027-12-31', A_START = '2026-11-23'
 // Real races (all Sundays). A = goal race, B = registered with a time target, C / D = for the experience, finish before the cut-offs.
 export const RACES = [
-  { date: '2027-06-13', name: 'Jakim FM', cls: 'B', target: 'sub 5:00', pace: [420, 426], reg: 'registered', note: 'CP9 · target sub-5:00 (7:00–7:06/km) · registered · not a VDOT test' },
+  { date: '2027-06-13', name: 'Jakim FM', cls: 'B', target: 'sub 5:00', pace: [420, 426], reg: 'registered', route: 'jakim', note: 'CP9 · target sub-5:00 (7:00–7:06/km) · registered · not a VDOT test' },
   { date: '2027-06-20', name: 'MJM FM', cls: 'D', target: null, reg: 'no-info', note: 'D-race · no time target: finish before the cut-offs (COP / COT) · only if G-MJM passed · no race info yet' },
   { date: '2027-10-24', name: 'JRF Full', cls: 'A', target: 'sub 4:00', pace: [336, 341], reg: 'not-open', note: 'CP19 · sub-4:00 (5:36–5:41/km) · first 5 km by HR cap · date confirmed, registration not open yet' },
   { date: '2027-11-14', name: 'Bormar FM', cls: 'C', target: null, reg: 'no-info', note: 'C-race · no time target: finish before the cut-offs (COP / COT) · 3 weeks after JRF · no race info yet' },

@@ -8,6 +8,8 @@ import { useApi, fmtDur, fmtPaceS } from './api.js'
 import { WorkoutDetail, stepsFor } from './Workout.jsx'
 import { effectiveDay } from './lib/scaler.js'
 import { useCorosPlan } from './useCoros.js'
+import CourseMap from './CourseMap.jsx'
+import { RACE_BY_DATE } from './lib/season.js'
 import { labelOf, fmtHM } from './lib/corosplan.js'
 
 const RULES = ['Sleep HR ≤ 67 bpm for hard sessions', 'Sleep HRV not Reduced for quality / TT', 'Pain while running < 2/10 (≥ 2 = durability event)', 'Tibia not tender before Lower', 'Meal buffer ≥ 90 min for hard sessions']
@@ -52,6 +54,7 @@ export default function DayPage({ date, vdot, settings, go }) {
           <WorkoutDetail day={d} settings={settings} />
         </Card>}
         {corosCard}
+        {RACE_BY_DATE[date]?.route && <CourseMap routeId={RACE_BY_DATE[date].route} pace={RACE_BY_DATE[date].pace?.[1]} goal="sub 5:00" />}
         <Card title={past || isToday ? 'Plan vs actual' : 'Actual'}>
           {A.state === 'loading' && <div className="skel" style={{ height: 56 }} />}
           {A.state === 'ok' && !acts.length && <p className="muted">{date > T ? 'Has not happened yet.' : 'No run recorded on this day.'}</p>}

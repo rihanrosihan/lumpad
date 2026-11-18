@@ -473,3 +473,10 @@ button.rp:hover{background:var(--surface)}.rp b.am{color:var(--amber-t)}.rp b.co
 .form.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}@media (max-width:420px){.form.two{grid-template-columns:1fr}}
 .planb .wline{color:rgba(255,255,255,.85);font-size:.82rem}.planb .wtarget{margin:8px 0 6px;color:#fff}.planb .muted{color:rgba(255,255,255,.88)}.planb-row{display:flex;gap:8px;flex-wrap:wrap}.planb-row .planb-btn{margin-top:10px}
 .h4-warn{margin:8px 0 0;font-size:.88rem;line-height:1.5;color:#fde68a;max-width:62ch}
+
+/* Course map */
+.cmap{background:var(--surface2);border-radius:14px;padding:6px;margin-bottom:8px}.cmap svg{width:100%;max-height:70vh;height:auto;display:block}
+.cm-line{fill:none;stroke:var(--accent);stroke-width:3;stroke-linejoin:round;stroke-linecap:round}.cm-turn{fill:var(--yellow);stroke:var(--surface);stroke-width:1.5}
+.cm-k{fill:var(--surface);stroke:var(--text);stroke-width:1}.cm-kt{font-size:8px;font-weight:700;fill:var(--text)}.cm-lab{font-size:9px;font-weight:700;fill:var(--text)}
+.cm-start{fill:var(--green);stroke:var(--surface);stroke-width:2}.cm-fin{fill:var(--red);stroke:var(--surface);stroke-width:2}.cm-pos{fill:var(--text);stroke:var(--accent);stroke-width:3}
+.cm-segs{list-style:none;margin:6px 0;padding:0}.cm-segs button{display:flex;gap:10px;width:100%;text-align:left;padding:8px 0;border-top:1px solid var(--line);font-size:.84rem;min-height:44px;align-items:center}.cm-segs button b{flex:none;width:92px;font-variant-numeric:tabular-nums}.cm-segs button span{color:var(--muted)}.cm-segs button.on span{color:var(--text);font-weight:600}
