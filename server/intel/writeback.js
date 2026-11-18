@@ -36,7 +36,7 @@ export function applyWriteback(parsed, { runId = null, itemIds = [], corpus = ''
       const m = getMemory(sim.id), n = m.n + 1, promote = m.status === 'candidate' && n >= 3
       mdb.prepare('UPDATE memory SET n=?, status=?, updated_at=? WHERE id=?').run(n, promote ? 'active' : m.status, new Date().toISOString(), m.id); audit(promote ? 'writeback:promoted' : 'writeback:merged', m.id, { n, provider }, runId); out.merged.push({ id: m.id, n, promoted: promote }); continue
     }
-    const r = addMemory({ tier: w.tier, kind: String(w.kind || 'insight').slice(0, 30), title: w.title, body: w.body, payload: { cites: w.cites, run: runId, provider }, evidence_tag: 'HYPOTHESIS', status, source: 'coach', created_by: provider === 'claude-code' ? 'claude-code' : 'llm' }, { runId })
+    const r = addMemory({ tier: w.tier, kind: String(w.kind || 'insight').slice(0, 30), title: w.title, body: w.body, payload: { cites: w.cites, run: runId, provider, tags: Array.isArray(w.tags) ? w.tags.slice(0, 8).map((t) => String(t).slice(0, 40)) : undefined }, confidence: typeof w.confidence === 'number' ? Math.max(0, Math.min(1, w.confidence)) : undefined, evidence_tag: 'HYPOTHESIS', status, source: 'coach', created_by: provider === 'claude-code' ? 'claude-code' : 'llm' }, { runId })
     out.stored.push({ id: r.id, status })
   }
   return out

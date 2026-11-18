@@ -1,8 +1,10 @@
 // Pure metric functions over a 1 Hz series (see fit.js). Definitions follow the KB (04.9 §5D, 04.8 §2, 03.9) so numbers match.
+import { ATHLETE } from '../../src/lib/athlete.js'
+import { hrZoneOf, paceZoneOf } from '../../src/lib/zones.js'
 // stop = speed < 0.3 m/s · run = moving and cadence >= 125 spm · walk = moving and cadence < 125 spm.
 // Every function returns null (with a reason where useful) rather than a guess when its validity rule is not met.
 export const STOP_MS = 0.3, RUN_CAD = 125
-export const BASELINE = { gct: 300, cad: 170, hr800: 143.1, hr800sd: 5.0, lthr: 170, hrmax: 189 } // KB 04.8 / 01.1 / 03.9; recomputed monthly by the pipeline
+export const BASELINE = { gct: 300, cad: 170, hr800: 143.1, hr800sd: 5.0, lthr: ATHLETE.lthr, hrmax: ATHLETE.hrmax, tpace: ATHLETE.tpace_s } // KB 04.8 / 01.1 / 03.9; recomputed monthly by the pipeline
 
 const mean = (a) => { let s = 0, n = 0; for (const x of a) if (!isNaN(x)) { s += x; n++ } return n ? s / n : NaN }
 const med = (a) => { const v = [...a].filter((x) => !isNaN(x)).sort((x, y) => x - y); return v.length ? v[v.length >> 1] : NaN }
@@ -141,6 +143,24 @@ export function mechAbs(km, baseline = BASELINE) { // first km hitting the absol
   return k ? k.km : null
 }
 
+// time in the six COROS zones (index 0 = below Z1 / slower than Z1), HR as % of LTHR and pace as % of threshold pace, over moving seconds.
+// Pace uses a 30 s rolling speed so GPS jitter does not scatter seconds across zones.
+export function zones6(S, cls, baseline = BASELINE) {
+  const cfg = { lthr: baseline.lthr, tpace: baseline.tpace || 356 }, hr = Array(7).fill(0), pace = Array(7).fill(0), W = 30
+  for (let i = 0; i < S.n; i++) {
+    if (!cls[i]) continue
+    const h = hrZoneOf(S.hr[i], cfg); if (h != null) hr[h]++
+    const j = Math.max(0, i - W), sp = (S.dist[i] - S.dist[j]) / Math.max(1, i - j), z = sp > 0.3 ? paceZoneOf(1000 / sp, cfg) : 0; if (z != null) pace[z]++
+  }
+  return { hr_s: hr, pace_s: pace }
+}
+// pacing discipline over mostly-running kilometres (first km dropped): coefficient of variation of run pace, split direction, 0–100 score
+export function pacing(km) {
+  const K = km.filter((k) => k.km > 1 && k.runShare >= 0.85 && k.runPace > 0)
+  if (K.length < 4) return null
+  const p = K.map((k) => k.runPace), m = mean(p), cv = sd(p) / m, h = K.length >> 1, a = mean(p.slice(0, h)), b = mean(p.slice(h)), split = (b - a) / a
+  return { km: K.length, cv_pct: r1(cv * 100, 1), score: Math.round(100 * Math.max(0, 1 - cv / 0.10)), split_pct: r1(split * 100, 1), split: split <= -0.01 ? 'negative' : split >= 0.01 ? 'positive' : 'even' }
+}
 const zone = (S, cls, lo, hi) => { let s = 0; for (let i = 0; i < S.n; i++) if (cls[i] && S.hr[i] >= lo && S.hr[i] < hi) s++; return s }
 
 export function sessionMetrics(S, baseline = BASELINE) {
@@ -158,6 +178,7 @@ export function sessionMetrics(S, baseline = BASELINE) {
     open_hr_first_hour: r1(openHr), gain_m: r1(e.ascent, 0), temp_device_c: r1(e.tempC, 0), avg_hr: r1(mean(S.hr)), max_hr: r1(e.maxHr, 0),
     z_hr: { below_lthr_min: r1(zone(S, cls, 0, lthr * 0.9) / 60, 0), tempo_min: r1(zone(S, cls, lthr * 0.9, lthr * 1.0) / 60, 0), above_lthr_min: r1(zone(S, cls, lthr, 999) / 60, 0) },
     first_km_gct: r1(mean(first.map((k) => k.gct)), 0),
+    z6: zones6(S, cls, baseline), pacing: pacing(km), lthr_pct: r1((all.runHr / lthr) * 100, 0),
   }
 }
 export { mean, sd, med, r1, paceOf }

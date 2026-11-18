@@ -88,7 +88,7 @@ const routes = {
       memory: mdb.prepare('SELECT tier, status, COUNT(*) n FROM memory GROUP BY tier, status').all(), edges: idb.prepare('SELECT status, COUNT(*) n FROM corr_edge GROUP BY status').all() }, coach_runs: recentRuns(6) }),
   'POST /api/intel/run': async (_q, req) => { const b = JSON.parse((await readBody(req, 1e4)).toString() || '{}'), kind = b.kind === 'quick' ? 'quick' : 'full'; runIntel(kind, { trigger: 'manual' }).catch((e) => console.error('intel', e.message)); return { started: kind } },
   'GET /api/intel/session': async (q) => { const id = String(q.get('id') || '').replace(/^coros:/, ''), s = idb.prepare('SELECT * FROM fit_session WHERE label_id=? OR activity_id=?').get(id, q.get('id')); if (!s) return { found: false }
-    return { found: true, ...s, metrics: JSON.parse(s.metrics), km: JSON.parse(s.km), features: undefined, weather: idb.prepare('SELECT temp_c, dew_c, rh, wind_ms, rad_wm2, wbgt, indoor FROM run_weather WHERE label_id=?').get(s.label_id) || null } },
+    return { found: true, ...s, metrics: JSON.parse(s.metrics), km: JSON.parse(s.km), features: undefined, similar: (await import('./intel/context.js')).similarSessions(s.label_id, 5), weather: idb.prepare('SELECT temp_c, dew_c, rh, wind_ms, rad_wm2, wbgt, indoor FROM run_weather WHERE label_id=?').get(s.label_id) || null } },
   'GET /api/intel/longruns': async () => idb.prepare('SELECT s.label_id, s.activity_id, s.date, s.distance_m, s.elapsed_s, s.run_share, s.ef, s.drift_pahr, s.run_drift, s.gct_fade, s.stride_fade, s.onset_km, s.mech_abs_km, s.hr800, s.run_hr, s.gain_m, w.wbgt, w.temp_c FROM fit_session s LEFT JOIN run_weather w ON w.label_id=s.label_id WHERE s.distance_m >= 16000 ORDER BY s.date DESC LIMIT 40').all(),
   'GET /api/intel/matrices': async () => (await import('./intel/matrices.js')).matrices() || { gym_to_stride: [], z2_discipline: [], modalities: [], sessions: 0 },
   'GET /api/intel/edges': async (q) => listEdges(q.get('status') || undefined),
@@ -99,6 +99,12 @@ const routes = {
   'GET /api/coach/runs': async () => recentRuns(20),
   'GET /api/coach/run': async (q) => getRun(+q.get('id')) || { error: 'not found' },
   // pull mode for a Claude routine / Claude Code: context out, answer back (same validation + write-back hook as DeepSeek)
+  // free preview of what retrieval would send (no model call): counts, retrieved items, the decomposed query and the split telemetry it attached
+  'GET /api/coach/preview': async (q) => {
+    const intent = TASKS[q.get('intent')] ? q.get('intent') : 'daily_brief', ctx = retrieveRunnerContext({ intent, question: String(q.get('question') || '').slice(0, 1000) }), v = ctx.volatile
+    const item = (i) => ({ id: i.id, title: i.title, why: i.why })
+    return { schema: ctx.schema, tokens_est: ctx.tokens_est, rules_count: ctx.stable.rules.length, episodes: v.episodes.map(item), facts: v.facts.map(item), query: v.query, edges: v.correlation_edges.length,
+      telemetry: v.telemetry.map((t) => ({ date: t.date, km: t.km_total, splits: t.km.length })), twin_version: v.twin_version } },
   'GET /api/coach/context': async (q, req) => { checkToken(req); const intent = TASKS[q.get('intent')] ? q.get('intent') : 'daily_brief', ctx = retrieveRunnerContext({ intent, question: q.get('question') || '', activityId: q.get('activity') || null }), prompt = renderPrompt(ctx, TASKS[intent])
     return { run_id: newRun({ intent, provider: 'claude-code', ctx, prompt, question: q.get('question') }), ...prompt, output_schema: OUTPUT_SCHEMA, item_ids: ctx.item_ids } },
   'POST /api/coach/writeback': async (_q, req) => { checkToken(req); const b = JSON.parse((await readBody(req, 2e5)).toString()); return finishRun(+b.run_id, b.answer, { provider: 'claude-code', raw: JSON.stringify(b.answer) }) },

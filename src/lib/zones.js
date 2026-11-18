@@ -1,8 +1,9 @@
 // Training zones (6 zones, threshold model — the same zone numbers COROS uses on the watch).
 // HR zones are % of lactate-threshold HR; pace zones are % of threshold pace (time per km, so >100% = slower).
-// Defaults: threshold pace 5:56/km = COROS fitness assessment (18 Nov 2026); LTHR 170 bpm = ESTIMATE from recent runs.
+// Defaults come from the athlete baseline (lib/athlete.js): threshold pace 5:56/km = COROS fitness assessment (18 Nov 2026); LTHR 168 bpm = COROS setting.
+import { ATHLETE } from './athlete.js'
 // Both are editable in Profile › Training zones — copy the values from the COROS app (Profile › Zones) when they differ.
-export const ZONE_DEFAULTS = { lthr: 170, tpace: 356, src: { lthr: 'estimate', tpace: 'COROS 18 Nov 2026' } }
+export const ZONE_DEFAULTS = { lthr: ATHLETE.lthr, tpace: ATHLETE.tpace_s, src: { lthr: ATHLETE.src.lthr, tpace: ATHLETE.src.tpace } }
 export const ZONES = [
   null,
   { z: 1, name: 'Recovery', hr: [0, 0.84], pace: [1.3, 1.45] },
@@ -50,8 +51,9 @@ export function summary(steps) {
 
 // ---- which zone a lap / second falls in (same 6 zones the plan and the watch use) ----
 // index 0 = below Z1 (HR < 65 % LTHR, or pace slower than Z1: walking / standing), 1..6 = Z1..Z6
-export const hrZoneOf = (hr, cfg = ZONE_DEFAULTS) => { if (!hr) return null; const f = hr / cfg.lthr; return f < 0.65 ? 0 : f < 0.85 ? 1 : f < 0.9 ? 2 : f < 0.95 ? 3 : f < 1.0 ? 4 : f < 1.03 ? 5 : 6 }
-export const paceZoneOf = (pace, cfg = ZONE_DEFAULTS) => { if (!pace) return null; const r = pace / cfg.tpace; return r > 1.45 ? 0 : r > 1.295 ? 1 : r > 1.135 ? 2 : r > 1.055 ? 3 : r > 1.005 ? 4 : r > 0.965 ? 5 : 6 }
+// boundaries are the same rounded bpm / pace numbers the plan displays, so a value shown as "Z2 143–150" is classified Z2
+export const hrZoneOf = (hr, cfg = ZONE_DEFAULTS) => { if (!hr) return null; if (hr < hrRange(1, cfg)[0]) return 0; for (let z = 1; z <= 5; z++) if (hr <= hrRange(z, cfg)[1]) return z; return 6 }
+export const paceZoneOf = (pace, cfg = ZONE_DEFAULTS) => { if (!pace) return null; if (pace > paceRange(1, cfg)[1]) return 0; for (let z = 1; z <= 5; z++) if (pace >= paceRange(z, cfg)[0]) return z; return 6 }
 // seconds per zone (index 0..6) from per-km laps, time-weighted
 export function zoneSeconds(laps, cfg = ZONE_DEFAULTS) {
   const hr = Array(7).fill(0), pace = Array(7).fill(0)

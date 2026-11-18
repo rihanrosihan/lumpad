@@ -4,7 +4,7 @@ import fs from 'node:fs'
 import FitParserMod from 'fit-file-parser'
 const FitParser = FitParserMod.default || FitParserMod
 
-export const PARSER_VERSION = 1
+export const PARSER_VERSION = 2 // 2: six-zone HR/pace time, pacing discipline, % LTHR
 const NUM = (x) => (typeof x === 'number' && isFinite(x) ? x : NaN)
 
 export function parseFitBuffer(buf) {

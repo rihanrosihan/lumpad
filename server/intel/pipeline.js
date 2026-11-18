@@ -43,7 +43,19 @@ export async function processFit({ label_id, date, file }, { baseline = BASELINE
 }
 
 // cards + similar sessions need all sessions processed first (z-scores over the whole set)
+// load state + strength/sleep context the day of each run (blueprint §5.4): CTL τ42 / ATL τ7 over daily_feat.tl; exposures from the 1–3 days BEFORE
+function contextByDate() {
+  const rows = idb.prepare('SELECT date, run_km, tl, strength, strength_lower, sleep_min FROM daily_feat ORDER BY date').all(), out = {}
+  let ctl = 0, atl = 0
+  rows.forEach((d, i) => {
+    const prev = (n) => rows.slice(Math.max(0, i - n), i)
+    out[d.date] = { km7: prev(7).reduce((s, x) => s + (x.run_km || 0), 0), ctl: Math.round(ctl), atl: Math.round(atl), tsb: Math.round(ctl - atl), gym_72h: prev(3).some((x) => x.strength), lower_72h: prev(3).some((x) => x.strength_lower), sleep_min: d.sleep_min }
+    ctl += ((d.tl || 0) - ctl) / 42; atl += ((d.tl || 0) - atl) / 7
+  })
+  return out
+}
 export function buildCards({ only } = {}) {
+  const CTX = contextByDate()
   const sessions = idb.prepare('SELECT * FROM fit_session ORDER BY date').all(), withF = sessions.map((s) => ({ s, f: JSON.parse(s.features || '{}') }))
   const Z = zMatrix(withF.map((x) => x.f)), vecs = withF.map((x) => ({ s: x.s, v: Z.z(x.f) }))
   let n = 0
@@ -52,7 +64,7 @@ export function buildCards({ only } = {}) {
     const m = JSON.parse(s.metrics), w = idb.prepare('SELECT * FROM run_weather WHERE label_id=?').get(s.label_id)
     const similar = vecs.filter((o) => o.s.label_id !== s.label_id && o.s.date < s.date && o.s.distance_m > 3000).map((o) => ({ ...o.s, sim: cosine(v, o.v) })).sort((a, b) => b.sim - a.sim).slice(0, 3)
     const log = idb.prepare('SELECT * FROM daily_log WHERE date=?').get(s.date)
-    const card = buildCard({ date: s.date, startHour: s.start_hour, m, weather: w, health: health(s.date), log, shoe: shoeOf(s.shoe_id), plan: PLAN_BY[s.date], similar, race: s.distance_m > 40000 })
+    const card = buildCard({ date: s.date, startHour: s.start_hour, m, weather: w, health: health(s.date), log, shoe: shoeOf(s.shoe_id), plan: PLAN_BY[s.date], similar, race: s.distance_m > 40000, ctx7: CTX[s.date] })
     idb.prepare('UPDATE fit_session SET card=? WHERE label_id=?').run(card, s.label_id)
     upsertEpisodic(s, card); n++
   }

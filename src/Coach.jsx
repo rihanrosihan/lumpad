@@ -42,6 +42,8 @@ export function Result({ p, res }) {
     <p className="lead">{cleanId(p.summary)}</p>
     {p.flags?.length > 0 && <div className="chips">{p.flags.map((f, i) => <Chip key={i} tone={f.type === 'gate' || f.type === 'injury' ? 'red' : 'yellow'}>{cleanId(f.text)}</Chip>)}</div>}
     {p.recommendations?.length > 0 && <ol className="recs">{p.recommendations.map((r, i) => <li key={i}><div><Chip tone={PRIO[r.priority]?.[0]}>{PRIO[r.priority]?.[1] || r.priority}</Chip>{r.needs_athlete_ok && <Chip>needs your approval</Chip>}</div><b>{cleanId(r.action)}</b><small>{cleanId(r.why)}</small></li>)}</ol>}
+    {p.twin_state_patch && Object.values(p.twin_state_patch).some((x) => x != null && x !== '') && <div className="mod yellow"><b>Suggested twin updates (not applied — check before acting)</b>
+      <ul className="rules">{p.twin_state_patch.current_ef_baseline != null && <li>EF baseline → {p.twin_state_patch.current_ef_baseline}</li>}{p.twin_state_patch.shoe_alert && <li>Shoe: {cleanId(p.twin_state_patch.shoe_alert)}</li>}{p.twin_state_patch.readiness_modifier && <li>Readiness: {cleanId(p.twin_state_patch.readiness_modifier)}</li>}</ul></div>}
     <details className="more" open><summary>Full analysis</summary><Md text={p.analysis_md} /></details>
     {wb && (wb.stored.length + wb.merged.length + wb.rejected.length > 0) && <p className="src-note">Memory: {wb.stored.length} new (awaiting confirmation) · {wb.merged.length} merged · {wb.rejected.length} rejected (numbers/citations not verified).</p>}
   </Card>
@@ -70,7 +72,7 @@ function Ask({ st }) {
   return <>
     <Card title="Ask the coach · Hybrid RAG" right={st?.model && <Chip>{st.model.name}</Chip>}>
       <div className="chiprow" role="group" aria-label="Analysis type">{INTENTS.map(([k, l]) => <button key={k} aria-pressed={intent === k} onClick={() => setIntent(k)}>{l}</button>)}</div>
-      {intent === 'question' && <textarea className="ask" rows={3} value={q} placeholder="e.g. why did HR@8:00 rise this week, or how did leg day affect my GCT?" onChange={(e) => setQ(e.target.value)} maxLength={1000} aria-label="Question" />}
+      {<textarea className="ask" rows={intent === 'question' ? 3 : 2} value={q} placeholder={intent === 'question' ? 'e.g. why did GCT drift on long runs in October after leg day, compared with Borobudur 2026?' : 'Optional focus — dates, a race, a shoe, a distance or an HR limit narrow what the coach retrieves'} onChange={(e) => setQ(e.target.value)} maxLength={1000} aria-label="Question" />}
       <div className="row2" style={{ gap: 8 }}>
         <button className="btn primary" disabled={busy || (intent === 'question' && q.trim().length < 5) || st?.guard?.level === 'paused'} onClick={run}>{busy ? 'Coach is analysing… (±30–90 s)' : 'Run analysis'}</button>
         <button className="btn" onClick={() => setShowCtx((x) => !x)} aria-pressed={showCtx}>{showCtx ? 'Hide RAG payload' : 'Inspect RAG payload (free)'}</button>
@@ -83,7 +85,9 @@ function Ask({ st }) {
           <Chip>{P.data.episodes?.length || 0} episodic runs</Chip>
           <Chip>{P.data.facts?.length || 0} semantic facts</Chip>
         </div>
-        <p className="muted" style={{ fontSize: '.78rem', margin: '6px 0' }}>Retrieved items injected into prompt (BM25 + RRF + MMR + 16-D kNN): {P.data.episodes?.map((e) => `[${e.id}] ${e.title}`).join(' · ')}</p>
+        {P.data.query && (P.data.query.topics?.length > 0 || Object.keys(P.data.query.filters || {}).length > 0) && <div className="chips"><Chip tone="str">query decomposition</Chip>{Object.entries(P.data.query.filters).map(([k, v]) => <Chip key={k}>{k}: {Array.isArray(v) ? v.join('–') : String(v)}</Chip>)}{P.data.query.topics.slice(0, 6).map((t) => <Chip key={t}>#{t}</Chip>)}</div>}
+        {P.data.telemetry?.length > 0 && <p className="muted" style={{ fontSize: '.78rem', margin: '6px 0' }}>Exact km splits attached: {P.data.telemetry.map((t) => `${t.date} (${t.km} km, ${t.splits} splits)`).join(' · ')} · correlation edges: {P.data.edges}</p>}
+        <p className="muted" style={{ fontSize: '.78rem', margin: '6px 0' }}>Retrieved items injected into prompt (SQL filters + BM25 + RRF + MMR + 16-D kNN): {P.data.episodes?.map((e) => `[${e.id}] ${e.title}${e.why && e.why !== 'recent' ? ' (' + e.why + ')' : ''}`).join(' · ')}</p>
       </div>}
       {st?.guard?.level === 'paused' && <p className="muted">Monthly cap reached — analyses still run, the coach is back on the 1st.</p>}
       {err && <p className="err" role="alert">{err}</p>}
@@ -188,7 +192,7 @@ function CorrelationMatrices() {
   const M = useApi('/api/intel/matrices'), d = M.data
   if (!d) return null
   return <Card title="Multi-context physiological correlation matrices" right={<Chip>{d.sessions} FIT sessions</Chip>}>
-    <h3 style={{ fontSize: '.84rem', margin: '4px 0 6px' }}>1. Gym-to-stride impact (runs 24–72 h after a gym session vs fresh legs)</h3>
+    <h3 style={{ fontSize: '.84rem', margin: '4px 0 6px' }}>1. Gym-to-stride impact (runs 24–72 h after a gym session vs fresh legs){d.gym_lag_basis ? ` · by hour: see Twin snapshot (${d.gym_lag_basis})` : ''}</h3>
     <div className="scroll" tabIndex={0}><table className="lapt">
       <thead><tr><th>Condition (runs ≥5 km)</th><th>n</th><th>Mean EF</th><th>Pa:HR drift</th><th>GCT fade</th><th>Stride Δ</th></tr></thead>
       <tbody>{(d.gym_to_stride || []).map((r) => <tr key={r.grp}>
@@ -197,11 +201,11 @@ function CorrelationMatrices() {
       </tr>)}</tbody>
     </table></div>
 
-    <h3 style={{ fontSize: '.84rem', margin: '12px 0 6px' }}>2. Z2 aerobic discipline vs. intensity creep (&gt;148 bpm ceiling on runs ≤15 km)</h3>
+    <h3 style={{ fontSize: '.84rem', margin: '12px 0 6px' }}>2. Z2 aerobic discipline vs. intensity creep (runs ≤ 15 km, Z2 ceiling {d.z2_ceiling} bpm)</h3>
     <div className="scroll" tabIndex={0}><table className="lapt">
       <thead><tr><th>Zone regime</th><th>n</th><th>Mean HR</th><th>Mean EF</th><th>Pa:HR drift</th><th>GCT fade</th></tr></thead>
       <tbody>{(d.z2_discipline || []).map((r) => <tr key={r.zone}>
-        <td><Chip tone={r.zone === 'z2_disciplined' ? 'green' : 'yellow'}>{r.zone === 'z2_disciplined' ? 'Z2 disciplined (≤148 bpm)' : 'Intensity creep (>148 bpm)'}</Chip></td>
+        <td><Chip tone={r.zone === 'z2_disciplined' ? 'green' : 'yellow'}>{r.zone === 'z2_disciplined' ? `Z2 disciplined (≤${d.z2_ceiling} bpm)` : `Intensity creep (>${d.z2_ceiling} bpm)`}</Chip></td>
         <td>{r.n}</td><td>{r.avg_hr} bpm</td><td><b>{r.ef}</b></td><td>{r.drift != null ? r.drift + '%' : '—'}</td><td>{r.gct_fade != null ? (r.gct_fade > 0 ? '+' : '') + r.gct_fade + ' ms' : '—'}</td>
       </tr>)}</tbody>
     </table></div>
@@ -213,11 +217,60 @@ function CorrelationMatrices() {
         <td><code className="md-code">#{r.modality}</code></td><td>{r.n}</td><td>{r.avg_km} km</td><td>{r.ef}</td><td>{r.avg_hr} bpm</td>
       </tr>)}</tbody>
     </table></div>
+    {d.threshold_blocks?.length > 0 && <><h3 style={{ fontSize: '.84rem', margin: '12px 0 6px' }}>4. Threshold work → aerobic speed (4-week blocks; pace at HR ≈ 150 in the 4 weeks after, lower = fitter)</h3>
+    <div className="scroll" tabIndex={0}><table className="lapt">
+      <thead><tr><th>Block</th><th>Min ≥ 90% LTHR / wk</th><th>Km / wk</th><th>Pace@HR150 during</th><th>Next 4 wk</th></tr></thead>
+      <tbody>{d.threshold_blocks.map((b) => <tr key={b.from}><td><b>{b.from.slice(5)} → {b.to.slice(5)}</b></td><td>{b.thr_min_per_week}</td><td>{b.km_per_week}</td><td>{pace(b.pace_hr150_during_s)}</td><td>{b.pace_hr150_next4w_s != null ? <>{pace(b.pace_hr150_next4w_s)}{b.pace_hr150_during_s != null && <Chip tone={b.pace_hr150_next4w_s < b.pace_hr150_during_s ? 'green' : 'yellow'}>{sgn(b.pace_hr150_next4w_s - b.pace_hr150_during_s, 0)} s</Chip>}</> : '—'}</td></tr>)}</tbody>
+    </table></div></>}
+    {d.race_fade?.length > 0 && <><h3 style={{ fontSize: '.84rem', margin: '12px 0 6px' }}>5. Race fade predictors (8 weeks before each half / full marathon vs the late-race fade)</h3>
+    <div className="scroll" tabIndex={0}><table className="lapt">
+      <thead><tr><th>Race</th><th>Long runs ≥ 21 km</th><th>Elevation</th><th>Min ≥ 90% LTHR</th><th>Km / wk</th><th>Pace fade</th><th>GCT fade</th><th>Late run share</th></tr></thead>
+      <tbody>{d.race_fade.map((r) => <tr key={r.date}><td><b>{r.date}</b><br /><small className="muted">{r.name}</small></td><td>{r.pre8w.long_runs_21k}</td><td>{r.pre8w.gain_m} m</td><td>{r.pre8w.thr_min}</td><td>{r.pre8w.km_per_week}</td>
+        <td>{r.fade ? <><b>{sgn(r.fade.pace_fade_pct)}%</b><br /><small className="muted">{r.fade.early} {pace(r.fade.pace_early_s)} → {r.fade.late} {pace(r.fade.pace_late_s)}</small></> : '—'}</td><td>{r.fade?.gct_fade_ms != null ? sgn(r.fade.gct_fade_ms, 0) + ' ms' : '—'}</td><td>{r.fade?.run_share_late != null ? Math.round(r.fade.run_share_late * 100) + '%' : '—'}</td></tr>)}</tbody>
+    </table></div></>}
     <p className="src-note">[MEASURED] Observational within-athlete matrices across {d.sessions} 1-Hz FIT sessions. Z2 aerobic ceiling 148 bpm. Differences are associations, not proof of cause.</p>
   </Card>
 }
 
 // ---- Twin
+const pace = (x) => (x == null ? '—' : `${Math.floor(x / 60)}:${String(Math.round(x % 60)).padStart(2, '0')}`)
+const sgn = (x, d = 1) => (x == null ? '—' : (x > 0 ? '+' : '') + (+x).toFixed(d))
+// blueprint §1.2: the twin's physiological profile, 30- vs 90-day baselines (anomaly check), intensity distribution and strength transfer
+function TwinSnapshot() {
+  const T = useApi('/api/twin'), t = T.data?.state
+  if (!t?.physiological_profile) return null
+  const P = t.physiological_profile, B = t.baselines, I = t.intensity, S = t.strength_to_run_transfer
+  // "better" direction per metric, so the delta can be coloured honestly
+  const rows = [['EF (steady runs)', 'ef', 3, 'up'], ['HR at 8:00/km', 'hr_at_800', 1, 'down'], ['Pace at HR ≈ 150', 'pace_at_hr150_s', 0, 'down', pace], ['Cadence (spm)', 'cadence_spm', 1, 'up'], ['GCT (ms)', 'gct_ms', 0, 'down'], ['Stride (m)', 'stride_m', 3, 'up'], ['Vertical ratio (%)', 'vertical_ratio_pct', 2, 'down']]
+  const tone = (d, dir) => (d == null || d === 0 ? undefined : (d > 0) === (dir === 'up') ? 'green' : 'yellow')
+  const ZN = ['<Z1', 'Z1', 'Z2', 'Z3', 'Z4', 'Z5', 'Z6'], ZC = ['var(--c-rest)', 'var(--c-easy)', 'var(--green)', 'var(--c-long)', 'var(--yellow)', 'var(--c-quality)', 'var(--red)']
+  return <Card title="Digital Twin snapshot" right={<Chip>twin v{T.data.version} · {t.as_of}</Chip>}>
+    <h3>Physiological profile</h3>
+    <div className="score-grid">
+      <div><small>LTHR</small><b>{P.lthr} bpm</b><em>{P.src?.lthr}</em></div>
+      <div><small>Max HR</small><b>{P.hrmax}</b><em>{P.hrmax_observed_180d ? `seen ${P.hrmax_observed_180d} in 180 d` : ''}</em></div>
+      <div><small>Resting HR</small><b>{P.rhr_7d ?? P.rhr_setting}</b><em>7-day mean · setting {P.rhr_setting}</em></div>
+      <div><small>Threshold pace</small><b>{pace(P.threshold_pace_s_km)}/km</b><em>COROS · VO2max {P.vo2max_coros}</em></div>
+      <div><small>Z2 ceiling</small><b>{P.z2_ceiling} bpm</b><em>easy runs above = intensity creep</em></div>
+      <div><small>Weight</small><b>{P.weight_kg} kg</b><em>COROS profile</em></div>
+    </div>
+    <h3>Anomaly check: last 30 vs 90 days</h3>
+    <div className="scroll" tabIndex={0}><table className="lapt">
+      <thead><tr><th>Metric</th><th>30 d (n={B.d30.n})</th><th>90 d (n={B.d90.n})</th><th>Δ</th></tr></thead>
+      <tbody>{rows.map(([l, k, d, dir, fmt]) => { const D = B.delta_30_vs_90[k]; return <tr key={k}><td>{l}</td><td>{fmt ? fmt(B.d30[k]) : B.d30[k] ?? '—'}</td><td>{fmt ? fmt(B.d90[k]) : B.d90[k] ?? '—'}</td><td>{D == null ? '—' : <Chip tone={tone(D, dir)}>{sgn(D, d)}</Chip>}</td></tr> })}</tbody>
+    </table></div>
+    <p className="src-note">{B.note}</p>
+    {I.hr_zone_pct_28d && <><h3>Intensity, last 28 days (per-second HR, {I.minutes_28d} min)</h3>
+      <div className="zbig" role="img" aria-label={'HR zones 28 days: ' + I.hr_zone_pct_28d.map((p, i) => `${ZN[i]} ${p}%`).join(', ')}>{I.hr_zone_pct_28d.map((p, i) => p ? <i key={i} style={{ width: p + '%', background: ZC[i] }} title={`${ZN[i]} ${p}%`} /> : null)}</div>
+      <div className="legend">{I.hr_zone_pct_28d.map((p, i) => <span key={i}><i className="kdot" style={{ background: ZC[i] }} />{ZN[i]} {p}%</span>)}</div>
+      <p className="muted" style={{ fontSize: '.85rem' }}>Low intensity (below Z3): <b>{I.low_share_pct}%</b> · easy runs above {I.z2_ceiling} bpm: <b>{I.easy_runs_above_z2} of {I.easy_runs}</b></p></>}
+    {S?.by_lag_hours?.length > 0 && <><h3>Strength → running transfer</h3>
+      <div className="scroll" tabIndex={0}><table className="lapt"><thead><tr><th>Run after gym</th><th>n</th><th>EF</th><th>Drift</th><th>Avg GCT</th><th>GCT fade</th></tr></thead>
+        <tbody>{S.by_lag_hours.map((r) => <tr key={String(r.hours)}><td><b>{r.hours ? `+${r.hours} h` : 'no gym in 72 h'}</b></td><td>{r.n}</td><td>{r.ef}</td><td>{r.drift != null ? r.drift + '%' : '—'}</td><td>{r.gct_avg != null ? r.gct_avg + ' ms' : '—'}</td><td>{r.gct_fade != null ? sgn(r.gct_fade, 1) + ' ms' : '—'}</td></tr>)}</tbody></table></div>
+      <p className="src-note">{S.note}. Small groups are noisy.</p></>}
+  </Card>
+}
+
 function Twin({ go }) {
   const T = useApi('/api/twin'), t = T.data?.state
   if (T.state === 'loading') return <div className="skel" style={{ height: 140 }} />
@@ -294,7 +347,7 @@ export default function Coach({ go }) {
   return <Screen title="AI Coach, Digital Twin & Validated Rules" sub="Hybrid RAG · Digital Twin · athlete memory · every module on one page">
     <nav className="chipjump" aria-label="Jump to section">{SECTIONS.map(([id, l]) => <button key={id} onClick={jumpTo(id)}>{l}</button>)}</nav>
     <div id="cs-ask" tabIndex={-1} className="rgrid coachtop"><Ask st={st.data} /><Recent /></div>
-    <div id="cs-twin" tabIndex={-1}><Twin go={go} /></div>
+    <div id="cs-twin" tabIndex={-1}><TwinSnapshot /><Twin go={go} /></div>
     <div id="cs-lag" tabIndex={-1}><LagExplorer /></div>
     <div id="cs-mem" tabIndex={-1}><Memory /></div>
     <div id="cs-dur" tabIndex={-1}><Durability /></div>

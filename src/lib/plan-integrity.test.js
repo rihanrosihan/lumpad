@@ -82,7 +82,7 @@ test('plan A courses rebuild exactly (distance, COROS time and load within 3%)',
   const cases = [['P10547', 18.4, 7921, 364], ['P10547', 12, 5548, 218], ['P10547', 17.5, 7222, 385], ['P10544', 19.2, 8848, 299], ['P10544', 9.2, 4467, 151], ['P10545', 27, 11561, 477], ['P10541', 13, 5972, 221], ['P10540', 8, 4279, 103], ['P10594', 16, 7959, 206]]
   for (const [code, k, sec, tl] of cases) { const w = fromCoros(code, k), e = estimate(w.steps); assert.equal(stepKm(w.steps), k, code + ' ' + k); assert.ok(Math.abs(e.sec / sec - 1) < 0.03, code + ' time'); assert.ok(Math.abs(e.tl / tl - 1) < 0.03, code + ' load') }
   assert.equal(summary(fromCoros('P10547', 18.4).steps), 'WU 5′ · 4× (1.6 km Z2 + 3 km Z4) · CD 5′')
-  assert.deepEqual(hrRange(2), [145, 151]); assert.deepEqual(paceRange(4), [360, 374]); assert.deepEqual(hrRange(4, { lthr: 180, tpace: 300 }), [171, 178])
+  assert.deepEqual(hrRange(2), [143, 150]); assert.deepEqual(paceRange(4), [360, 374]); assert.deepEqual(hrRange(4, { lthr: 180, tpace: 300 }), [171, 178])
   assert.equal(stepKm(timeTrial(5000, 400).steps), 9)
 })
 test('segments cover the season without gaps', () => { assert.equal(SEGMENTS[0].from, '2026-11-23'); assert.equal(SEGMENTS.at(-1).to, '2027-12-31'); SEGMENTS.forEach((s, i) => i && assert.equal(addDays(SEGMENTS[i - 1].to, 1), s.from)) })

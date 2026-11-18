@@ -759,3 +759,7 @@ svg.chart[data-fit]{max-width:720px;margin-left:auto;margin-right:auto}
 .md-code{font-size:max(.85em,11.5px)}
 .zrow{grid-template-columns:minmax(120px,34%) 1fr 42px;font-size:.78rem}.zrow span{line-height:1.2}
 @media(max-width:520px){.zrow{grid-template-columns:1fr 42px}.zrow span{grid-column:1/-1}.zrow .tb{grid-column:1}}
+.zstrip{display:grid;grid-template-columns:38px 1fr 64px;gap:6px;align-items:center;font-size:.75rem;margin-top:4px}.zstrip i{display:flex;height:10px;border-radius:99px;overflow:hidden;background:var(--surface2)}.zstrip u{display:block;height:100%}.zstrip em{font-style:normal;font-weight:700;text-align:right}
+.zbig{display:flex;height:16px;border-radius:99px;overflow:hidden;background:var(--surface2);margin:6px 0}.zbig i{display:block;height:100%}
+.card h3{font-size:.86rem}
+.zstrip{grid-template-columns:1fr auto;row-gap:3px;margin-top:6px}.zstrip i{grid-column:1/-1;grid-row:2;height:9px}.zstrip span{color:var(--muted)}

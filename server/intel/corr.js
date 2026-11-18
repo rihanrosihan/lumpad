@@ -8,7 +8,8 @@ import { spearman, partialSpearman, shiftP, blockBootstrapCI, bh, nEff, ols, ran
 export const WINDOWS = [[1, 3], [4, 7], [8, 14], [15, 28]]
 // agg: SUM for counts/loads, AVG for state variables
 export const EXPOSURES = [
-  { id: 'strength_lower', col: 'strength_lower', agg: 'SUM', label: 'lower-body strength sessions' }, { id: 'strength_upper', col: 'strength_upper', agg: 'SUM', label: 'upper-body strength sessions' },
+  // gym → stride (blueprint matrix 1): also the single days +24 h, +48 h, +72 h before the run
+  { id: 'strength_lower', col: 'strength_lower', agg: 'SUM', label: 'lower-body strength sessions', windows: [[1, 1], [2, 2], [3, 3], [1, 3], [4, 7]] }, { id: 'strength_upper', col: 'strength_upper', agg: 'SUM', label: 'upper-body strength sessions' },
   { id: 'strength_tl', col: 'strength_tl', agg: 'SUM', label: 'strength training load' }, { id: 'thr_min', col: 'thr_min', agg: 'SUM', label: 'threshold-zone minutes' },
   { id: 'quality_sessions', col: 'quality', agg: 'SUM', label: 'quality sessions' }, { id: 'double_days', col: 'double_day', agg: 'SUM', label: 'double-run quality days' },
   { id: 'run_km', col: 'run_km', agg: 'SUM', label: 'running km' }, { id: 'run_tl', col: 'run_tl', agg: 'SUM', label: 'running training load' },
@@ -17,12 +18,14 @@ export const EXPOSURES = [
 export const OUTCOMES = [
   { id: 'gct_fade', label: 'late-run GCT fade (ms)', min: 25 }, { id: 'drift', label: 'Pa:HR / run-phase drift (%)', min: 25 }, { id: 'ef_resid', label: 'EF residual (pace/temp/duration adjusted)', min: 30 },
   { id: 'run_share_long', label: 'run share on long runs ≥ 16 km', min: 15 }, { id: 'stride_fade', label: 'late-run stride change (m)', min: 25 },
+  // double-threshold adaptation (blueprint matrix 3) and the plain GCT level (matrix 1)
+  { id: 'pace_hr150', label: 'pace at HR ≈ 150 (s/km; lower = fitter)', min: 20 }, { id: 'gct_avg', label: 'average running GCT (ms)', min: 25 },
 ]
 
 // SQL: for every date, every exposure×window as a column
 export function lagSql() {
   const cols = []
-  for (const e of EXPOSURES) for (const [lo, hi] of WINDOWS) cols.push(`${e.agg}(${e.col}) OVER (ORDER BY date ROWS BETWEEN ${hi} PRECEDING AND ${lo} PRECEDING) AS ${e.id}__${lo}_${hi}`)
+  for (const e of EXPOSURES) for (const [lo, hi] of (e.windows || WINDOWS)) cols.push(`${e.agg}(${e.col}) OVER (ORDER BY date ROWS BETWEEN ${hi} PRECEDING AND ${lo} PRECEDING) AS ${e.id}__${lo}_${hi}`)
   return `SELECT date, ${cols.join(', ')} FROM daily_feat ORDER BY date`
 }
 export const lagRows = () => Object.fromEntries(idb.prepare(lagSql()).all().map((r) => [r.date, r]))
@@ -35,7 +38,7 @@ export function computeEdges(sessions, { B = 300, seed = 7, minN = null } = {}) 
   const tests = []
   for (const o of OUTCOMES) {
     const S = sessions.filter((s) => finite(s.y[o.id]) && s.ctl.every(Number.isFinite)).sort((a, b) => a.date.localeCompare(b.date)); if (S.length < (minN ?? o.min)) continue
-    for (const e of EXPOSURES) for (const [lo, hi] of WINDOWS) {
+    for (const e of EXPOSURES) for (const [lo, hi] of (e.windows || WINDOWS)) {
       const key = `${e.id}__${lo}_${hi}`, rows = S.filter((s) => finite(s.x[key])), n = rows.length; if (n < (minN ?? o.min)) continue
       const x = rows.map((s) => s.x[key]), y = rows.map((s) => s.y[o.id]); if (new Set(x).size < 4) continue   // no variation in the exposure → nothing to test
       const Z = rows.map((s) => s.ctl), rho = spearman(x, y), prho = partialSpearman(x, y, Z)
@@ -63,7 +66,7 @@ export function sessionDataset() {
   const efRes = (s) => (fit && s.ef != null && temp(s) != null && s.run_share >= 0.85 && s.distance_m >= 3000 ? s.ef - (fit.coef[0] + fit.coef[1] * s.run_pace + fit.coef[2] * temp(s) + fit.coef[3] * (s.elapsed_s / 60)) : null)
   return rows.filter((s) => lags[s.date]).map((s) => ({
     date: s.date, ctl: [s.run_pace, temp(s) ?? NaN, s.elapsed_s / 60, s.distance_m / 1000],
-    y: { gct_fade: s.gct_fade, drift: s.drift_pahr ?? s.run_drift, ef_resid: efRes(s), run_share_long: s.distance_m >= 16000 ? s.run_share : null, stride_fade: s.stride_fade },
+    y: { gct_fade: s.gct_fade, drift: s.drift_pahr ?? s.run_drift, ef_resid: efRes(s), run_share_long: s.distance_m >= 16000 ? s.run_share : null, stride_fade: s.stride_fade, pace_hr150: s.pace_hr150, gct_avg: JSON.parse(s.metrics || '{}').run_gct ?? null },
     x: Object.fromEntries(Object.entries(lags[s.date]).filter(([k]) => k !== 'date')),
   }))
 }

@@ -13,6 +13,9 @@ import { vdotFromRace, raceTime } from '../../src/lib/vdot.js'
 import { CHECKPOINTS, TARGET, killGate } from '../../src/lib/plan.js'
 import { HARD } from '../../src/lib/gate.js'
 import PLAN from '../../src/data/plan.json' with { type: 'json' }
+import { ATHLETE, Z2_CEILING } from '../../src/lib/athlete.js'
+import { listEdges } from './corr.js'
+import { matrices } from './matrices.js'
 
 export const SCHEMA = 'twin/1'
 const PLAN_BY = Object.fromEntries(PLAN.map((d) => [d.date, d]))
@@ -131,6 +134,37 @@ export function projection(T, vdot0) {
     label: '[MODEL] scenarios built on stated assumptions; the ratio is the biggest unknown (observed 0.59, n=1). Not a prediction.' }
 }
 
+// physiological profile: the athlete's COROS settings + what the data currently shows (so a stale setting is visible)
+function profile(S, T) {
+  const h = app.prepare('SELECT resting_hr FROM health_daily WHERE date > ? AND date <= ? AND resting_hr IS NOT NULL').all(addDays(T, -7), T).map((x) => x.resting_hr)
+  const maxObs = Math.max(0, ...S.filter((s) => s.date > addDays(T, -180)).map((s) => JSON.parse(s.metrics).max_hr || 0)) || null
+  return { lthr: ATHLETE.lthr, hrmax: ATHLETE.hrmax, rhr_setting: ATHLETE.rhr, threshold_pace_s_km: ATHLETE.tpace_s, z2_ceiling: Z2_CEILING, vo2max_coros: ATHLETE.vo2max_coros, weight_kg: ATHLETE.weight_kg, src: ATHLETE.src,
+    rhr_7d: h.length ? r(mean(h), 0) : null, hrmax_observed_180d: maxObs, devices: ATHLETE.devices }
+}
+// 30-day vs 90-day baselines for the anomaly check (steady 3–15 km runs, run share ≥ 0.9) + biomechanical signature (COROS Pod 2)
+function baselines(S, T) {
+  const steady = (d) => S.filter((s) => s.date > addDays(T, -d) && s.run_share >= 0.9 && s.distance_m >= 3000 && s.distance_m <= 15000)
+  const pick = (L, f) => L.map(f).filter((x) => x != null && isFinite(x)), m = (s) => JSON.parse(s.metrics), mean = (v) => (v.length ? v.reduce((a, b) => a + b, 0) / v.length : null) // empty → null, never 0
+  const one = (d) => { const L = steady(d); return { n: L.length, ef: r(mean(pick(L, (s) => s.ef)), 3), hr_at_800: r(mean(pick(L, (s) => s.hr800))), pace_at_hr150_s: r(mean(pick(L, (s) => s.pace_hr150)), 0),
+    cadence_spm: r(mean(pick(L, (s) => m(s).run_cad))), gct_ms: r(mean(pick(L, (s) => m(s).run_gct)), 0), stride_m: r(mean(pick(L, (s) => m(s).run_step)), 3), vertical_ratio_pct: r(mean(pick(L, (s) => m(s).run_vr)), 2) } }
+  const a = one(30), b = one(90), delta = (k) => (a[k] != null && b[k] != null ? r(a[k] - b[k], k === 'ef' ? 3 : k === 'stride_m' ? 3 : 1) : null)
+  return { d30: a, d90: b, delta_30_vs_90: Object.fromEntries(['ef', 'hr_at_800', 'pace_at_hr150_s', 'cadence_spm', 'gct_ms', 'stride_m', 'vertical_ratio_pct'].map((k) => [k, delta(k)])),
+    note: 'EF up / HR@8:00 down / pace@HR150 lower = fitter. Means of steady 3–15 km runs; small n is noisy.' }
+}
+// intensity distribution over 28 days from per-second HR (six COROS zones) + easy runs above the Z2 ceiling
+function intensity(S, T) {
+  const L = S.filter((s) => s.date > addDays(T, -28)), tot = Array(7).fill(0)
+  for (const s of L) { const z = JSON.parse(s.metrics).z6?.hr_s; if (z) z.forEach((v, i) => { tot[i] += v }) }
+  const all = tot.reduce((x, y) => x + y, 0), pct = all ? tot.map((v) => Math.round((v / all) * 100)) : null
+  const easy = L.filter((s) => s.distance_m <= 15000 && ['easy', 'social', 'recovery'].includes(PLAN_BY[s.date]?.kind || 'easy') && s.run_hr != null)
+  return { hr_zone_pct_28d: pct, low_share_pct: pct ? pct[0] + pct[1] + pct[2] : null, minutes_28d: Math.round(all / 60), easy_runs: easy.length, easy_runs_above_z2: easy.filter((s) => s.run_hr > Z2_CEILING).length, z2_ceiling: Z2_CEILING }
+}
+// strength → running transfer: gym-vs-fresh matrix + any correlation edges whose exposure is strength
+function strengthTransfer() {
+  let mx = null; try { mx = matrices() } catch {}
+  const edges = listEdges().filter((e) => /^strength/.test(e.exposure)).slice(0, 6).map((e) => ({ exposure: e.exposure, outcome: e.outcome, days_before: [e.lag_lo, e.lag_hi], partial_rho: e.partial_rho, n: e.n, status: e.status }))
+  return { gym_vs_fresh: mx?.gym_to_stride || [], by_lag_hours: mx?.gym_lag || [], edges, note: 'associations in observational data, not proof of cause' }
+}
 export function buildTwin(T = wibDate()) {
   const kv = load('kv', {}), S = sessions('2025-01-01'), lr = loadAndReadiness(T)
   const results = kv['lumpad.results']?.value || {}, last = CHECKPOINTS.filter((c) => results[c.id]?.vdot != null && c.kind === 'tt').at(-1), vdot0 = last ? results[last.id].vdot : TARGET.baseline
@@ -138,7 +172,7 @@ export function buildTwin(T = wibDate()) {
   const noWx = idb.prepare("SELECT COUNT(*) n FROM fit_session s LEFT JOIN run_weather w ON w.label_id=s.label_id WHERE w.label_id IS NULL").get().n; if (noWx) gaps.push(`${noWx} sessions without weather`)
   if (!idb.prepare('SELECT COUNT(*) n FROM daily_log WHERE pain IS NOT NULL').get().n) gaps.push('no pain log yet')
   const pending = app.prepare("SELECT 1 FROM activities WHERE sport='Run' AND source='coros'").all().length - S.length; if (pending > 0) gaps.push(`${pending} runs have no FIT file yet (laps-only metrics)`)
-  return { schema: SCHEMA, as_of: T, ...lr, aerobic: aerobic(S, T), durability: durability(S, T), heat: heat(S), shoes: shoes(S), fade_curves: fadeCurves(S), races: races(S, kv), injury: injury(T), plan: plan(T, kv),
+  return { schema: SCHEMA, as_of: T, physiological_profile: profile(S, T), ...lr, baselines: baselines(S, T), intensity: intensity(S, T), strength_to_run_transfer: strengthTransfer(), aerobic: aerobic(S, T), durability: durability(S, T), heat: heat(S), shoes: shoes(S), fade_curves: fadeCurves(S), races: races(S, kv), injury: injury(T), plan: plan(T, kv),
     projection: projection(T, vdot0), sessions_with_fit: S.length, data_gaps: gaps }
 }
 // write a new version only when the content (minus the date) changed
