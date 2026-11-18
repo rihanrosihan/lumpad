@@ -431,3 +431,4 @@ button.rp:hover{background:var(--surface)}.rp b.am{color:var(--amber-t)}.rp b.co
 .iconbtn{width:44px;height:44px;display:grid;place-items:center;border-radius:12px;color:var(--muted)}.iconbtn:hover{background:var(--surface2);color:var(--red-t)}
 .rp b.gr{color:var(--green-t)}.bdg.b-biometrics{background:#d1fae5;color:#065f46}
 .bmain .chart{max-width:640px;margin:0 auto;display:block}.bside .form>.fld:first-child{grid-column:1/-1}
+.zm tr.cur td{font-weight:800;background:color-mix(in srgb,var(--cobalt) 12%,transparent)}
