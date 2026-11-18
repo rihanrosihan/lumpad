@@ -117,3 +117,15 @@ export const healthRange = (from, to) => db.prepare('SELECT * FROM health_daily 
 export const activitiesRange = (from, to) => db.prepare('SELECT * FROM activities WHERE date BETWEEN ? AND ? ORDER BY start_ts, date').all(from, to)
 export const lapsOf = (id) => db.prepare('SELECT * FROM laps WHERE activity_id = ? ORDER BY idx').all(id)
 export const validDate = (s) => DATE.test(s || '')
+
+// Reconciliation view for monitoring (counts and dates only, no health values): lets the stored data be compared with the source month by month.
+export function coverage() {
+  const bySource = db.prepare('SELECT source, COUNT(*) n, MIN(date) first, MAX(date) last FROM activities GROUP BY source').all()
+  const bySport = db.prepare('SELECT source, sport, COUNT(*) n FROM activities GROUP BY source, sport ORDER BY n DESC').all()
+  const byMonth = db.prepare(`SELECT substr(date,1,7) month, source, COUNT(*) n, SUM(EXISTS(SELECT 1 FROM laps l WHERE l.activity_id=a.id)) withLaps
+    FROM activities a GROUP BY month, source ORDER BY month, source`).all()
+  const days = db.prepare('SELECT date FROM health_daily ORDER BY date').all().map((r) => r.date), have = new Set(days), gaps = []
+  if (days.length > 1) for (let t = Date.parse(days[0] + 'T00:00:00Z'); t <= Date.parse(days.at(-1) + 'T00:00:00Z'); t += 864e5) { const d = new Date(t).toISOString().slice(0, 10); if (!have.has(d)) gaps.push(d) }
+  const noLaps = db.prepare("SELECT COUNT(*) n FROM activities a WHERE (sport LIKE '%run%' OR sport LIKE '%Run%') AND distance_m >= 1000 AND NOT EXISTS(SELECT 1 FROM laps l WHERE l.activity_id=a.id)").get().n
+  return { bySource, bySport, byMonth, health: { days: days.length, first: days[0] || null, last: days.at(-1) || null, gaps: gaps.slice(0, 60), gapCount: gaps.length }, runsOver1kmWithoutLaps: noLaps }
+}

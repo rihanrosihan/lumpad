@@ -18,7 +18,7 @@ import { retrieveRunnerContext, renderPrompt, TASKS, OUTPUT_SCHEMA } from './int
 import { guardStatus, resolveModel } from './intel/llm.js'
 import { status as archiveStatus } from './coros/archive.js'
 import { listMerged, activityDetail, gearList, readinessData, lapsInRange, exportRows, toCsv } from './activities.js'
-import { applyIngest, checkToken, syncStatus, healthRange, activitiesRange, lapsOf, validDate } from './ingest.js'
+import { applyIngest, checkToken, syncStatus, coverage, healthRange, activitiesRange, lapsOf, validDate } from './ingest.js'
 
 const send = (res, code, body, headers = {}) => { res.writeHead(code, { 'content-type': 'application/json', ...headers }); res.end(JSON.stringify(body)) }
 const readBody = (req, max = 20e6) => new Promise((ok, no) => { const c = []; let n = 0; req.on('data', (d) => { n += d.length; if (n > max) { no(new Error('too large')); req.destroy() } else c.push(d) }); req.on('end', () => ok(Buffer.concat(c))) })
@@ -60,7 +60,7 @@ const routes = {
     res.writeHead(200, { 'content-type': fmt === 'json' ? 'application/json' : 'text/csv; charset=utf-8', 'content-disposition': `attachment; filename="${name}"` }); res.end(body); return null },
   'GET /api/sync/jobs': async () => jobView(),
   // read-only monitoring for the sync routine / Claude (bearer token, no health values — counts and dates only)
-  'GET /api/ingest/status': async (_q, req) => { checkToken(req); const a = archiveStatus(); return { ...syncStatus(), ...jobView(), coros: corosAuth.status(), archive: { backlog: a.backlog, etaDays: a.etaDays, complete: a.complete, healthFrom: a.healthFrom, activities: a.activities, fit: a.fit, total: a.total } } },
+  'GET /api/ingest/status': async (_q, req) => { checkToken(req); const a = archiveStatus(); return { ...syncStatus(), coverage: coverage(), ...jobView(), coros: corosAuth.status(), archive: { backlog: a.backlog, etaDays: a.etaDays, complete: a.complete, healthFrom: a.healthFrom, activities: a.activities, fit: a.fit, total: a.total } } },
   'POST /api/ingest': async (_q, req) => { checkToken(req); return applyIngest(JSON.parse((await readBody(req, 5e6)).toString())) },
   'GET /api/sync/status': async () => syncStatus(),
   'GET /api/health/range': async (q) => healthRange(...range(q)),
