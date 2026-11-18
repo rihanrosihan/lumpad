@@ -2575,7 +2575,7 @@
  {
   "date": "2027-06-07",
   "week": "W23",
-  "phase": "C-RACE",
+  "phase": "RACE WEEK",
   "event": null,
   "tags": [],
   "km": 6.5,
@@ -2588,7 +2588,7 @@
  {
   "date": "2027-06-08",
   "week": "W23",
-  "phase": "C-RACE",
+  "phase": "RACE WEEK",
   "event": null,
   "tags": [],
   "km": 0,
@@ -2601,7 +2601,7 @@
  {
   "date": "2027-06-09",
   "week": "W23",
-  "phase": "C-RACE",
+  "phase": "RACE WEEK",
   "event": null,
   "tags": [],
   "km": 6.5,
@@ -2614,7 +2614,7 @@
  {
   "date": "2027-06-10",
   "week": "W23",
-  "phase": "C-RACE",
+  "phase": "RACE WEEK",
   "event": null,
   "tags": [],
   "km": 0,
@@ -2627,7 +2627,7 @@
  {
   "date": "2027-06-11",
   "week": "W23",
-  "phase": "C-RACE",
+  "phase": "RACE WEEK",
   "event": null,
   "tags": [],
   "km": 0,
@@ -2640,7 +2640,7 @@
  {
   "date": "2027-06-12",
   "week": "W23",
-  "phase": "C-RACE",
+  "phase": "RACE WEEK",
   "event": null,
   "tags": [],
   "km": 3,
@@ -2653,21 +2653,21 @@
  {
   "date": "2027-06-13",
   "week": "W23",
-  "phase": "C-RACE",
+  "phase": "RACE WEEK",
   "event": null,
   "tags": [
    "CP9"
   ],
   "km": 42.2,
-  "label": "Jakim FM · C-race",
+  "label": "Jakim FM · B-race",
   "kind": "race",
-  "note": "CP9 run-walk from km 1 · <6:00",
+  "note": "CP9 · target sub-5:00 (7:06/km) · registered · not a VDOT test",
   "src": "lumpad"
  },
  {
   "date": "2027-06-14",
   "week": "W24",
-  "phase": "C-RACE",
+  "phase": "RACE WEEK",
   "event": null,
   "tags": [
    "Upper"
@@ -2681,7 +2681,7 @@
  {
   "date": "2027-06-15",
   "week": "W24",
-  "phase": "C-RACE",
+  "phase": "RACE WEEK",
   "event": null,
   "tags": [],
   "km": 0,
@@ -2693,7 +2693,7 @@
  {
   "date": "2027-06-16",
   "week": "W24",
-  "phase": "C-RACE",
+  "phase": "RACE WEEK",
   "event": null,
   "tags": [],
   "km": 3,
@@ -2705,7 +2705,7 @@
  {
   "date": "2027-06-17",
   "week": "W24",
-  "phase": "C-RACE",
+  "phase": "RACE WEEK",
   "event": null,
   "tags": [],
   "km": 5,
@@ -2717,7 +2717,7 @@
  {
   "date": "2027-06-18",
   "week": "W24",
-  "phase": "C-RACE",
+  "phase": "RACE WEEK",
   "event": null,
   "tags": [],
   "km": 0,
@@ -2729,7 +2729,7 @@
  {
   "date": "2027-06-19",
   "week": "W24",
-  "phase": "C-RACE",
+  "phase": "RACE WEEK",
   "event": null,
   "tags": [],
   "km": 3,
@@ -2741,13 +2741,13 @@
  {
   "date": "2027-06-20",
   "week": "W24",
-  "phase": "C-RACE",
+  "phase": "RACE WEEK",
   "event": null,
   "tags": [],
   "km": 42.2,
-  "label": "MJM FM · C-race",
+  "label": "MJM FM · D-race",
   "kind": "race",
-  "note": "only if G-MJM passed",
+  "note": "D-race · no time target: finish before the cut-offs (COP / COT) · only if G-MJM passed · no race info yet",
   "src": "lumpad"
  },
  {
@@ -4422,7 +4422,7 @@
   "km": 42.2,
   "label": "JRF Full · A-RACE",
   "kind": "race",
-  "note": "CP19 CP19 · sub-4:00 attempt",
+  "note": "CP19 · sub-4:00 attempt · date confirmed, registration not open yet",
   "src": "lumpad"
  },
  {
@@ -4610,7 +4610,7 @@
  {
   "date": "2027-11-08",
   "week": "W45",
-  "phase": "C-RACE",
+  "phase": "RACE WEEK",
   "event": null,
   "tags": [],
   "km": 0,
@@ -4623,7 +4623,7 @@
  {
   "date": "2027-11-09",
   "week": "W45",
-  "phase": "C-RACE",
+  "phase": "RACE WEEK",
   "event": null,
   "tags": [],
   "km": 0,
@@ -4636,7 +4636,7 @@
  {
   "date": "2027-11-10",
   "week": "W45",
-  "phase": "C-RACE",
+  "phase": "RACE WEEK",
   "event": null,
   "tags": [],
   "km": 5,
@@ -4649,7 +4649,7 @@
  {
   "date": "2027-11-11",
   "week": "W45",
-  "phase": "C-RACE",
+  "phase": "RACE WEEK",
   "event": null,
   "tags": [],
   "km": 13,
@@ -4662,7 +4662,7 @@
  {
   "date": "2027-11-12",
   "week": "W45",
-  "phase": "C-RACE",
+  "phase": "RACE WEEK",
   "event": null,
   "tags": [],
   "km": 5,
@@ -4675,7 +4675,7 @@
  {
   "date": "2027-11-13",
   "week": "W45",
-  "phase": "C-RACE",
+  "phase": "RACE WEEK",
   "event": null,
   "tags": [],
   "km": 4,
@@ -4688,13 +4688,13 @@
  {
   "date": "2027-11-14",
   "week": "W45",
-  "phase": "C-RACE",
+  "phase": "RACE WEEK",
   "event": null,
   "tags": [],
   "km": 42.2,
   "label": "Bormar FM · C-race",
   "kind": "race",
-  "note": "Borobudur Marathon · 3 weeks after JRF: run it for the experience, no time target",
+  "note": "C-race · no time target: finish before the cut-offs (COP / COT) · 3 weeks after JRF · no race info yet",
   "src": "lumpad"
  },
  {

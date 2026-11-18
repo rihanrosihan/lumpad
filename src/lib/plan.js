@@ -22,7 +22,7 @@ export const CHECKPOINTS = [
   [6, '2027-05-04', '5K TT · W18 cutback', 'tt', 34.4, 'Sets B3'],
   [7, '2027-05-29', '28 km · race-fueling + head-cooling rehearsal', 'lr', null, 'Fueling + sodium, race start time'],
   [8, '2027-06-01', '10K TT', 'tt', 35.4, 'Sets B4 (Pancasila Day)'],
-  [9, '2027-06-13', 'Jakim FM (C-race) + G-MJM gate Rab 16 Jun', 'race', null, 'Run-walk <6:00, finish-first. Not a VDOT test'],
+  [9, '2027-06-13', 'Jakim FM (B-race, target sub-5:00) + G-MJM gate Wed 16 Jun', 'race', null, 'Target sub-5:00 (7:06/km). Not a VDOT test'],
   [10, '2027-07-13', '5K TT (post-June return)', 'tt', 36.8, 'Sets B5; measure the cost of two FMs in 7 days'],
   [11, '2027-08-01', 'HM TT · ratio gate', 'ratio', 35.5, 'Ratio ≥0.90 passes; <0.85 → re-target'],
   [12, '2027-08-19', '5K TT · W33 cutback', 'tt', 38.0, 'Sets B8'],

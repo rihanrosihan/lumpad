@@ -1,5 +1,6 @@
 import { raceTime, fmtTime } from './lib/vdot.js'
 import { PLAN, BY_DATE, today, diffDays, addDays, fmtLong, fmtShort, KIND } from './lib/calendar.js'
+import { RACE_BY_DATE, REG_LABEL } from './lib/season.js'
 import { Card, Chip, Evidence } from './ui.jsx'
 import { useApi } from './api.js'
 import { WEEKS } from './lib/calendar.js'
@@ -88,16 +89,17 @@ function Registration({ date, r, setBib, go }) {
   </Card>
 }
 
-const C_RULES = ['Run-walk, target < 6:00, finish-first — not a VDOT test.', 'Pace and HR cap come from easy running, not from race VDOT.', 'Pain ≥ 2/10 = durability event: stop or walk, do not push through.', 'After the race: 7 easy days; first quality session only if Sleep HR ≤ 67 and HRV is normal.']
+const C_RULES = ['Not a VDOT test — pace and HR cap come from easy running, not from race VDOT.', 'Pain ≥ 2/10 = durability event: stop or walk, do not push through.', 'After the race: 7 easy days; first quality session only if Sleep HR ≤ 67 and HRV is normal.']
 function CRace({ date, label, regs, go }) {
-  const T = today(), x = BY_DATE[date], reg = regs?.[date], lead = Array.from({ length: 7 }, (_, i) => addDays(date, i - 6)).map((d) => BY_DATE[d]).filter(Boolean)
+  const meta = RACE_BY_DATE[date], T = today(), x = BY_DATE[date], reg = regs?.[date], lead = Array.from({ length: 7 }, (_, i) => addDays(date, i - 6)).map((d) => BY_DATE[d]).filter(Boolean)
   const gate = date === '2027-06-20' ? "G-MJM (Wed 16 Jun): 20′ jog, pain 0/10, Sleep HR ≤ 67, HRV not Reduced. MJM is only run if this gate passes." : null
   return <>
     <Card className="sess k-race">
-      <div className="sess-top"><Chip kind="race">C-race</Chip>{reg ? <Chip tone="green">registered ✓</Chip> : <Chip tone="yellow">not registered</Chip>}</div>
+      <div className="sess-top"><Chip kind="race">{meta?.cls || 'C'}-race</Chip>{reg || meta?.reg === 'registered' ? <Chip tone="green">registered ✓</Chip> : <Chip tone="yellow">{REG_LABEL[meta?.reg] || 'not registered'}</Chip>}</div>
       <h2 className="sess-title">{label}</h2>
       <p className="muted">{fmtLong(date)}</p>
       <div className="bigkm"><b>{Math.max(0, diffDays(date, T))}</b><span>days to go</span></div>
+      {meta && <p><b>{meta.target ? `Target ${meta.target}` : 'No time target'}</b>{meta.target ? '' : ' — finish before the cut-offs (COP / COT).'}{meta.reg === 'no-info' ? ' No race information yet, so the cut-off times are unknown: check the organiser site once the details are published.' : ''}</p>}
       <ul className="rules">{C_RULES.map((r) => <li key={r}>{r}</li>)}</ul>
       {gate && <p className="banner" role="note">{gate}</p>}
       <button className="btn sm full" onClick={() => go('calendar', date)}>Open the race-day Day Plan</button>
@@ -124,11 +126,11 @@ export default function Race({ vdot, results, settings, go }) {
   const hub = PLAN.filter((d) => d.kind === 'race' && /FM|Full/.test(d.label || '')).map((d) => ({ date: d.date, label: d.label.replace(/ · .*/, ''), a: d.date === '2027-10-24' })).sort((a, b) => a.date.localeCompare(b.date))
   const nearest = (hub.find((r) => r.date >= T) || hub.at(-1)).date, cur = selDate || nearest, isA = cur === '2027-10-24', curRace = hub.find((r) => r.date === cur)
   return <>
-    <div className="racebar" role="group" aria-label="Choose a race (nearest first)">{hub.map((r) => <button key={r.date} aria-pressed={cur === r.date} onClick={() => setSelDate(r.date)}><b>{r.label}</b><small>{fmtShort(r.date)} · D-{Math.max(0, diffDays(r.date, T))}{r.a ? ' · A-race' : ' · C-race'}</small></button>)}</div>
+    <div className="racebar" role="group" aria-label="Choose a race (nearest first)">{hub.map((r) => <button key={r.date} aria-pressed={cur === r.date} onClick={() => setSelDate(r.date)}><b>{r.label}</b><small>{fmtShort(r.date)} · D-{Math.max(0, diffDays(r.date, T))}{` · ${RACE_BY_DATE[r.date]?.cls || 'C'}-race`}</small></button>)}</div>
     {!isA && <CRace date={cur} label={curRace.label} regs={regs} go={go} />}
     {isA && <>
     <Card className="sess k-race">
-      <div className="sess-top"><Chip kind="race">A-race</Chip>{settings.raceConfirmed ? <Chip tone="green">official date</Chip> : <Chip tone="yellow">date not official</Chip>}</div>
+      <div className="sess-top"><Chip kind="race">A-race</Chip>{settings.raceConfirmed ? <Chip tone="green">date confirmed</Chip> : <Chip tone="yellow">date not official</Chip>}{regs?.['2027-10-24'] ? <Chip tone="green">registered ✓</Chip> : <Chip tone="yellow">registration not open</Chip>}</div>
       <h2 className="sess-title">JRF Full Marathon</h2>
       <p className="muted">{fmtLong(race)} · start {JRF.gun.replace(':', '.')} WIB · {JRF.place}</p>
       <div className="bigkm"><b>{left > 0 ? left : 0}</b><span>days to go</span></div>
@@ -173,8 +175,8 @@ export default function Race({ vdot, results, settings, go }) {
     {Object.entries(regs || {}).filter(([d]) => d !== race).sort(([a], [b]) => a.localeCompare(b)).map(([d, r]) => <Registration key={d} date={d} r={r} go={go} setBib={(bib) => setRegs((x) => ({ ...x, [d]: { ...x[d], bib } }))} />)}
 
     <Card title="Other 2027 races">
-      {races.filter((d) => d !== '2027-10-24').map((d) => { const x = BY_DATE[d], reg = regs?.[d]; return <button key={d} className="rowbtn" onClick={() => go('calendar', d)}><span className="kdot k-race" /><span><b>{x.label}</b><small>{fmtLong(d)} · {diffDays(d, T) > 0 ? diffDays(d, T) + ' days away' : 'past'}</small></span>{reg ? <Chip tone="green">registered</Chip> : (x.km >= 21 ? <Chip tone="yellow">not registered</Chip> : null)}</button> })}
-      <p className="muted">Jakim 13 Jun and MJM 20 Jun = C-races (run-walk, &lt;6:00, finish-first), not VDOT tests. MJM is only run if the G-MJM gate (Wed 16 Jun: 20&apos; jog, pain 0/10, Sleep HR ≤67, HRV not Reduced) passes.</p>
+      {races.filter((d) => d !== '2027-10-24').map((d) => { const x = BY_DATE[d], reg = regs?.[d]; return <button key={d} className="rowbtn" onClick={() => go('calendar', d)}><span className="kdot k-race" /><span><b>{x.label}</b><small>{fmtLong(d)} · {diffDays(d, T) > 0 ? diffDays(d, T) + ' days away' : 'past'}</small></span>{reg || RACE_BY_DATE[d]?.reg === 'registered' ? <Chip tone="green">registered</Chip> : (x.km >= 21 ? <Chip tone="yellow">{REG_LABEL[RACE_BY_DATE[d]?.reg] || 'not registered'}</Chip> : null)}</button> })}
+      <p className="muted">Jakim 13 Jun = B-race, target sub-5:00, registered. MJM 20 Jun (D) and Bormar 14 Nov (C) have no time target — finish before the cut-offs (COP / COT); no race info yet. None of them is a VDOT test. MJM is only run if the G-MJM gate (Wed 16 Jun: 20&apos; jog, pain 0/10, Sleep HR ≤67, HRV not Reduced) passes.</p>
     </Card>
 
     {isA && <Card title="Race-day rules"><ul className="rules">{RULES.map((r) => <li key={r}>{r}</li>)}</ul></Card>}

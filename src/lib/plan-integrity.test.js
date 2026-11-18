@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import { addDays, diffDays, mondayOf } from './dates.js'
 import { parseSnapshot, classify, weekly, findings, labelOf, byDate, allByDate } from './corosplan.js'
-import { buildSeason, phaseOf, SEGMENTS, RACES, weekNo } from './season.js'
+import { buildSeason, phaseOf, SEGMENTS, RACES, RACE_BY_DATE, weekNo } from './season.js'
 
 const J = (p) => JSON.parse(fs.readFileSync(new URL(p, import.meta.url), 'utf8'))
 const PLAN = J('../data/plan.json'), SNAP = J('../data/coros-plan.json'), ORIG = J('../../tools/data/lumpad-2027-original.json')
@@ -29,9 +29,9 @@ test('races are on the real dates and nowhere else (no other 40+ km day)', () =>
 test('phases follow the race dates', () => {
   const ph = (d) => BY[d].phase
   assert.equal(ph('2026-11-23'), 'BASE'); assert.equal(ph('2027-02-10'), 'RAMADAN'); assert.equal(ph('2027-04-05'), 'BUILD'); assert.equal(ph('2027-05-10'), 'PEAK')
-  assert.equal(ph('2027-06-03'), 'TAPER'); assert.equal(ph('2027-06-09'), 'C-RACE'); assert.equal(ph('2027-06-17'), 'C-RACE'); assert.equal(ph('2027-06-23'), 'RECOVERY'); assert.equal(ph('2027-07-10'), 'BASE')
+  assert.equal(ph('2027-06-03'), 'TAPER'); assert.equal(ph('2027-06-09'), 'RACE WEEK'); assert.equal(ph('2027-06-17'), 'RACE WEEK'); assert.equal(ph('2027-06-23'), 'RECOVERY'); assert.equal(ph('2027-07-10'), 'BASE')
   assert.equal(ph('2027-08-10'), 'BUILD'); assert.equal(ph('2027-09-20'), 'PEAK'); assert.equal(ph('2027-10-14'), 'TAPER'); assert.equal(ph('2027-10-20'), 'RACE WEEK'); assert.equal(ph('2027-10-27'), 'RECOVERY')
-  assert.equal(ph('2027-11-03'), 'TAPER'); assert.equal(ph('2027-11-12'), 'C-RACE'); assert.equal(ph('2027-11-17'), 'RECOVERY'); assert.equal(ph('2027-12-20'), 'BASE')
+  assert.equal(ph('2027-11-03'), 'TAPER'); assert.equal(ph('2027-11-12'), 'RACE WEEK'); assert.equal(ph('2027-11-17'), 'RECOVERY'); assert.equal(ph('2027-12-20'), 'BASE')
   for (const d of PLAN) assert.equal(d.phase, phaseOf(d.date))
 })
 test('cycles end on the real races: race week, 1 taper week, a recovery week after each marathon', () => {
@@ -66,4 +66,12 @@ test('weekly + findings: ramp, wrong COROS marathon dates, unknown races, overla
   assert.match(f['fm-missing'].body, /2027-06-13, 2027-06-20, 2027-10-24, 2027-11-14/); assert.ok(f.overlap0 && f.overlap1 && f.overlap2)
   assert.match(f.ramadan.title, /Ramadan/); assert.ok(f['cp-collide']); assert.match(f['lr-before-a'].body, /27 km on 10-10, 14 days/)
   assert.equal(findings(PLAN, ROWS).find((x) => x.id === 'ramp'), undefined)
+})
+test('race classes, targets and registration status', () => {
+  const c = (d) => [RACE_BY_DATE[d].cls, RACE_BY_DATE[d].target, RACE_BY_DATE[d].reg]
+  assert.deepEqual(c('2027-06-13'), ['B', 'sub 5:00', 'registered']); assert.deepEqual(c('2027-06-20'), ['D', null, 'no-info'])
+  assert.deepEqual(c('2027-10-24'), ['A', 'sub 4:00', 'not-open']); assert.deepEqual(c('2027-11-14'), ['C', null, 'no-info'])
+  assert.match(BY['2027-06-13'].label, /B-race/); assert.match(BY['2027-06-20'].label, /D-race/); assert.match(BY['2027-11-14'].label, /C-race/); assert.match(BY['2027-10-24'].label, /A-RACE/)
+  assert.match(BY['2027-06-13'].note, /sub-5:00/); assert.match(BY['2027-06-20'].note, /COP \/ COT/); assert.match(BY['2027-10-24'].note, /registration not open/)
+  assert.ok(!PLAN.some((d) => d.phase === 'C-RACE'))
 })

@@ -4,11 +4,17 @@ import { addDays, diffDays, mondayOf } from './dates.js'
 import { allByDate, labelOf, TYPE_KIND, fmtHM } from './corosplan.js'
 
 export const SEASON_START = '2026-11-23', SEASON_END = '2027-12-31'
-// Real races (all Sundays). cls A = goal race, C = run for the experience.
+// Real races (all Sundays). A = goal race (sub 4:00), B = registered, target sub 5:00, C / D = for the experience, finish before the cut-offs.
 export const RACES = [
-  { date: '2027-06-13', name: 'Jakim FM', cls: 'C' }, { date: '2027-06-20', name: 'MJM FM', cls: 'C' },
-  { date: '2027-10-24', name: 'JRF Full', cls: 'A' }, { date: '2027-11-14', name: 'Bormar FM', cls: 'C' },
+  { date: '2027-06-13', name: 'Jakim FM', cls: 'B', target: 'sub 5:00', reg: 'registered', note: 'CP9 · target sub-5:00 (7:06/km) · registered · not a VDOT test' },
+  { date: '2027-06-20', name: 'MJM FM', cls: 'D', target: null, reg: 'no-info', note: 'D-race · no time target: finish before the cut-offs (COP / COT) · only if G-MJM passed · no race info yet' },
+  { date: '2027-10-24', name: 'JRF Full', cls: 'A', target: 'sub 4:00', reg: 'not-open', note: 'CP19 · sub-4:00 attempt · date confirmed, registration not open yet' },
+  { date: '2027-11-14', name: 'Bormar FM', cls: 'C', target: null, reg: 'no-info', note: 'C-race · no time target: finish before the cut-offs (COP / COT) · 3 weeks after JRF · no race info yet' },
 ]
+export const RACE_BY_DATE = Object.fromEntries(RACES.map((r) => [r.date, r]))
+export const REG_LABEL = { registered: 'registered', 'not-open': 'registration not open', 'no-info': 'no info yet' }
+// Goal / status of a race: "sub 4:00" or "finish before COP/COT"
+export const raceGoal = (r) => (r.target ? `target ${r.target}` : 'no time target — finish before COP / COT')
 export const RAMADAN = ['2027-02-01', '2027-03-14'] // pre-Ramadan week + Ramadan + Eid (as in the original plan)
 const BASE = [['2026-11-23', '2027-01-24'], ['2027-06-28', '2027-08-01'], ['2027-11-22', '2027-12-31']]
 
@@ -33,7 +39,7 @@ export function phaseOf(d) {
   if (d >= RAMADAN[0] && d <= RAMADAN[1]) return 'RAMADAN'
   const next = RACES.find((r) => r.date >= d), prev = [...RACES].reverse().find((r) => r.date < d)
   const n = next ? Math.floor(diffDays(next.date, mondayOf(d)) / 7) : null // weeks until the race week
-  if (n === 0) return next.cls === 'A' ? 'RACE WEEK' : 'C-RACE'
+  if (n === 0) return 'RACE WEEK'
   if (prev && diffDays(d, prev.date) <= 7) return 'RECOVERY'
   if (BASE.some(([a, b]) => d >= a && d <= b)) return 'BASE'
   if (n === 1) return 'TAPER'
@@ -47,12 +53,11 @@ const lifeEvent = (o) => (o?.special && o.label ? o.label : null)
 // rows: classified COROS rows (src of the segments). orig: the original Lumpad 2027 days (races, checkpoints, personal events).
 export function buildSeason(rows, orig) {
   const by = allByDate(rows), O = Object.fromEntries(orig.map((d) => [d.date, d])), out = []
-  const raceRow = (r) => (r.name === 'Bormar FM' ? { km: 42.2, label: 'Bormar FM · C-race', kind: 'race', tags: [], note: 'Borobudur Marathon · 3 weeks after JRF: run it for the experience, no time target' } : null)
   for (let t = SEASON_START; t <= SEASON_END; t = addDays(t, 1)) {
     const seg = segmentOf(t), base = { date: t, week: 'W' + weekNo(t), phase: phaseOf(t), event: lifeEvent(O[t]), tags: [] }
     let d
     const raceDay = RACES.find((r) => r.date === t)
-    if (raceDay) { const o = O[t], rr = raceRow(raceDay); d = { ...base, ...(rr || { km: o.km, label: o.label, kind: o.kind, tags: [...o.tags], note: o.note }), src: 'lumpad' } }
+    if (raceDay) { const o = O[t]; d = { ...base, km: 42.2, label: raceDay.cls === 'A' ? o.label : `${raceDay.name} · ${raceDay.cls}-race`, kind: 'race', tags: [...(o?.tags || [])], note: raceDay.note, src: 'lumpad' } }
     else if (t === '2027-10-23') { const o = O[t]; d = { ...base, km: o.km, label: o.label, kind: o.kind, tags: [...o.tags], note: o.note, src: 'lumpad' } }
     else if (seg.id === 'S3') { const o = O[t]; d = { ...base, km: o.km, label: o.label, kind: o.kind, tags: [...o.tags], note: o.note, src: 'lumpad' } }
     else if (seg.id === 'S7') { const [kind, km, label] = HAND[new Date(t + 'T12:00:00Z').getUTCDay()]; d = { ...base, km, label, kind, note: kind === 'rest' ? 'REST DAY' : 'Post-marathon recovery', src: 'lumpad' } }
