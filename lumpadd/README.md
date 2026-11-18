@@ -8,6 +8,7 @@ Redesign Phase 1 (foundation). The current Node app keeps running and coaching; 
 | `lumpadd load <server/data>` | Copies lumpad.db, coros.db, intel.db, memory.db and kv.json into Postgres and verifies **every table**: row count and a SHA-256 over all rows must match. Repeatable (truncates first). Exit code 1 on any mismatch. |
 | `lumpadd serve` | Health endpoint `GET /api/v2/health` on 127.0.0.1:8788 (db ping, version, RSS). Real API arrives phase by phase. |
 | `fitbench <fit dir>` | Decode benchmark (muktihari/fit). |
+| `golden <sessions.json> <fit dir>` | Diffs the Go engine against the golden fixtures from the Node engine (gate G2): every session metric and per-km row. |
 
 `DATABASE_URL=postgres://user@host/db?sslmode=disable` is required.
 
@@ -38,3 +39,13 @@ Budget while both systems run: Node app ~125 MB · Postgres ≤ 450 MB (`deploy/
 | Loader, 31 tables / 5,900+ rows | — | 0.8–1.0 s, all checksums identical |
 
 `tormoder/fit` was rejected: it fails on 95 of 169 COROS files (`parsing definition message`). The sandbox is a 16 GB machine, so memory results for the 2 GB server must come from step 3.
+
+## Phase 2 progress (engine port)
+| Module | Status | Check |
+| --- | --- | --- |
+| FIT → 1 Hz series, session metrics (classify, grade, per-km, steady blocks, drift, fades, onset, six zones, pacing) | **done** | all 99 sessions: every metric and per-km row identical to Node (`golden`, `go test ./internal/engine`); 99 sessions decode + compute in 1.4 s (Node: ~9.3 s for the nightly FIT step) |
+| Load (CTL/ATL/TSB, ACWR, monotony), readiness, HRV/RHR/sleep states | next | golden: twin.json |
+| VDOT, pacing, zones (client library) | next | unit tests from src/lib/*.test.js |
+| Correlation engine, matrices, twin builder | after | golden: edges.json, matrices.json, twin.json |
+
+Notes from the port: JS `Math.round` rounds halves up (Go's rounds away from zero) so `jsRound` is used; `mean()` over `null` counts null as 0 in `fadeOnset` (kept, because the golden data depends on it); the Node parser reports `speed`, not `enhanced_speed` (they differ by 1 mm/s on some seconds); COROS 'Effort Pace' is a developer field found through `field_description`.
