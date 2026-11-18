@@ -131,6 +131,7 @@ export default function Readiness({ vdot, settings, focus }) {
     </>}
 
     {mode === 'analisis' && <>
+    {mode === 'analysis' || mode === 'analisis' ? <nav className="chipjump" aria-label="Jump to section">{[['sec-load', 'Load & injury risk'], ['sec-auto', 'Autonomic'], ['sec-sleep', 'Sleep & muscles']].map(([id, t]) => <button key={id} onClick={() => { const el = document.getElementById(id); el?.scrollIntoView({ behavior: 'smooth', block: 'start' }); el?.focus({ preventScroll: true }) }}>{t}</button>)}</nav> : null}
     <Card title="Pillar contribution">
       <div className="pbar" role="img" aria-label={Object.entries(rd.pillars).map(([k, v]) => `${PILLAR[k]} ${Math.round(v.earned)} of ${v.weight}`).join(', ')}>
         {Object.entries(rd.pillars).map(([k, v]) => <i key={k} className={'pb-' + k} style={{ width: v.earned + '%' }} />)}</div>
@@ -140,7 +141,7 @@ export default function Readiness({ vdot, settings, focus }) {
     </Card>
 
     {/* ---- Layer 2.2: load ---- */}
-    <h2 className="sech">Training load & injury risk</h2>
+    <h2 className="sech" id="sec-load" tabIndex={-1}>Training load & injury risk</h2>
     {M.state === 'ok' && !M.series.some((d) => d.load) ? <div className="card empty"><b>No Training Load yet</b>Connect COROS and pull the history — the load panel fills in automatically.</div> : <>
       <div className="score-grid">
         <div><small>Fitness (CTL) <Info k="CTL" /></small><b>{cur?.ctl ?? '—'}</b><em>{M.ramp != null ? `${sign(M.ramp)} / 7 d` : ''}</em></div>
@@ -169,7 +170,7 @@ export default function Readiness({ vdot, settings, focus }) {
       </Card></>}
 
     {/* ---- Layer 2.3: autonomic ---- */}
-    <h2 className="sech">Autonomic nervous system</h2>
+    <h2 className="sech" id="sec-auto" tabIndex={-1}>Autonomic nervous system</h2>
     <div className="score-grid">
       <div><small>Overnight HRV <Info k="HRV" /></small><b>{hv.today ?? '—'}</b><em>{hv.enough ? `7 hr ${hv.roll7} ms` : 'needs 14 d'}</em></div>
       <div><small>60-day corridor</small><b>{hv.enough ? `${hv.lo}–${hv.hi}` : '—'}</b><em>± 0,5 SD (ln)</em></div>
@@ -189,7 +190,7 @@ export default function Readiness({ vdot, settings, focus }) {
     </Card>
 
     {/* ---- Layer 2.4: sleep & musculoskeletal ---- */}
-    <h2 className="sech">Sleep & muscles</h2>
+    <h2 className="sech" id="sec-sleep" tabIndex={-1}>Sleep & muscles</h2>
     <div className="score-grid">
       <div><small>Sleep (asleep)</small><b>{sl.enough ? hm(sl.asleep_min) : '—'}</b><em>{sl.enough ? `${sign(Math.round(sl.vs_need_min))} min vs need` : ''}</em></div>
       <div><small>Need</small><b>{hm(settings.sleepNeedMin || 480)}</b><em>change in Profile</em></div>
