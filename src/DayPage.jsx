@@ -54,7 +54,7 @@ export default function DayPage({ date, vdot, settings, go }) {
           <WorkoutDetail day={d} settings={settings} />
         </Card>}
         {corosCard}
-        {RACE_BY_DATE[date]?.route && <CourseMap routeId={RACE_BY_DATE[date].route} pace={RACE_BY_DATE[date].pace?.[1]} goal="sub 5:00" />}
+        {RACE_BY_DATE[date]?.route && <CourseMap routeId={RACE_BY_DATE[date].route} pace={RACE_BY_DATE[date].pace?.[1]} goal="sub 5:00" go={go} />}
         <Card title={past || isToday ? 'Plan vs actual' : 'Actual'}>
           {A.state === 'loading' && <div className="skel" style={{ height: 56 }} />}
           {A.state === 'ok' && !acts.length && <p className="muted">{date > T ? 'Has not happened yet.' : 'No run recorded on this day.'}</p>}

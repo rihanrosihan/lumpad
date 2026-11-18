@@ -106,7 +106,7 @@ function CRace({ date, label, regs, go }) {
       {gate && <p className="banner" role="note">{gate}</p>}
       <button className="btn sm full" onClick={() => go('calendar', date)}>Open the race-day Day Plan</button>
     </Card>
-    {meta?.route ? <CourseMap routeId={meta.route} pace={meta.pace ? meta.pace[1] : null} goal={meta.target ? `sub ${meta.target.replace('sub ', '')}` : null} /> : <Card title="Course"><p className="muted">The official route for {label} has not been published yet. Send the GPX or the map when it is out and it appears here.</p></Card>}
+    {meta?.route ? <CourseMap routeId={meta.route} pace={meta.pace ? meta.pace[1] : null} goal={meta.target ? `sub ${meta.target.replace('sub ', '')}` : null} go={go} /> : <Card title="Course"><p className="muted">The official route for {label} has not been published yet. Send the GPX or the map when it is out and it appears here.</p></Card>}
     <Card title="The week before the race">
       {lead.map((d) => <button key={d.date} className="rowbtn" onClick={() => go('calendar', d.date)}><span className={`kdot k-${d.kind}`} /><span><b>{d.label || KIND[d.kind].label}</b><small>{fmtLong(d.date)}{d.km ? ` · ${d.km} km` : ''}</small></span><Icon n="chev" size={18} /></button>)}
     </Card>

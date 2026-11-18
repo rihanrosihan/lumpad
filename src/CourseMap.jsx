@@ -9,7 +9,7 @@ const W = 300, H = 400, PAD = 14
 
 // Route card: map from the official GPX (km markers every 5 km, U-turns), a km scrubber with street + clock at the goal pace,
 // the street-by-street list and the GPX download. No elevation: the official file has none (Jakarta is flat).
-export default function CourseMap({ routeId = 'jakim', pace = null, goal = null }) {
+export default function CourseMap({ routeId = 'jakim', pace = null, goal = null, go = null }) {
   const R = ROUTES[routeId], [km, setKm] = useState(0)
   const proj = useMemo(() => {
     const [la0, lo0, la1, lo1] = R.bbox, k = Math.cos(((la0 + la1) / 2) * Math.PI / 180), w = (lo1 - lo0) * k, h = la1 - la0, s = Math.min((W - 2 * PAD) / w, (H - 2 * PAD) / h)
@@ -36,6 +36,7 @@ export default function CourseMap({ routeId = 'jakim', pace = null, goal = null 
     <p><b>{seg.what}</b>{pace ? <> · {goal ? goal + ': ' : ''}<b>{fmtT(km * pace)}</b> at {fmtP(pace)}/km</> : null}</p>
     <ol className="cm-segs">{R.segments.map((s) => <li key={s.from}><button className={s === seg ? 'on' : ''} onClick={() => setKm(s.from)}><b>km {s.from % 1 ? s.from : s.from.toFixed(0)}–{s.to % 1 ? s.to : s.to.toFixed(0)}</b><span>{s.what}</span></button></li>)}</ol>
     <p className="muted">Four U-turns in the second half (km {R.turns.filter((t) => t.km > 12).map((t) => t.km).join(', ')}) plus one at km 12.4: take them wide and slow slightly, each costs a few seconds. No elevation data: the official file has none and the course is flat.</p>
+    {go && <button className="btn sm full" onClick={() => go('route')}>Open the full course page: zoomable map, pacing plan, turn by turn</button>}
     <a className="btn sm full" href={R.gpx} download>Download the GPX (load it on the watch)</a>
     <Evidence>{R.source} The GPX track is {R.trackKm} km as drawn; the map and clock scale it to the certified {R.officialKm} km. Street names are read from the official map; km ranges come from the track.</Evidence>
   </Card>

@@ -10,6 +10,7 @@ import Coach from './Coach.jsx'
 import DayPage from './DayPage.jsx'
 import Biometrics from './Biometrics.jsx'
 import PlanSync from './PlanSync.jsx'
+import Course from './Course.jsx'
 import { EMPTY_BIO, latest, classifyBP } from './lib/bio.js'
 import { CHECKPOINTS, TARGET } from './lib/plan.js'
 import { paces, fmtPace } from './lib/vdot.js'
@@ -21,10 +22,10 @@ import { useModel } from './model.js'
 // Pages (each its own full page, no popups). `short` = label in the phone bottom bar.
 const PAGES = {
   home: { label: 'Home', icon: 'home' }, ready: { label: 'Readiness', icon: 'ready', short: 'Ready' }, activity: { label: 'Activities', icon: 'run', short: 'Activity' },
-  calendar: { label: 'Calendar', icon: 'cal' }, plan: { label: 'Plan Sync', icon: 'sync', short: 'Sync' }, day: { label: 'Day Plan', icon: 'day' }, checkpoint: { label: 'Checkpoints', icon: 'bars' }, race: { label: 'Races', icon: 'flag' },
+  calendar: { label: 'Calendar', icon: 'cal' }, plan: { label: 'Plan Sync', icon: 'sync', short: 'Sync' }, day: { label: 'Day Plan', icon: 'day' }, checkpoint: { label: 'Checkpoints', icon: 'bars' }, race: { label: 'Races', icon: 'flag' }, route: { label: 'Course', icon: 'run' },
   coach: { label: 'AI Coach', icon: 'coach', short: 'Coach' }, biometrics: { label: 'Biometrics', icon: 'heart' }, profile: { label: 'Profile', icon: 'user' },
 }
-const GROUPS = [['Daily', ['home', 'ready', 'activity']], ['Planning', ['calendar', 'plan', 'day', 'checkpoint', 'race']], ['Intelligence', ['coach', 'biometrics', 'profile']]]
+const GROUPS = [['Daily', ['home', 'ready', 'activity']], ['Planning', ['calendar', 'plan', 'day', 'checkpoint', 'race', 'route']], ['Intelligence', ['coach', 'biometrics', 'profile']]]
 const BOTTOM = ['home', 'ready', 'activity', 'calendar', 'coach', 'profile']
 const ROUTES = Object.keys(PAGES)
 const RACES = PLAN.filter((d) => d.kind === 'race' && /FM|Full/.test(d.label || ''))
@@ -119,6 +120,7 @@ export default function App() {
           {tab === 'coach' && <Coach />}
           {tab === 'calendar' && <Calendar view="month" vdot={vdot} results={results} setResults={setResults} focus={null} settings={settings} go={go} />}
           {tab === 'plan' && <PlanSync go={go} />}
+          {tab === 'route' && <Course go={go} />}
           {tab === 'day' && <DayPage date={focus || T} vdot={vdot} settings={settings} go={go} />}
           {tab === 'checkpoint' && <Calendar view="cp" vdot={vdot} results={results} setResults={setResults} focus={focus} settings={settings} go={go} />}
           {tab === 'race' && <Calendar view="race" vdot={vdot} results={results} setResults={setResults} focus={focus} settings={settings} go={go} />}

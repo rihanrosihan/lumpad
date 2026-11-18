@@ -21,6 +21,13 @@ const line = [...keep].sort((a, b) => a - b).map((i) => [+pts[i][0].toFixed(5), 
 
 const at = (km) => { const m = (km * 1000) / scale; let i = cum.findIndex((c) => c >= m); if (i < 1) i = 1; const f = (m - cum[i - 1]) / Math.max(1e-9, cum[i] - cum[i - 1]); return [+(pts[i - 1][0] + f * (pts[i][0] - pts[i - 1][0])).toFixed(5), +(pts[i - 1][1] + f * (pts[i][1] - pts[i - 1][1])).toFixed(5)] }
 const marks = Array.from({ length: 42 }, (_, i) => ({ km: i + 1, ll: at(i + 1) }))
+// corners from the full track: resample every 20 m, signed heading change between the 60 m behind and the 60 m ahead
+const rs = []; { let m = 0; const posAt = (d) => { let i = cum.findIndex((c) => c >= d); if (i < 1) i = 1; const f = (d - cum[i - 1]) / Math.max(1e-9, cum[i] - cum[i - 1]); return [pts[i - 1][0] + f * (pts[i][0] - pts[i - 1][0]), pts[i - 1][1] + f * (pts[i][1] - pts[i - 1][1])] }; for (m = 0; m <= trackM; m += 20) rs.push({ m, p: posAt(m) }) }
+const brg = (a, b) => (Math.atan2((b[1] - a[1]) * Math.cos(rad(a[0])), b[0] - a[0]) * 180) / Math.PI
+const turnAt = (i, w = 3) => { if (i < w || i + w >= rs.length) return 0; const h1 = brg(rs[i - w].p, rs[i].p), h2 = brg(rs[i].p, rs[i + w].p); return ((h2 - h1 + 540) % 360) - 180 }
+const corners = []; { let i = 3; while (i < rs.length - 3) { const t = turnAt(i); if (Math.abs(t) >= 55) { let best = i, j = i; while (j < rs.length - 3 && Math.abs(turnAt(j)) >= 40) { if (Math.abs(turnAt(j)) > Math.abs(turnAt(best))) best = j; j++ } const a = turnAt(best); corners.push({ km: +((rs[best].m * scale) / 1000).toFixed(2), dir: a > 0 ? 'R' : 'L', deg: Math.round(Math.abs(a)), ll: [+rs[best].p[0].toFixed(5), +rs[best].p[1].toFixed(5)] }); i = j + 2 } else i++ } }
+const headingAt = (km) => { const m = (km * 1000) / scale, i = Math.min(rs.length - 4, Math.max(0, Math.round(m / 20))); const h = (brg(rs[i].p, rs[i + 3].p) + 360) % 360; return Math.round(h) }
+const kmHeadings = Array.from({ length: 43 }, (_, i) => headingAt(Math.min(i + 0.5, 42.1)))
 const lat = pts.map((p) => p[0]), lon = pts.map((p) => p[1])
 
 // segments: street names from the official map, km from the track
@@ -42,8 +49,8 @@ const segments = [
   { from: 38, to: 39, what: 'Jl. Jend. Sudirman towards Gelora Bung Karno' },
   { from: 39, to: 42.195, what: 'Around GBK, finish inside the Stadion Utama complex' },
 ]
-const turns = [[2.1, 'Monas east turn'], [12.4, 'Mampang U-turn (southernmost point)'], [23.8, 'Satrio U-turn'], [32.2, 'Prapanca Raya U-turn'], [36.9, 'Sisingamangaraja U-turn (westernmost point)']].map(([km, name]) => ({ km, name, ll: at(km) }))
+const turns = [[2.1, 'Monas east turn'], [12.4, 'Mampang U-turn (southernmost point)'], [23.8, 'Satrio U-turn'], [28.7, 'Hairpin at the Sudirman / Senayan junction'], [32.2, 'Prapanca Raya U-turn'], [36.9, 'Sisingamangaraja U-turn (westernmost point)'], [39.7, 'Hairpin inside the GBK complex']].map(([km, name]) => ({ km, name, ll: at(km) }))
 const out = { id: 'jakim', name: 'Jakarta International Marathon · BTN Jakim', source: 'Official BTN Jakim 2026 marathon GPX; the 2027 course map shows the same route.', trackKm: +(trackM / 1000).toFixed(2), officialKm: 42.195,
-  elevation: null, bbox: [Math.min(...lat), Math.min(...lon), Math.max(...lat), Math.max(...lon)].map((x) => +x.toFixed(5)), start: at(0), finish: at(42.195), line, marks, turns, segments, gpx: 'routes/jakim-2026.gpx' }
+  elevation: null, corners, kmHeadings, bbox: [Math.min(...lat), Math.min(...lon), Math.max(...lat), Math.max(...lon)].map((x) => +x.toFixed(5)), start: at(0), finish: at(42.195), line, marks, turns, segments, gpx: 'routes/jakim-2026.gpx' }
 fs.writeFileSync(U('../src/data/routes/jakim.json'), JSON.stringify(out) + '\n')
-console.log(`${pts.length} points → ${line.length}; track ${out.trackKm} km scaled to 42.195; ${marks.length} km marks; ${turns.length} turns; ${(fs.statSync(U('../src/data/routes/jakim.json')).size / 1024).toFixed(1)} KB`)
+console.log(`${pts.length} points → ${line.length}; track ${out.trackKm} km scaled to 42.195; ${marks.length} km marks; ${turns.length} turns; ${corners.length} corners; ${(fs.statSync(U('../src/data/routes/jakim.json')).size / 1024).toFixed(1)} KB`)
