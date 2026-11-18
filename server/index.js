@@ -90,6 +90,7 @@ const routes = {
   'GET /api/intel/session': async (q) => { const id = String(q.get('id') || '').replace(/^coros:/, ''), s = idb.prepare('SELECT * FROM fit_session WHERE label_id=? OR activity_id=?').get(id, q.get('id')); if (!s) return { found: false }
     return { found: true, ...s, metrics: JSON.parse(s.metrics), km: JSON.parse(s.km), features: undefined, weather: idb.prepare('SELECT temp_c, dew_c, rh, wind_ms, rad_wm2, wbgt, indoor FROM run_weather WHERE label_id=?').get(s.label_id) || null } },
   'GET /api/intel/longruns': async () => idb.prepare('SELECT s.label_id, s.activity_id, s.date, s.distance_m, s.elapsed_s, s.run_share, s.ef, s.drift_pahr, s.run_drift, s.gct_fade, s.stride_fade, s.onset_km, s.mech_abs_km, s.hr800, s.run_hr, s.gain_m, w.wbgt, w.temp_c FROM fit_session s LEFT JOIN run_weather w ON w.label_id=s.label_id WHERE s.distance_m >= 16000 ORDER BY s.date DESC LIMIT 40').all(),
+  'GET /api/intel/matrices': async () => (await import('./intel/matrices.js')).matrices() || { gym_to_stride: [], z2_discipline: [], modalities: [], sessions: 0 },
   'GET /api/intel/edges': async (q) => listEdges(q.get('status') || undefined),
   'GET /api/memory': async (q) => listMemory({ tier: q.get('tier') || undefined, status: q.get('status') || undefined, kind: q.get('kind') || undefined, limit: Math.min(+q.get('limit') || 100, 300) }),
   'GET /api/memory/item': async (q) => getMemory(+q.get('id')) || { error: 'not found' },

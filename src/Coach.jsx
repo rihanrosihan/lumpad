@@ -34,7 +34,7 @@ const f1 = (x, d = 1) => (x == null || Number.isNaN(x) ? '—' : (+x).toFixed(d)
 const pct = (x) => (x == null ? '—' : Math.round(x * 100) + '%')
 export const post = (path, body) => fetch(path, { method: 'POST', headers: { 'content-type': 'application/json', 'x-lumpad': '1' }, body: JSON.stringify(body || {}) }).then(async (r) => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || r.status); return j })
 const PRIO = { now: ['red', 'now'], this_week: ['yellow', 'this week'], later: ['none', 'later'] }
-const INTENTS = [['daily_brief', 'Today\'s brief'], ['weekly_review', 'Weekly review'], ['race_plan', 'Race plan'], ['question', 'Free question']]
+const INTENTS = [['daily_brief', 'Today\'s brief'], ['weekly_review', 'Weekly review'], ['race_plan', 'Race plan'], ['question', 'Free question'], ['session_review', 'Session review']]
 
 export function Result({ p, res }) {
   const wb = p?._writeback
@@ -96,7 +96,7 @@ function Recent() {
   const R = useApi('/api/coach/runs'), [open, setOpen] = useState(null), D = useApi(open ? `/api/coach/run?id=${open}` : '', !!open)
   if (!R.data?.length) return null
   return <Card title="Coach history">
-    <div className="alist">{R.data.slice(0, 8).map((r) => <button key={r.id} className="arow" onClick={() => setOpen(r.id)}><div className="t"><b>{INTENTS.find((i) => i[0] === r.intent)?.[1] || r.intent}</b><small>{new Date(r.created_at).toLocaleString('en-GB', { timeZone: 'Asia/Jakarta', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })} · {r.provider}{r.model ? ' · ' + r.model : ''}</small></div><div className="n"><Chip tone={r.ok ? 'green' : 'yellow'}>{r.ok ? 'ok' : 'failed'}</Chip></div></button>)}</div>
+    <div className="alist">{R.data.slice(0, 8).map((r) => <button key={r.id} className="arow" onClick={() => setOpen(r.id)}><div className="t"><b>{INTENTS.find((i) => i[0] === r.intent)?.[1] || r.intent}</b><small>{!r.ok && r.error ? <><span className="errline">{/max_tokens/.test(r.error) ? 'ran out of tokens while thinking — fixed, run it again' : r.error.slice(0, 80)}</span><br /></> : null}{new Date(r.created_at).toLocaleString('en-GB', { timeZone: 'Asia/Jakarta', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })} · {r.provider}{r.model ? ' · ' + r.model : ''}</small></div><div className="n"><Chip tone={r.ok ? 'green' : 'yellow'}>{r.ok ? 'ok' : 'failed'}</Chip></div></button>)}</div>
     <Sheet open={!!open} onClose={() => setOpen(null)} label="Coach detail">{D.data?.parsed ? <>
       <div className="chips"><Chip tone="str">{INTENTS.find((i) => i[0] === D.data.intent)?.[1] || D.data.intent}</Chip>{D.data.model && <Chip>{D.data.model}</Chip>}{D.data.cost_cny != null && <Chip>¥{f1(D.data.cost_cny, 2)}</Chip>}</div>
       <h2 className="sess-title">{INTENTS.find((i) => i[0] === D.data.intent)?.[1] || D.data.intent}</h2>
@@ -177,7 +177,7 @@ function TwinHistory() {
       <label className="fld"><span>Compare baseline</span><select value={a || ''} onChange={(e) => setVa(+e.target.value)}>{rows.map((r) => <option key={r.version} value={r.version}>v{r.version} · {r.as_of} ({r.trigger})</option>)}</select></label>
       <label className="fld"><span>Against target</span><select value={b || ''} onChange={(e) => setVb(+e.target.value)}>{rows.map((r) => <option key={r.version} value={r.version}>v{r.version} · {r.as_of} ({r.trigger})</option>)}</select></label>
     </div>
-    {diffEntries.length > 0 ? <div className="scroll"><table className="lapt"><thead><tr><th>Twin field</th><th>v{a}</th><th>v{b}</th></tr></thead><tbody>
+    {diffEntries.length > 0 ? <div className="scroll" tabIndex={0} role="region" aria-label="Scrollable table"><table className="lapt"><thead><tr><th>Twin field</th><th>v{a}</th><th>v{b}</th></tr></thead><tbody>
       {diffEntries.map(([path, d]) => <tr key={path}><td><code className="md-code">{path}</code></td><td className="muted">{String(d.from ?? '—')}</td><td><b>{String(d.to ?? '—')}</b></td></tr>)}
     </tbody></table></div> : <p className="muted">No scalar field differences between v{a} and v{b}.</p>}
   </Card>
@@ -187,18 +187,18 @@ function TwinHistory() {
 function CorrelationMatrices() {
   const M = useApi('/api/intel/matrices'), d = M.data
   if (!d) return null
-  return <Card title="Multi-context physiological correlation matrices" right={<Chip>99 FIT · Pod 2</Chip>}>
-    <h3 style={{ fontSize: '.84rem', margin: '4px 0 6px' }}>1. Gym-to-Stride impact (+24h to +72h post lower-body gym vs. fresh legs)</h3>
-    <div className="scroll"><table className="lapt">
+  return <Card title="Multi-context physiological correlation matrices" right={<Chip>{d.sessions} FIT sessions</Chip>}>
+    <h3 style={{ fontSize: '.84rem', margin: '4px 0 6px' }}>1. Gym-to-stride impact (runs 24–72 h after a gym session vs fresh legs)</h3>
+    <div className="scroll" tabIndex={0} role="region" aria-label="Scrollable table"><table className="lapt">
       <thead><tr><th>Condition (runs ≥5 km)</th><th>n</th><th>Mean EF</th><th>Pa:HR drift</th><th>GCT fade</th><th>Stride Δ</th></tr></thead>
       <tbody>{(d.gym_to_stride || []).map((r) => <tr key={r.grp}>
-        <td><b>{r.grp === 'post_lower_72h' ? 'Within 72h of Lower Gym' : 'Fresh legs (>72h)'}</b></td>
+        <td><b>{r.grp === 'post_gym_72h' ? 'Within 72 h of a gym session' : 'Fresh legs (no gym in 72 h)'}</b></td>
         <td>{r.n}</td><td>{r.ef}</td><td>{r.drift != null ? r.drift + '%' : '—'}</td><td>{r.gct_fade != null ? (r.gct_fade > 0 ? '+' : '') + r.gct_fade + ' ms' : '—'}</td><td>{r.stride_fade != null ? r.stride_fade + ' m' : '—'}</td>
       </tr>)}</tbody>
     </table></div>
 
     <h3 style={{ fontSize: '.84rem', margin: '12px 0 6px' }}>2. Z2 aerobic discipline vs. intensity creep (&gt;148 bpm ceiling on runs ≤15 km)</h3>
-    <div className="scroll"><table className="lapt">
+    <div className="scroll" tabIndex={0} role="region" aria-label="Scrollable table"><table className="lapt">
       <thead><tr><th>Zone regime</th><th>n</th><th>Mean HR</th><th>Mean EF</th><th>Pa:HR drift</th><th>GCT fade</th></tr></thead>
       <tbody>{(d.z2_discipline || []).map((r) => <tr key={r.zone}>
         <td><Chip tone={r.zone === 'z2_disciplined' ? 'green' : 'yellow'}>{r.zone === 'z2_disciplined' ? 'Z2 disciplined (≤148 bpm)' : 'Intensity creep (>148 bpm)'}</Chip></td>
@@ -206,14 +206,14 @@ function CorrelationMatrices() {
       </tr>)}</tbody>
     </table></div>
 
-    <h3 style={{ fontSize: '.84rem', margin: '12px 0 6px' }}>3. Modality &amp; venue telemetry breakdown (GPS + indoor classification)</h3>
-    <div className="scroll"><table className="lapt">
+    <h3 style={{ fontSize: '.84rem', margin: '12px 0 6px' }}>3. Outdoor vs indoor (treadmill) runs</h3>
+    <div className="scroll" tabIndex={0} role="region" aria-label="Scrollable table"><table className="lapt">
       <thead><tr><th>Modality tag</th><th>n</th><th>Avg km</th><th>Mean EF</th><th>Mean run HR</th></tr></thead>
       <tbody>{(d.modalities || []).map((r) => <tr key={r.modality}>
         <td><code className="md-code">#{r.modality}</code></td><td>{r.n}</td><td>{r.avg_km} km</td><td>{r.ef}</td><td>{r.avg_hr} bpm</td>
       </tr>)}</tbody>
     </table></div>
-    <p className="src-note">[MEASURED] Observational within-athlete matrices across 99 1-Hz FIT sessions. LTHR reference 168–170 bpm; Z2 aerobic ceiling 148 bpm.</p>
+    <p className="src-note">[MEASURED] Observational within-athlete matrices across {d.sessions} 1-Hz FIT sessions. Z2 aerobic ceiling 148 bpm. Differences are associations, not proof of cause.</p>
   </Card>
 }
 
@@ -287,19 +287,22 @@ function Memory() {
   </>
 }
 
-const VIEWS = [['coach', 'Coach'], ['dur', 'Durability'], ['twin', 'Twin'], ['mem', 'Memory']]
+const SECTIONS = [['cs-ask', 'Ask the coach'], ['cs-twin', 'Digital Twin & Monte Carlo'], ['cs-lag', 'Lag explorer'], ['cs-mem', 'Memory & rules'], ['cs-dur', 'Durability'], ['cs-shoe', 'Shoe fleet'], ['cs-sys', 'System']]
+const jumpTo = (id) => () => { const el = document.getElementById(id); el?.scrollIntoView({ behavior: 'smooth', block: 'start' }); el?.focus({ preventScroll: true }) }
 export default function Coach({ go }) {
-  const [v, setV] = useState('coach'), st = useApi('/api/intel/status')
-  return <Screen title="AI Coach, Digital Twin & Validated Rules" sub="Hybrid RAG · Digital Twin · athlete memory · guidance toward sub-4:00">
-    <div className="seg3" role="tablist" aria-label="Coach sections">{VIEWS.map(([k, l]) => <button key={k} role="tab" aria-selected={v === k} onClick={() => setV(k)}>{l}</button>)}</div>
-    {v === 'coach' && <><Ask st={st.data} /><Recent /><Status st={st.data} /></>}
-    {v === 'dur' && <Durability />}
-    {v === 'twin' && <><Twin go={go} /><ShoeDegradation /><LagExplorer /></>}
-    {v === 'mem' && <Memory />}
+  const st = useApi('/api/intel/status')
+  return <Screen title="AI Coach, Digital Twin & Validated Rules" sub="Hybrid RAG · Digital Twin · athlete memory · every module on one page">
+    <nav className="chipjump" aria-label="Jump to section">{SECTIONS.map(([id, l]) => <button key={id} onClick={jumpTo(id)}>{l}</button>)}</nav>
+    <div id="cs-ask" tabIndex={-1} className="rgrid coachtop"><Ask st={st.data} /><Recent /></div>
+    <div id="cs-twin" tabIndex={-1}><Twin go={go} /></div>
+    <div id="cs-lag" tabIndex={-1}><LagExplorer /></div>
+    <div id="cs-mem" tabIndex={-1}><Memory /></div>
+    <div id="cs-dur" tabIndex={-1}><Durability /></div>
+    <div id="cs-shoe" tabIndex={-1}><ShoeDegradation /></div>
+    <div id="cs-sys" tabIndex={-1}><Status st={st.data} /></div>
   </Screen>
 }
 
-// ---- Home card: today's brief + the two numbers that matter (load guard, sub-4 scenarios)
 export function HomeCoach({ go }) {
   const R = useApi('/api/coach/runs'), T = useApi('/api/twin'), t = T.data?.state
   const brief = (R.data || []).find((r) => r.intent === 'daily_brief' && r.ok && r.created_at.slice(0, 10) >= new Date(Date.now() - 20 * 3600e3).toISOString().slice(0, 10)), B = useApi(brief ? `/api/coach/run?id=${brief.id}` : '', !!brief)

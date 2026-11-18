@@ -33,6 +33,18 @@ test('complete(): resolves the model, sends effort only when supported, parses J
   const r = await L.complete({ system: 's', user: 'u', effort: 'high', intent: 'daily_brief', fetchFn })
   assert.equal(r.model, 'deepseek-flash'); assert.deepEqual(r.json, { a: 1 }); assert.equal(seen.reasoning_effort, 'high'); assert.equal(seen.response_format.type, 'json_object'); assert.ok(Math.abs(r.cost_cny - 0.03) < 1e-9)
 })
+test('complete(): a run truncated by max_tokens is retried once at low effort with a bigger share left for the answer', async () => {
+  const calls = []
+  const fetchFn = async (url, opt) => {
+    if (url.endsWith('/models')) return ok(models)
+    if (url.endsWith('/user/balance')) return ok({ is_available: true, balance_infos: [{ currency: 'CNY', total_balance: '10.00' }] })
+    const b = JSON.parse(opt.body); calls.push({ effort: b.reasoning_effort, max: b.max_tokens })
+    return ok({ choices: [{ message: { content: b.reasoning_effort === 'high' ? '' : '{"a":2}' }, finish_reason: b.reasoning_effort === 'high' ? 'length' : 'stop' }], usage: {} })
+  }
+  const r = await L.complete({ system: 's', user: 'u', effort: 'high', intent: 'daily_brief', fetchFn })
+  assert.deepEqual(r.json, { a: 2 }); assert.equal(r.retried_low, true)
+  assert.equal(calls[0].effort, 'high'); assert.ok(calls[0].max >= 20000); assert.equal(calls[1].effort, 'low')
+})
 test('schema validator rejects wrong shapes with paths', () => {
   const bad = { summary: 1, analysis_md: 'x', recommendations: [{ action: 'a', why: 'b', priority: 'soon' }], flags: [], memory_writes: [], cited_ids: [] }
   const e = validate(bad, C.OUTPUT_SCHEMA); assert.ok(e.some((x) => x.includes('$.summary')) && e.some((x) => x.includes('priority')))

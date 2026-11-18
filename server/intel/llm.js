@@ -49,7 +49,19 @@ export function guard(intent, { month = monthOf() } = {}) {
 export const guardStatus = () => ({ month: monthOf(), cap_cny: capCny(), spend_cny: monthSpend(), level: guard('daily_brief').level === 'paused' ? 'paused' : guard('weekly_review').level })
 
 const stripFence = (t) => String(t).trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '')
-export async function complete({ system, user, messages, effort = 'high', maxTokens = 6000, intent = 'question', fetchFn = fetch, skipGuard = false } = {}) {
+// DeepSeek counts the model's hidden reasoning inside max_tokens, so a 'high' effort run can spend the whole budget thinking and return
+// finish_reason 'length' with no answer. Budget by effort, and if it still runs out retry once at low effort (costs add up).
+const BUDGET = { high: 24000, medium: 14000, low: 8000 }
+export async function complete(o = {}) {
+  const effort = o.effort || 'high'
+  try { return await completeOnce({ ...o, effort, maxTokens: o.maxTokens ?? BUDGET[effort] ?? 14000 }) }
+  catch (e) {
+    if (!e.truncated || effort === 'low') throw e
+    const r = await completeOnce({ ...o, effort: 'low', maxTokens: o.maxTokens ?? BUDGET.low * 2 })
+    return { ...r, retried_low: true, cost_cny: r.cost_cny != null && e.cost_cny != null ? +(r.cost_cny + e.cost_cny).toFixed(4) : r.cost_cny }
+  }
+}
+async function completeOnce({ system, user, messages, effort = 'high', maxTokens = 14000, intent = 'question', fetchFn = fetch, skipGuard = false } = {}) {
   const g = guard(intent); if (!skipGuard && !g.ok) throw Object.assign(new Error(g.reason), { status: 429, guard: g })
   const model = await resolveModel({ fetchFn }); let pre = null; try { pre = await snapBalance({ fetchFn }) } catch {}
   const body = { model: model.id, messages: messages || [{ role: 'system', content: system }, { role: 'user', content: user }], response_format: { type: 'json_object' }, max_tokens: maxTokens, stream: false, ...(model.efforts?.includes(effort) ? { reasoning_effort: effort } : {}) }
@@ -61,7 +73,7 @@ export async function complete({ system, user, messages, effort = 'high', maxTok
   if (!j) throw lastErr
   let post = null; try { post = await snapBalance({ fetchFn }) } catch {}
   const text = j.choices?.[0]?.message?.content ?? '', finish = j.choices?.[0]?.finish_reason
-  if (finish === 'length') throw Object.assign(new Error('response truncated (max_tokens)'), { status: 502, text })
+  if (finish === 'length') throw Object.assign(new Error('response truncated (max_tokens) — the model used its whole budget before finishing'), { status: 502, text, truncated: true, cost_cny: pre != null && post != null ? +Math.max(0, pre - post).toFixed(4) : null })
   let json = null; try { json = JSON.parse(stripFence(text)) } catch {}
   return { text, json, usage: j.usage || null, model: model.id, model_name: model.name, cost_cny: pre != null && post != null ? +Math.max(0, pre - post).toFixed(4) : null, effort }
 }

@@ -754,3 +754,6 @@ nav.tabbar {
 .g-num.sm{font-size:19px}.bbars small{font-size:.74rem}.rstats small{font-size:.74rem}
 .b-vol .g-num.sm{font-size:26px!important}
 svg.chart[data-fit]{max-width:720px;margin-left:auto;margin-right:auto}
+.errline{color:var(--red-t);font-weight:600}
+.coachtop{align-items:start}.coachtop>.card{margin:0}
+.md-code{font-size:max(.85em,11.5px)}
