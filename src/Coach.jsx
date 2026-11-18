@@ -177,7 +177,7 @@ function TwinHistory() {
       <label className="fld"><span>Compare baseline</span><select value={a || ''} onChange={(e) => setVa(+e.target.value)}>{rows.map((r) => <option key={r.version} value={r.version}>v{r.version} · {r.as_of} ({r.trigger})</option>)}</select></label>
       <label className="fld"><span>Against target</span><select value={b || ''} onChange={(e) => setVb(+e.target.value)}>{rows.map((r) => <option key={r.version} value={r.version}>v{r.version} · {r.as_of} ({r.trigger})</option>)}</select></label>
     </div>
-    {diffEntries.length > 0 ? <div className="scroll" tabIndex={0} role="region" aria-label="Scrollable table"><table className="lapt"><thead><tr><th>Twin field</th><th>v{a}</th><th>v{b}</th></tr></thead><tbody>
+    {diffEntries.length > 0 ? <div className="scroll" tabIndex={0}><table className="lapt"><thead><tr><th>Twin field</th><th>v{a}</th><th>v{b}</th></tr></thead><tbody>
       {diffEntries.map(([path, d]) => <tr key={path}><td><code className="md-code">{path}</code></td><td className="muted">{String(d.from ?? '—')}</td><td><b>{String(d.to ?? '—')}</b></td></tr>)}
     </tbody></table></div> : <p className="muted">No scalar field differences between v{a} and v{b}.</p>}
   </Card>
@@ -189,7 +189,7 @@ function CorrelationMatrices() {
   if (!d) return null
   return <Card title="Multi-context physiological correlation matrices" right={<Chip>{d.sessions} FIT sessions</Chip>}>
     <h3 style={{ fontSize: '.84rem', margin: '4px 0 6px' }}>1. Gym-to-stride impact (runs 24–72 h after a gym session vs fresh legs)</h3>
-    <div className="scroll" tabIndex={0} role="region" aria-label="Scrollable table"><table className="lapt">
+    <div className="scroll" tabIndex={0}><table className="lapt">
       <thead><tr><th>Condition (runs ≥5 km)</th><th>n</th><th>Mean EF</th><th>Pa:HR drift</th><th>GCT fade</th><th>Stride Δ</th></tr></thead>
       <tbody>{(d.gym_to_stride || []).map((r) => <tr key={r.grp}>
         <td><b>{r.grp === 'post_gym_72h' ? 'Within 72 h of a gym session' : 'Fresh legs (no gym in 72 h)'}</b></td>
@@ -198,7 +198,7 @@ function CorrelationMatrices() {
     </table></div>
 
     <h3 style={{ fontSize: '.84rem', margin: '12px 0 6px' }}>2. Z2 aerobic discipline vs. intensity creep (&gt;148 bpm ceiling on runs ≤15 km)</h3>
-    <div className="scroll" tabIndex={0} role="region" aria-label="Scrollable table"><table className="lapt">
+    <div className="scroll" tabIndex={0}><table className="lapt">
       <thead><tr><th>Zone regime</th><th>n</th><th>Mean HR</th><th>Mean EF</th><th>Pa:HR drift</th><th>GCT fade</th></tr></thead>
       <tbody>{(d.z2_discipline || []).map((r) => <tr key={r.zone}>
         <td><Chip tone={r.zone === 'z2_disciplined' ? 'green' : 'yellow'}>{r.zone === 'z2_disciplined' ? 'Z2 disciplined (≤148 bpm)' : 'Intensity creep (>148 bpm)'}</Chip></td>
@@ -207,7 +207,7 @@ function CorrelationMatrices() {
     </table></div>
 
     <h3 style={{ fontSize: '.84rem', margin: '12px 0 6px' }}>3. Outdoor vs indoor (treadmill) runs</h3>
-    <div className="scroll" tabIndex={0} role="region" aria-label="Scrollable table"><table className="lapt">
+    <div className="scroll" tabIndex={0}><table className="lapt">
       <thead><tr><th>Modality tag</th><th>n</th><th>Avg km</th><th>Mean EF</th><th>Mean run HR</th></tr></thead>
       <tbody>{(d.modalities || []).map((r) => <tr key={r.modality}>
         <td><code className="md-code">#{r.modality}</code></td><td>{r.n}</td><td>{r.avg_km} km</td><td>{r.ef}</td><td>{r.avg_hr} bpm</td>
