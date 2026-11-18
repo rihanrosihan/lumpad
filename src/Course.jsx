@@ -5,13 +5,14 @@ import { makeProfile } from './lib/profile.js'
 import LOG26 from './data/races/jakim2026.json'
 import { makeLog } from './lib/racelog.js'
 import { cfgOf } from './lib/zones.js'
+import JakimBenchmark from './JakimBenchmark.jsx'
 import { RACES, RACE_BY_DATE } from './lib/season.js'
 import { useStore } from './store.js'
 import { Card, Chip, Evidence, Screen } from './ui.jsx'
 
 const W = 300, H = 400, PAD = 14, GR = { down: 'var(--c-tt)', flat: 'var(--green)', gentle: 'var(--yellow)', rise: 'var(--c-quality)' }
 const STRAT = [['even', 'Even pace'], ['negative', 'Negative split'], ['runwalk', 'Run–walk']]
-const NAV = [['s-sum', 'Summary'], ['s-map', 'Map'], ['s-seg', 'Segment'], ['s-climb', 'Climbs'], ['s-terr', 'Terrain'], ['s-km', 'Per km'], ['s-cot', 'Cut-offs'], ['s-arr', 'Arrival'], ['s-last', '2026'], ['s-sec', 'Sections'], ['s-data', 'Data']]
+const NAV = [['s-sum', 'Summary'], ['s-map', 'Map'], ['s-seg', 'Segment'], ['s-climb', 'Climbs'], ['s-terr', 'Terrain'], ['s-km', 'Per km'], ['s-cot', 'Cut-offs'], ['s-arr', 'Arrival'], ['s-bench', '2026 benchmark'], ['s-last', 'Your 2026'], ['s-sec', 'Sections'], ['s-data', 'Data']]
 const f1 = (x) => (Math.round(x * 10) / 10).toFixed(1), f0 = (x) => Math.round(x)
 const sgn = (x, d = 1) => (x > 0 ? '+' : '') + x.toFixed(d)
 const hm = (m) => { m = ((Math.round(m) % 1440) + 1440) % 1440; return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}` }
@@ -88,7 +89,7 @@ export default function Course({ go, settings }) {
   const climbs = useMemo(() => (P ? P.climbs() : []), [P]), comp = useMemo(() => (P ? P.composition() : []), [P]), perKm = useMemo(() => (P ? P.perKm() : []), [P])
   const [km, setKm] = useState(0), [sel, setSelRaw] = useState([0, 10]), [hl, setHl] = useState(null), [detail, setDetail] = useState(false), [kmSel, setKmSel] = useState(null), [allKm, setAllKm] = useState(false)
   const setSel = (r) => setSelRaw(r[0] > r[1] ? [r[1], r[0]] : r)
-  const [strategy, setStrategy] = useState('even'), [target, setTarget] = useState(hms(4 * 3600 + 59 * 60)), [runMin, setRunMin] = useState(4), [walkMin, setWalkMin] = useState(1)
+  const [strategy, setStrategy] = useState('even'), [target, setTarget] = useState(hms(4 * 3600 + 51 * 60)), [runMin, setRunMin] = useState(4), [walkMin, setWalkMin] = useState(1)
   const [cot, setCot] = useStore('lumpad.cot.jakim', { start: '05:00', cuts: [] }), [queue, setQueue] = useState(3), [stops, setStops] = useState(10), [nc, setNc] = useState({ name: '', km: '', clock: '' })
   const total = parseHMS(target), ok = total != null && total >= 2 * 3600 && total <= 9 * 3600
   const plan = useMemo(() => { if (!ok) return null; const sp = splits(total, strategy === 'negative' ? 'negative' : 'even'), cl = clock(sp); return { sp, cl, rw: strategy === 'runwalk' ? runWalk(total / FM, runMin, walkMin) : null } }, [ok, total, strategy, runMin, walkMin])
@@ -175,6 +176,9 @@ export default function Course({ go, settings }) {
     </Card>
 
 
+    <div id="s-bench" />
+    <JakimBenchmark settings={settings} planSec={ok ? total : undefined} />
+
     <Card title="K · Your Jakim 2026" right={<Chip>{hms(L.total)} watch time</Chip>}><div id="s-last" />
       <div className="wmeta wk4"><div><small>Watch distance</small><b>{f1(LOG26.gpsKm)}</b><em>km (GPS)</em></div><div><small>Moving time</small><b>{hms(L.moving)}</b><em>{f0(L.stopped / 60)} min stopped</em></div><div><small>Average HR</small><b>{LOG26.avgHr}</b><em>max {LOG26.maxHr}</em></div><div><small>Climb (watch)</small><b>+{LOG26.gain}</b><em>m</em></div></div>
       <LastChart L={L} plan={plan} lthr={cfg.lthr} km={km} setKm={setKm} />
@@ -184,7 +188,7 @@ export default function Course({ go, settings }) {
         <li><b>10–21 km:</b> {mss(L.avgPace(10, 21.0975))}/km, HR {f0(L.avgHr(10, 21.0975))}. Half-way in <b>{hms(L.clockAt(21.0975))}</b>{plan ? ` (plan ${hms(plan.cl[20] + (plan.sp[21] || 0) * 0.0975)})` : ''}.</li>
         <li><b>21–30 km:</b> {mss(L.avgPace(21.0975, 30))}/km, HR {f0(L.avgHr(21.0975, 30))}. <b>30–42.2 km:</b> {mss(L.avgPace(30, 42.195))}/km, HR {f0(L.avgHr(30, 42.2))}.</li>
         <li><b>Walking and stops:</b> {L.slow(540)} of 42 km were slower than 9:00/km and {L.slow(720)} slower than 12:00/km; the watch was running {f0(L.stopped / 60)} min longer than it was moving.</li>
-        <li><b>Target now:</b> sub-5:00 needs {mss(18000 / FM)}/km on average, {mss(18000 / FM - L.avgPace(0, 42.195))} {18000 / FM < L.avgPace(0, 42.195) ? 'faster' : 'slower'} than your 2026 average of {mss(L.avgPace(0, 42.195))}/km on the official distance.</li>
+        
       </ul>
       <p className="muted">From your COROS recording of {LOG26.date} (1 km laps); distances are scaled from {f1(LOG26.gpsKm)} km on the watch to the official {FM} km. Facts only: what to do with them is for your plan and coach.</p>
     </Card>

@@ -3,6 +3,7 @@ import { PLAN, BY_DATE, today, diffDays, addDays, fmtLong, fmtShort, KIND } from
 import { RACE_BY_DATE, REG_LABEL } from './lib/season.js'
 import { CHECKPOINTS } from './lib/plan.js'
 import CourseMap from './CourseMap.jsx'
+import JakimBenchmark from './JakimBenchmark.jsx'
 import { Card, Chip, Evidence } from './ui.jsx'
 import { useApi } from './api.js'
 import { WEEKS } from './lib/calendar.js'
@@ -92,7 +93,7 @@ function Registration({ date, r, setBib, go }) {
 }
 
 const C_RULES = ['Not a VDOT test — pace and HR cap come from easy running, not from race VDOT.', 'Pain ≥ 2/10 = durability event: stop or walk, do not push through.', 'After the race: 7 easy days; first quality session only if Sleep HR ≤ 67 and HRV is normal.']
-function CRace({ date, label, regs, go }) {
+function CRace({ date, label, regs, go, settings }) {
   const meta = RACE_BY_DATE[date], T = today(), x = BY_DATE[date], reg = regs?.[date], lead = Array.from({ length: 7 }, (_, i) => addDays(date, i - 6)).map((d) => BY_DATE[d]).filter(Boolean)
   const gate = date === '2027-06-20' ? "G-MJM (Wed 16 Jun): 20′ jog, pain 0/10, Sleep HR ≤ 67, HRV not Reduced. MJM is only run if this gate passes." : null
   return <>
@@ -106,6 +107,7 @@ function CRace({ date, label, regs, go }) {
       {gate && <p className="banner" role="note">{gate}</p>}
       <button className="btn sm full" onClick={() => go('calendar', date)}>Open the race-day Day Plan</button>
     </Card>
+    {meta?.route === 'jakim' && <JakimBenchmark settings={settings} compact onOpen={() => go('route')} />}
     {meta?.route ? <CourseMap routeId={meta.route} pace={meta.pace ? meta.pace[1] : null} goal={meta.target ? `sub ${meta.target.replace('sub ', '')}` : null} go={go} /> : <Card title="Course"><p className="muted">The official route for {label} has not been published yet. Send the GPX or the map when it is out and it appears here.</p></Card>}
     <Card title="The week before the race">
       {lead.map((d) => <button key={d.date} className="rowbtn" onClick={() => go('calendar', d.date)}><span className={`kdot k-${d.kind}`} /><span><b>{d.label || KIND[d.kind].label}</b><small>{fmtLong(d.date)}{d.km ? ` · ${d.km} km` : ''}</small></span><Icon n="chev" size={18} /></button>)}
@@ -130,7 +132,7 @@ export default function Race({ vdot, results, settings, go }) {
   const nearest = (hub.find((r) => r.date >= T) || hub.at(-1)).date, cur = selDate || nearest, isA = cur === '2027-10-24', curRace = hub.find((r) => r.date === cur)
   return <>
     <div className="racebar" role="group" aria-label="Choose a race (nearest first)">{hub.map((r) => <button key={r.date} aria-pressed={cur === r.date} onClick={() => setSelDate(r.date)}><b>{r.label}</b><small>{fmtShort(r.date)} · D-{Math.max(0, diffDays(r.date, T))}{` · ${RACE_BY_DATE[r.date]?.cls || 'C'}-race`}</small></button>)}</div>
-    {!isA && <CRace date={cur} label={curRace.label} regs={regs} go={go} />}
+    {!isA && <CRace date={cur} label={curRace.label} regs={regs} go={go} settings={settings} />}
     {isA && <>
     <Card className="sess k-race">
       <div className="sess-top"><Chip kind="race">A-race</Chip>{settings.raceConfirmed ? <Chip tone="green">date confirmed</Chip> : <Chip tone="yellow">date not official</Chip>}{regs?.['2027-10-24'] ? <Chip tone="green">registered ✓</Chip> : <Chip tone="yellow">registration not open</Chip>}</div>
@@ -179,7 +181,7 @@ export default function Race({ vdot, results, settings, go }) {
 
     <Card title="Other 2027 races">
       {races.filter((d) => d !== '2027-10-24').map((d) => { const x = BY_DATE[d], reg = regs?.[d]; return <button key={d} className="rowbtn" onClick={() => go('calendar', d)}><span className="kdot k-race" /><span><b>{x.label}</b><small>{fmtLong(d)} · {diffDays(d, T) > 0 ? diffDays(d, T) + ' days away' : 'past'}</small></span>{reg || RACE_BY_DATE[d]?.reg === 'registered' ? <Chip tone="green">registered</Chip> : (x.km >= 21 ? <Chip tone="yellow">{REG_LABEL[RACE_BY_DATE[d]?.reg] || 'not registered'}</Chip> : null)}</button> })}
-      <p className="muted">Jakim 13 Jun = B-race, target sub-5:00, registered. MJM 20 Jun (D) and Bormar 14 Nov (C) have no time target — finish before the cut-offs (COP / COT); no race info yet. None of them is a VDOT test. MJM is only run if the G-MJM gate (Wed 16 Jun: 20&apos; jog, pain 0/10, Sleep HR ≤67, HRV not Reduced) passes.</p>
+      <p className="muted">Jakim 13 Jun = B-race, official sub-5:00 (watch plan 4:50–4:52), registered. MJM 20 Jun (D) and Bormar 14 Nov (C) have no time target — finish before the cut-offs (COP / COT); no race info yet. None of them is a VDOT test. MJM is only run if the G-MJM gate (Wed 16 Jun: 20&apos; jog, pain 0/10, Sleep HR ≤67, HRV not Reduced) passes.</p>
     </Card>
 
     {isA && <Card title="Race-day rules"><ul className="rules">{RULES.map((r) => <li key={r}>{r}</li>)}</ul></Card>}

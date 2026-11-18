@@ -5653,7 +5653,7 @@
   "km": 14,
   "label": "10K Time Trial",
   "kind": "tt",
-  "note": "10K TT · Jakim pace check · Sets B4 and the Jakim pacing (sub-5:00 needs ≤7:06/km)",
+  "note": "10K TT · Jakim pace check · Sets B4 and the Jakim pacing (watch plan 4:50–4:52 = 6:52–6:55/km; official sub-5:00 needs ≤7:06/km)",
   "src": "lumpad",
   "steps": [
    {
@@ -5904,7 +5904,7 @@
   "km": 42.2,
   "label": "Jakim FM · B-race",
   "kind": "race",
-  "note": "CP9 · target sub-5:00 (7:00–7:06/km) · registered · not a VDOT test",
+  "note": "CP9 · official sub-5:00 (2026: 6:53:03) · watch plan 4:50–4:52 = 6:52–6:55/km · registered · not a VDOT test",
   "src": "lumpad",
   "steps": [
    {
@@ -5912,14 +5912,14 @@
     "m": 42200,
     "z": 3,
     "pace": [
-     420,
-     426
+     412,
+     415
     ],
     "note": "even pace; walk the aid stations if needed"
    }
   ],
-  "sec": 17851,
-  "tl": 815
+  "sec": 17450,
+  "tl": 797
  },
  {
   "date": "2027-06-14",

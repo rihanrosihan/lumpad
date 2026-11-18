@@ -9,6 +9,7 @@ import { WorkoutDetail, stepsFor } from './Workout.jsx'
 import { effectiveDay } from './lib/scaler.js'
 import { useCorosPlan } from './useCoros.js'
 import CourseMap from './CourseMap.jsx'
+import JakimBenchmark from './JakimBenchmark.jsx'
 import { RACE_BY_DATE } from './lib/season.js'
 import { labelOf, fmtHM } from './lib/corosplan.js'
 
@@ -54,6 +55,7 @@ export default function DayPage({ date, vdot, settings, go }) {
           <WorkoutDetail day={d} settings={settings} />
         </Card>}
         {corosCard}
+        {RACE_BY_DATE[date]?.route === 'jakim' && <JakimBenchmark settings={settings} compact onOpen={() => go('route')} />}
         {RACE_BY_DATE[date]?.route && <CourseMap routeId={RACE_BY_DATE[date].route} pace={RACE_BY_DATE[date].pace?.[1]} goal="sub 5:00" go={go} />}
         <Card title={past || isToday ? 'Plan vs actual' : 'Actual'}>
           {A.state === 'loading' && <div className="skel" style={{ height: 56 }} />}

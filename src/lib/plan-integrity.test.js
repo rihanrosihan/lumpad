@@ -45,7 +45,7 @@ test('races on the real dates with their class, target and status; nothing else 
   assert.deepEqual(c('2027-06-13'), ['B', 'sub 5:00', 'registered']); assert.deepEqual(c('2027-06-20'), ['D', null, 'no-info'])
   assert.deepEqual(c('2027-10-24'), ['A', 'sub 4:00', 'not-open']); assert.deepEqual(c('2027-11-14'), ['C', null, 'no-info'])
   assert.match(BY['2027-06-13'].label, /B-race/); assert.match(BY['2027-06-20'].label, /D-race/); assert.match(BY['2027-11-14'].label, /C-race/); assert.match(BY['2027-10-24'].label, /A-RACE/)
-  assert.deepEqual(BY['2027-10-24'].steps[0].pace, [336, 341]); assert.deepEqual(BY['2027-06-13'].steps[0].pace, [420, 426])
+  assert.deepEqual(BY['2027-10-24'].steps[0].pace, [336, 341]); assert.deepEqual(BY['2027-06-13'].steps[0].pace, [412, 415])
   assert.equal(BY['2027-10-23'].label, 'JRF Half · bib jog'); assert.equal(BY['2027-06-16'].label, 'G-MJM gate jog 20′')
   assert.ok(!PLAN.some((d) => d.phase === 'C-RACE'))
 })
