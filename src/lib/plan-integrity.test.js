@@ -29,12 +29,12 @@ test('2027 Lumpad plan is untouched (races, checkpoints, total)', () => {
 test('bundled COROS snapshot = tools/data/coros-schedule.txt (run node tools/build_preseason.mjs after editing it)', () => {
   const rows = parseSnapshot(TXT); assert.equal(SNAP.length, rows.length)
   assert.deepEqual(SNAP.map((r) => [r.date, r.km, r.sec, r.tl]), rows.map((r) => [r.date, r.km, r.sec, r.tl]))
-  assert.equal(SNAP[0].date, '2026-11-23'); assert.equal(SNAP.at(-1).date, '2027-09-25')
+  assert.equal(SNAP[0].date, '2026-11-23'); assert.equal(SNAP.at(-1).date, '2027-12-18')
 })
 test('classify: long = longest run of the week (≥12 km), quality by load density, ≥40 km = marathon distance, no km = free run', () => {
   const c = Object.fromEntries(classify(parseSnapshot(TXT)).map((r) => [r.date, r]))
   assert.equal(c['2026-11-29'].type, 'long'); assert.equal(c['2026-11-23'].type, 'easy'); assert.equal(c['2026-12-03'].type, 'quality')
-  assert.equal(c['2026-11-26'].type, 'free'); assert.equal(c['2027-04-11'].type, 'race'); assert.equal(c['2027-03-21'].type, 'long'); assert.equal(labelOf(c['2027-03-21']), 'Long run · quality')
+  assert.equal(c['2026-11-26'].type, 'free'); assert.equal(classify(parseSnapshot(TXT)).filter((r) => r.date === '2027-10-12').map((r) => r.type).sort().join(), 'easy,strength'); assert.equal(c['2027-04-11'].type, 'race'); assert.equal(c['2027-03-21'].type, 'long'); assert.equal(labelOf(c['2027-03-21']), 'Long run · quality')
 })
 test('weekly + findings: ramp, overlaps, stray marathon days, tail after the last COROS workout', () => {
   const rows = classify(parseSnapshot(TXT)), W = weekly(PLAN, rows), w1 = W.find((w) => w.mon === '2026-11-23')
@@ -42,6 +42,11 @@ test('weekly + findings: ramp, overlaps, stray marathon days, tail after the las
   const f = Object.fromEntries(findings(PLAN, rows, { actualAvg4: 19 }).map((x) => [x.id, x]))
   assert.equal(f.ramp.tone, 'yellow'); assert.match(f.ramp.body, /\+87%/)
   assert.ok(f.overlap0 && f.overlap1); assert.match(f['fm-stray'].body, /2027-04-11, 2027-07-04, 2027-09-25/)
-  assert.match(f['fm-missing'].body, /2027-06-13/); assert.match(f.tail.title, /before the taper/); assert.ok(f['vol-high'] && f['vol-low'])
+  assert.match(f['fm-missing'].body, /2027-06-13/); assert.equal(f.tail, undefined) /* Plan D runs to 18 Dec 2027 */; assert.ok(f.overlap2); assert.ok(f['vol-high'] && f['vol-low'] && f['post-race']); assert.match(f['post-race'].body, /23 km long run/)
   assert.equal(findings(PLAN, rows).find((x) => x.id === 'ramp'), undefined) // no recent-actuals → no ramp claim
+})
+test('several sessions on one date: byDate = the run, allByDate = all', async () => {
+  const { byDate, allByDate } = await import('./corosplan.js'), rows = classify(parseSnapshot(TXT))
+  assert.equal(byDate(rows)['2027-10-12'].km, 5); assert.equal(allByDate(rows)['2027-10-12'].length, 2)
+  assert.equal(findings(PLAN, rows).find((x) => x.id === 'fm-missing').body.includes('2027-10-24 — the COROS plans treat') || /2027-10-24/.test(findings(PLAN, rows).find((x) => x.id === 'fm-missing').body), true)
 })

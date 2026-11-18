@@ -7,7 +7,7 @@ export function parseSchedule(text) {
   for (const block of String(text || '').split(/\n\s*\n/)) {
     const lines = block.split('\n').map((l) => l.trim()).filter(Boolean), date = lines.find((l) => /^\d{4}-\d{2}-\d{2}$/.test(l))
     if (!date) continue
-    const code = lines.find((l) => /^P\d+$/.test(l)) || null, dist = block.match(/Distance:\s*([\d.]+)\s*(km|m)\b/i), time = block.match(/Estimated Time:\s*([\d:]+)/i), load = block.match(/Load:\s*(\d+)\s*TL/i)
+    const code = lines[lines.indexOf(date) + 1]?.match(/^(?:Plan ID|idInPlan|Distance|Estimated Time|Load):/) ? null : lines[lines.indexOf(date) + 1] || null, dist = block.match(/Distance:\s*([\d.]+)\s*(km|m)\b/i), time = block.match(/Estimated Time:\s*([\d:]+)/i), load = block.match(/Load:\s*(\d+)\s*TL/i)
     rows.push({ date, code, km: dist ? Math.round((dist[2].toLowerCase() === 'm' ? Number(dist[1]) / 1000 : Number(dist[1])) * 100) / 100 : null, sec: time ? toSec(time[1]) : null, tl: load ? Number(load[1]) : null })
   }
   return rows.sort((a, b) => a.date.localeCompare(b.date))
@@ -17,5 +17,5 @@ export function parseSchedule(text) {
 export async function pullSchedule(call, from, to, addDays) {
   const rows = []
   for (let s = from; s <= to; s = addDays(s, 123)) { const e = addDays(s, 122) > to ? to : addDays(s, 122); rows.push(...parseSchedule(await call('queryTrainingSchedule', { startDate: s.replace(/-/g, ''), endDate: e.replace(/-/g, '') }))) }
-  return [...new Map(rows.map((r) => [r.date, r])).values()].sort((a, b) => a.date.localeCompare(b.date))
+  return rows.sort((a, b) => a.date.localeCompare(b.date)) // chunks do not overlap; a date may hold several sessions
 }

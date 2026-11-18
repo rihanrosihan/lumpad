@@ -32,6 +32,7 @@ export default function DayPage({ date, vdot, settings, go }) {
       {d.src === 'coros' ? <p className="muted">This day comes straight from the COROS plan (the season starts 23 Nov).</p>
         : d.km > 0 || cr.km ? <p className="muted">Lumpad prescribes {d.km || 0} km, COROS {cr.km || 0} km ({(cr.km || 0) - d.km >= 0 ? '+' : ''}{Math.round(((cr.km || 0) - d.km) * 10) / 10} km). Lumpad's plan, checkpoints and gate rules drive this date; the watch shows the COROS workout.</p> : <p className="muted">Lumpad has no run on this day; the watch has the COROS workout.</p>}
     </> : <p className="muted">{d.km > 0 ? `COROS has no workout on this day (Lumpad prescribes ${d.km} km).` : 'No COROS workout — rest in both plans.'}</p>}
+    {(CP.all[date] || []).filter((x) => x.type === 'strength').map((x, i) => <p key={i} className="muted">+ {labelOf(x)} · {fmtHM(x.sec)} (COROS)</p>)}
   </Card> : null
   return <Screen title="Day Plan" sub={`${d.week} · ${PHASE_NAME[d.phase] || d.phase}`}>
     <div className="dbar">

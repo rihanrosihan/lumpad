@@ -1,13 +1,14 @@
 // COROS training-plan overlay. COROS only exposes the *scheduled runs* (date, distance, estimated time, load) — no names,
 // no strength, no rest markers — so everything else here is derived and labelled as such.
 // Rows: { date:'YYYY-MM-DD', km:number|null, sec:number|null, tl:number|null, code?:string }
-import { diffDays, mondayOf } from './dates.js'
+import { addDays, diffDays, mondayOf } from './dates.js'
 
 // Plan windows as reported by COROS (the three active execution plans). Windows overlap by design of the templates.
 export const COROS_PLANS = [
   { id: 'A', label: 'Plan A · 20 weeks', from: '2026-11-23', to: '2027-04-18' },
   { id: 'B', label: 'Plan B · 12 weeks', from: '2027-04-12', to: '2027-07-11' },
   { id: 'C', label: 'Plan C · 12 weeks', from: '2027-07-05', to: '2027-10-02' },
+  { id: 'D', label: 'Plan D · 12 weeks', from: '2027-09-27', to: '2027-12-25' },
 ]
 
 export const parseSnapshot = (txt) => String(txt).split('\n').filter((l) => l.trim() && !l.startsWith('#')).map((l) => {
@@ -23,18 +24,20 @@ export function classify(rows) {
   return rows.map((r) => {
     const tlph = r.tl && r.sec ? r.tl / (r.sec / 3600) : null, hard = tlph != null && tlph >= 110
     let type = 'easy'
-    if (!r.km) type = 'free'
+    if (!r.km) type = r.sec ? 'strength' : 'free' // no distance but a duration = a non-running session; neither = free-mode run
     else if (r.km >= 40) type = 'race'
     else if (r.km >= 12 && r.km === byWeek[mondayOf(r.date)]) type = 'long'
     else if (hard) type = 'quality'
     return { ...r, type, hard, tlph: tlph != null ? Math.round(tlph) : null }
   })
 }
-export const TYPE_LABEL = { easy: 'Easy run', long: 'Long run', quality: 'Quality run', race: 'Marathon distance', free: 'Free run' }
-export const TYPE_KIND = { easy: 'easy', long: 'long', quality: 'quality', race: 'race', free: 'easy' }
+export const TYPE_LABEL = { easy: 'Easy run', long: 'Long run', quality: 'Quality run', race: 'Marathon distance', free: 'Free run', strength: 'Strength / cross-training' }
+export const TYPE_KIND = { easy: 'easy', long: 'long', quality: 'quality', race: 'race', free: 'easy', strength: 'gym' }
 export const labelOf = (r) => r.type === 'long' && r.hard ? 'Long run · quality' : TYPE_LABEL[r.type]
 export const fmtHM = (sec) => { if (sec == null) return '—'; const h = Math.floor(sec / 3600), m = Math.round((sec % 3600) / 60); return h ? `${h}:${String(m).padStart(2, '0')}` : `${m} min` }
-export const byDate = (rows) => Object.fromEntries(rows.map((r) => [r.date, r]))
+// A date can hold several COROS sessions (a run + a strength session). byDate = the run (else the first session); allByDate = every session.
+export const allByDate = (rows) => { const m = {}; for (const r of rows) (m[r.date] ||= []).push(r); return m }
+export const byDate = (rows) => Object.fromEntries(Object.entries(allByDate(rows)).map(([d, l]) => [d, l.find((r) => r.km) || l[0]]))
 
 // Weekly (Mon–Sun) km of both plans for the table + findings.
 export function weekly(plan, coros) {
@@ -65,8 +68,10 @@ export function findings(plan, coros, { actualAvg4 = null, T = null } = {}) {
   const last = coros.at(-1)?.date
   if (last) { const rest = plan.filter((d) => d.date > last && d.date <= '2027-10-24' && d.km > 0); if (rest.length) out.push({ id: 'tail', tone: 'yellow', title: 'COROS stops before the taper', body: `Last COROS workout: ${last}. ${rest.length} Lumpad running days (${Math.round(rest.reduce((s, d) => s + d.km, 0))} km, incl. taper, race week and JRF) have no COROS workout on the watch.` }) }
   // big volume gaps
-  const big = W.filter((w) => w.coros > 0 && w.lumpad > 0 && w.mon >= '2027-01-01' && w.coros >= w.lumpad * 1.5)
-  if (big.length) out.push({ id: 'vol-high', tone: 'red', title: `COROS volume ≥1.5× Lumpad in ${big.length} weeks`, body: `${big[0].mon} → ${big.at(-1).mon}: e.g. week of ${big[0].mon} COROS ${big[0].coros} km vs Lumpad ${big[0].lumpad} km. Lumpad's Jan–Mar is the post-injury return (B0 baseline); the COROS template assumes a normal marathon build.` })
+  const big = W.filter((w) => w.coros > 0 && w.lumpad > 0 && w.mon >= '2027-01-01' && w.mon < '2027-10-25' && w.coros >= w.lumpad * 1.5)
+  if (big.length) out.push({ id: 'vol-high', tone: 'red', title: `COROS volume ≥1.5× Lumpad in ${big.length} ${big.length === 1 ? "week" : "weeks"}`, body: `${big[0].mon} → ${big.at(-1).mon}: e.g. week of ${big[0].mon} COROS ${big[0].coros} km vs Lumpad ${big[0].lumpad} km. Lumpad's Jan–Mar is the post-injury return (B0 baseline); the COROS template assumes a normal marathon build.` })
+  const after = W.filter((w) => w.mon >= '2027-10-25' && w.coros > 0 && w.coros >= w.lumpad * 1.5)
+  if (after.length) out.push({ id: 'post-race', tone: 'yellow', title: `After JRF: COROS keeps building (${after.length} ${after.length === 1 ? "week" : "weeks"} ≥1.5× Lumpad)`, body: `Week of ${after[0].mon}: COROS ${after[0].coros} km vs Lumpad's recovery week ${after[0].lumpad} km (COROS plan D includes a ${Math.max(...coros.filter((r) => r.date >= after[0].mon && r.date < addDays(after[0].mon, 7)).map((r) => r.km || 0))} km long run). Plan D is a 12-week build to its own marathon in December.` })
   const low = W.filter((w) => w.coros > 0 && w.lumpad > 0 && w.mon >= '2027-04-01' && w.coros <= w.lumpad * 0.7)
   if (low.length) out.push({ id: 'vol-low', tone: 'yellow', title: `COROS volume ≤70% of Lumpad in ${low.length} weeks`, body: `Mostly Apr–Aug (peak of Lumpad's build). Lumpad's 70–86 km weeks are not on the watch for those dates.` })
   void T; void P

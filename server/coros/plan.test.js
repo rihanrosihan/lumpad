@@ -17,5 +17,11 @@ test('pullSchedule chunks the range and de-duplicates dates', async () => {
   const calls = [], add = (s, n) => { const d = new Date(s + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10) }
   const rows = await pullSchedule(async (t, a) => { calls.push(a); return TXT }, '2026-11-23', '2027-10-31', add)
   assert.equal(calls.length, 3); assert.equal(calls[0].startDate, '20261123'); assert.equal(calls.at(-1).endDate, '20271031')
-  assert.equal(rows.length, 4)
+  assert.equal(rows.length, 12) // chunks are disjoint → nothing is de-duplicated across calls
+})
+test('parseSchedule keeps several sessions per date, named workouts and time-only (strength) sessions', () => {
+  const t = 'Training Schedule\n====\n\n2027-09-28\nS5779\nPlan ID: 1\nidInPlan: 1\nDistance: 7.00 km\nEstimated Time: 1:05:28\nLoad: 81 TL\n\n2027-09-28\nS5729\nPlan ID: 1\nidInPlan: 2\nEstimated Time: 34:00\n\n2026-11-15\nBorobudur Marathon\nPlan ID: 2\nidInPlan: 617\nDistance: 42.20 km\n'
+  const r = parseSchedule(t)
+  assert.equal(r.length, 3); assert.deepEqual(r.filter((x) => x.date === '2027-09-28').map((x) => [x.code, x.km, x.sec]), [['S5779', 7, 3928], ['S5729', null, 2040]])
+  assert.equal(r[0].code, 'Borobudur Marathon')
 })

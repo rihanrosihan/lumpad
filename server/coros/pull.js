@@ -67,7 +67,7 @@ export async function pullRange({ call, from, to, trigger, progress = () => {}, 
   try {
     const prev = kvLoad('coros_plan', null)
     if (!prev?.at || Date.now() - Date.parse(prev.at) > 6 * 3600e3) {
-      const rows = await pullSchedule(call, '2026-11-01', '2027-12-31', addDays)
+      const rows = await pullSchedule(call, '2026-11-23', '2027-12-31', addDays) // season start; older plans' history is not part of it
       if (rows.length) kvSave('coros_plan', { rows, at: new Date().toISOString() }); else if (!prev) note('training plan: COROS returned no scheduled workouts')
     }
   } catch (e) { note(`training plan: ${String(e.message).slice(0, 120)}`) }
