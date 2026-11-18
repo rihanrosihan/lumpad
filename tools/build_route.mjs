@@ -50,7 +50,10 @@ const segments = [
   { from: 39, to: 42.195, what: 'Around GBK, finish inside the Stadion Utama complex' },
 ]
 const turns = [[2.1, 'Monas east turn'], [12.4, 'Mampang U-turn (southernmost point)'], [23.8, 'Satrio U-turn'], [28.7, 'Hairpin at the Sudirman / Senayan junction'], [32.2, 'Prapanca Raya U-turn'], [36.9, 'Sisingamangaraja U-turn (westernmost point)'], [39.7, 'Hairpin inside the GBK complex']].map(([km, name]) => ({ km, name, ll: at(km) }))
+// elevation: tools/fetch_elevation.py (the official GPX has none) → samples every 50 m of official distance, whole metres
+let elevation = null
+if (fs.existsSync(U('./data/jakim-elev.json'))) { const e = JSON.parse(fs.readFileSync(U('./data/jakim-elev.json'), 'utf8')); elevation = { source: e.source, stepKm: 0.05, ele: e.ele } }
 const out = { id: 'jakim', name: 'Jakarta International Marathon · BTN Jakim', source: 'Official BTN Jakim 2026 marathon GPX; the 2027 course map shows the same route.', trackKm: +(trackM / 1000).toFixed(2), officialKm: 42.195,
-  elevation: null, corners, kmHeadings, bbox: [Math.min(...lat), Math.min(...lon), Math.max(...lat), Math.max(...lon)].map((x) => +x.toFixed(5)), start: at(0), finish: at(42.195), line, marks, turns, segments, gpx: 'routes/jakim-2026.gpx' }
+  elevation, corners, kmHeadings, bbox: [Math.min(...lat), Math.min(...lon), Math.max(...lat), Math.max(...lon)].map((x) => +x.toFixed(5)), start: at(0), finish: at(42.195), line, marks, turns, segments, gpx: 'routes/jakim-2026.gpx' }
 fs.writeFileSync(U('../src/data/routes/jakim.json'), JSON.stringify(out) + '\n')
 console.log(`${pts.length} points → ${line.length}; track ${out.trackKm} km scaled to 42.195; ${marks.length} km marks; ${turns.length} turns; ${corners.length} corners; ${(fs.statSync(U('../src/data/routes/jakim.json')).size / 1024).toFixed(1)} KB`)

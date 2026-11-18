@@ -16,6 +16,7 @@ test('Jakim route: markers follow the track, turn points match the official map,
   for (const m of R.marks) { const near = Math.min(...R.line.slice(1).map((q, i) => segDist(m.ll, R.line[i], q))); assert.ok(near < 15, 'km ' + m.km + ' off the track by ' + Math.round(near) + ' m') }
   const south = R.turns.find((t) => /Mampang/.test(t.name)); assert.ok(south.km > 12 && south.km < 13); assert.ok(south.ll[0] < -6.25)
   assert.equal(R.segments[0].from, 0); assert.equal(R.segments.at(-1).to, 42.195); R.segments.forEach((s, i) => i && assert.equal(s.from, R.segments[i - 1].to))
-  assert.equal(R.elevation, null) // the official GPX carries no elevation: never invent a profile
+  // the official GPX carries no elevation: the profile is an estimate from a terrain model and says so
+  assert.ok(R.elevation && /Copernicus|Open-Meteo/.test(R.elevation.source) && R.elevation.ele.every((e) => Number.isFinite(e)))
   assert.ok(fs.existsSync(new URL('../../public/' + R.gpx, import.meta.url)))
 })
