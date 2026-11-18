@@ -135,9 +135,9 @@ function CalSwitch({ vdot, focus, settings, go }) {
     {mode === 'week' ? <WeekView T={T} settings={settings} onOpen={(d) => go('calendar', d)} /> : <MonthView vdot={vdot} focus={focus} raceDate={settings.raceDate} onOpen={(d) => go('calendar', d)} />}
   </>
 }
-const TITLES = { month: ['Calendar', 'Season plan from 23 Nov 2026 — tap a day for its prescription'], cp: ['Checkpoints', 'CP1–CP20: tests, gates and the VDOT path'], race: ['Races', 'From the nearest race to the sub-4 JRF'] }
+const TITLES = { month: ['Macrocycle Calendar (23 Nov 2026 – 31 Dec 2027)', 'Season plan · tap any date for its dedicated workout page'], cp: ['Checkpoint Roadmap (CP1 – CP20)', 'Tests, gates and the VDOT path to sub-4'], race: ['Race Calendar & Strategy', 'From the nearest race to the A-race: sub-4 at JRF'] }
 export default function Calendar({ view = 'month', vdot, results, setResults, focus, settings, go }) {
-  return <Screen title={TITLES[view][0]} sub={TITLES[view][1]}>
+  return <Screen title={TITLES[view][0]} sub={TITLES[view][1]} right={view === 'month' ? <div className="hdracts"><button className="hb v" onClick={() => go('checkpoint')}>Open checkpoints →</button><button className="hb r" onClick={() => go('race')}>Open races hub →</button></div> : view === 'cp' ? <div className="hdracts"><button className="hb v" onClick={() => go('calendar')}>Calendar →</button></div> : <div className="hdracts"><button className="hb v" onClick={() => go('route')}>Official course →</button></div>}>
     {view === 'month' && <CalSwitch vdot={vdot} focus={typeof focus === 'string' ? focus : null} settings={settings} go={go} />}
     {view === 'cp' && <Checkpoints vdot={vdot} results={results} setResults={setResults} focus={focus?.id} />}
     {view === 'race' && <Race vdot={vdot} results={results} settings={settings} go={go} />}

@@ -17,7 +17,7 @@ import { runCoach, recentRuns, getRun, newRun, finishRun } from './intel/coach.j
 import { retrieveRunnerContext, renderPrompt, TASKS, OUTPUT_SCHEMA } from './intel/context.js'
 import { guardStatus, resolveModel } from './intel/llm.js'
 import { status as archiveStatus } from './coros/archive.js'
-import { listMerged, activityDetail, gearList, readinessData, lapsInRange, exportRows, toCsv } from './activities.js'
+import { listMerged, activityDetail, gearList, setShoe, readinessData, lapsInRange, exportRows, toCsv } from './activities.js'
 import { applyIngest, checkToken, syncStatus, coverage, healthRange, activitiesRange, lapsOf, validDate } from './ingest.js'
 
 const send = (res, code, body, headers = {}) => { res.writeHead(code, { 'content-type': 'application/json', ...headers }); res.end(JSON.stringify(body)) }
@@ -101,6 +101,13 @@ const routes = {
   'GET /api/coach/context': async (q, req) => { checkToken(req); const intent = TASKS[q.get('intent')] ? q.get('intent') : 'daily_brief', ctx = retrieveRunnerContext({ intent, question: q.get('question') || '', activityId: q.get('activity') || null }), prompt = renderPrompt(ctx, TASKS[intent])
     return { run_id: newRun({ intent, provider: 'claude-code', ctx, prompt, question: q.get('question') }), ...prompt, output_schema: OUTPUT_SCHEMA, item_ids: ctx.item_ids } },
   'POST /api/coach/writeback': async (_q, req) => { checkToken(req); const b = JSON.parse((await readBody(req, 2e5)).toString()); return finishRun(+b.run_id, b.answer, { provider: 'claude-code', raw: JSON.stringify(b.answer) }) },
+  // shoe assigned by hand on the Activity page: written to every record of the merged activity (COROS + its Strava twin) so Twin & FIT see it
+  'POST /api/activities/shoe': async (_q, req) => {
+    const b = JSON.parse((await readBody(req, 1e4)).toString() || '{}'), id = String(b.id || ''), a = activityDetail(id)
+    if (!a) throw Object.assign(new Error('not found'), { status: 404 })
+    const g = b.gear_id == null || b.gear_id === '' ? null : String(b.gear_id)
+    if (g && !gearList().some((x) => String(x.id) === g)) throw Object.assign(new Error('unknown shoe'), { status: 400 })
+    return { ok: true, gear_id: g, ids: setShoe(a.ids || [id], g) } },
   'POST /api/strava/sync-shoes': async () => strava.syncShoes(),
   'GET /api/pubmed/search': async (q) => pubmed.search(q.get('q') || '', Math.min(+q.get('max') || 8, 20)),
   'POST /api/coros/fit': async (_q, req) => { const a = await coros.parseFit(await readBody(req)); save('coros_acts', [a, ...load('coros_acts', [])].slice(0, 500)); return a },

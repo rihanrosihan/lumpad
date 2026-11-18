@@ -37,31 +37,46 @@ export default function Activity({ vdot, focus, go }) {
       <button className="btn sm" onClick={() => go('activity')}><Icon n="left" size={16} />Activities</button>
       <div className="snav"><button onClick={() => older && go('activity', { id: older.ids[0] })} disabled={!older} aria-label={older ? `Previous session: ${older.name}` : 'Previous session'}><Icon n="left" /></button><p>{at >= 0 ? `${flat[at].date} · session ${flat.length - at} of ${flat.length}` : 'Session detail'}</p><button onClick={() => newer && go('activity', { id: newer.ids[0] })} disabled={!newer} aria-label={newer ? `Next session: ${newer.name}` : 'Next session'} className="flip"><Icon n="left" /></button></div>
     </div>
+    <nav className="chipjump" aria-label="Jump to section">{[['KPIs', null], ['Per-second FIT', 'Per-second analysis'], ['Long-run comparison', 'Long-run comparison'], ['AI analysis', 'Coach analysis'], ['Per-lap telemetry', 'Per-lap telemetry'], ['Laps', 'Splits per km']].map(([l, h]) => <button key={l} onClick={() => { const el = h ? [...document.querySelectorAll('.card h2')].find((x) => x.textContent.includes(h)) : document.querySelector('.screen'); el?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}>{l}</button>)}</nav>
     <Detail id={sel} page gear={gear} vdot={vdot} history={Hist.data || []} go={go} />
   </Screen>
 
-  return <Screen title="Activities" sub="Log eksekusi & telemetri · COROS + Strava digabung">
-    <div className="monthbar">
-      <button onClick={() => setYm(shiftMonth(ym, -1))} aria-label="Previous month"><Icon n="left" /></button>
-      <div className="mid"><h2 aria-live="polite">{MONTHS[+ym.slice(5) - 1]} {ym.slice(0, 4)}</h2>{ym !== T.slice(0, 7) && <button onClick={() => setYm(T.slice(0, 7))}>Go to this month</button>}</div>
-      <button onClick={() => setYm(shiftMonth(ym, 1))} aria-label="Next month" className="flip"><Icon n="left" /></button>
+  const prevKm = cumPrev.at(-1)?.km ?? 0, curKm = cum.at(-1)?.km ?? 0, dKm = prevKm ? Math.round(((curKm - prevKm) / prevKm) * 1000) / 10 : null
+  const cnt = (k) => all.filter((a) => a.sport_class === k).length, hhmm = (a) => (a.start_ts ? new Date(a.start_ts * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' }) : null)
+  const longest = (a) => a.sport_class === 'run' && typeOf(a) === 'long'
+  return <section className="screen acts">
+    <div className="actgrid">
+      <div className="card acthead">
+        <div className="monthbar slim">
+          <button onClick={() => setYm(shiftMonth(ym, -1))} aria-label="Previous month"><Icon n="left" /></button>
+          <div className="mid"><h1 aria-live="polite">All Activities — {MONTHS[+ym.slice(5) - 1]} {ym.slice(0, 4)}</h1><p className="sub">Merged COROS + Strava · open any card for its dedicated full-page analysis</p></div>
+          <button onClick={() => setYm(shiftMonth(ym, 1))} aria-label="Next month" className="flip"><Icon n="left" /></button>
+        </div>
+        <div className="bigkm"><b>{curKm} km</b><small>{prevKm ? `vs ${prevKm} km last month${dKm != null ? ` (${dKm > 0 ? '+' : ''}${dKm}%)` : ''}` : 'no comparison yet'}</small>{ym !== T.slice(0, 7) && <button className="link" onClick={() => setYm(T.slice(0, 7))}>Go to this month</button>}</div>
+        <BandLine data={curve} keys={[{ key: 'cur', color: 'var(--c-long)' }, { key: 'prev', color: 'var(--muted)', cls: 'dash' }]} height={130} label={`Cumulative run km this month ${curKm} vs last month ${prevKm}`} />
+        <div className="legend"><span><i className="ll" style={{ borderColor: 'var(--c-long)' }} />This month ({curKm} km)</span><span><i className="ll" style={{ borderColor: 'var(--muted)', borderTopStyle: 'dashed' }} />Last month ({prevKm} km)</span></div>
+      </div>
+      <div className="card actsum">
+        <h2>Monthly summary &amp; sport filter</h2><p className="sub">Filter activities by sport or workout type</p>
+        <div className="sumtiles"><div><small>Activities</small><b>{tot.n}</b></div><div><small>Run distance</small><b className="gr">{tot.km.toFixed(1)} km</b></div><div><small>Total time</small><b>{fmtDur(tot.time)}</b></div><div><small>Total load</small><b className="cr">{tot.tl || '—'}</b></div></div>
+        <div className="chipfilter" role="group" aria-label="Sport filter">{SPORTS.map(([k, l]) => <button key={k} aria-pressed={sport === k} onClick={() => setSport(k)}>{l}{k === 'all' ? ` (${all.length})` : ` (${cnt(k)})`}</button>)}</div>
+        <div className="chipfilter" role="group" aria-label="Workout type filter" style={{ marginTop: 6 }}>{TYPES.map(([k, l]) => <button key={k} aria-pressed={type === k} onClick={() => setType(k)}>{l}</button>)}</div>
+      </div>
     </div>
-    <Card title="Cumulative km" right={<span className="muted">{cum.at(-1)?.km ?? 0} vs {cumPrev.at(-1)?.km ?? 0} km</span>}>
-      <BandLine data={curve} keys={[{ key: 'cur', color: 'var(--c-long)' }, { key: 'prev', color: 'var(--muted)', cls: 'dash' }]} height={110} label={`Cumulative run km this month ${cum.at(-1)?.km} vs last month ${cumPrev.at(-1)?.km}`} />
-      <div className="legend"><span><i className="ll" style={{ borderColor: 'var(--c-long)' }} />This month</span><span><i className="ll" style={{ borderColor: 'var(--muted)', borderTopStyle: 'dashed' }} />Last month</span></div>
-    </Card>
-    <div className="seg3" role="group" aria-label="Sport filter">{SPORTS.map(([k, l]) => <button key={k} aria-pressed={sport === k} onClick={() => setSport(k)}>{l}</button>)}</div>
-    <div className="chiprow" role="group" aria-label="Workout type filter">{TYPES.map(([k, l]) => <button key={k} aria-pressed={type === k} onClick={() => setType(k)}>{l}</button>)}</div>
-    <div className="sumrow"><div><b>{tot.n}</b><small>activities</small></div><div><b>{tot.km.toFixed(1)}</b><small>km run</small></div><div><b>{fmtDur(tot.time)}</b><small>time</small></div><div><b>{tot.tl || '—'}</b><small>load</small></div></div>
 
     {A.state === 'loading' && <><div className="skel" style={{ height: 72 }} /><div className="skel" style={{ height: 72 }} /></>}
     {A.state === 'error' && <div className="card empty"><b>Failed to load</b>Server unreachable.</div>}
     {A.state === 'ok' && !list.length && <div className="card empty"><b>{all.length ? 'No activities for this filter' : 'No activities this month yet'}</b>{all.length ? 'Try “All”.' : 'Data arrives through the COROS/Strava sync — check Profile › Connections.'}</div>}
-    <div className="alist">{list.map((a) => <button key={a.id} className={`arow ${CLS(a)}`} onClick={() => go('activity', { id: a.ids[0] })} aria-label={`${fmtLong(a.date)}: ${a.name}, ${a.distance_m ? km(a.distance_m) + ' km, ' : ''}${fmtDur(a.duration_s)}`}>
-      <div className="t"><b>{a.name || SPORT_LABEL[a.sport_class] || a.sport}</b><small>{a.date.slice(5)} · {SPORT_LABEL[a.sport_class] || a.sport}{typeOf(a) ? ' · ' + TYPES.find((t) => t[0] === typeOf(a))[1] : ''}{a.gear_id && gear[a.gear_id] ? ' · ' + gear[a.gear_id] : ''}</small></div>
-      <div className="n"><b>{a.distance_m ? km(a.distance_m) + ' km' : fmtDur(a.duration_s)}</b><small>{a.avg_pace_s_km && a.sport_class === 'run' ? fmtPaceS(a.avg_pace_s_km) + '/km' : a.avg_hr ? a.avg_hr + ' bpm' : ''}</small>{a.training_load ? <span className="tlb2">TL {a.training_load}</span> : null}</div>
-    </button>)}</div>
-  </Screen>
+    <div className="acards">{list.map((a) => { const t = typeOf(a), g = a.gear_id && gear[a.gear_id]; return <button key={a.id} className={`acard ${CLS(a)}`} onClick={() => go('activity', { id: a.ids[0] })} aria-label={`${fmtLong(a.date)}: ${a.name}, ${a.distance_m ? km(a.distance_m) + ' km, ' : ''}${fmtDur(a.duration_s)}`}>
+      <div className="ac-top">
+        <div><span className="chip t-sport">{SPORT_LABEL[a.sport_class] || a.sport}{t ? ' · ' + TYPES.find((x) => x[0] === t)[1] : ''}</span> <small className="mono">{fmtLong(a.date).replace(/^(\w{3})\w*, (\w{3})\w* /, '$1, $2 ')}{hhmm(a) ? ` · ${hhmm(a)}` : ''}</small></div>
+        <div className="ac-km"><b>{a.distance_m ? km(a.distance_m) + ' km' : fmtDur(a.duration_s)}</b>{a.training_load ? <span className="tlb2">TL {a.training_load}</span> : null}</div>
+      </div>
+      <h3>{a.name || SPORT_LABEL[a.sport_class] || a.sport}</h3>
+      <p className="muted">{[g ? 'Shoe: ' + g : null, a.temp_c != null ? `${a.temp_c}°C · RH ${a.humidity ?? '—'}%` : null, a.location].filter(Boolean).join(' · ') || (longest(a) ? 'Long run' : '—')}</p>
+      <div className="ac-stats"><div><small>Duration</small><b>{fmtDur(a.duration_s)}</b></div><div><small>Pace</small><b>{a.avg_pace_s_km && a.sport_class === 'run' ? fmtPaceS(a.avg_pace_s_km) + ' /km' : '—'}</b></div><div><small>Avg HR</small><b>{a.avg_hr ? a.avg_hr + ' bpm' : '—'}</b></div><span className="ac-go">Open analysis →</span></div>
+    </button> })}</div>
+  </section>
 }
 
 
@@ -116,7 +131,7 @@ function Detail({ id, gear, vdot, history, go }) {
       {plan && <Card title="Plan vs actual">
         <div className="vs"><div><small>Planned</small><b>{plan.label}{plan.km ? ` · ${plan.km} km` : ''}</b></div><div><small>Actual</small><b>{a.distance_m ? km(a.distance_m) + ' km' : fmtDur(a.duration_s)}</b></div></div>
         {a.distance_m && plan.km ? <p className="muted">{Math.round(((a.distance_m / 1000) / plan.km) * 100)}% of plan</p> : null}{verdict && <Chip tone={verdict[0]}>{verdict[1]}</Chip>}</Card>}
-      {a.sport_class === 'run' && <FitPanel id={a.ids?.[0] || id} />}
+      {a.sport_class === 'run' && <FitPanel id={a.ids?.[0] || id} go={go} />}
       {a.sport_class === 'run' && (a.distance_m || 0) >= 16000 && <LongRunContext label={String(a.ids?.[0] || id).replace(/^coros:/, '')} go={go} />}
       {a.sport_class === 'run' && (a.distance_m || 0) >= 5000 && <ActivityCoach id={a.ids?.[0] || id} label={String(a.ids?.[0] || id).replace(/^coros:/, '')} />}
       {a.sport_class === 'run' && <RunCompare a={a} id={id} history={history} />}
@@ -132,12 +147,24 @@ function Detail({ id, gear, vdot, history, go }) {
         <Evidence>[calc] Per lap. Max HR = the highest ever recorded in your laps (an estimate, not a lab test).</Evidence></Card>}
       <Card title="Running dynamics & context">
         <div className="score-grid"><div><small>GCT</small><b>{dyn('gct_ms') ?? '—'}</b><em>ms</em></div><div><small>Vertical oscillation</small><b>{dyn('vo_cm') ?? '—'}</b><em>cm</em></div><div><small>Vertical ratio</small><b>{dyn('vratio_pct') ?? '—'}</b><em>%</em></div>
-          <div><small>Stride</small><b>{dyn('stride_m') ?? '—'}</b><em>m</em></div><div><small>Shoe</small><b className="sm-b">{a.gear_id ? gear[a.gear_id] || '—' : '—'}</b></div><div><small>Weather</small><b className="sm-b">{a.temp_c != null ? `${a.temp_c}°C · ${a.humidity ?? '—'}%` : 'not pulled yet'}</b></div></div>
+          <div><small>Stride</small><b>{dyn('stride_m') ?? '—'}</b><em>m</em></div><div><small>Shoe</small><b className="sm-b">{(ctx.gear_id || a.gear_id) ? gear[ctx.gear_id || a.gear_id] || '—' : '—'}</b></div><div><small>Weather</small><b className="sm-b">{a.temp_c != null ? `${a.temp_c}°C · ${a.humidity ?? '—'}%` : 'not pulled yet'}</b></div></div>
+        <div className="form two" style={{ marginTop: 12 }}>
+          <label className="fld"><span>Shoe used (syncs to Twin &amp; FIT)</span>
+            <select value={ctx.gear_id ?? a.gear_id ?? ''} onChange={(e) => { const g = e.target.value; setC({ gear_id: g }); fetch('/api/activities/shoe', { method: 'POST', headers: { 'content-type': 'application/json', 'x-lumpad': '1' }, body: JSON.stringify({ id: a.ids?.[0] || id, gear_id: g || null }) }).catch(() => {}) }}>
+              <option value="">— Not assigned —</option>
+              {Object.entries(gear).map(([gid, gname]) => <option key={gid} value={gid}>{gname}</option>)}
+            </select>
+          </label>
+          <div className="fld"><span>GI distress during run</span>
+            <div className="pain" role="group" aria-label="GI distress" style={{ gridTemplateColumns: 'repeat(4,1fr)' }}>{[[0, 'None'], [1, 'Mild'], [2, 'Mod'], [3, 'Severe']].map(([n, l]) => <button key={n} aria-pressed={ctx.gi === n} className={n >= 2 ? 'hi' : ''} onClick={() => setC({ gi: ctx.gi === n ? '' : n })}>{l}</button>)}</div>
+          </div>
+        </div>
         <div className="fld" style={{ marginTop: 12 }}><span>RPE (1–10)</span><div className="pill10" role="group" aria-label="RPE">{Array.from({ length: 10 }, (_, i) => i + 1).map((n) => <button key={n} aria-pressed={ctx.rpe === n} onClick={() => setC({ rpe: ctx.rpe === n ? '' : n })}>{n}</button>)}</div></div>
-        <div className="form" style={{ marginTop: 10 }}><label className="fld"><span>Gels taken</span><input inputMode="numeric" type="number" value={ctx.gels} onChange={(e) => setC({ gels: e.target.value === '' ? '' : +e.target.value })} /></label>
+        <div className="form two" style={{ marginTop: 10 }}><label className="fld"><span>Gels taken</span><input inputMode="numeric" type="number" value={ctx.gels} onChange={(e) => setC({ gels: e.target.value === '' ? '' : +e.target.value })} /></label>
           <label className="fld"><span>Actual carbs (g)</span><input inputMode="numeric" type="number" value={ctx.cho_g} onChange={(e) => setC({ cho_g: e.target.value === '' ? '' : +e.target.value })} /></label></div>
         {ctx.cho_g !== '' && a.duration_s > 0 && <p className="muted">≈ {Math.round(ctx.cho_g / (a.duration_s / 3600))} g/h (target for runs &gt; 90 min: 30–60 g/h from minute 45)</p>}
-        <Evidence>The log asks for actual intake — it is never filled in from the plan.</Evidence>
+        <label className="fld" style={{ display: 'block', marginTop: 10 }}><span>Session notes (pacing, heat, mechanical feel)</span><input type="text" placeholder="e.g. felt smooth through km 12, took 2 gels with water" value={ctx.note || ''} onChange={(e) => setC({ note: e.target.value })} /></label>
+        <Evidence>The log asks for actual intake and shoe assignment — updating the shoe also links this session in the Digital Twin degradation model.</Evidence>
       </Card>
     </>}
   </div>

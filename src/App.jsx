@@ -14,20 +14,23 @@ import Course from './Course.jsx'
 import { EMPTY_BIO, latest, classifyBP } from './lib/bio.js'
 import { CHECKPOINTS, TARGET } from './lib/plan.js'
 import { paces, fmtPace } from './lib/vdot.js'
-import { today, diffDays, PLAN, fmtShort } from './lib/calendar.js'
+import { today, diffDays, PLAN, fmtShort, fmtLong } from './lib/calendar.js'
 import { EMPTY_DAY } from './lib/gate.js'
 import { useSyncStatus2, wib } from './sync.js'
 import { useModel } from './model.js'
+import { useApi } from './api.js'
 
 // Pages (each its own full page, no popups). `short` = label in the phone bottom bar.
 const PAGES = {
   home: { label: 'Home', icon: 'home' }, ready: { label: 'Readiness', icon: 'ready', short: 'Ready' }, activity: { label: 'Activities', icon: 'run', short: 'Activity' },
-  calendar: { label: 'Calendar', icon: 'cal' }, plan: { label: 'Plan Sync', icon: 'sync', short: 'Sync' }, day: { label: 'Day Plan', icon: 'day' }, checkpoint: { label: 'Checkpoints', icon: 'bars' }, race: { label: 'Races', icon: 'flag' }, route: { label: 'Course', icon: 'run' },
+  calendar: { label: 'Calendar', icon: 'cal' }, analysis: { label: 'Run Analysis', icon: 'run' }, plan: { label: 'Plan Sync', icon: 'sync', short: 'Sync' }, day: { label: 'Day Plan', icon: 'day' }, checkpoint: { label: 'Checkpoints', icon: 'bars' }, race: { label: 'Races', icon: 'flag' }, route: { label: 'Course', icon: 'run' },
   coach: { label: 'AI Coach', icon: 'coach', short: 'Coach' }, biometrics: { label: 'Biometrics', icon: 'heart' }, profile: { label: 'Profile', icon: 'user' },
 }
-const GROUPS = [['Daily', ['home', 'ready', 'activity']], ['Planning', ['calendar', 'plan', 'day', 'checkpoint', 'race', 'route']], ['Intelligence', ['coach', 'biometrics', 'profile']]]
+const GROUPS = [['Daily', ['home', 'ready', 'activity', 'analysis']], ['Planning', ['calendar', 'day', 'plan', 'checkpoint', 'race', 'route']], ['Intelligence', ['coach', 'biometrics', 'profile']]]
+// breadcrumb under the brand (mockup wording)
+const CRUMB = { home: 'Home Briefing', ready: 'Readiness & Load', activity: 'Activities Catalog', calendar: 'Macrocycle Calendar', plan: 'Plan Sync', day: 'Day Plan', checkpoint: 'Checkpoint Roadmap', race: 'Races Hub', route: 'Official Course', coach: 'AI Coach & Rules', biometrics: 'Biometrics & Labs', profile: 'Profile & Fleet' }
 const BOTTOM = ['home', 'ready', 'activity', 'calendar', 'coach', 'profile']
-const ROUTES = Object.keys(PAGES)
+const ROUTES = Object.keys(PAGES).filter((k) => k !== 'analysis')
 const RACES = PLAN.filter((d) => d.kind === 'race' && /FM|Full/.test(d.label || ''))
 const THEMES = ['auto', 'light', 'dark']
 
@@ -75,14 +78,19 @@ export default function App() {
   const rd = M.readiness, lastRun = M.acts.filter((a) => a.sport_class === 'run')[0], p = paces(vdot.v), last = sync2?.lastRun
   const nextCp = CHECKPOINTS.find((c) => c.date >= T)
   const weekKm = (() => { const mon = new Date(T + 'T00:00:00Z'); const d = (mon.getUTCDay() + 6) % 7; const m = new Date(mon - d * 864e5).toISOString().slice(0, 10); return M.acts.filter((a) => a.sport_class === 'run' && a.date >= m && a.date <= T).reduce((s, a) => s + (a.distance_m || 0) / 1000, 0) })()
+  const gear = useApi('/api/gear'), mem = useApi('/api/memory?tier=procedural&status=active&kind=rule&limit=100')
+  const monthKm = M.acts.filter((a) => a.sport_class === 'run' && a.date.slice(0, 7) === T.slice(0, 7)).reduce((s, a) => s + (a.distance_m || 0) / 1000, 0)
+  const seasonKm = Math.round(PLAN.reduce((s, d) => s + (d.km || 0), 0)), nShoes = (gear.data || []).filter((g) => !g.retired).length, nRules = Array.isArray(mem.data) ? mem.data.length : mem.data?.items?.length
+  const lastRunId = lastRun ? (lastRun.ids?.[0] || lastRun.id) : null
   const BADGE = {
-    home: nextRace ? 'D-' + dNext : null, ready: rd.score != null ? `${rd.score} · ${rd.caps.length ? 'GATE' : rd.tier.label.toUpperCase().slice(0, 4)}` : null, activity: `${Math.round(weekKm * 10) / 10} km`,
-    checkpoint: nextCp ? 'CP' + nextCp.id : null, biometrics: (bio.bp?.length || 0) + (bio.glu?.length || 0) + (bio.weight?.length || 0) + (bio.lab?.length || 0) ? 'LOGS' : null, race: nextRace ? 'D-' + dNext : null, coach: 'AI',
+    calendar: seasonKm ? seasonKm.toLocaleString('en-US') + ' km' : null, analysis: 'AI + FIT', profile: nShoes ? nShoes + ' Shoes' : null, coach: nRules ? nRules + ' Rules' : 'AI',
+    home: nextRace ? 'D-' + dNext : null, ready: rd.score != null ? `${rd.score} · ${rd.caps.length ? 'GATE' : rd.tier.label.toUpperCase().slice(0, 4)}` : null, activity: `${Math.round(monthKm * 10) / 10} km`,
+    checkpoint: nextCp ? 'CP1–' + CHECKPOINTS.length : null, biometrics: (bio.bp?.length || 0) + (bio.glu?.length || 0) + (bio.weight?.length || 0) + (bio.lab?.length || 0) ? 'LABS' : null, race: nextRace ? 'D-' + dNext : null,
   }
   const cur = tab === 'activity' && focus?.id ? 'activity-detail' : tab
-  const subOf = { day: 'calendar' }
-  const navBtn = (k, cls) => <button key={k} className={`${cls} ${tab === k ? 'on' : ''} ${subOf[k] ? 'sub' : ''}`} aria-current={tab === k ? 'page' : undefined}
-    onClick={() => go(k, k === 'day' ? T : null)}><Icon n={PAGES[k].icon} size={cls === 'rb' ? 18 : 22} /><span>{cls === 'nb' ? PAGES[k].short || PAGES[k].label : PAGES[k].label}</span>{cls !== 'nb' && BADGE[k] && <em className={'bdg b-' + k}>{BADGE[k]}</em>}</button>
+  const subOf = { day: 'calendar', plan: 'calendar', analysis: 'activity' }
+  const navBtn = (k, cls) => <button key={k} className={`${cls} ${(k === 'analysis' ? cur === 'activity-detail' : tab === k && !(k === 'activity' && cur === 'activity-detail')) ? 'on' : ''} ${subOf[k] ? 'sub' : ''}`} aria-current={(k === 'analysis' ? cur === 'activity-detail' : tab === k) ? 'page' : undefined}
+    onClick={() => (k === 'analysis' ? (lastRunId ? go('activity', { id: lastRunId }) : go('activity')) : go(k, k === 'day' ? T : null))}><Icon n={PAGES[k].icon} size={cls === 'rb' ? 18 : 22} /><span>{cls === 'nb' ? PAGES[k].short || PAGES[k].label : PAGES[k].label}</span>{cls !== 'nb' && BADGE[k] && <em className={'bdg b-' + k}>{BADGE[k]}</em>}</button>
   const grouped = (cls) => GROUPS.map(([g, ks]) => <div key={g} className="ngroup"><p className="ngl">{g}</p>{ks.map((k) => navBtn(k, cls))}</div>)
   const gate = rd.score == null ? ['none', 'NO DATA', 'Not enough data for today\'s score yet.'] : rd.caps.length ? ['caution', 'CAUTION', rd.caps[0].why] : ['ok', rd.tier.label.toUpperCase(), rd.tier.advice]
   const Ribbon = ({ children }) => <div className="ribbon">{children}</div>
@@ -93,7 +101,7 @@ export default function App() {
     <header className="appbar">
       <div className="appbar-in">
         <button className="menubtn" onClick={() => setMenu(true)} aria-label="Open menu"><Icon n="menu" size={20} /></button>
-        <button className="brand" onClick={jump('home')} aria-label="LUMPAD — go Home"><span className="logo" aria-hidden="true"><i>SUB 4</i><small>COACH</small></span><span className="bt"><b>LUMPAD</b><small>{PAGES[tab]?.label}{cur === 'activity-detail' ? ' · Run Analysis' : ''}</small></span></button>
+        <button className="brand" onClick={jump('home')} aria-label="LUMPAD — go Home"><span className="logo" aria-hidden="true"><i>SUB 4</i><small>COACH</small></span><span className="bt"><b>LUMPAD<em className="osv">OS 5.0 · Fluid Telemetry</em></b><small><i>{fmtLong(T)}</i><u> · </u>{cur === 'activity-detail' ? 'Run Analysis & AI Narrative' : CRUMB[tab]}</small></span></button>
         <Ribbon>
           <span className="rp"><i className={'dot ' + (last?.ok ? 'ok' : 'warn')} />COROS<b>{last ? wib(last.received_at) + ' WIB' : '—'}</b></span>
           <button className="rp" onClick={jump('profile')}>VDOT<b className="am">{vdot.v.toFixed(1)}</b>→<b>{TARGET.vdotNeeded}</b></button>
@@ -117,7 +125,7 @@ export default function App() {
           {tab === 'home' && <Home vdot={vdot} settings={settings} results={results} go={go} M={M} />}
           {tab === 'ready' && <Readiness vdot={vdot} settings={settings} focus={focus} />}
           {tab === 'activity' && <Activity vdot={vdot} focus={focus} go={go} />}
-          {tab === 'coach' && <Coach />}
+          {tab === 'coach' && <Coach go={go} />}
           {tab === 'calendar' && <Calendar view="month" vdot={vdot} results={results} setResults={setResults} focus={null} settings={settings} go={go} />}
           {tab === 'plan' && <PlanSync go={go} />}
           {tab === 'route' && <Course go={go} settings={settings} />}

@@ -36,7 +36,7 @@ export default function Biometrics({ settings, setSettings }) {
   const sl = byDate(sleepLog || []), slAvg = (k) => { const v = sl.map((e) => e[k]).filter((x) => x != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null }, hm = (m) => (m == null ? '—' : `${Math.floor(m / 60)}h ${String(Math.round(m % 60)).padStart(2, '0')}m`)
   const total = B.weight.length + B.bp.length + B.glu.length + B.lab.length
 
-  return <Screen title="Biometrics" sub="Weight, blood pressure, glucose and lab panel">
+  return <Screen title="Body Composition, Blood Pressure & Glucose" sub="Weight, blood pressure, glucose, medical check-up and sleep & HRV — logged and imported from the Health Dictionary">
     <div className="card bio-intro"><b>Personal health log</b><p className="muted">Stored on your server (KV database), not in the repository. Classifications use general reference ranges and are information only, not diagnosis — abnormal results should always be confirmed with a doctor.</p></div>
 
     <div className="bgrid">

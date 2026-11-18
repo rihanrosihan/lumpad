@@ -26,14 +26,14 @@ const SITES = [['vmo_l', 'Left VMO (thigh)'], ['achilles', 'Achilles'], ['planta
 export default function Readiness({ vdot, settings, focus }) {
   const T = today(), [date, setDate] = useState(T)
   const [f, setF] = useStore('lumpad.daily.' + date, EMPTY_DAY), [ov, setOv] = useStore('lumpad.muscle.' + date, {})
-  const [mode, setMode] = useStore('lumpad.ready.mode', 'pagi')
-  useEffect(() => { if (focus?.mode === 'pagi' || focus?.mode === 'analisis') setMode(focus.mode) }, [focus]) // eslint-disable-line
+  const [panel, setPanel] = useState('all')
+  useEffect(() => { if (focus?.mode === 'analysis' || focus?.mode === 'analisis') setTimeout(() => document.getElementById('sec-load')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 250) }, [focus])
   const [hist, setHist] = useState({}), [range, setRange] = useState(42), [acwrMode, setAcwrMode] = useState('ewma')
   const hd = useHealthDay(date), row = hd.row, M = useModel(date, settings, vdot, f, ov)
   const [painOpen, setPainOpen] = useState(false)
   useEffect(() => { fetch('/api/kv/prefix?prefix=lumpad.daily.').then((r) => r.json()).then(setHist).catch(() => {}) }, [])
   const topRef = useRef(), [stuck, setStuck] = useState(false)
-  useEffect(() => { if (mode !== 'pagi' || !topRef.current) { setStuck(false); return } const o = new IntersectionObserver(([e]) => setStuck(!e.isIntersecting)); o.observe(topRef.current); return () => o.disconnect() }, [mode])
+  useEffect(() => { if (!topRef.current) { setStuck(false); return } const o = new IntersectionObserver(([e]) => setStuck(!e.isIntersecting)); o.observe(topRef.current); return () => o.disconnect() }, [panel])
 
   const sess = BY_DATE[date] || null, g = evaluate(f, sess), has = hasInput(f), p = paces(vdot.v), rd = M.readiness, tier = rd.tier
   const easy = `${fmtPace(p.E[1])}–${fmtPace(p.E[0])} /km`
@@ -56,20 +56,21 @@ export default function Readiness({ vdot, settings, focus }) {
   const mTl = mean(weeksIE.map((w) => w.tl)) || 1, mKm = mean(weeksIE.map((w) => w.km)) || 1
   const tapRegion = (k) => { const auto = M.muscle[k] || 0, curv = ov[k]; const next = curv == null ? Math.min(3, Math.round(auto) + 1) : curv >= 3 ? null : curv + 1; const o = { ...ov }; if (next == null) delete o[k]; else o[k] = next; setOv(o) }
 
-  return <Screen title="Readiness" sub="Transparent evidence-based model · your validated rules win">
-    {(stuck || mode === 'analisis') && <div className={`gatemini g-${tier ? { prime: 'green', optimal: 'green', compromised: 'yellow', depleted: 'red' }[tier.id] : has ? g.level : 'none'}`}><span className="gdot" aria-hidden="true" /><span>{label}</span><small>{sess ? `${sess.label || KIND[sess.kind].label}${sess.km ? ' · ' + sess.km + ' km' : ''}` : ''}</small></div>}
+  const PANELS = [['all', 'All panels'], ['load', 'Load, PMC & ACWR'], ['auto', 'Autonomic (HRV & RHR)'], ['sleep', 'Sleep & muscle map']]
+  return <Screen title="Readiness & Physiological Load" sub="Evidence-based transparent model · morning check-in and every telemetry chart on one page" right={<div className="chipfilter" role="group" aria-label="Panels">{PANELS.map(([k, l]) => <button key={k} aria-pressed={panel === k} onClick={() => setPanel(k)}>{l}</button>)}</div>}>
+    {stuck && <div className={`gatemini g-${tier ? { prime: 'green', optimal: 'green', compromised: 'yellow', depleted: 'red' }[tier.id] : has ? g.level : 'none'}`}><span className="gdot" aria-hidden="true" /><span>{label}</span><small>{sess ? `${sess.label || KIND[sess.kind].label}${sess.km ? ' · ' + sess.km + ' km' : ''}` : ''}</small></div>}
     <div className="datebar">
       <button onClick={() => setDate(addDays(date, -1))} aria-label="Previous day"><Icon n="left" /></button>
       <div><b>{fmtLong(date)}</b>{date === T && <small>today</small>}</div>
       <button onClick={() => setDate(addDays(date, 1))} aria-label="Next day" className="flip"><Icon n="left" /></button>
     </div>
-    <div className="seg3" role="group" aria-label="Readiness view">{[['pagi', 'Morning'], ['analisis', 'Analysis']].map(([k, l]) => <button key={k} aria-pressed={mode === k} onClick={() => { setMode(k); window.scrollTo(0, 0) }}>{l}</button>)}</div>
+    {panel === 'all' && <nav className="chipjump" aria-label="Jump to section">{[['sec-check', '1-tap check-in'], ['sec-scaler', '72 h calendar auto-scaler'], ['sec-load', 'PMC & ACWR'], ['sec-auto', 'HRV & RHR'], ['sec-sleep', 'Sleep & muscles']].map(([id, t]) => <button key={id} onClick={() => { const el = document.getElementById(id); el?.scrollIntoView({ behavior: 'smooth', block: 'start' }); el?.focus({ preventScroll: true }) }}>{t}</button>)}</nav>}
 
-    {mode === 'pagi' && <>
+    {panel === 'all' && <>
     {/* ---- Layer 2.1: verdict & prescription ---- */}
     <div ref={topRef} className="card" role="status" aria-live="polite">
       <div className="hero">
-        <RadialGauge value={rd.score} tone={tier ? TIER_TONE[tier.id] : 'none'} label="Skor readiness" sub={rd.score == null ? 'not enough data' : '/ 100'} />
+        <RadialGauge value={rd.score} tone={tier ? TIER_TONE[tier.id] : 'none'} label="Readiness score" sub={rd.score == null ? 'not enough data' : '/ 100'} />
         <div className="hx">
           {tier ? <span className={'tierc tier-' + tier.id}>{tier.label}</span> : <span className="tierc">No score yet</span>}
           <h2>{tier ? tier.advice : 'Needs ≥ 60 points of data — fill in the check-in or wait for the sync.'}</h2>
@@ -87,9 +88,10 @@ export default function Readiness({ vdot, settings, focus }) {
       {(needsMod && g.level !== 'green' && has) && <input className="ovr" aria-label="Override reason" placeholder="Going ahead anyway? Write why (saved)" value={f.override} onChange={(e) => set({ override: e.target.value })} />}
     </div>
 
-    {date === T && <ScaleCard rd={rd} M={M} T={T} />}
+    {date === T && <div id="sec-scaler" tabIndex={-1}><ScaleCard rd={rd} M={M} T={T} /></div>}
 
     {/* ---- Morning check-in: 1 tap on a normal day (Feel). Sleep HR / HRV come from COROS automatically; pain defaults to 0 ---- */}
+    <div id="sec-check" tabIndex={-1} />
     <Card title="Morning check-in" className="coros" right={<span className="saved" aria-live="polite">{has ? 'saved' : ''}</span>}>
       {hd.state === 'none' && <p className="muted">COROS data has not been pulled for this date — enter Sleep HR manually under “Details”.</p>}
       {row && <p className="muted">COROS read automatically · Sleep HR {row.sleep_hr_avg ?? '—'} · HRV {row.hrv_avg ?? '—'} ms {row.hrv_status ? `(${row.hrv_status})` : ''}</p>}
@@ -115,8 +117,8 @@ export default function Readiness({ vdot, settings, focus }) {
 
 
     <div className="score-grid two" role="group" aria-label="Recovery summary">
-      <div><small>Overnight HRV <Info k="HRV" /></small><b>{hv.today ?? '—'}</b><em>{hv.enough ? `7 hr ${hv.roll7} ms` : 'needs 14 d'}</em></div>
-      <div><small>Resting HR <Info k="RHR" /></small><b>{rh.value ?? '—'}</b><em>{rh.enough ? `${sign(rh.dev)} vs 30 hr` : ''}</em></div>
+      <div><small>Overnight HRV <Info k="HRV" /></small><b>{hv.today ?? '—'}</b><em>{hv.enough ? `7 d ${hv.roll7} ms` : 'needs 14 d'}</em></div>
+      <div><small>Resting HR <Info k="RHR" /></small><b>{rh.value ?? '—'}</b><em>{rh.enough ? `${sign(rh.dev)} vs 30 d` : ''}</em></div>
       <div><small>Sleep (asleep)</small><b>{sl.enough ? hm(sl.asleep_min) : '—'}</b><em>{sl.enough ? `${sign(Math.round(sl.vs_need_min))} min vs need` : ''}</em></div>
       <div><small>Form (TSB) <Info k="TSB" /></small><b>{sign(cur?.tsb)}</b><em>{fz ? `${cur.tsbPct}% · ${fz.label}` : ''}</em></div>
     </div>
@@ -127,11 +129,12 @@ export default function Readiness({ vdot, settings, focus }) {
       <p className="muted">{wg.bad} nights with Sleep HR &gt; 67 / HRV Reduced in the last 7 days{wg.pain ? ' · pain / tibia positive' : ''}.</p>
     </Card>
     </>}
-    <button className="btn wide" onClick={() => { setMode('analisis'); window.scrollTo(0, 0) }}>See the full analysis →</button>
+
     </>}
 
-    {mode === 'analisis' && <>
-    {mode === 'analysis' || mode === 'analisis' ? <nav className="chipjump" aria-label="Jump to section">{[['sec-load', 'Load & injury risk'], ['sec-auto', 'Autonomic'], ['sec-sleep', 'Sleep & muscles']].map(([id, t]) => <button key={id} onClick={() => { const el = document.getElementById(id); el?.scrollIntoView({ behavior: 'smooth', block: 'start' }); el?.focus({ preventScroll: true }) }}>{t}</button>)}</nav> : null}
+
+
+    {panel === 'all' && <>
     <Card title="Pillar contribution">
       <div className="pbar" role="img" aria-label={Object.entries(rd.pillars).map(([k, v]) => `${PILLAR[k]} ${Math.round(v.earned)} of ${v.weight}`).join(', ')}>
         {Object.entries(rd.pillars).map(([k, v]) => <i key={k} className={'pb-' + k} style={{ width: v.earned + '%' }} />)}</div>
@@ -140,6 +143,8 @@ export default function Readiness({ vdot, settings, focus }) {
       <Src>Weights: musculoskeletal & subjective 30 · autonomic 30 · sleep 20 · load 20 (taper/peak phase ±5). Rationale & formulas: docs/readiness-model.md. Saw 2016 (PMID 26423706): subjective measures are more sensitive than objective ones.</Src>
     </Card>
 
+    </>}
+    {(panel === 'all' || panel === 'load') && <>
     {/* ---- Layer 2.2: load ---- */}
     <h2 className="sech" id="sec-load" tabIndex={-1}>Training load & injury risk</h2>
     {M.state === 'ok' && !M.series.some((d) => d.load) ? <div className="card empty"><b>No Training Load yet</b>Connect COROS and pull the history — the load panel fills in automatically.</div> : <>
@@ -151,17 +156,19 @@ export default function Readiness({ vdot, settings, focus }) {
         <div><small>CTL ramp</small><b>{sign(M.ramp)}</b><em>per 7 days</em></div>
         <div><small>Monotony · Strain <Info k="Monotony" /></small><b>{M.mono?.monotony ?? '—'}</b><em>{M.mono?.strain != null ? `strain ${M.mono.strain}` : ''}</em></div>
       </div>
-      <Card title="PMC: fitness · fatigue · form" right={<div className="seg" role="group" aria-label="Rentang">{[[42, '6M'], [90, '3B']].map(([d, l]) => <button key={d} aria-pressed={range === d} className={range === d ? 'on' : ''} onClick={() => setRange(d)}>{l}</button>)}</div>}>
+      <div className="rgrid">
+      <Card title="PMC: fitness · fatigue · form" right={<div className="seg" role="group" aria-label="Range">{[[42, '6W'], [90, '3M']].map(([d, l]) => <button key={d} aria-pressed={range === d} className={range === d ? 'on' : ''} onClick={() => setRange(d)}>{l}</button>)}</div>}>
         <PMCChart data={pmcData} proj={M.proj} label={`Fitness ${cur?.ctl}, fatigue ${cur?.atl}, form ${cur?.tsb}; 14-day projection from the plan`} />
-        <div className="legend"><span><i className="ll" style={{ borderColor: 'var(--c-long)' }} />Fitness (CTL)</span><span><i className="ll" style={{ borderColor: 'var(--c-tt)' }} />Fatigue (ATL)</span><span><i className="ll" style={{ borderColor: 'var(--text)' }} />Form % (bawah)</span><span><i className="ll" style={{ borderTopStyle: 'dashed', borderColor: 'var(--muted)' }} />Plan projection</span></div>
+        <div className="legend"><span><i className="ll" style={{ borderColor: 'var(--c-long)' }} />Fitness (CTL)</span><span><i className="ll" style={{ borderColor: 'var(--c-tt)' }} />Fatigue (ATL)</span><span><i className="ll" style={{ borderColor: 'var(--text)' }} />Form % (bottom)</span><span><i className="ll" style={{ borderTopStyle: 'dashed', borderColor: 'var(--muted)' }} />Plan projection</span></div>
         <Src>[calc] CTL τ42 / ATL τ7 from daily COROS Training Load; TSB = yesterday's CTL − yesterday's ATL. Form zones are relative to fitness (convention, not evidence) because COROS Training Load is not on the TSS scale. Projection = planned km × your own TL/km per session type.</Src>
       </Card>
-      <Card title="ACWR" right={<div className="seg" role="group" aria-label="Metode ACWR">{[['ewma', 'EWMA'], ['roll', '7:28']].map(([k, l]) => <button key={k} aria-pressed={acwrMode === k} className={acwrMode === k ? 'on' : ''} onClick={() => setAcwrMode(k)}>{l}</button>)}</div>}>
+      <Card title="ACWR" right={<div className="seg" role="group" aria-label="ACWR method">{[['ewma', 'EWMA'], ['roll', '7:28']].map(([k, l]) => <button key={k} aria-pressed={acwrMode === k} className={acwrMode === k ? 'on' : ''} onClick={() => setAcwrMode(k)}>{l}</button>)}</div>}>
         <Speedometer value={acwrShown} />
         <BandLine data={M.pmc.slice(-30)} keys={[{ key: 'acwr', color: 'var(--text)' }]} refBand={[0.8, 1.3]} label="ACWR 30 days with the 0.8–1.3 band" height={110} />
         <Src>[LITERATURE] EWMA is more sensitive (Griffin 2020, PMID 31691167; Maupin 2020, PMID 32158285); 0.8–1.3 tends to carry the lowest risk. Methodological critique: Impellizzeri 2020 (PMID 32502973). Information, not a gate.</Src>
       </Card>
-      <Card title="Distance progression & internal vs external load">
+      </div>
+      <Card title="Distance progression & internal vs external load" className="narrowc">
         <p><b>{M.prog.cur} km</b> in the last 7 days vs {M.prog.prev} km before · <Chip tone={pb === 'safe' ? 'green' : pb === 'caution' ? 'yellow' : pb === 'alert' ? 'red' : undefined}>{M.prog.pct == null ? 'no comparison yet' : sign(M.prog.pct) + '%'}</Chip></p>
         <Bullet value={M.prog.pct} unit="%" bands={[{ from: -50, to: 10, cls: 'b-safe' }, { from: 10, to: 30, cls: 'b-caution' }, { from: 30, to: 80, cls: 'b-alert' }]} label={`Weekly distance progression ${M.prog.pct}%`} />
         <GroupedBars groups={weeksIE.map((w) => ({ label: w.label, int: Math.round((w.tl / mTl) * 100), ext: Math.round((w.km / mKm) * 100) }))} series={[{ key: 'int', color: 'var(--c-tt)' }, { key: 'ext', color: 'var(--c-long)' }]} label="Internal load (Training Load) and external load (km), percent of the 6-week average" fmt={(v) => v} />
@@ -169,26 +176,32 @@ export default function Readiness({ vdot, settings, focus }) {
         <Src>Nielsen 2014 (PMID 25155475): &gt;30% per week was linked to distance-related injury — including MTSS (exploratory, novice runners). CTL ramp is shown without a band (the +5–7 CTL/week band is a TSS convention).</Src>
       </Card></>}
 
+    </>}
+    {(panel === 'all' || panel === 'auto') && <>
     {/* ---- Layer 2.3: autonomic ---- */}
     <h2 className="sech" id="sec-auto" tabIndex={-1}>Autonomic nervous system</h2>
     <div className="score-grid">
-      <div><small>Overnight HRV <Info k="HRV" /></small><b>{hv.today ?? '—'}</b><em>{hv.enough ? `7 hr ${hv.roll7} ms` : 'needs 14 d'}</em></div>
-      <div><small>60-day corridor</small><b>{hv.enough ? `${hv.lo}–${hv.hi}` : '—'}</b><em>± 0,5 SD (ln)</em></div>
+      <div><small>Overnight HRV <Info k="HRV" /></small><b>{hv.today ?? '—'}</b><em>{hv.enough ? `7 d ${hv.roll7} ms` : 'needs 14 d'}</em></div>
+      <div><small>60-day corridor</small><b>{hv.enough ? `${hv.lo}–${hv.hi}` : '—'}</b><em>± 0.5 SD (ln)</em></div>
       <div><small>CV 7-day <Info k="CV" /></small><b>{hv.cv7 != null ? hv.cv7 + '%' : '—'}</b><em>{hv.flagCv ? 'unstable' : hv.enough ? 'stable' : ''}</em></div>
-      <div><small>Resting HR <Info k="RHR" /></small><b>{rh.value ?? '—'}</b><em>{rh.enough ? `${sign(rh.dev)} vs 30 hr` : ''}</em></div>
+      <div><small>Resting HR <Info k="RHR" /></small><b>{rh.value ?? '—'}</b><em>{rh.enough ? `${sign(rh.dev)} vs 30 d` : ''}</em></div>
       <div><small>7-day status</small><b>{hv.enough ? (hv.flagTrend ? 'down' : 'normal') : '—'}</b><em>{hv.flagDay ? 'suppressed today' : ''}</em></div>
       <div><small>RHR spike</small><b>{rh.enough ? (rh.spike ? 'yes' : 'no') : '—'}</b><em>≥ +5 bpm</em></div>
     </div>
+    <div className="rgrid">
     <Card title="60-day HRV corridor">
       <BandLine data={M.hrvSeries} keys={[{ key: 'roll7', color: 'var(--c-long)' }]} band={['lo', 'hi']} dots={{ key: 'hrv', cls: (d) => (d.lo != null && d.hrv < d.lo ? 'low' : '') }} label={`Daily HRV and 7-day mean with a ±0.5 SD corridor; latest ${hv.today} ms`} />
       <div className="legend"><span><i className="kdot" style={{ background: 'var(--c-long)' }} />Daily HRV</span><span><i className="ll" style={{ borderColor: 'var(--c-long)' }} />7-day mean</span><span><i className="kdot" style={{ background: 'var(--green)', opacity: 0.4 }} />Normal corridor</span><span><i className="kdot" style={{ background: 'var(--yellow)' }} />Below corridor</span></div>
       <Src>Plews 2013 (PMID 23852425): use a rolling mean and an individual baseline. Yellow dot = acute drop (normal after a hard session); the 7-day line leaving the corridor = a systemic signal. The spec uses ±0.75 SD; Lumpad uses ±0.5 SD (smallest worthwhile change).</Src>
     </Card>
     <Card title="Resting HR vs 30-day baseline"><BandLine data={M.rhrSeries} keys={[{ key: 'rhr', color: 'var(--c-quality)' }, { key: 'base', color: 'var(--muted)', cls: 'dash' }]} label={`Resting HR ${rh.value}, baseline ${rh.base}`} height={110} /></Card>
+    </div>
     <Card title="Autonomic quadrant (7 days)" right={M.quadrant.length ? <Chip tone={quadrantLabel(M.quadrant.at(-1).x, M.quadrant.at(-1).y)[0] === 'purple' ? undefined : quadrantLabel(M.quadrant.at(-1).x, M.quadrant.at(-1).y)[0]}>{quadrantLabel(M.quadrant.at(-1).x, M.quadrant.at(-1).y)[1].split(' · ')[0]}</Chip> : null}>
       {M.quadrant.length ? <><Quadrant points={M.quadrant} /><p className="muted">Today: {quadrantLabel(M.quadrant.at(-1).x, M.quadrant.at(-1).y)[1]}. Descriptive, not a diagnosis.</p></> : <p className="muted">Needs ≥ 14 days of HRV and 7 days of RHR.</p>}
     </Card>
 
+    </>}
+    {(panel === 'all' || panel === 'sleep') && <>
     {/* ---- Layer 2.4: sleep & musculoskeletal ---- */}
     <h2 className="sech" id="sec-sleep" tabIndex={-1}>Sleep & muscles</h2>
     <div className="score-grid">
@@ -199,15 +212,19 @@ export default function Readiness({ vdot, settings, focus }) {
       <div><small>COROS score</small><b>{sl.score ?? '—'}</b><em>[COROS]</em></div>
       <div><small>Sleep HR</small><b>{sl.hr_avg ?? '—'}</b><em>&gt; 67 = gate</em></div>
     </div>
+    <div className="rgrid">
     {sl.enough && <Card title="Sleep stages"><Stacked100 parts={[{ k: 'Deep', v: sl.deep, c: 'var(--c-long)' }, { k: 'REM', v: sl.rem, c: 'var(--c-tt)' }, { k: 'Light', v: sl.light, c: 'color-mix(in srgb, var(--c-long) 40%, var(--surface2))' }, { k: 'Awake', v: sl.awake, c: 'var(--c-quality)' }]} label={`Deep ${sl.deep}%, REM ${sl.rem}%, light ${sl.light}%, awake ${sl.awake}%`} />
       <Src>The hypnogram and overnight HR curve are not shown: the COROS MCP only gives totals per stage, not their time order.</Src></Card>}
     <Card title="14-day sleep debt"><Waterfall series={sl.series} label={`Sleep vs need over 14 days; debt ${Math.round(sl.debt_min / 6) / 10} hours`} />
       <Src>Walsh 2021 (PMID 33144349): sleep need is individual; chronic &lt; 7 h raises infection risk. The need is not increased automatically by load — there is no evidence-based formula.</Src></Card>
+    </div>
+    <div className="rgrid">
     <Card title="Muscle load map" right={Object.keys(ov).length ? <button className="link" onClick={() => setOv({})}>Reset manual</button> : null}>
       <BodyMap load={M.muscle} overrides={ov} onTap={tapRegion} />
       <Src>[heuristic] Automatic from the sessions actually done (gym lower/plyo from plan tags, runs from session type), decaying with a 12–36 h half-life. Tap an area to change it manually (* = manual).</Src></Card>
     <Card title="Systemic vs structural readiness"><TwinBars a={{ label: 'Systemic (HRV, RHR, sleep)', v: sys }} b={{ label: 'Structural (muscle, pain, tibia)', v: str }} />
       {sys != null && str != null && sys - str >= 25 && <p className="banner">Heart is ready, muscles/structure are not — avoid fast intervals and hills today.</p>}</Card>
+    </div>
 
     <Card title="Weekly gate · ◇ Thursday tempo" tone={wg.blocked ? 'red' : 'green'}>
       <p><b>{wg.blocked ? 'Thursday stays strides / hills' : 'No reason to hold back the ◇ tempo'}</b></p>

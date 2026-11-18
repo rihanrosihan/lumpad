@@ -52,3 +52,5 @@ export function toCsv(rows) {
   const cols = Object.keys(rows[0]), esc = (v) => (v == null ? '' : /[",\n]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : String(v))
   return [cols.join(','), ...rows.map((r) => cols.map((c) => esc(r[c])).join(','))].join('\n')
 }
+
+export function setShoe(ids, gearId) { const u = db.prepare('UPDATE activities SET gear_id = ? WHERE id = ?'); for (const x of ids) u.run(gearId, x); return ids }

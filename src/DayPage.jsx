@@ -1,3 +1,4 @@
+import SessionBrief from './SessionBrief.jsx'
 import { useStore } from './store.js'
 import { paces } from './lib/vdot.js'
 import { evaluate, EMPTY_DAY, hasInput, HARD } from './lib/gate.js'
@@ -51,6 +52,7 @@ export default function DayPage({ date, vdot, settings, go }) {
           {d.event && <p className="note">♥ {d.event}</p>}
           {reg && <p className="note">{reg.event} · {reg.distance} · {reg.category}{reg.start ? ` · ${reg.start} → ${reg.finish}` : ''}</p>}
         </Card>
+        <SessionBrief day={d} dailyCheckin={f} vdot={vdot} />
         {stepsFor(d).length > 0 && <Card title="Workout" right={<Chip>{PHASE_NAME[d.phase] || d.phase}</Chip>}>
           <WorkoutDetail day={d} settings={settings} />
         </Card>}

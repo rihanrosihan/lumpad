@@ -52,7 +52,7 @@ export default function Profile({ vdot, results, settings, setSettings }) {
 
   const [openG, setOpenG] = useStore('lumpad.profile.open', { conn: true }), setOpen = (id, v) => setOpenG((o) => ({ ...o, [id]: v }))
   const jump = (id) => { setOpen(id, true); setTimeout(() => { const el = document.getElementById('g-' + id); el?.scrollIntoView({ behavior: 'smooth', block: 'start' }); el?.querySelector('summary')?.focus({ preventScroll: true }) }, 60) }
-  return <Screen title="Profile" sub="Athlete engine, shoe garage, connections">
+  return <Screen title="Athlete Profile, VDOT Physiology & Shoe Fleet" sub="Training zones, personal records, shoe garage, AI Coach budget and connections">
     <nav className="chipjump" aria-label="Jump to section">{GROUPS.map(([id, t]) => <button key={id} onClick={() => jump(id)}>{t}</button>)}</nav>
     <Group id="vdot" title="VDOT & zones" open={openG.vdot} setOpen={setOpen}>
     {/* 1. VDOT & thresholds */}
