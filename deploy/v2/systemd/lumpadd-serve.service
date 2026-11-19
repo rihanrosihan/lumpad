@@ -1,0 +1,16 @@
+[Unit]
+Description=Lumpad v2 Go API Server (127.0.0.1:8788)
+After=postgresql.service network-online.target
+
+[Service]
+Type=simple
+User=lumpad
+WorkingDirectory=/opt/lumpad/lumpadd
+EnvironmentFile=/opt/lumpad/.env.v2
+MemoryMax=128M
+ExecStart=/opt/lumpad/lumpadd/lumpadd serve
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

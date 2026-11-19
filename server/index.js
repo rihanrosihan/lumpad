@@ -75,6 +75,42 @@ const routes = {
     kv[k] = { value: body.value, updatedAt: new Date().toISOString() }; save('kv', kv); return { ok: true, updatedAt: kv[k].updatedAt }
   },
   'GET /api/health': async () => ({ ok: true }),
+  'GET /api/graph/node': async (q) => {
+    const kind = q.get('kind') || 'races'
+    const raw = (() => { try { return fs.readFileSync('/opt/lumpad/.env.v2', 'utf8') } catch { return '' } })()
+    const env = { uri: process.env.NEO4J_URI, user: process.env.NEO4J_USER, pass: process.env.NEO4J_PASSWORD, db: process.env.NEO4J_DATABASE || 'neo4j' }
+    for (const l of raw.split(/\r?\n/)) {
+      const m = /^(NEO4J_(?:URI|USER|PASSWORD|DATABASE))=(.*)$/.exec(l.trim())
+      if (!m) continue
+      const v = m[2].trim().replace(/^["']|["']$/g, '')
+      if (m[1] === 'NEO4J_URI') env.uri = v
+      else if (m[1] === 'NEO4J_USER') env.user = v
+      else if (m[1] === 'NEO4J_PASSWORD') env.pass = v
+      else if (m[1] === 'NEO4J_DATABASE') env.db = v || 'neo4j'
+    }
+    if (!env.uri || !env.user || !env.pass) return { connected: false, rows: [] }
+    const queries = {
+      races: 'MATCH (r:Race)<-[:ATTEMPT_OF]-(s:Session) RETURN r.name, r.date, round(s.run_share*100), s.onset_km, r.status ORDER BY r.date DESC LIMIT 6',
+      shoes: 'MATCH (s:Session)-[:WORE]->(sh:Shoe) RETURN sh.model, count(s), round(avg(s.ef)*1000)/1000, round(avg(s.run_share)*100) ORDER BY count(s) DESC LIMIT 6',
+      pain: 'MATCH (d:Day)-[p:LOGGED_PAIN]->(ps:PainSite) RETURN d.date, ps.site, p.score ORDER BY d.date DESC LIMIT 6',
+      rules: 'MATCH (rl:Rule) RETURN rl.id, rl.title, rl.locked ORDER BY rl.locked DESC, rl.id LIMIT 8',
+    }
+    const stmt = queries[kind] || queries.races
+    try {
+      const host = env.uri.replace(/^(?:neo4j\+s|neo4j\+ssc|bolt\+s|bolt\+ssc|neo4j|bolt|https?):\/\//, '').split('/')[0]
+      const r = await fetch(`https://${host}/db/${encodeURIComponent(env.db)}/query/v2`, {
+        method: 'POST',
+        headers: { Authorization: 'Basic ' + Buffer.from(`${env.user}:${env.pass}`).toString('base64'), 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ statement: stmt }),
+        signal: AbortSignal.timeout(1500),
+      })
+      if (!r.ok) throw new Error('HTTP ' + r.status)
+      const j = await r.json()
+      return { connected: true, kind, fields: j?.data?.fields || [], rows: j?.data?.values || [] }
+    } catch (err) {
+      return { connected: false, kind, error: err.message, rows: [] }
+    }
+  },
   'GET /api/graph/overview': async () => {
     const readEnv = () => {
       const env = { uri: process.env.NEO4J_URI, user: process.env.NEO4J_USER, pass: process.env.NEO4J_PASSWORD, db: process.env.NEO4J_DATABASE || 'neo4j' }

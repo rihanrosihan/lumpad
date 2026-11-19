@@ -38,6 +38,8 @@ export default function KnowledgeGraphPanel({ twin, matrices, status }) {
   const [selected, setSelected] = useState('twin')
   const [filter, setFilter] = useState('all')
   const aura = useApi('/api/graph/overview')
+  const nodeKind = selected === 'races' ? 'races' : selected === 'shoes' ? 'shoes' : selected === 'gates' ? 'rules' : 'pain'
+  const auraNode = useApi(aura.data?.connected ? `/api/graph/node?kind=${nodeKind}` : '', !!aura.data?.connected)
   const t = twin?.state || twin || null
   const c = status?.counts || {}
   const memTotal = (status?.memory || []).reduce((s, m) => s + (m.n || 0), 0)
@@ -135,6 +137,7 @@ export default function KnowledgeGraphPanel({ twin, matrices, status }) {
     <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginTop: 8, marginBottom: 8, padding: '8px 10px', borderRadius: 10, background: 'var(--surface2)', border: '1px solid var(--line)', fontSize: '.78rem' }}>
       <StatusPill tone={aura.data?.connected ? 'green' : 'amber'}>{aura.data?.connected ? `Neo4j AuraDB Live · ${aura.data.total_nodes} nodes · ${aura.data.total_edges} edges` : aura.data?.configured ? 'Neo4j AuraDB Standby (PG16 active)' : 'Local PG16 + SQLite Graph'}</StatusPill>
       {aura.data?.connected && Object.entries(aura.data.nodes || {}).slice(0, 8).map(([k, v]) => <Chip key={k}>{k}: {v}</Chip>)}
+      {auraNode.data?.rows?.length > 0 && <span className="muted" style={{ width: '100%', fontSize: '.74rem' }}>Live Cypher ({nodeKind}): {auraNode.data.rows.slice(0, 3).map((r) => r.join(' · ')).join(' | ')}</span>}
     </div>
     <div className="chiprow" role="group" aria-label="Knowledge graph layers" style={{ marginTop: 8 }}>
       {FILTERS.map(([k, l]) => <button key={k} type="button" aria-pressed={filter === k} onClick={() => setFilter(k)}>{l}</button>)}

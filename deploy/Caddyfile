@@ -35,6 +35,9 @@ __DOMAIN__ {
 		basicauth {
 			__USER__ __HASH__
 		}
+		handle /api/v2/* {
+			reverse_proxy 127.0.0.1:8788
+		}
 		handle /api/* {
 			reverse_proxy 127.0.0.1:8787
 		}

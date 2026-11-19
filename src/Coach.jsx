@@ -121,12 +121,51 @@ function TwinPillars({ twin }) {
   </div>
 }
 
+// ---- Sub-4 Readiness Ranges (P10-P90) & Adaptive Coach Decision Ledger (v2 Phase 5)
+function Sub4AdaptiveCard({ twin }) {
+  const s4 = useApi('/api/v2/sub4')
+  const dec = useApi('/api/v2/decisions')
+  const ranges = s4.data?.ranges || []
+  const decisions = dec.data?.decisions || []
+  const vNow = s4.data?.vdot_current ?? twin?.state?.profile?.vdot ?? 31.7
+  const vNeed = s4.data?.vdot_needed ?? 39.9
+  return (
+    <Card title="Sub-4 Readiness Ranges (P10–P90) &amp; Adaptive Coach Loop" right={<span className="chips" style={{ margin: 0 }}><ProvenanceBadge type="MODEL" /><Chip tone="cobalt">VDOT {Number(vNow).toFixed(1)} → {vNeed}</Chip></span>}>
+      {ranges.length > 0 ? (
+        <div className="scroll" tabIndex={0}><table className="lapt">
+          <thead><tr><th>Race Target</th><th>P10 (Fast)</th><th>P50 (Median)</th><th>P90 (Safe)</th><th>Primary Limiter</th><th>Confidence</th></tr></thead>
+          <tbody>{ranges.map((r) => (
+            <tr key={r.race_name}>
+              <td><b>{r.race_name}</b></td>
+              <td className="cmp-good">{r.p10_hms}</td>
+              <td><b>{r.p50_hms}</b></td>
+              <td className="muted">{r.p90_hms}</td>
+              <td>{r.limiter}</td>
+              <td><StatusPill tone={r.confidence === 'high' ? 'green' : r.confidence === 'moderate' ? 'cobalt' : 'amber'}>{r.confidence}</StatusPill></td>
+            </tr>
+          ))}</tbody>
+        </table></div>
+      ) : (
+        <p className="muted" style={{ margin: 0 }}>Sub-4 P10–P90 engine ready on <code>lumpadd serve</code> (:8788). Current VDOT gap: <b>+{(vNeed - Number(vNow)).toFixed(1)}</b> (durability >20K is primary limiter).</p>
+      )}
+      <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid var(--line)', display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+        <Chip>Phase 5 Decision Ledger: {decisions.length} records</Chip>
+        {decisions.slice(0, 3).map((d) => (
+          <StatusPill key={d.id} tone={d.verdict === 'helped' ? 'green' : d.verdict === 'harmed' ? 'red' : 'cobalt'}>
+            {d.source}: {d.status}{d.verdict ? ` (${d.verdict})` : ''}
+          </StatusPill>
+        ))}
+      </div>
+    </Card>
+  )
+}
+
 // ---- Versioned Digital Twin & P(Sub-4) Monte Carlo [MODEL] with Scenarios / twin/1 JSON toggle
 function TwinMonteCarlo({ twin }) {
   const [view, setView] = useState('scenarios')
   const t = twin?.state, P = t?.projection
   if (!t) return null
-  return <Card title="Versioned Athlete Digital Twin & P(Sub-4) Monte Carlo" right={<span className="chips" style={{ margin: 0 }}><ProvenanceBadge type="MODEL" /><Chip>v{twin.version}</Chip></span>}>
+  return <Card title="Versioned AthleteDigitalTwin & P(Sub-4) Monte Carlo" right={<span className="chips" style={{ margin: 0 }}><ProvenanceBadge type="MODEL" /><Chip>v{twin.version}</Chip></span>}>
     <div style={{ marginBottom: 10 }}>
       <SegmentedTabs tabs={[{ id: 'scenarios', label: '3 Scenarios' }, { id: 'json', label: `twin/${twin.version} JSON` }]} value={view} onChange={setView} label="Twin view" />
     </div>
@@ -481,7 +520,7 @@ export default function Coach({ go, focus }) {
 
     {/* Row 2: Versioned Twin Monte Carlo / JSON (left) + Multi-Lag SQL & Hybrid RAG Status (right) */}
     <div id="cs-mc" tabIndex={-1} className="rgrid">
-      <div><TwinMonteCarlo twin={twin.data} /><TwinHistory /></div>
+      <div><Sub4AdaptiveCard twin={twin.data} /><TwinMonteCarlo twin={twin.data} /><TwinHistory /></div>
       <RagStatusAndHistory st={s} />
     </div>
 
