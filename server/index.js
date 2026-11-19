@@ -37,11 +37,11 @@ const routes = {
   // --- direct COROS connection (OAuth + PKCE, tokens sealed at rest)
   'GET /api/coros/status': async () => ({ ...corosAuth.status(), mcp: corosAuth.MCP_URL(), ...jobView() }),
   'GET /api/coros/login': async (_q, req, res) => {
-    let to; try { to = await corosAuth.startAuth(baseUrl(req) + '/api/coros/callback') } catch (e) { console.error('coros login:', e.message); to = '/?coros=error&why=' + encodeURIComponent(String(e.message).slice(0, 200)) + '#/profile' }
+    let to; try { to = await corosAuth.startAuth(baseUrl(req) + '/api/coros/callback') } catch (e) { console.error('coros login:', e.message); to = '/profile?coros=error&why=' + encodeURIComponent(String(e.message).slice(0, 200)) }
     res.writeHead(302, { location: to }); res.end(); return null },
   'GET /api/coros/callback': async (q, _r, res) => {
     let ok = false; try { if (!q.get('error')) { await corosAuth.finishAuth(q.get('code'), q.get('state')); ok = true } } catch (e) { console.error('coros callback:', e.message) }
-    res.writeHead(302, { location: '/?coros=' + (ok ? 'ok' : 'error') + '#/profile' }); res.end(); return null },
+    res.writeHead(302, { location: '/profile?coros=' + (ok ? 'ok' : 'error') }); res.end(); return null },
   'POST /api/coros/test': async () => withCoros(async (call) => { const t = await call('queryDevices'); return { ok: true, devices: [...t.matchAll(/^\s*\d+\.\s+(.+)$/gm)].map((m) => m[1].trim()) } }, { archive: false }),
   'POST /api/coros/disconnect': async () => { await corosAuth.disconnect(); return { ok: true } },
   'POST /api/sync/run': async () => { needCoros(); return { job: startJob('daily') } },

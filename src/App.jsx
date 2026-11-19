@@ -10,7 +10,6 @@ import Coach from './Coach.jsx'
 import DayPage from './DayPage.jsx'
 import Biometrics from './Biometrics.jsx'
 import PlanSync from './PlanSync.jsx'
-import Course from './Course.jsx'
 import { EMPTY_BIO, latest, classifyBP } from './lib/bio.js'
 import { CHECKPOINTS, TARGET } from './lib/plan.js'
 import { paces, fmtPace } from './lib/vdot.js'
@@ -23,20 +22,24 @@ import { useApi } from './api.js'
 // Pages (each its own full page, no popups). `short` = label in the phone bottom bar.
 const PAGES = {
   home: { label: 'Home', icon: 'home' }, ready: { label: 'Readiness', icon: 'ready', short: 'Ready' }, activity: { label: 'Activities', icon: 'run', short: 'Activity' },
-  calendar: { label: 'Calendar', icon: 'cal', short: 'Plan' }, analysis: { label: 'Run Analysis', icon: 'run' }, plan: { label: 'Plan Sync', icon: 'sync', short: 'Sync' }, day: { label: 'Day Plan', icon: 'day' }, checkpoint: { label: 'Checkpoints', icon: 'bars' }, race: { label: 'Races', icon: 'flag' }, route: { label: 'Course', icon: 'run' },
+  calendar: { label: 'Calendar', icon: 'cal', short: 'Plan' }, analysis: { label: 'Run Analysis', icon: 'run' }, plan: { label: 'Plan Sync', icon: 'sync', short: 'Sync' }, day: { label: 'Day Plan', icon: 'day' }, checkpoint: { label: 'Checkpoints', icon: 'bars' }, race: { label: 'Races', icon: 'flag' },
   coach: { label: 'AI Coach', icon: 'coach', short: 'Coach' }, biometrics: { label: 'Biometrics', icon: 'heart', short: 'Labs' }, profile: { label: 'Profile', icon: 'user' },
 }
-const GROUPS = [['Daily', ['home', 'ready', 'activity', 'analysis']], ['Planning', ['calendar', 'day', 'plan', 'checkpoint', 'race', 'route']], ['Intelligence', ['coach', 'biometrics', 'profile']]]
+const GROUPS = [['Daily', ['home', 'ready', 'activity', 'analysis']], ['Planning', ['calendar', 'day', 'plan', 'checkpoint', 'race']], ['Intelligence', ['coach', 'biometrics', 'profile']]]
 // breadcrumb under the brand (mockup wording)
-const CRUMB = { home: 'Home Briefing', ready: 'Readiness & Load', activity: 'Activities Catalog', calendar: 'Macrocycle Calendar', plan: 'Plan Sync', day: 'Day Plan', checkpoint: 'Checkpoint Roadmap', race: 'Races Hub', route: 'Official Course', coach: 'AI Coach & Rules', biometrics: 'Biometrics & Labs', profile: 'Profile & Fleet' }
+const CRUMB = { home: 'Home Briefing', ready: 'Readiness & Load', activity: 'Activities Catalog', calendar: 'Macrocycle Calendar', plan: 'Plan Sync', day: 'Day Plan', checkpoint: 'Checkpoint Roadmap', race: 'Races Hub', coach: 'AI Coach & Rules', biometrics: 'Biometrics & Labs', profile: 'Profile & Fleet' }
 const BOTTOM = ['home', 'ready', 'coach', 'calendar', 'race', 'biometrics', 'profile']
 const ROUTES = Object.keys(PAGES).filter((k) => k !== 'analysis')
 const RACES = PLAN.filter((d) => d.kind === 'race' && /FM|Full/.test(d.label || ''))
 const THEMES = ['auto', 'light', 'dark']
 
-// #/day/2027-01-07 and #/activity/<id> carry their argument in the hash so a reload or a shared link lands on the same page
+// Clean History API routes: /home, /ready, /day/2027-01-07, /activity/<id> (also redirects legacy #/ and /route URLs)
 function parse() {
-  const [t, ...rest] = location.hash.replace('#/', '').split('/'), a = rest.join('/') ? decodeURIComponent(rest.join('/')) : null, tab = ROUTES.includes(t) ? t : 'home'
+  const raw = location.hash && location.hash.startsWith('#/') ? location.hash.slice(2) : location.pathname.replace(/^\/+/, '')
+  const [t0, ...rest] = raw.split('/')
+  const t = t0 === 'route' ? 'race' : t0
+  const a = rest.join('/') ? decodeURIComponent(rest.join('/')) : null
+  const tab = ROUTES.includes(t) ? t : 'home'
   return { tab, focus: tab === 'day' ? a : tab === 'activity' && a ? { id: a } : null }
 }
 function latestVdot(results) {
@@ -71,15 +74,26 @@ export default function App() {
   const sync = useSyncStatus(), sync2 = useSyncStatus2(), [busy, setBusy] = useState('')
   const mainRef = useRef(), first = useRef(true)
   useEffect(() => { if (first.current) { first.current = false; return } mainRef.current?.focus({ preventScroll: true }) }, [tab])
-  useEffect(() => { const f = () => { const r = parse(); setTab(r.tab); setFocus(r.focus) }; addEventListener('hashchange', f); return () => removeEventListener('hashchange', f) }, [])
+  useEffect(() => {
+    const cleanPath = '/' + init.tab + (init.tab === 'day' && init.focus ? '/' + encodeURIComponent(init.focus) : init.tab === 'activity' && init.focus?.id ? '/' + encodeURIComponent(init.focus.id) : '')
+    if (location.hash.startsWith('#/') || location.pathname === '/' || location.pathname === '/route') {
+      history.replaceState(null, '', cleanPath + (location.search || ''))
+    }
+    const f = () => { const r = parse(); setTab(r.tab); setFocus(r.focus) }
+    addEventListener('popstate', f)
+    return () => removeEventListener('popstate', f)
+  }, [])
   useEffect(() => { document.documentElement.dataset.theme = theme === 'auto' ? '' : theme }, [theme])
   // go(tab, arg): callers keep the old vocabulary — calendar+{view:'cp'|'race'} and calendar+date map onto their dedicated pages
   const go = (t, arg = null) => {
+    if (t === 'route') t = 'race'
     if (t === 'calendar' && arg && typeof arg === 'object') t = arg.view === 'cp' ? 'checkpoint' : arg.view === 'race' ? 'race' : 'calendar'
     else if (t === 'calendar' && typeof arg === 'string') t = 'day'
     const a = t === 'day' ? (typeof arg === 'string' ? arg : T) : t === 'activity' && arg?.id ? arg.id : null
     setFocus(t === 'day' ? a : arg); setTab(t); setMenu(false)
-    location.hash = '#/' + t + (a ? '/' + encodeURIComponent(a) : ''); window.scrollTo(0, 0)
+    const nextUrl = '/' + t + (a ? '/' + encodeURIComponent(a) : '')
+    if (location.pathname !== nextUrl || location.hash) history.pushState(null, '', nextUrl)
+    window.scrollTo(0, 0)
   }
   const cycleTheme = () => setTheme(THEMES[(THEMES.indexOf(theme) + 1) % 3])
   const syncNow = async () => { setBusy('run'); try { const r = await fetch('/api/sync/run', { method: 'POST' }); setBusy(r.ok ? 'ok' : 'err') } catch { setBusy('err') } setTimeout(() => setBusy(''), 4000) }
@@ -100,7 +114,7 @@ export default function App() {
   const cur = tab === 'activity' && focus?.id ? 'activity-detail' : tab
   const subOf = { day: 'calendar', plan: 'calendar', analysis: 'activity' }
   const navBtn = (k, cls) => <button key={k} className={`${cls} ${(k === 'analysis' ? cur === 'activity-detail' : tab === k && !(k === 'activity' && cur === 'activity-detail')) ? 'on' : ''} ${subOf[k] ? 'sub' : ''}`} aria-current={(k === 'analysis' ? cur === 'activity-detail' : tab === k) ? 'page' : undefined}
-    onClick={() => (k === 'analysis' ? (lastRunId ? go('activity', { id: lastRunId }) : go('activity')) : go(k, k === 'day' ? T : null))}><Icon n={PAGES[k].icon} size={cls === 'rb' ? 18 : 22} /><span>{cls === 'nb' ? PAGES[k].short || PAGES[k].label : PAGES[k].label}</span>{cls !== 'nb' && BADGE[k] && <em className={'bdg b-' + k}>{BADGE[k]}</em>}</button>
+    onClick={() => (k === 'analysis' ? (lastRunId ? go('activity', { id: lastRunId }) : go('activity')) : go(k, k === 'day' ? T : null))}><Icon n={PAGES[k].icon} size={cls === 'rb' ? 18 : 22} /><span>{cls === 'nb' ? PAGES[k].short || PAGES[k].label : PAGES[k].label}</span></button>
   const grouped = (cls) => GROUPS.map(([g, ks]) => <div key={g} className="ngroup"><p className="ngl">{g}</p>{ks.map((k) => navBtn(k, cls))}</div>)
   const gate = rd.score == null ? ['none', 'NO DATA', 'Not enough data for today\'s score yet.'] : rd.caps.length ? ['caution', 'CAUTION', rd.caps[0].why] : ['ok', rd.tier.label.toUpperCase(), rd.tier.advice]
   const Ribbon = ({ children }) => <div className="ribbon">{children}</div>
@@ -139,7 +153,6 @@ export default function App() {
           {tab === 'coach' && <Coach go={go} focus={focus} />}
           {tab === 'calendar' && <Calendar view="month" vdot={vdot} results={results} setResults={setResults} focus={null} settings={settings} go={go} />}
           {tab === 'plan' && <PlanSync go={go} />}
-          {tab === 'route' && <Course go={go} settings={settings} />}
           {tab === 'day' && <DayPage date={focus || T} vdot={vdot} settings={settings} go={go} />}
           {tab === 'checkpoint' && <Calendar view="cp" vdot={vdot} results={results} setResults={setResults} focus={focus} settings={settings} go={go} />}
           {tab === 'race' && <Calendar view="race" vdot={vdot} results={results} setResults={setResults} focus={focus} settings={settings} go={go} />}

@@ -107,6 +107,7 @@ export default function Race({ settings, go }) {
   const T = today()
   const [tab, setTab] = useState('upcoming')
   const [planSub, setPlanSub] = useState('course')
+  const [selectedPlan, setSelectedPlan] = useState('jrf2027')
   const [histFilter, setHistFilter] = useState('all')
   const [bib, setBib] = useStore('lumpad.race.jakim2027.bib', '')
   const [bibDraft, setBibDraft] = useState('')
@@ -218,29 +219,80 @@ export default function Race({ settings, go }) {
           </div>
         </Card>
 
-        <JakimBenchmark settings={settings} compact onOpen={() => go('route')} />
-        <CourseMap routeId="jakim" pace={null} goal="healthy finish" go={go} />
+        <Card title="Official Course &amp; Benchmark — Jakarta International Marathon 2027 (Jakim FM)" right={<Chip tone="green">42.195 km · Monas → GBK</Chip>}>
+          <JakimBenchmark settings={settings} />
+          <div style={{ marginTop: 12 }}>
+            <CourseMap routeId="jakim" pace={null} goal="healthy finish" go={go} />
+          </div>
+        </Card>
       </div>
     })}
 
     {/* ===== TAB 2: PLAN (UNBOOKED 2027 ROADMAP ONLY — JAKIM EXCLUDED) ===== */}
     {tab === 'plan' && <>
       <Card title="2027 planned races (unbooked roadmap)" right={<Chip>Optional: NY Run 20.3K (Jan 1)</Chip>}>
-        <p className="muted" style={{ marginBottom: 10 }}>Registered races (Jakim FM) live exclusively in <b>Upcoming</b>. Below are your 3 planned targets on the 2027 roadmap.</p>
+        <p className="muted" style={{ marginBottom: 10 }}>Registered races (Jakim FM) live exclusively in <b>Upcoming</b>. Select any planned race below to open its specific Official Race Guide &amp; Blueprint.</p>
         <div className="plan-cards3">
-          {planned.map((r) => <div key={r.id} className={`pcard ${r.arace ? 'arace' : ''}`}>
-            <div className="ch" style={{ marginBottom: 0 }}>
-              <StatusPill tone={r.arace ? 'red' : 'amber'}>{r.cls}</StatusPill>
-              <b style={{ fontFamily: 'var(--f-mono)', fontSize: '.78rem' }}>{r.dateSpan} · D-{Math.max(0, diffDays(r.date, T))}</b>
-            </div>
-            <h3 style={{ margin: '4px 0 2px', fontSize: '.98rem' }}>{r.name}</h3>
-            <p className="muted" style={{ fontSize: '.8rem' }}>{r.desc}</p>
-            <small className="muted" style={{ marginTop: 'auto', paddingTop: 6, borderTop: '1px solid var(--line)' }}>{r.note}</small>
-          </div>)}
+          {planned.map((r) => {
+            const active = selectedPlan === r.id
+            return <button key={r.id} type="button" onClick={() => setSelectedPlan(r.id)} className={`pcard ${r.arace ? 'arace' : ''}`} style={{ textAlign: 'left', cursor: 'pointer', outline: active ? '2px solid var(--cobalt)' : undefined, outlineOffset: 2 }}>
+              <div className="ch" style={{ marginBottom: 0 }}>
+                <StatusPill tone={r.arace ? 'red' : 'amber'}>{r.cls}</StatusPill>
+                <b style={{ fontFamily: 'var(--f-mono)', fontSize: '.78rem' }}>{r.dateSpan} · D-{Math.max(0, diffDays(r.date, T))}</b>
+              </div>
+              <h3 style={{ margin: '4px 0 2px', fontSize: '.98rem' }}>{r.name}</h3>
+              <p className="muted" style={{ fontSize: '.8rem' }}>{r.desc}</p>
+              <small style={{ marginTop: 'auto', paddingTop: 6, borderTop: '1px solid var(--line)', color: active ? 'var(--cobalt-t)' : 'var(--muted)', fontWeight: active ? 700 : 400 }}>
+                {active ? 'Viewing Race Guide & Blueprint ↓' : `${r.note} · Open guide →`}
+              </small>
+            </button>
+          })}
         </div>
       </Card>
 
-      <Card title="JRF Official Race Guide & A-Race Blueprint" right={<span className="chips" style={{ margin: 0 }}><ProvenanceBadge type="MODEL" /><Chip tone="red">5h 00m COT</Chip></span>}>
+      {selectedPlan === 'mjm2027' && <Card title="Mandiri Jogja Marathon 2027 — Race Plan &amp; D+3 Gate Blueprint" right={<span className="chips" style={{ margin: 0 }}><StatusPill tone="amber">C-RACE · GATED</StatusPill><Chip>Jun 19–20, 2027</Chip></span>}>
+        <div className="rgrid">
+          <div>
+            <h3>Race Weekend Structure (Yogyakarta Family Trip)</h3>
+            <ul className="rules">
+              <li><b>Sat, Jun 19 (B-MJM):</b> 30′ easy shakeout jog only — treat as a mobility &amp; GI-flush gate, never a race effort.</li>
+              <li><b>Sun, Jun 20 (MJM FM · 42.2 km):</b> Falls D+7 after Jakim FM (Jun 13). Easy conversational run-walk pace; zero time pressure.</li>
+              <li><b>Logistics:</b> 4D3N Yogyakarta family trip (Prambanan / Sleman area); prioritize post-Jakim sleep, hydration, and plantar recovery.</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Mandatory D+3 Go/No-Go Gate (Wed, Jun 16, 2027)</h3>
+            <div className="mod yellow">
+              <b>Auto-DNS Trigger Rules:</b>
+              <p style={{ margin: '4px 0 0', fontSize: '.82rem' }}>Any lingering plantar/VMO/Achilles pain ≥ 1/10, Sleep HR &gt; +5 bpm over baseline, or Reduced HRV on Wed Jun 16 automatically converts MJM FM to DNS to protect the JRF Sub-4 A-Race build.</p>
+            </div>
+            <button type="button" className="btn sm full" style={{ marginTop: 10 }} onClick={() => go('calendar', '2027-06-20')}>Open MJM Race Day Plan →</button>
+          </div>
+        </div>
+      </Card>}
+
+      {selectedPlan === 'bormar2027' && <Card title="Borobudur FM 2027 (Bormar) — Race Plan &amp; Recovery Blueprint" right={<span className="chips" style={{ margin: 0 }}><StatusPill tone="amber">PLAN · SYNC NEEDED</StatusPill><Chip>Nov 14, 2027</Chip></span>}>
+        <div className="rgrid">
+          <div>
+            <h3>Post-A-Race Recovery Reconciliation</h3>
+            <ul className="rules">
+              <li><b>Date &amp; Spacing:</b> Sun, Nov 14, 2027 (Magelang, 42.195 km) — falls <b>D+21 after JRF A-Race</b> (Oct 24).</li>
+              <li><b>W45 Sync Gate:</b> Do not schedule peak intensity between JRF and Bormar; treat Bormar as a celebratory / fun finish if legs pass W44 recovery check.</li>
+              <li><b>2026 Lessons (Bib #B13718 · 5:09:15 @34K QRY):</b> Borobudur heat + rolling hills triggered Black Flag &amp; nausea from km 25 — enforce conservative opening HR cap and proven gels only.</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Key Heat &amp; Terrain Guardrails</h3>
+            <div className="mod red">
+              <b>No New Products on Race Day:</b>
+              <p style={{ margin: '4px 0 0', fontSize: '.82rem' }}>Use only tested fueling (45–60 g/hr CHO) and early cooling at every water station; respect WBGT flags and COP cutoffs without chasing lost time on climbs.</p>
+            </div>
+            <button type="button" className="btn sm full" style={{ marginTop: 10 }} onClick={() => go('calendar', '2027-11-14')}>Open Borobudur Race Day Plan →</button>
+          </div>
+        </div>
+      </Card>}
+
+      {selectedPlan === 'jrf2027' && <Card title="myBCA JRF 2027 — Official Race Guide & A-Race Blueprint" right={<span className="chips" style={{ margin: 0 }}><ProvenanceBadge type="MODEL" /><Chip tone="red">5h 00m COT</Chip></span>}>
         <div className="chiprow" role="tablist" aria-label="JRF blueprint sections">
           {[['course', 'Course Map & GPX'], ['sim', 'Pacing & WBGT Sim'], ['cop', 'Cut-offs & WBGT Flags'], ['logistics', 'Logistics, MRT & Pacers'], ['week', 'Taper, Week & Rules']].map(([k, l]) => (
             <button key={k} type="button" role="tab" aria-selected={planSub === k} aria-pressed={planSub === k} onClick={() => setPlanSub(k)}>{l}</button>
@@ -350,7 +402,7 @@ export default function Race({ settings, go }) {
             <button type="button" className="btn sm full" onClick={() => go('calendar', { view: 'cp', id: 18 })}>CP18 Go/No-Go Gate (Thu 21 Oct) →</button>
           </div>
         </div>}
-      </Card>
+      </Card>}
     </>}
 
     {/* ===== TAB 3: HISTORY (2024–2026 VALIDATED LEDGER) ===== */}
