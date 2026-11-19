@@ -4,6 +4,7 @@ import { Card, Chip, Evidence, Icon, SegmentedTabs, ProgressBar, StatusPill, Pro
 import { useStore } from './store.js'
 import { BarChart } from './charts.jsx'
 import CourseMap from './CourseMap.jsx'
+import JrfCourseMap from './JrfCourseMap.jsx'
 import JakimBenchmark from './JakimBenchmark.jsx'
 
 const JRF_COPS = [
@@ -105,7 +106,7 @@ function Arc10kChart() {
 export default function Race({ settings, go }) {
   const T = today()
   const [tab, setTab] = useState('upcoming')
-  const [planSub, setPlanSub] = useState('sim')
+  const [planSub, setPlanSub] = useState('course')
   const [histFilter, setHistFilter] = useState('all')
   const [bib, setBib] = useStore('lumpad.race.jakim2027.bib', '')
   const [bibDraft, setBibDraft] = useState('')
@@ -241,10 +242,12 @@ export default function Race({ settings, go }) {
 
       <Card title="JRF Official Race Guide & A-Race Blueprint" right={<span className="chips" style={{ margin: 0 }}><ProvenanceBadge type="MODEL" /><Chip tone="red">5h 00m COT</Chip></span>}>
         <div className="chiprow" role="tablist" aria-label="JRF blueprint sections">
-          {[['sim', 'Pacing & WBGT Sim'], ['cop', 'Cut-offs & WBGT Flags'], ['logistics', 'Logistics, MRT & Pacers'], ['week', 'Taper, Week & Rules']].map(([k, l]) => (
+          {[['course', 'Course Map & GPX'], ['sim', 'Pacing & WBGT Sim'], ['cop', 'Cut-offs & WBGT Flags'], ['logistics', 'Logistics, MRT & Pacers'], ['week', 'Taper, Week & Rules']].map(([k, l]) => (
             <button key={k} type="button" role="tab" aria-selected={planSub === k} aria-pressed={planSub === k} onClick={() => setPlanSub(k)}>{l}</button>
           ))}
         </div>
+
+        {planSub === 'course' && <JrfCourseMap />}
 
         {planSub === 'sim' && <>
           <div className="ch" style={{ flexWrap: 'wrap', gap: 8 }}>
@@ -308,7 +311,25 @@ export default function Race({ settings, go }) {
           <div>
             <h3>Official HYDROPLUS Marathon Pacers</h3>
             <dl className="kv">{PACERS.map(([tier, names, hi]) => <div key={tier} style={hi ? { background: 'color-mix(in srgb, var(--cobalt) 12%, transparent)', padding: '8px 10px', borderRadius: 10 } : undefined}><dt><b>{tier}</b></dt><dd>{names}</dd></div>)}</dl>
-            <p className="muted" style={{ marginTop: 8 }}><b>JRF App &amp; Photos:</b> JRF Pass + Free MRT QR · Fotoyu <code>JRF2026</code> (Rp168,000 package).</p>
+            <p className="muted" style={{ marginTop: 8 }}><b>JRF App &amp; Photos:</b> JRF Pass + Free MRT QR · Fotoyu <code>JRF2026</code> (Rp168,000 package · single Rp88,000) · Runna 2 wks free: <code>JAKARTA26</code>.</p>
+            <p className="muted" style={{ marginTop: 4 }}><b>Official Channels:</b> <code>jakartarunningfestival.id</code> · <code>help@marathon.id</code> · WA Broadcast <code>085137482373</code> · Prayer room available pre-race &amp; on-course.</p>
+          </div>
+          <div style={{ gridColumn: '1 / -1', marginTop: 8 }}>
+            <h3>MRT Jakarta Early Race-Day Schedule (Free w/ JRF App QR · Starts 03:00 WIB)</h3>
+            <div className="scroll" tabIndex={0}><table className="zm">
+              <thead><tr><th>Direction</th><th>Train 1</th><th>Train 2</th><th>Train 3</th><th>Train 4</th><th>Train 5</th></tr></thead>
+              <tbody>
+                <tr><td><b>Lebak Bulus → Istora</b></td><td>Blok M 03:00 → <b>03:07</b></td><td>03:00 → <b>03:19</b></td><td>03:13 → <b>03:32</b></td><td>03:25 → <b>03:44</b></td><td>03:37 → <b>03:56</b></td></tr>
+                <tr><td><b>Bundaran HI → Istora</b></td><td>03:01 → <b>03:10</b></td><td>03:21 → <b>03:30</b></td><td>03:36 → <b>03:45</b></td><td>03:48 → <b>03:57</b></td><td>04:00 → <b>04:09</b></td></tr>
+              </tbody>
+            </table></div>
+            <details className="more" style={{ marginTop: 8 }}><summary>Sunday Road Closures (02:30–09:15 WIB) &amp; Park-and-Ride Options</summary>
+              <ul className="rules" style={{ marginTop: 6 }}>
+                <li><b>Closed 02:30–09:15:</b> Jl. Jend. Sudirman, Jl. Gatot Subroto (N &amp; S), Jl. Gerbang Pemuda, Jl. Asia Afrika (to Pintu Satu Senayan), Jl. M.H. Thamrin, Jl. Medan Merdeka Barat &amp; Selatan (N), Jl. Imam Bonjol, Jl. H.O.S. Cokroaminoto*, Jl. H.R. Rasuna Said (E &amp; W)*, Mampang–Kuningan Underpass, Jl. Sisingamangaraja (*leftmost lane open). Live map: <code>jrf.id/road-closure</code>.</li>
+                <li><b>24h Park &amp; Ride near MRT:</b> Lebak Bulus Park &amp; Ride / Poins Square / Carrefour · Blok M Plaza / Blok M Square / Melawai · Cipete Raya (next to McD).</li>
+                <li><b>GBK Area Parking:</b> 16 zones (4,423 cars / 11,024 motorbikes; vehicle entry via Entrances 2 &amp; 5 only — extremely limited). Grab Advance Booking promo: <code>ADVANCEJRF26</code>.</li>
+              </ul>
+            </details>
           </div>
         </div>}
 
