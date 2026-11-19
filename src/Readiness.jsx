@@ -6,7 +6,7 @@ import { BY_DATE, today, addDays, fmtLong, KIND } from './lib/calendar.js'
 import { PILLAR } from './lib/readiness.js'
 import { formZone, progressionBand } from './lib/load.js'
 import { mean, r1 } from './lib/stats.js'
-import { Card, Chip, Icon, Evidence, SegmentedTabs, StatusPill } from './ui.jsx'
+import { Card, Chip, Icon, Info, Evidence, SegmentedTabs, StatusPill } from './ui.jsx'
 import ScaleCard from './ScaleCard.jsx'
 import { useHealthDay, hrvLow } from './sync.js'
 import { hm } from './api.js'
@@ -236,7 +236,7 @@ export default function Readiness({ vdot, settings, focus }) {
         {/* 2x2 Summary KPI Grid (Prototype Parity) */}
         <div className="rd-kpi2x2">
           <div className="rd-ktile">
-            <span>HRV ({hv.today ?? '—'} ms)</span>
+            <span>HRV <Info k="HRV" /> ({hv.today ?? '—'} ms)</span>
             <b style={{ color: 'var(--green-t)' }}>{hvPct != null ? `${sign(hvPct)}%` : '—'}</b>
           </div>
           <div className="rd-ktile">
@@ -244,7 +244,7 @@ export default function Readiness({ vdot, settings, focus }) {
             <b style={{ color: 'var(--cobalt-t)' }}>{sl.enough ? `${sl.eff}% Eff` : '—'}</b>
           </div>
           <div className="rd-ktile">
-            <span>RHR ({rh.value ?? '—'} bpm)</span>
+            <span>RHR <Info k="RHR" /> ({rh.value ?? '—'} bpm)</span>
             <b style={{ color: 'var(--cobalt-t)' }}>{rh.enough ? `${sign(rh.dev)} bpm` : '—'}</b>
           </div>
           <div className={`rd-ktile ${cur?.tsb < -30 ? 'warn' : ''}`}>
@@ -279,7 +279,7 @@ export default function Readiness({ vdot, settings, focus }) {
     {(panel === 'all' || panel === 'load') && <div id="sec-load" tabIndex={-1} className="rgrid">
       <Card title="Performance Management Chart (PMC)" right={<div className="seg" role="group" aria-label="Range">{[[42, '6W'], [90, '3M']].map(([d, l]) => <button key={d} aria-pressed={range === d} className={range === d ? 'on' : ''} onClick={() => setRange(d)}>{l}</button>)}</div>}>
         <p className="muted" style={{ marginTop: 0, fontSize: '.78rem' }}>
-          Fitness (CTL <b>{cur?.ctl ?? '—'}</b>) · Fatigue (ATL <b>{cur?.atl ?? '—'}</b>) · Form (TSB <b>{sign(cur?.tsb)}</b>) · Monotony {M.mono?.monotony ?? '—'} · Strain {M.mono?.strain ?? '—'}
+          Fitness (CTL <Info k="CTL" /> <b>{cur?.ctl ?? '—'}</b>) · Fatigue (ATL <Info k="ATL" /> <b>{cur?.atl ?? '—'}</b>) · Form (TSB <Info k="TSB" /> <b>{sign(cur?.tsb)}</b>) · Monotony <Info k="Monotony" /> {M.mono?.monotony ?? '—'} · Strain {M.mono?.strain ?? '—'}
         </p>
         <PMCChart data={pmcData} proj={M.proj} label={`Fitness ${cur?.ctl}, fatigue ${cur?.atl}, form ${cur?.tsb}`} />
         <div className="legend"><span><i className="ll" style={{ borderColor: 'var(--c-long)' }} />CTL</span><span><i className="ll" style={{ borderColor: 'var(--c-tt)' }} />ATL</span><span><i className="ll" style={{ borderColor: 'var(--text)' }} />Form %</span><span><i className="ll" style={{ borderTopStyle: 'dashed', borderColor: 'var(--muted)' }} />Plan</span></div>
@@ -287,7 +287,7 @@ export default function Readiness({ vdot, settings, focus }) {
 
       <Card title="ACWR & Weekly Load Progression" right={<div className="seg" role="group" aria-label="ACWR method">{[['ewma', 'EWMA'], ['roll', '7:28']].map(([k, l]) => <button key={k} aria-pressed={acwrMode === k} className={acwrMode === k ? 'on' : ''} onClick={() => setAcwrMode(k)}>{l}</button>)}</div>}>
         <p className="muted" style={{ marginTop: 0, fontSize: '.78rem' }}>
-          ACWR <b>{acwrShown ?? '—'}</b> (0.8–1.3 sweet spot) · Last 7d: <b>{M.prog.cur} km</b> vs {M.prog.prev} km (<Chip tone={pb === 'safe' ? 'green' : pb === 'caution' ? 'yellow' : pb === 'alert' ? 'red' : undefined}>{M.prog.pct == null ? '—' : sign(M.prog.pct) + '%'}</Chip>)
+          ACWR <Info k="ACWR" /> <b>{acwrShown ?? '—'}</b> (0.8–1.3 sweet spot) · Last 7d: <b>{M.prog.cur} km</b> vs {M.prog.prev} km (<Chip tone={pb === 'safe' ? 'green' : pb === 'caution' ? 'yellow' : pb === 'alert' ? 'red' : undefined}>{M.prog.pct == null ? '—' : sign(M.prog.pct) + '%'}</Chip>)
         </p>
         <BandLine data={M.pmc.slice(-30)} keys={[{ key: 'acwr', color: 'var(--cobalt)' }]} refBand={[0.8, 1.3]} label="ACWR 30 days with 0.8–1.3 band" height={125} />
         <Bullet value={M.prog.pct} unit="%" bands={[{ from: -50, to: 10, cls: 'b-safe' }, { from: 10, to: 30, cls: 'b-caution' }, { from: 30, to: 80, cls: 'b-alert' }]} label={`Weekly distance progression ${M.prog.pct}%`} />
@@ -298,7 +298,7 @@ export default function Readiness({ vdot, settings, focus }) {
     {(panel === 'all' || panel === 'auto') && <div id="sec-auto" tabIndex={-1} className="rgrid">
       <Card title="Overnight HRV & Normal Band" right={<StatusPill tone={hv.flagTrend ? 'amber' : 'green'}>{hv.enough ? (hv.flagTrend ? 'Suppressed' : 'Optimal') : 'Building'}</StatusPill>}>
         <p className="muted" style={{ marginTop: 0, fontSize: '.78rem' }}>
-          Last night: <b>{hv.today ?? '—'} ms</b> · 7d avg: <b>{hv.roll7 ?? '—'} ms</b> · 60d corridor: {hv.enough ? `${hv.lo}–${hv.hi} ms` : 'needs 14d'} · CV {hv.cv7 != null ? `${hv.cv7}%` : '—'}
+          Last night: <b>{hv.today ?? '—'} ms</b> · 7d avg: <b>{hv.roll7 ?? '—'} ms</b> · 60d corridor: {hv.enough ? `${hv.lo}–${hv.hi} ms` : 'needs 14d'} · CV <Info k="CV" /> {hv.cv7 != null ? `${hv.cv7}%` : '—'}
         </p>
         <BandLine data={M.hrvSeries} keys={[{ key: 'roll7', color: 'var(--green)' }]} band={['lo', 'hi']} dots={{ key: 'hrv', cls: (d) => (d.lo != null && d.hrv < d.lo ? 'low' : '') }} label={`Daily HRV and 7-day mean; latest ${hv.today} ms`} height={150} />
         <div className="legend"><span><i className="kdot" style={{ background: 'var(--green)' }} />7-day mean &amp; corridor</span><span><i className="kdot" style={{ background: 'var(--yellow)' }} />Below corridor</span></div>
