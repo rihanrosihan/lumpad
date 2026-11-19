@@ -43,8 +43,8 @@ export default function Activity({ vdot, focus, go, settings }) {
           <StatusPill tone="cobalt">Dedicated Run Analysis · COROS + Strava</StatusPill>
         </div>
         <div className="prof-chips">
-          <button type="button" className="btn sm" disabled={!older} onClick={() => older && go('activity', { id: older.ids[0] })}>← Previous Run</button>
-          <button type="button" className="btn sm" disabled={!newer} onClick={() => newer && go('activity', { id: newer.ids[0] })}>Next Run →</button>
+          <button type="button" className="btn sm" disabled={!older} onClick={() => older && go('activity', { id: (older.ids?.[0] || older.id) })}>← Previous Run</button>
+          <button type="button" className="btn sm" disabled={!newer} onClick={() => newer && go('activity', { id: (newer.ids?.[0] || newer.id) })}>Next Run →</button>
         </div>
       </div>
       <nav className="chipjump prof-cmd-bar" style={{ margin: 0 }} aria-label="Jump to section">
@@ -81,7 +81,7 @@ export default function Activity({ vdot, focus, go, settings }) {
     {A.state === 'loading' && <><div className="skel" style={{ height: 72 }} /><div className="skel" style={{ height: 72 }} /></>}
     {A.state === 'error' && <div className="card empty"><b>Failed to load</b>Server unreachable.</div>}
     {A.state === 'ok' && !list.length && <div className="card empty"><b>{all.length ? 'No activities for this filter' : 'No activities this month yet'}</b>{all.length ? 'Try “All”.' : 'Check Profile › Devices & Connections.'}</div>}
-    <div className="acards">{list.map((a) => { const t = typeOf(a), g = a.gear_id && gear[a.gear_id]; return <button key={a.id} className={`acard ${CLS(a)}`} onClick={() => go('activity', { id: a.ids[0] })} aria-label={`${fmtLong(a.date)}: ${a.name}`}>
+    <div className="acards">{list.map((a) => { const t = typeOf(a), g = a.gear_id && gear[a.gear_id]; return <button key={a.id} className={`acard ${CLS(a)}`} onClick={() => go('activity', { id: (a.ids?.[0] || a.id) })} aria-label={`${fmtLong(a.date)}: ${a.name}`}>
       <div className="ac-top">
         <div><span className="chip t-sport">{SPORT_LABEL[a.sport_class] || a.sport}{t ? ' · ' + TYPES.find((x) => x[0] === t)[1] : ''}</span> <small className="mono">{fmtLong(a.date).replace(/^(\w{3})\w*, (\w{3})\w* /, '$1, $2 ')}{hhmm(a) ? ` · ${hhmm(a)}` : ''}</small></div>
         <div className="ac-km"><b>{a.distance_m ? km(a.distance_m) + ' km' : fmtDur(a.duration_s)}</b>{a.training_load ? <span className="tlb2">TL {a.training_load}</span> : null}</div>

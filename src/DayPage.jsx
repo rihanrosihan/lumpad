@@ -101,7 +101,7 @@ export default function DayPage({ date, vdot, settings, go }) {
         <Card title={past || isToday ? 'Plan vs Actual' : 'Actual Execution'}>
           {A.state === 'loading' && <div className="skel" style={{ height: 56 }} />}
           {A.state === 'ok' && !acts.length && <p className="muted">{date > T ? 'Has not happened yet.' : 'No run recorded on this day.'}</p>}
-          {acts.map((a) => <button key={a.id} className="rowbtn plain" onClick={() => go('activity', { id: a.ids[0] })}><span className="kdot k-arun" /><span><b>{a.name}</b><small>{(a.distance_m / 1000).toFixed(2)} km · {fmtDur(a.duration_s)}{a.avg_pace_s_km ? ' · ' + fmtPaceS(a.avg_pace_s_km) + '/km' : ''}{a.avg_hr ? ' · ' + a.avg_hr + ' bpm' : ''}{d.km ? ` · ${Math.round(((a.distance_m / 1000) / d.km) * 100)}% of plan` : ''}</small></span><Icon n="chev" size={18} /></button>)}
+          {acts.map((a) => <button key={a.id} className="rowbtn plain" onClick={() => go('activity', { id: (a.ids?.[0] || a.id) })}><span className="kdot k-arun" /><span><b>{a.name}</b><small>{(a.distance_m / 1000).toFixed(2)} km · {fmtDur(a.duration_s)}{a.avg_pace_s_km ? ' · ' + fmtPaceS(a.avg_pace_s_km) + '/km' : ''}{a.avg_hr ? ' · ' + a.avg_hr + ' bpm' : ''}{d.km ? ` · ${Math.round(((a.distance_m / 1000) / d.km) * 100)}% of plan` : ''}</small></span><Icon n="chev" size={18} /></button>)}
         </Card>
       </div>
 

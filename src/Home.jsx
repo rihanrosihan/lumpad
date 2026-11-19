@@ -163,7 +163,7 @@ export default function Home({ vdot, settings, results, go, M: Mprop }) {
           </p>
         </div>
         <div className="prof-chips">
-          <button type="button" className="btn primary sm" onClick={() => go("activity", { id: last.ids[0] })}>Open Full Run Analysis →</button>
+          <button type="button" className="btn primary sm" onClick={() => go("activity", { id: (last.ids?.[0] || last.id) })}>Open Full Run Analysis →</button>
           <button type="button" className="btn sm" onClick={() => go("activity")}>All Activities</button>
         </div>
       </div>
