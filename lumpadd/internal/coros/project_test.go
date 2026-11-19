@@ -13,7 +13,8 @@ import (
 )
 
 // Golden: Go archive projection + ingest validation vs Node's on the same snapshot (load it into Postgres with `lumpadd load` first).
-//   GOLDEN_DATABASE_URL=… GOLDEN_DIR=../tools/golden/out go test ./internal/coros
+//
+//	GOLDEN_DATABASE_URL=… GOLDEN_DIR=../tools/golden/out go test ./internal/coros
 func TestProjectionGolden(t *testing.T) {
 	url, dir := os.Getenv("GOLDEN_DATABASE_URL"), os.Getenv("GOLDEN_DIR")
 	if url == "" || dir == "" {
@@ -110,7 +111,9 @@ func byOrder(got []Row, want []any) []Row {
 		pos[fmt.Sprint(x.(map[string]any)["source_id"])] = i
 	}
 	out := append([]Row(nil), got...)
-	sort.SliceStable(out, func(a, b int) bool { return pos[fmt.Sprint(out[a]["source_id"])] < pos[fmt.Sprint(out[b]["source_id"])] })
+	sort.SliceStable(out, func(a, b int) bool {
+		return pos[fmt.Sprint(out[a]["source_id"])] < pos[fmt.Sprint(out[b]["source_id"])]
+	})
 	return out
 }
 

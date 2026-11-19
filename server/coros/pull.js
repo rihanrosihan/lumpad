@@ -4,6 +4,7 @@ import { pullSchedule } from './plan.js'
 import { load as kvLoad, save as kvSave } from '../db.js'
 import { applyIngest } from '../ingest.js'
 import { db } from '../store.js'
+import zlib from 'node:zlib'
 
 const D = (s) => new Date(s + 'T12:00:00Z')
 export const addDays = (s, n) => { const d = D(s); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10) }
@@ -17,7 +18,21 @@ async function retry(fn, tries, note, what) {
 }
 
 // Pull [from..to] and write it. progress({stage, done, total}) is called after every step.
-export async function pullRange({ call, from, to, trigger, progress = () => {}, notes = [] }) {
+// Every run leaves a trace (calls + responses, the DB facts it branched on, kv writes, the ingest payloads) in pull_trace so the Go port can
+// replay it and must produce the same payloads (redesign Phase 3, gate G3). Saving the trace never fails the sync.
+export async function pullRange({ call: call0, from, to, trigger, progress = () => {}, notes = [] }) {
+  const trace = { v: 1, from, to, trigger, calls: [], laps: {}, tl: {}, planDue: null, kv: {}, payloads: [] }
+  const call = async (tool, args) => { try { const t = await call0(tool, args); trace.calls.push({ tool, args, text: t }); return t } catch (e) { trace.calls.push({ tool, args, error: String(e?.message ?? e) }); throw e } }
+  try { return await pullInner({ call, from, to, trigger, progress, notes, trace }) } finally { saveTrace(trace) }
+}
+export function saveTrace(trace) {
+  try {
+    db.prepare('CREATE TABLE IF NOT EXISTS pull_trace (id INTEGER PRIMARY KEY AUTOINCREMENT, created_at TEXT NOT NULL, from_date TEXT, to_date TEXT, trigger TEXT, body BLOB NOT NULL)').run()
+    db.prepare('INSERT INTO pull_trace (created_at, from_date, to_date, trigger, body) VALUES (?,?,?,?,?)').run(new Date().toISOString(), trace.from, trace.to, trace.trigger, zlib.gzipSync(JSON.stringify(trace)))
+    db.prepare('DELETE FROM pull_trace WHERE created_at < ?').run(new Date(Date.now() - 60 * 864e5).toISOString())
+  } catch (e) { console.error('pull trace', e.message) }
+}
+async function pullInner({ call, from, to, trigger, progress, notes, trace }) {
   const note = (m) => { if (notes.length < 40) notes.push(m) }
   const rows = new Map(), get = (d) => rows.get(d) || rows.set(d, { date: d }).get(d)
   const keep = (d) => d >= from && d <= to
@@ -60,14 +75,16 @@ export async function pullRange({ call, from, to, trigger, progress = () => {}, 
   const rec = await retry(() => call('queryRecoveryStatus', {}), 2, note, 'recovery status'); if (rec != null) Object.assign(get(to), parseRecovery(rec))
   const fit = await retry(() => call('queryFitnessAssessmentOverview', {}), 2, note, 'fitness overview'); const fitness = fit != null ? parseFitness(fit) : {}
   const dev = await retry(() => call('queryDevices', {}), 1, () => {}, '')
-  if (dev != null) { const kv = kvLoad('kv', {}); kv['lumpad.devices'] = { value: { devices: parseDevices(dev), at: new Date().toISOString() }, updatedAt: new Date().toISOString() }; kvSave('kv', kv) }
+  if (dev != null) { const kv = kvLoad('kv', {}); trace.kv.devices = parseDevices(dev); kv['lumpad.devices'] = { value: { devices: trace.kv.devices, at: new Date().toISOString() }, updatedAt: new Date().toISOString() }; kvSave('kv', kv) }
 
   // 3e. the COROS training schedule (watch plan): Nov 2026 → end of 2027, refreshed at most every 6 h; an empty answer never overwrites a good copy
   progress({ stage: 'plan', done: 0, total: 1 })
   try {
     const prev = kvLoad('coros_plan', null)
-    if (!prev?.at || Date.now() - Date.parse(prev.at) > 6 * 3600e3) {
+    trace.planDue = !prev?.at || Date.now() - Date.parse(prev.at) > 6 * 3600e3; trace.planHad = !!prev
+    if (trace.planDue) {
       const rows = await pullSchedule(call, '2026-11-23', '2027-12-31', addDays) // season start; older plans' history is not part of it
+      trace.kv.coros_plan = rows
       if (rows.length) kvSave('coros_plan', { rows, at: new Date().toISOString() }); else if (!prev) note('training plan: COROS returned no scheduled workouts')
     }
   } catch (e) { note(`training plan: ${String(e.message).slice(0, 120)}`) }
@@ -85,7 +102,7 @@ export async function pullRange({ call, from, to, trigger, progress = () => {}, 
   const uniq = [...new Map(acts.map((a) => [a.source_id, a])).values()]
 
   // 5. laps for runs that don't have them yet (the lap tool is flaky: 3 tries, then move on)
-  const runs = uniq.filter((a) => RUN.has(a.sport_code) && !db.prepare('SELECT 1 FROM laps WHERE activity_id = ? LIMIT 1').get('coros:' + a.source_id))
+  const runs = uniq.filter((a) => RUN.has(a.sport_code) && !(trace.laps[a.source_id] = !!db.prepare('SELECT 1 FROM laps WHERE activity_id = ? LIMIT 1').get('coros:' + a.source_id)))
   for (const [i, a] of runs.entries()) {
     progress({ stage: 'laps', done: i, total: runs.length })
     const t = await retry(async () => { const r = await call('queryActivityLapData', { labelId: a.source_id, sportType: a.sport_code }); if (!parseLaps(r)) throw new Error('unreadable laps response'); return r }, 3, () => {}, '')
@@ -93,7 +110,7 @@ export async function pullRange({ call, from, to, trigger, progress = () => {}, 
     if (p?.laps.length) { a.laps = p.laps; a.cadence ??= p.cadence; a.power ??= p.power; a.max_hr ??= p.max_hr; stats.laps += p.laps.length } else { stats.lapsMissing++; note(`laps missing for run ${a.date} (${a.source_id})`) }
   }
   // 5b. per-activity training load / TE / focus (runs + strength) where we don't have it yet
-  const need = uniq.filter((a) => (RUN.has(a.sport_code) || a.sport_code === 402) && db.prepare('SELECT training_load FROM activities WHERE id = ?').get('coros:' + a.source_id)?.training_load == null)
+  const need = uniq.filter((a) => (RUN.has(a.sport_code) || a.sport_code === 402) && !(trace.tl[a.source_id] = db.prepare('SELECT training_load FROM activities WHERE id = ?').get('coros:' + a.source_id)?.training_load != null))
   for (const [i, a] of need.entries()) {
     progress({ stage: 'details', done: i, total: need.length })
     const t = await retry(() => call('getActivityDetail', { labelId: a.source_id, sportType: a.sport_code }), 2, () => {}, '')
@@ -106,7 +123,9 @@ export async function pullRange({ call, from, to, trigger, progress = () => {}, 
   const health = [...rows.values()].filter((r) => Object.keys(r).length > 1).sort((a, b) => a.date.localeCompare(b.date))
   let res = { counts: { health: 0, activities: 0, laps: 0 }, rejected: [] }
   for (let i = 0; i < Math.max(1, Math.ceil(uniq.length / 300)); i++) {
-    const r = applyIngest({ run: { trigger, started_at: new Date().toISOString(), notes: i === 0 ? notes.slice(0, 30) : [] }, health: i === 0 ? health : [], fitness: i === 0 && Object.keys(fitness).length ? [{ date: to, ...fitness }] : [], activities: uniq.slice(i * 300, (i + 1) * 300) })
+    const payload = { run: { trigger, started_at: new Date().toISOString(), notes: i === 0 ? notes.slice(0, 30) : [] }, health: i === 0 ? health : [], fitness: i === 0 && Object.keys(fitness).length ? [{ date: to, ...fitness }] : [], activities: uniq.slice(i * 300, (i + 1) * 300) }
+    trace.payloads.push(JSON.parse(JSON.stringify({ ...payload, run: { trigger, notes: payload.run.notes } })))
+    const r = applyIngest(payload)
     for (const k of ['health', 'activities', 'laps']) res.counts[k] += r.counts[k]; res.counts.fitness = (res.counts.fitness || 0) + (r.counts.fitness || 0); res.rejected.push(...r.rejected)
   }
   return { stats, counts: res.counts, rejected: res.rejected.length, notes }
