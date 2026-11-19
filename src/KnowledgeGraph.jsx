@@ -33,6 +33,7 @@ const KG_EDGES = [
 const FILTERS = [['all', 'All Layers (9)'], ['telemetry', 'Telemetry'], ['memory', 'Memory & RAG'], ['rules', 'Gates & Rules']]
 
 export default function KnowledgeGraphPanel({ twin, matrices, status }) {
+  const ver = twin?.version ?? 6
   const [selected, setSelected] = useState('twin')
   const [filter, setFilter] = useState('all')
   const t = twin?.state || twin || null
@@ -171,7 +172,7 @@ export default function KnowledgeGraphPanel({ twin, matrices, status }) {
         <div className="ch" style={{ marginBottom: 6 }}>
           <div>
             <Chip>{cur.cat.toUpperCase()}</Chip>
-            <h3 style={{ margin: '6px 0 2px', fontSize: '1rem' }}>{cur.label}</h3>
+            <h3 style={{ margin: '6px 0 2px', fontSize: '1rem' }}>{cur.id === 'twin' ? `Digital Twin v${ver}` : cur.label}</h3>
             <code className="md-code">{cur.db}</code>
           </div>
           <Chip tone="green">{curMeta.count}</Chip>

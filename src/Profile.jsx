@@ -95,6 +95,7 @@ export default function Profile({ vdot, results, settings, setSettings, go }) {
   const Qual = useApi('/api/data/quality', tab === 'connections' || tab === 'server')
   const Twin = useApi('/api/twin', tab === 'shoes' || tab === 'connections')
   const Srv = useApi('/api/server/info', tab === 'server' || tab === 'connections')
+  const Intel = useApi('/api/intel/status', tab === 'server' || tab === 'connections')
   const Health = useApi('/api/health', tab === 'server')
 
   const set = (patch) => setSettings({ ...settings, ...patch })
@@ -127,8 +128,8 @@ export default function Profile({ vdot, results, settings, setSettings, go }) {
   const srv = Srv.data || {}
   const fitTotal = Arch.data?.activities?.n ?? (typeof Arch.data?.activities === 'number' ? Arch.data.activities : null) ?? qd.coros_runs ?? 456
   const fitDone = Arch.data?.fit?.files ?? (typeof Arch.data?.fit === 'number' ? Arch.data.fit : 0)
-  const fitParsed = srv.dbCounts?.fit_sessions ?? qd.fit_sessions ?? 0
-  const weatherDone = srv.dbCounts?.run_weather ?? (fitParsed && qd.missing_weather != null ? Math.max(0, fitParsed - qd.missing_weather) : 0)
+  const fitParsed = srv.dbCounts?.fit_sessions ?? Intel.data?.counts?.fit_sessions ?? qd.fit_sessions ?? 0
+  const weatherDone = srv.dbCounts?.run_weather ?? Intel.data?.counts?.weather ?? (fitParsed && qd.missing_weather != null ? Math.max(0, fitParsed - qd.missing_weather) : 0)
   const shoeMatched = qd.coros_runs != null && qd.missing_shoe != null ? Math.max(0, qd.coros_runs - qd.missing_shoe) : null
 
   const syncMatrix = [
@@ -330,8 +331,8 @@ export default function Profile({ vdot, results, settings, setSettings, go }) {
             <div className="db-grid">
               <div className="db-card"><div className="db-card-h"><code className="md-code">lumpad.db</code><StatusPill tone="green">{srv.dbSizesMb?.lumpad != null ? srv.dbSizesMb.lumpad + ' MB' : 'Online'}</StatusPill></div><small className="muted">Core store: activities, laps, health_daily, gear, sync_runs, oauth_tokens</small></div>
               <div className="db-card"><div className="db-card-h"><code className="md-code">coros.db</code><StatusPill tone="green">{srv.dbSizesMb?.coros != null ? srv.dbSizesMb.coros + ' MB' : 'Online'}</StatusPill></div><small className="muted">MCP archive: tasks, responses, activities ({fitTotal}), fit_files ({fitDone})</small></div>
-              <div className="db-card"><div className="db-card-h"><code className="md-code">intel.db</code><StatusPill tone="green">{srv.dbSizesMb?.intel != null ? srv.dbSizesMb.intel + ' MB' : 'Online'}</StatusPill></div><small className="muted">FIT sessions ({fitParsed}), run_weather ({weatherDone}), daily_feat ({srv.dbCounts?.daily_feat ?? '—'}), kb_docs ({srv.dbCounts?.kb_docs ?? '—'})</small></div>
-              <div className="db-card"><div className="db-card-h"><code className="md-code">memory.db + kv.json</code><StatusPill tone="green">{srv.dbSizesMb?.memory != null ? srv.dbSizesMb.memory + ' MB' : 'Online'}</StatusPill></div><small className="muted">Hybrid RAG FTS5 memories ({srv.dbCounts?.memories ?? '—'}), coach_run ({srv.dbCounts?.coach_runs ?? '—'}), synced KV</small></div>
+              <div className="db-card"><div className="db-card-h"><code className="md-code">intel.db</code><StatusPill tone="green">{srv.dbSizesMb?.intel != null ? srv.dbSizesMb.intel + ' MB' : 'Online'}</StatusPill></div><small className="muted">FIT sessions ({fitParsed}), run_weather ({weatherDone}), daily_feat ({srv.dbCounts?.daily_feat ?? '—'}), kb_docs ({srv.dbCounts?.kb_docs ?? Intel.data?.counts?.kb_docs ?? '—'})</small></div>
+              <div className="db-card"><div className="db-card-h"><code className="md-code">memory.db + kv.json</code><StatusPill tone="green">{srv.dbSizesMb?.memory != null ? srv.dbSizesMb.memory + ' MB' : 'Online'}</StatusPill></div><small className="muted">Hybrid RAG FTS5 memories ({srv.dbCounts?.memories ?? (Intel.data?.counts?.memory ? Intel.data.counts.memory.reduce((a, r) => a + (r.n || 0), 0) : '—')}), coach_run ({srv.dbCounts?.coach_runs ?? Intel.data?.coach_runs?.length ?? '—'}), synced KV</small></div>
             </div>
             <h3>FIT binary queue vs. parsed sessions</h3>
             <ProgressBar value={fitDone} max={fitTotal || 1} tone="cobalt" label={`FIT binaries ${fitDone} of ${fitTotal}`} />

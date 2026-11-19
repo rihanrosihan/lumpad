@@ -1034,3 +1034,8 @@ nav.tabbar {
 @media (min-width: 641px) { .chipjump { flex-wrap: wrap !important; overflow-x: visible !important; } }
 .rail { padding-right: 14px; }
 .score-grid b { overflow-wrap: anywhere; }
+
+/* ===== QA v4.7 Fixes (.detail-page full-width, Server Details hostname, sidebar badge room) ===== */
+.detail-page { column-count: 1 !important; }
+.srv-host { font-size: .92rem !important; word-break: break-all !important; line-height: 1.25 !important; }
+.rail .rb { padding-right: 10px; }

@@ -92,7 +92,7 @@ const routes = {
     }
   },
   'GET /api/server/info': async () => {
-    const dataDir = path.resolve(process.cwd(), 'server/data')
+    const dataDir = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.resolve(process.cwd(), 'server/data')
     const sz = (f) => { try { return Math.round((fs.statSync(path.join(dataDir, f)).size / (1024 * 1024)) * 100) / 100 } catch { return null } }
     const countOf = (db, table) => { try { return db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get()?.n ?? null } catch { return null } }
     return {
