@@ -898,3 +898,32 @@ svg.chart[data-fit]{max-width:720px;margin-left:auto;margin-right:auto}
 /* Knowledge Graph jump buttons */
 .card .kg-jump { background: var(--surface); color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; min-height: 44px; font-size: .78rem; }
 .card .kg-jump:hover { border-color: var(--cobalt); }
+
+/* ===== Intelligence Suite (Biometrics + AI Coach prototype parity) ===== */
+.bio-kpis4 { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 12px; }
+@media (min-width: 680px) { .bio-kpis4 { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1120px) { .bio-kpis4 { grid-template-columns: repeat(4, 1fr); } }
+.kpi-top { display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-bottom: 4px; }
+.kpi-warn { border-color: color-mix(in srgb, var(--crimson) 45%, var(--line)) !important; background: color-mix(in srgb, var(--crimson) 5%, var(--surface)) !important; }
+.bio-split-75 { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 12px; align-items: start; }
+@media (min-width: 980px) { .bio-split-75 { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); } }
+.bio-split-57 { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 12px; align-items: start; }
+@media (min-width: 980px) { .bio-split-57 { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); } }
+.bio-drawer { margin-top: 12px; padding: 14px 16px; border-radius: 16px; background: color-mix(in srgb, var(--cobalt) 7%, var(--surface2)); border: 1px solid color-mix(in srgb, var(--cobalt) 25%, var(--line)); }
+.bio-drawer-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+@media (min-width: 720px) { .bio-drawer-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 1080px) { .bio-drawer-grid { grid-template-columns: repeat(5, 1fr); } }
+.bio-imp-banner { margin-top: 12px; padding: 12px 14px; border-radius: 14px; background: var(--surface2); border: 1px solid var(--line); }
+.mcu-lab-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.mcu-lab-item { padding: 8px 10px; border-radius: 12px; background: var(--surface2); border: 1px solid var(--line); display: grid; gap: 2px; }
+.mcu-lab-item small { color: var(--muted); font-size: .72rem; }
+.mcu-lab-item b { font: 700 .92rem var(--f-mono); }
+.mcu-lab-item em { font-style: normal; font-size: .7rem; color: var(--muted); }
+.mcu-lab-item.flag-hi { border-color: color-mix(in srgb, var(--crimson) 40%, var(--line)); background: color-mix(in srgb, var(--crimson) 7%, var(--surface)); }
+.mcu-lab-item.flag-lo { border-color: color-mix(in srgb, var(--amber) 40%, var(--line)); background: color-mix(in srgb, var(--amber) 7%, var(--surface)); }
+.twin-pillars { display: grid; grid-template-columns: 1fr; gap: 12px; }
+@media (min-width: 640px) { .twin-pillars { grid-template-columns: 1fr 1fr; } }
+.hyp-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+@media (min-width: 760px) { .hyp-grid { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 1120px) { .hyp-grid { grid-template-columns: repeat(3, 1fr); } }
+.hyp-card { padding: 12px 14px; border-radius: 14px; background: var(--surface2); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 6px; }
