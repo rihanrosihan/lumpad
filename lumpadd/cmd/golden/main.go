@@ -14,21 +14,6 @@ import (
 	"github.com/rihanrosihan/lumpad/lumpadd/internal/engine"
 )
 
-func kmRows(km []engine.KM) []any {
-	f := func(x float64) any {
-		if math.IsNaN(x) {
-			return nil
-		}
-		return x
-	}
-	out := make([]any, len(km))
-	for i, k := range km {
-		out[i] = map[string]any{"km": k.Km, "sec": k.Sec, "run": k.Run, "walk": k.Walk, "stop": k.Stop, "runShare": f(k.RunShare), "pace": f(k.Pace), "runPace": f(k.RunPace), "hr": f(k.HR), "power": f(k.Power),
-			"cad": f(k.Cad), "gct": f(k.GCT), "step": f(k.Step), "vr": f(k.VR), "ef": f(k.EF), "gain": f(k.Gain)}
-	}
-	return out
-}
-
 // diff returns the paths where a and b differ (numbers equal within 1e-9).
 func diff(path string, a, b any, out *[]string) {
 	switch x := a.(type) {
@@ -110,7 +95,7 @@ func main() {
 		res := engine.SessionMetrics(S, engine.DefaultBaseline)
 		var d []string
 		diff("metrics", g["metrics"], roundtrip(res.Metrics), &d)
-		diff("km", g["km"], roundtrip(kmRows(res.Km)), &d)
+		diff("km", g["km"], roundtrip(engine.KmRows(res.Km)), &d)
 		if len(d) == 0 {
 			ok++
 			continue

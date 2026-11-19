@@ -6,6 +6,8 @@ Redesign Phase 1 (foundation). The current Node app keeps running and coaching; 
 | --- | --- |
 | `lumpadd migrate` | Applies `internal/db/migrations/*.sql`. `*.optional.sql` run only if the extension (TimescaleDB, pgvector) is installed; otherwise they are recorded as skipped. |
 | `lumpadd load <server/data>` | Copies lumpad.db, coros.db, intel.db, memory.db and kv.json into Postgres and verifies **every table**: row count and a SHA-256 over all rows must match. Repeatable (truncates first). Exit code 1 on any mismatch. |
+| `lumpadd shadow <server/data>` | One shadow pass (Phase 3): mirror SQLite → Postgres (verified), replay new Node pull traces, recompute new/reprocessed FIT sessions, compare the twin and correlation edges of each new Node intel job. Results → `analytics.shadow_check`; exit 1 when anything differs. |
+| `lumpadd g3` | Gate G3 report: the last 30 days and the streak of identical days (needs 14). |
 | `lumpadd serve` | Health endpoint `GET /api/v2/health` on 127.0.0.1:8788 (db ping, version, RSS). Real API arrives phase by phase. |
 | `fitbench <fit dir>` | Decode benchmark (muktihari/fit). |
 | `GOLDEN_DATABASE_URL=… GOLDEN_DIR=../tools/golden/out go test ./internal/analytics` | Diffs matrices, the correlation engine and the twin against the golden fixtures (load the snapshot they came from first). |
@@ -60,3 +62,21 @@ Budget while both systems run: Node app ~125 MB · Postgres ≤ 450 MB (`deploy/
 Fixes that came out of the port (all applied to the Node app too): the twin's kill gate read `.triggered`/`.warn` but `killGate()` returns `{ fired }`, so it always showed 'ok' (now 'triggered' when it fires; unit-tested in Go); twin sessions are ordered by start time within a day. Two from the correlation port (both applied to the Node app too): same-date sessions are ordered by start time (SQLite left their order undefined, which changed split halves and permutation p), and lagged exposures are rounded to 1e-6 (SQLite's incremental window SUM left float noise such as 10.000000000000002 that split genuine rank ties).
 
 Notes from the port: JS `Math.round` rounds halves up (Go's rounds away from zero) so `jsRound` is used; `mean()` over `null` counts null as 0 in `fadeOnset` (kept, because the golden data depends on it); the Node parser reports `speed`, not `enhanced_speed` (they differ by 1 mm/s on some seconds); COROS 'Effort Pace' is a developer field found through `field_description`.
+
+## Phase 3 — ingestion in shadow (gate G3)
+Node stays the only writer until G3 passes; the Go side proves, from the same inputs, that it writes the same rows. No extra COROS calls, no
+second OAuth client (a parallel client could clash with refresh-token rotation).
+
+| Piece | Status | Check |
+| --- | --- | --- |
+| COROS response parsers (11 tools) | **done** | all 1,115 archived responses parse identically |
+| Ingest validation (`ingestOps`: whitelist, ranges, null rules, reject paths) | **done** | full archive projection + synthetic payloads for every reject / drop path |
+| Archive projection (`buildProjection`) | **done** | 309 health days, 8 fitness, 456 activities, 2,698 laps identical |
+| Daily pull (`pullRange`) | **done** | Node records a trace per run (`pull_trace`: calls + responses, the DB facts it branched on, kv writes, payloads); Go replays it — 9 scripted scenarios identical, mutations caught |
+| Shadow runner + timer + G3 report | **done** | local: 99 FIT sessions identical, 9 traces identical, twin correctly marked stale after a later check-in |
+| Server setup | **next** | `sudo bash deploy/v2/setup-v2.sh` (one time), then 14 days of `lumpadd g3` |
+| Cutover (Go becomes the COROS writer) | after G3 | needs an off-server backup destination first |
+
+Server: `sudo bash /opt/lumpad/deploy/v2/setup-v2.sh` once (real Postgres cluster with the 2 GB config and limits, role/db `lumpad` over the
+local socket, build, migrate, shadow timer every 15 min). After that every auto-deploy rebuilds and migrates (`/etc/lumpad-v2.enabled`); a v2
+failure never fails the Node deploy. Postgres is a verified mirror during Phase 3 — it can be rebuilt from SQLite at any time.

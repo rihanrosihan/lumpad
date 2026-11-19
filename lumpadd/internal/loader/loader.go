@@ -156,6 +156,9 @@ func srcValue(c Col, v any) (any, error) {
 	return v, nil
 }
 
+// OpenSQLite opens a data-dir database read-only (busy timeout 5 s).
+func OpenSQLite(dir, file string) (*sql.DB, error) { return openSQLite(dir, file) }
+
 func openSQLite(dir, file string) (*sql.DB, error) {
 	p := filepath.Join(dir, file)
 	if _, err := os.Stat(p); err != nil {

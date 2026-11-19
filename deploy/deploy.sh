@@ -36,4 +36,6 @@ cp deploy/lumpad-autodeploy.service deploy/lumpad-autodeploy.timer /etc/systemd/
 systemctl enable --now lumpad-autodeploy.timer >/dev/null 2>&1 || true
 systemctl restart lumpad
 sleep 1
+# v2 (Go + Postgres, redesign): rebuild + migrate after each deploy once set up (deploy/v2/setup-v2.sh). Never fails the Node deploy.
+if [ -f /etc/lumpad-v2.enabled ]; then bash deploy/v2/build.sh || echo ">> PERINGATAN: build v2 gagal — aplikasi Node tetap berjalan"; fi
 systemctl is-active lumpad && curl -fsS http://127.0.0.1:8787/api/health && echo

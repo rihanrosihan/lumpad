@@ -1,0 +1,20 @@
+[Unit]
+Description=Lumpad v2 shadow pass (mirror + replay + compare; gate G3)
+After=postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=oneshot
+User=lumpad
+EnvironmentFile=/opt/lumpad/.env.v2
+ExecStart=/opt/lumpad/lumpadd/lumpadd shadow /opt/lumpad/server/data
+Nice=10
+IOSchedulingClass=idle
+MemoryHigh=250M
+MemoryMax=350M
+TimeoutStartSec=10min
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/lumpad/server/data
+# SQLite readers of a WAL database must update the -shm index; the loader opens every database with mode=ro, so data is never written

@@ -67,3 +67,19 @@ func SessionMetrics(S *Series, b Baseline) Result {
 	}
 	return Result{Metrics: m, Km: km, Series: S}
 }
+
+// KmRows: the per-km rows as Node stores them in fit_session.km (NaN → null).
+func KmRows(km []KM) []any {
+	f := func(x float64) any {
+		if math.IsNaN(x) {
+			return nil
+		}
+		return x
+	}
+	out := make([]any, len(km))
+	for i, k := range km {
+		out[i] = map[string]any{"km": k.Km, "sec": k.Sec, "run": k.Run, "walk": k.Walk, "stop": k.Stop, "runShare": f(k.RunShare), "pace": f(k.Pace), "runPace": f(k.RunPace), "hr": f(k.HR), "power": f(k.Power),
+			"cad": f(k.Cad), "gct": f(k.GCT), "step": f(k.Step), "vr": f(k.VR), "ef": f(k.EF), "gain": f(k.Gain)}
+	}
+	return out
+}

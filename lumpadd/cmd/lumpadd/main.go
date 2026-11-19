@@ -17,6 +17,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rihanrosihan/lumpad/lumpadd/internal/db"
 	"github.com/rihanrosihan/lumpad/lumpadd/internal/loader"
+	"github.com/rihanrosihan/lumpad/lumpadd/internal/shadow"
 )
 
 var version = "0.1.0-phase1"
@@ -84,12 +85,46 @@ func main() {
 			os.Exit(1)
 		}
 		fmt.Printf("all %d tables verified (row counts and checksums identical)\n", len(reps))
+	case "shadow":
+		if len(os.Args) != 3 {
+			fmt.Fprintln(os.Stderr, "usage: lumpadd shadow <server/data dir>")
+			os.Exit(2)
+		}
+		sum, err := shadow.Run(ctx, pool, os.Args[2])
+		must(err)
+		bad := 0
+		for kind, st := range sum.Counts() {
+			fmt.Printf("%-7s %v\n", kind, st)
+			bad += st["diff"] + st["error"]
+		}
+		for _, c := range sum.Checks {
+			if c.Status == "diff" || c.Status == "error" {
+				fmt.Printf("  %s %s %s: %d difference(s), first: %.300s\n", c.Kind, c.Ref, c.Status, len(c.Diffs), first(c.Diffs))
+			}
+		}
+		fmt.Printf("shadow run %d: %d check(s), %d not identical\n", sum.RunID, len(sum.Checks), bad)
+		if bad > 0 {
+			os.Exit(1)
+		}
+	case "g3":
+		days, streak, err := shadow.G3(ctx, pool)
+		must(err)
+		for _, d := range days {
+			fmt.Printf("%s  %-4s  checks %3d  pulls %d  not identical %d  stale %d\n", d.Day, map[bool]string{true: "ok", false: "FAIL"}[d.OK], d.Checks, d.Pulls, d.Bad, d.Stale)
+		}
+		fmt.Printf("gate G3: %d consecutive identical day(s) with a replayed pull (needs 14) — %s\n", streak, map[bool]string{true: "PASS", false: "not yet"}[streak >= 14])
 	case "serve":
 		serve(ctx, pool)
 	default:
 		fmt.Fprintln(os.Stderr, "unknown command", os.Args[1])
 		os.Exit(2)
 	}
+}
+func first(d []string) string {
+	if len(d) == 0 {
+		return ""
+	}
+	return d[0]
 }
 func short(s string) string {
 	if len(s) > 12 {
