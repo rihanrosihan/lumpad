@@ -320,3 +320,6 @@ func ComputeReadiness(in ReadinessInput) Readiness {
 	return Readiness{Score: nv(capped), Raw: nv(score), Capped: !(capped == score || (isNull(capped) && isNull(score))), Caps: caps, Tier: TierOf(capped),
 		Coverage: jsRound(haveW), Weights: w, Pillars: P}
 }
+
+// ToFixed is JS Number.prototype.toFixed (exported for the analytics package).
+func ToFixed(x float64, d int) string { return toFixed(x, d) }

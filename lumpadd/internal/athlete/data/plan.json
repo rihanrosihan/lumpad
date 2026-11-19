@@ -1,0 +1,11439 @@
+[
+ {
+  "date": "2026-11-23",
+  "week": "W-5",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2026-11-23",
+  "code": "P10540"
+ },
+ {
+  "date": "2026-11-24",
+  "week": "W-5",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2026-11-24"
+ },
+ {
+  "date": "2026-11-25",
+  "week": "W-5",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2026-11-25",
+  "code": "P10540"
+ },
+ {
+  "date": "2026-11-26",
+  "week": "W-5",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "Free Run (by feel)",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "free",
+    "z": 2,
+    "note": "COROS free mode: run easy, end with the lap button"
+   }
+  ],
+  "sec": 0,
+  "tl": 0,
+  "from": "2026-11-26",
+  "code": "P10546"
+ },
+ {
+  "date": "2026-11-27",
+  "week": "W-5",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2026-11-27",
+  "code": "P10540"
+ },
+ {
+  "date": "2026-11-28",
+  "week": "W-5",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2026-11-28"
+ },
+ {
+  "date": "2026-11-29",
+  "week": "W-5",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 13,
+  "label": "Long Run",
+  "kind": "long",
+  "note": "Fuel from 45 min (30–60 g/h), drink to thirst, sodium in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 13000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 6579,
+  "tl": 167,
+  "from": "2026-11-29",
+  "code": "P10594"
+ },
+ {
+  "date": "2026-11-30",
+  "week": "W-4",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 10,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5199,
+  "tl": 129,
+  "from": "2026-11-30",
+  "code": "P10540"
+ },
+ {
+  "date": "2026-12-01",
+  "week": "W-4",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2026-12-01"
+ },
+ {
+  "date": "2026-12-02",
+  "week": "W-4",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2026-12-02",
+  "code": "P10540"
+ },
+ {
+  "date": "2026-12-03",
+  "week": "W-4",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 13,
+  "label": "Steady Run · Aerobic Power",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5972,
+  "tl": 221,
+  "from": "2026-12-03",
+  "code": "P10541"
+ },
+ {
+  "date": "2026-12-04",
+  "week": "W-4",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2026-12-04",
+  "code": "P10540"
+ },
+ {
+  "date": "2026-12-05",
+  "week": "W-4",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2026-12-05",
+  "code": "P10540"
+ },
+ {
+  "date": "2026-12-06",
+  "week": "W-4",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 15,
+  "label": "Long Run",
+  "kind": "long",
+  "note": "Fuel from 45 min (30–60 g/h), drink to thirst, sodium in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 15000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 7499,
+  "tl": 193,
+  "from": "2026-12-06",
+  "code": "P10594"
+ },
+ {
+  "date": "2026-12-07",
+  "week": "W-3",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 10,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5199,
+  "tl": 129,
+  "from": "2026-12-07",
+  "code": "P10540"
+ },
+ {
+  "date": "2026-12-08",
+  "week": "W-3",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2026-12-08"
+ },
+ {
+  "date": "2026-12-09",
+  "week": "W-3",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2026-12-09",
+  "code": "P10540"
+ },
+ {
+  "date": "2026-12-10",
+  "week": "W-3",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 13,
+  "label": "Steady Run · Aerobic Power",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5972,
+  "tl": 221,
+  "from": "2026-12-10",
+  "code": "P10541"
+ },
+ {
+  "date": "2026-12-11",
+  "week": "W-3",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2026-12-11",
+  "code": "P10540"
+ },
+ {
+  "date": "2026-12-12",
+  "week": "W-3",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2026-12-12",
+  "code": "P10540"
+ },
+ {
+  "date": "2026-12-13",
+  "week": "W-3",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 16,
+  "label": "Long Run",
+  "kind": "long",
+  "note": "Fuel from 45 min (30–60 g/h), drink to thirst, sodium in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 16000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 7959,
+  "tl": 206,
+  "from": "2026-12-13",
+  "code": "P10594"
+ },
+ {
+  "date": "2026-12-14",
+  "week": "W-2",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 5000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 2900,
+  "tl": 64,
+  "from": "2026-12-14",
+  "code": "P10540"
+ },
+ {
+  "date": "2026-12-15",
+  "week": "W-2",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2026-12-15"
+ },
+ {
+  "date": "2026-12-16",
+  "week": "W-2",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2026-12-16",
+  "code": "P10540"
+ },
+ {
+  "date": "2026-12-17",
+  "week": "W-2",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2026-12-17"
+ },
+ {
+  "date": "2026-12-18",
+  "week": "W-2",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2026-12-18",
+  "code": "P10540"
+ },
+ {
+  "date": "2026-12-19",
+  "week": "W-2",
+  "phase": "BASE",
+  "event": null,
+  "tags": [
+   "CP1"
+  ],
+  "km": 9,
+  "label": "5K Time Trial",
+  "kind": "tt",
+  "note": "5K TT · baseline B0 · Cutback week 4. Pain ≥2/10 or HRV reduced → postpone 1 week",
+  "src": "lumpad",
+  "steps": [
+   {
+    "t": "wu",
+    "m": 2000,
+    "z": 2,
+    "note": "finish with 4 × 20 s strides"
+   },
+   {
+    "t": "tt",
+    "m": 5000,
+    "z": 5,
+    "pace": [
+     351,
+     361
+    ],
+    "note": "even effort, all out over the last km"
+   },
+   {
+    "t": "cd",
+    "m": 2000,
+    "z": 1
+   }
+  ],
+  "sec": 3660,
+  "tl": 148
+ },
+ {
+  "date": "2026-12-20",
+  "week": "W-2",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 5000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 2900,
+  "tl": 64,
+  "from": "2026-12-20",
+  "code": "P10540"
+ },
+ {
+  "date": "2026-12-21",
+  "week": "W-1",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2026-12-21",
+  "code": "P10540"
+ },
+ {
+  "date": "2026-12-22",
+  "week": "W-1",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 12,
+  "label": "Threshold Intervals 2×3 km",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "rep": 2,
+    "steps": [
+     {
+      "t": "run",
+      "m": 3000,
+      "z": 2
+     },
+     {
+      "t": "run",
+      "m": 3000,
+      "z": 4
+     }
+    ]
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5548,
+  "tl": 218,
+  "from": "2026-12-22",
+  "code": "P10547"
+ },
+ {
+  "date": "2026-12-23",
+  "week": "W-1",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2026-12-23",
+  "code": "P10540"
+ },
+ {
+  "date": "2026-12-24",
+  "week": "W-1",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2026-12-24"
+ },
+ {
+  "date": "2026-12-25",
+  "week": "W-1",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 13,
+  "label": "Steady Run · Aerobic Power",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5972,
+  "tl": 221,
+  "from": "2026-12-25",
+  "code": "P10541"
+ },
+ {
+  "date": "2026-12-26",
+  "week": "W-1",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 5000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 2900,
+  "tl": 64,
+  "from": "2026-12-26",
+  "code": "P10540"
+ },
+ {
+  "date": "2026-12-27",
+  "week": "W-1",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 13,
+  "label": "Long Run",
+  "kind": "long",
+  "note": "Fuel from 45 min (30–60 g/h), drink to thirst, sodium in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 13000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 6579,
+  "tl": 167,
+  "from": "2026-12-27",
+  "code": "P10594"
+ },
+ {
+  "date": "2026-12-28",
+  "week": "W0",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2026-12-28",
+  "code": "P10540"
+ },
+ {
+  "date": "2026-12-29",
+  "week": "W0",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 13.8,
+  "label": "Threshold Intervals 3×3 km",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "rep": 3,
+    "steps": [
+     {
+      "t": "run",
+      "m": 1600,
+      "z": 2
+     },
+     {
+      "t": "run",
+      "m": 3000,
+      "z": 4
+     }
+    ]
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 6091,
+  "tl": 273,
+  "from": "2026-12-29",
+  "code": "P10547"
+ },
+ {
+  "date": "2026-12-30",
+  "week": "W0",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2026-12-30",
+  "code": "P10540"
+ },
+ {
+  "date": "2026-12-31",
+  "week": "W0",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2026-12-31"
+ },
+ {
+  "date": "2027-01-01",
+  "week": "W0",
+  "phase": "BASE",
+  "event": "New Year Run",
+  "tags": [],
+  "km": 13,
+  "label": "Steady Run · Aerobic Power",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5972,
+  "tl": 221,
+  "from": "2027-01-01",
+  "code": "P10541"
+ },
+ {
+  "date": "2027-01-02",
+  "week": "W0",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 5000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 2900,
+  "tl": 64,
+  "from": "2027-01-02",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-01-03",
+  "week": "W0",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 16,
+  "label": "Long Run",
+  "kind": "long",
+  "note": "Fuel from 45 min (30–60 g/h), drink to thirst, sodium in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 16000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 7959,
+  "tl": 206,
+  "from": "2027-01-03",
+  "code": "P10594"
+ },
+ {
+  "date": "2027-01-04",
+  "week": "W1",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2027-01-04",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-01-05",
+  "week": "W1",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 13.8,
+  "label": "Threshold Intervals 3×3 km",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "rep": 3,
+    "steps": [
+     {
+      "t": "run",
+      "m": 1600,
+      "z": 2
+     },
+     {
+      "t": "run",
+      "m": 3000,
+      "z": 4
+     }
+    ]
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 6091,
+  "tl": 273,
+  "from": "2027-01-05",
+  "code": "P10547"
+ },
+ {
+  "date": "2027-01-06",
+  "week": "W1",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-01-06",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-01-07",
+  "week": "W1",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-01-07"
+ },
+ {
+  "date": "2027-01-08",
+  "week": "W1",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 14,
+  "label": "Steady Run · Aerobic Power",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 11000,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 6371,
+  "tl": 240,
+  "from": "2027-01-08",
+  "code": "P10541"
+ },
+ {
+  "date": "2027-01-09",
+  "week": "W1",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-01-09",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-01-10",
+  "week": "W1",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 18,
+  "label": "Long Run",
+  "kind": "long",
+  "note": "Fuel from 45 min (30–60 g/h), drink to thirst, sodium in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 18000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 8879,
+  "tl": 231,
+  "from": "2027-01-10",
+  "code": "P10594"
+ },
+ {
+  "date": "2027-01-11",
+  "week": "W2",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2027-01-11",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-01-12",
+  "week": "W2",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-01-12"
+ },
+ {
+  "date": "2027-01-13",
+  "week": "W2",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2027-01-13",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-01-14",
+  "week": "W2",
+  "phase": "BASE",
+  "event": "Medical check-up",
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-01-14"
+ },
+ {
+  "date": "2027-01-15",
+  "week": "W2",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-01-15",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-01-16",
+  "week": "W2",
+  "phase": "BASE",
+  "event": null,
+  "tags": [
+   "CP2"
+  ],
+  "km": 9,
+  "label": "5K Time Trial",
+  "kind": "tt",
+  "note": "5K TT · pre-Ramadan · Red → keep B0 paces through Ramadan",
+  "src": "lumpad",
+  "steps": [
+   {
+    "t": "wu",
+    "m": 2000,
+    "z": 2,
+    "note": "finish with 4 × 20 s strides"
+   },
+   {
+    "t": "tt",
+    "m": 5000,
+    "z": 5,
+    "pace": [
+     349,
+     359
+    ],
+    "note": "even effort, all out over the last km"
+   },
+   {
+    "t": "cd",
+    "m": 2000,
+    "z": 1
+   }
+  ],
+  "sec": 3650,
+  "tl": 148
+ },
+ {
+  "date": "2027-01-17",
+  "week": "W2",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-01-17",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-01-18",
+  "week": "W3",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 10,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5199,
+  "tl": 129,
+  "from": "2027-01-18",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-01-19",
+  "week": "W3",
+  "phase": "BASE",
+  "event": "Birthday Run",
+  "tags": [],
+  "km": 18.4,
+  "label": "Threshold Intervals 4×3 km",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "rep": 4,
+    "steps": [
+     {
+      "t": "run",
+      "m": 1600,
+      "z": 2
+     },
+     {
+      "t": "run",
+      "m": 3000,
+      "z": 4
+     }
+    ]
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 7921,
+  "tl": 364,
+  "from": "2027-01-19",
+  "code": "P10547"
+ },
+ {
+  "date": "2027-01-20",
+  "week": "W3",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-01-20",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-01-21",
+  "week": "W3",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-01-21"
+ },
+ {
+  "date": "2027-01-22",
+  "week": "W3",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 14,
+  "label": "Steady Run · Aerobic Power",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 11000,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 6371,
+  "tl": 240,
+  "from": "2027-01-22",
+  "code": "P10541"
+ },
+ {
+  "date": "2027-01-23",
+  "week": "W3",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-01-23",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-01-24",
+  "week": "W3",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 19,
+  "label": "Long Run",
+  "kind": "long",
+  "note": "Fuel from 45 min (30–60 g/h), drink to thirst, sodium in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 19000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 9339,
+  "tl": 244,
+  "from": "2027-01-24",
+  "code": "P10594"
+ },
+ {
+  "date": "2027-01-25",
+  "week": "W4",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 11,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 11000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5659,
+  "tl": 141,
+  "from": "2027-01-25",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-01-26",
+  "week": "W4",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 18.4,
+  "label": "Threshold Intervals 4×3 km",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "rep": 4,
+    "steps": [
+     {
+      "t": "run",
+      "m": 1600,
+      "z": 2
+     },
+     {
+      "t": "run",
+      "m": 3000,
+      "z": 4
+     }
+    ]
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 7921,
+  "tl": 364,
+  "from": "2027-01-26",
+  "code": "P10547"
+ },
+ {
+  "date": "2027-01-27",
+  "week": "W4",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2027-01-27",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-01-28",
+  "week": "W4",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-01-28"
+ },
+ {
+  "date": "2027-01-29",
+  "week": "W4",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 16,
+  "label": "Steady Run · Aerobic Power",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 13000,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 7169,
+  "tl": 276,
+  "from": "2027-01-29",
+  "code": "P10541"
+ },
+ {
+  "date": "2027-01-30",
+  "week": "W4",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-01-30",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-01-31",
+  "week": "W4",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 21.1,
+  "label": "Long Run",
+  "kind": "long",
+  "note": "Fuel from 45 min (30–60 g/h), drink to thirst, sodium in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 21100,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 10305,
+  "tl": 271,
+  "from": "2027-01-31",
+  "code": "P10594"
+ },
+ {
+  "date": "2027-02-01",
+  "week": "W5",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 11,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 11000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5659,
+  "tl": 141,
+  "from": "2027-02-01",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-02-02",
+  "week": "W5",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 18.4,
+  "label": "Threshold Intervals 4×3 km",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "rep": 4,
+    "steps": [
+     {
+      "t": "run",
+      "m": 1600,
+      "z": 2
+     },
+     {
+      "t": "run",
+      "m": 3000,
+      "z": 4
+     }
+    ]
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 7921,
+  "tl": 364,
+  "from": "2027-02-02",
+  "code": "P10547"
+ },
+ {
+  "date": "2027-02-03",
+  "week": "W5",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 10,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5199,
+  "tl": 129,
+  "from": "2027-02-03",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-02-04",
+  "week": "W5",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-02-04"
+ },
+ {
+  "date": "2027-02-05",
+  "week": "W5",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 18,
+  "label": "Steady Run · Aerobic Power",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 15000,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 7968,
+  "tl": 313,
+  "from": "2027-02-05",
+  "code": "P10541"
+ },
+ {
+  "date": "2027-02-06",
+  "week": "W5",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-02-06",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-02-07",
+  "week": "W5",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 23,
+  "label": "Long Run",
+  "kind": "long",
+  "note": "Fuel from 45 min (30–60 g/h), drink to thirst, sodium in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 23000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 11178,
+  "tl": 296,
+  "from": "2027-02-07",
+  "code": "P10594"
+ },
+ {
+  "date": "2027-02-08",
+  "week": "W6",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-02-08",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-02-09",
+  "week": "W6",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-02-09"
+ },
+ {
+  "date": "2027-02-10",
+  "week": "W6",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 10,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5199,
+  "tl": 129,
+  "from": "2027-02-10",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-02-11",
+  "week": "W6",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-02-11"
+ },
+ {
+  "date": "2027-02-12",
+  "week": "W6",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-02-12",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-02-13",
+  "week": "W6",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 14,
+  "label": "Steady Run · Aerobic Power",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 11000,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 6371,
+  "tl": 240,
+  "from": "2027-02-13",
+  "code": "P10541"
+ },
+ {
+  "date": "2027-02-14",
+  "week": "W6",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-02-14",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-02-15",
+  "week": "W7",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 11,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 11000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5659,
+  "tl": 141,
+  "from": "2027-02-15",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-02-16",
+  "week": "W7",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 14,
+  "label": "Threshold Intervals 4×3 km",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "rep": 4,
+    "steps": [
+     {
+      "t": "run",
+      "m": 500,
+      "z": 2
+     },
+     {
+      "t": "run",
+      "m": 3000,
+      "z": 4
+     }
+    ]
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5897,
+  "tl": 308,
+  "from": "2027-02-16",
+  "code": "P10547"
+ },
+ {
+  "date": "2027-02-17",
+  "week": "W7",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 10,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5199,
+  "tl": 129,
+  "from": "2027-02-17",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-02-18",
+  "week": "W7",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-02-18"
+ },
+ {
+  "date": "2027-02-19",
+  "week": "W7",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 18,
+  "label": "Steady Run · Aerobic Power",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 15000,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 7968,
+  "tl": 313,
+  "from": "2027-02-19",
+  "code": "P10541"
+ },
+ {
+  "date": "2027-02-20",
+  "week": "W7",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2027-02-20",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-02-21",
+  "week": "W7",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 24,
+  "label": "Long Run",
+  "kind": "long",
+  "note": "Fuel from 45 min (30–60 g/h), drink to thirst, sodium in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 24000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 11638,
+  "tl": 309,
+  "from": "2027-02-21",
+  "code": "P10594"
+ },
+ {
+  "date": "2027-02-22",
+  "week": "W8",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 11,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 11000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5659,
+  "tl": 141,
+  "from": "2027-02-22",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-02-23",
+  "week": "W8",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 17.5,
+  "label": "Threshold Intervals 5×3 km",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "rep": 5,
+    "steps": [
+     {
+      "t": "run",
+      "m": 500,
+      "z": 2
+     },
+     {
+      "t": "run",
+      "m": 3000,
+      "z": 4
+     }
+    ]
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 7222,
+  "tl": 385,
+  "from": "2027-02-23",
+  "code": "P10547"
+ },
+ {
+  "date": "2027-02-24",
+  "week": "W8",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 10,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5199,
+  "tl": 129,
+  "from": "2027-02-24",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-02-25",
+  "week": "W8",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-02-25"
+ },
+ {
+  "date": "2027-02-26",
+  "week": "W8",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 19,
+  "label": "Steady Run · Aerobic Power",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 16000,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 8367,
+  "tl": 331,
+  "from": "2027-02-26",
+  "code": "P10541"
+ },
+ {
+  "date": "2027-02-27",
+  "week": "W8",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2027-02-27",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-02-28",
+  "week": "W8",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 26,
+  "label": "Long Run",
+  "kind": "long",
+  "note": "Fuel from 45 min (30–60 g/h), drink to thirst, sodium in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 26000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 12558,
+  "tl": 334,
+  "from": "2027-02-28",
+  "code": "P10594"
+ },
+ {
+  "date": "2027-03-01",
+  "week": "W9",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 11,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 11000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5659,
+  "tl": 141,
+  "from": "2027-03-01",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-03-02",
+  "week": "W9",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 19,
+  "label": "Threshold Intervals 5×3 km",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "rep": 5,
+    "steps": [
+     {
+      "t": "run",
+      "m": 800,
+      "z": 2
+     },
+     {
+      "t": "run",
+      "m": 3000,
+      "z": 4
+     }
+    ]
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 7912,
+  "tl": 404,
+  "from": "2027-03-02",
+  "code": "P10547"
+ },
+ {
+  "date": "2027-03-03",
+  "week": "W9",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 10,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5199,
+  "tl": 129,
+  "from": "2027-03-03",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-03-04",
+  "week": "W9",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-03-04"
+ },
+ {
+  "date": "2027-03-05",
+  "week": "W9",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 21,
+  "label": "Steady Run · Aerobic Power",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 18000,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 9165,
+  "tl": 368,
+  "from": "2027-03-05",
+  "code": "P10541"
+ },
+ {
+  "date": "2027-03-06",
+  "week": "W9",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2027-03-06",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-03-07",
+  "week": "W9",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 27,
+  "label": "Long Run",
+  "kind": "long",
+  "note": "Fuel from 45 min (30–60 g/h), drink to thirst, sodium in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 27000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 13018,
+  "tl": 347,
+  "from": "2027-03-07",
+  "code": "P10594"
+ },
+ {
+  "date": "2027-03-08",
+  "week": "W10",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 10,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5199,
+  "tl": 129,
+  "from": "2027-03-08",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-03-09",
+  "week": "W10",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-03-09"
+ },
+ {
+  "date": "2027-03-10",
+  "week": "W10",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 10,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5199,
+  "tl": 129,
+  "from": "2027-03-10",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-03-11",
+  "week": "W10",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-03-11"
+ },
+ {
+  "date": "2027-03-12",
+  "week": "W10",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-03-12",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-03-13",
+  "week": "W10",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [
+   "CP3"
+  ],
+  "km": 9,
+  "label": "5K Time Trial",
+  "kind": "tt",
+  "note": "Anchor 5K TT · after Eid · Sets B1. Yellow/red → paces stay at B0",
+  "src": "lumpad",
+  "steps": [
+   {
+    "t": "wu",
+    "m": 2000,
+    "z": 2,
+    "note": "finish with 4 × 20 s strides"
+   },
+   {
+    "t": "tt",
+    "m": 5000,
+    "z": 5,
+    "pace": [
+     339,
+     349
+    ],
+    "note": "even effort, all out over the last km"
+   },
+   {
+    "t": "cd",
+    "m": 2000,
+    "z": 1
+   }
+  ],
+  "sec": 3600,
+  "tl": 143
+ },
+ {
+  "date": "2027-03-14",
+  "week": "W10",
+  "phase": "RAMADAN",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-03-14",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-03-15",
+  "week": "W11",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 11,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 11000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5659,
+  "tl": 141,
+  "from": "2027-03-15",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-03-16",
+  "week": "W11",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-03-16"
+ },
+ {
+  "date": "2027-03-17",
+  "week": "W11",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2027-03-17",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-03-18",
+  "week": "W11",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 19.2,
+  "label": "Aerobic Power Alternations 6×1.6 km",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "rep": 6,
+    "steps": [
+     {
+      "t": "run",
+      "m": 1600,
+      "z": 2
+     },
+     {
+      "t": "run",
+      "m": 1600,
+      "z": 3
+     }
+    ]
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 8848,
+  "tl": 299,
+  "from": "2027-03-18",
+  "code": "P10544"
+ },
+ {
+  "date": "2027-03-19",
+  "week": "W11",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 10,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5199,
+  "tl": 129,
+  "from": "2027-03-19",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-03-20",
+  "week": "W11",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2027-03-20",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-03-21",
+  "week": "W11",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 24.1,
+  "label": "Long Run · Aerobic Power finish",
+  "kind": "long",
+  "note": "Fuel from 45 min (30–60 g/h), drink to thirst, sodium in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 21100,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 10403,
+  "tl": 424,
+  "from": "2027-03-21",
+  "code": "P10545"
+ },
+ {
+  "date": "2027-03-22",
+  "week": "W12",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 10,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5199,
+  "tl": 129,
+  "from": "2027-01-18",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-03-23",
+  "week": "W12",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 18.4,
+  "label": "Threshold Intervals 4×3 km",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "rep": 4,
+    "steps": [
+     {
+      "t": "run",
+      "m": 1600,
+      "z": 2
+     },
+     {
+      "t": "run",
+      "m": 3000,
+      "z": 4
+     }
+    ]
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 7921,
+  "tl": 364,
+  "from": "2027-01-19",
+  "code": "P10547"
+ },
+ {
+  "date": "2027-03-24",
+  "week": "W12",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-01-20",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-03-25",
+  "week": "W12",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-01-21"
+ },
+ {
+  "date": "2027-03-26",
+  "week": "W12",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 14,
+  "label": "Steady Run · Aerobic Power",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 11000,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 6371,
+  "tl": 240,
+  "from": "2027-01-22",
+  "code": "P10541"
+ },
+ {
+  "date": "2027-03-27",
+  "week": "W12",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-01-23",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-03-28",
+  "week": "W12",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 19,
+  "label": "Long Run",
+  "kind": "long",
+  "note": "Fuel from 45 min (30–60 g/h), drink to thirst, sodium in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 19000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 9339,
+  "tl": 244,
+  "from": "2027-01-24",
+  "code": "P10594"
+ },
+ {
+  "date": "2027-03-29",
+  "week": "W13",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 11,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 11000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5659,
+  "tl": 141,
+  "from": "2027-01-25",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-03-30",
+  "week": "W13",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 18.4,
+  "label": "Threshold Intervals 4×3 km",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "rep": 4,
+    "steps": [
+     {
+      "t": "run",
+      "m": 1600,
+      "z": 2
+     },
+     {
+      "t": "run",
+      "m": 3000,
+      "z": 4
+     }
+    ]
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 7921,
+  "tl": 364,
+  "from": "2027-01-26",
+  "code": "P10547"
+ },
+ {
+  "date": "2027-03-31",
+  "week": "W13",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2027-01-27",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-04-01",
+  "week": "W13",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-01-28"
+ },
+ {
+  "date": "2027-04-02",
+  "week": "W13",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 16,
+  "label": "Steady Run · Aerobic Power",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 13000,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 7169,
+  "tl": 276,
+  "from": "2027-01-29",
+  "code": "P10541"
+ },
+ {
+  "date": "2027-04-03",
+  "week": "W13",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-01-30",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-04-04",
+  "week": "W13",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 21.1,
+  "label": "Long Run",
+  "kind": "long",
+  "note": "Fuel from 45 min (30–60 g/h), drink to thirst, sodium in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 21100,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 10305,
+  "tl": 271,
+  "from": "2027-01-31",
+  "code": "P10594"
+ },
+ {
+  "date": "2027-04-05",
+  "week": "W14",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 11,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 11000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5659,
+  "tl": 141,
+  "from": "2027-02-01",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-04-06",
+  "week": "W14",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 18.4,
+  "label": "Threshold Intervals 4×3 km",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "rep": 4,
+    "steps": [
+     {
+      "t": "run",
+      "m": 1600,
+      "z": 2
+     },
+     {
+      "t": "run",
+      "m": 3000,
+      "z": 4
+     }
+    ]
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 7921,
+  "tl": 364,
+  "from": "2027-02-02",
+  "code": "P10547"
+ },
+ {
+  "date": "2027-04-07",
+  "week": "W14",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 10,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5199,
+  "tl": 129,
+  "from": "2027-02-03",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-04-08",
+  "week": "W14",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-02-04"
+ },
+ {
+  "date": "2027-04-09",
+  "week": "W14",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 18,
+  "label": "Steady Run · Aerobic Power",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 15000,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 7968,
+  "tl": 313,
+  "from": "2027-02-05",
+  "code": "P10541"
+ },
+ {
+  "date": "2027-04-10",
+  "week": "W14",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-02-06",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-04-11",
+  "week": "W14",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 23,
+  "label": "Long Run",
+  "kind": "long",
+  "note": "Fuel from 45 min (30–60 g/h), drink to thirst, sodium in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 23000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 11178,
+  "tl": 296,
+  "from": "2027-02-07",
+  "code": "P10594"
+ },
+ {
+  "date": "2027-04-12",
+  "week": "W15",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-02-08",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-04-13",
+  "week": "W15",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-02-09"
+ },
+ {
+  "date": "2027-04-14",
+  "week": "W15",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 10,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5199,
+  "tl": 129,
+  "from": "2027-02-10",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-04-15",
+  "week": "W15",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-02-11"
+ },
+ {
+  "date": "2027-04-16",
+  "week": "W15",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-02-12",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-04-17",
+  "week": "W15",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [
+   "CP4"
+  ],
+  "km": 14,
+  "label": "10K Time Trial",
+  "kind": "tt",
+  "note": "10K TT · Sets B2. First red that counts toward the kill gate",
+  "src": "lumpad",
+  "steps": [
+   {
+    "t": "wu",
+    "m": 2000,
+    "z": 2,
+    "note": "finish with 4 × 20 s strides"
+   },
+   {
+    "t": "tt",
+    "m": 10000,
+    "z": 5,
+    "pace": [
+     347,
+     357
+    ],
+    "note": "even effort, all out over the last km"
+   },
+   {
+    "t": "cd",
+    "m": 2000,
+    "z": 1
+   }
+  ],
+  "sec": 5400,
+  "tl": 293
+ },
+ {
+  "date": "2027-04-18",
+  "week": "W15",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-02-14",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-04-19",
+  "week": "W16",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 11,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 11000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5659,
+  "tl": 141,
+  "from": "2027-02-15",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-04-20",
+  "week": "W16",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 14,
+  "label": "Threshold Intervals 4×3 km",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "rep": 4,
+    "steps": [
+     {
+      "t": "run",
+      "m": 500,
+      "z": 2
+     },
+     {
+      "t": "run",
+      "m": 3000,
+      "z": 4
+     }
+    ]
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5897,
+  "tl": 308,
+  "from": "2027-02-16",
+  "code": "P10547"
+ },
+ {
+  "date": "2027-04-21",
+  "week": "W16",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 10,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5199,
+  "tl": 129,
+  "from": "2027-02-17",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-04-22",
+  "week": "W16",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-02-18"
+ },
+ {
+  "date": "2027-04-23",
+  "week": "W16",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 18,
+  "label": "Steady Run · Aerobic Power",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 15000,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 7968,
+  "tl": 313,
+  "from": "2027-02-19",
+  "code": "P10541"
+ },
+ {
+  "date": "2027-04-24",
+  "week": "W16",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2027-02-20",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-04-25",
+  "week": "W16",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [
+   "CP5"
+  ],
+  "km": 24,
+  "label": "Long Run",
+  "kind": "long",
+  "note": "24 km long run proof · Fuel 30–60 g/h; pain 0/10",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 24000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 11638,
+  "tl": 309,
+  "from": "2027-02-21",
+  "code": "P10594"
+ },
+ {
+  "date": "2027-04-26",
+  "week": "W17",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 11,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 11000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5659,
+  "tl": 141,
+  "from": "2027-02-22",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-04-27",
+  "week": "W17",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 17.5,
+  "label": "Threshold Intervals 5×3 km",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "rep": 5,
+    "steps": [
+     {
+      "t": "run",
+      "m": 500,
+      "z": 2
+     },
+     {
+      "t": "run",
+      "m": 3000,
+      "z": 4
+     }
+    ]
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 7222,
+  "tl": 385,
+  "from": "2027-02-23",
+  "code": "P10547"
+ },
+ {
+  "date": "2027-04-28",
+  "week": "W17",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 10,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5199,
+  "tl": 129,
+  "from": "2027-02-24",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-04-29",
+  "week": "W17",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-02-25"
+ },
+ {
+  "date": "2027-04-30",
+  "week": "W17",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 19,
+  "label": "Steady Run · Aerobic Power",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 16000,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 8367,
+  "tl": 331,
+  "from": "2027-02-26",
+  "code": "P10541"
+ },
+ {
+  "date": "2027-05-01",
+  "week": "W17",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2027-02-27",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-05-02",
+  "week": "W17",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 26,
+  "label": "Long Run",
+  "kind": "long",
+  "note": "Fuel from 45 min (30–60 g/h), drink to thirst, sodium in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 26000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 12558,
+  "tl": 334,
+  "from": "2027-02-28",
+  "code": "P10594"
+ },
+ {
+  "date": "2027-05-03",
+  "week": "W18",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 11,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 11000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5659,
+  "tl": 141,
+  "from": "2027-03-01",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-05-04",
+  "week": "W18",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 19,
+  "label": "Threshold Intervals 5×3 km",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "rep": 5,
+    "steps": [
+     {
+      "t": "run",
+      "m": 800,
+      "z": 2
+     },
+     {
+      "t": "run",
+      "m": 3000,
+      "z": 4
+     }
+    ]
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 7912,
+  "tl": 404,
+  "from": "2027-03-02",
+  "code": "P10547"
+ },
+ {
+  "date": "2027-05-05",
+  "week": "W18",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 10,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5199,
+  "tl": 129,
+  "from": "2027-03-03",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-05-06",
+  "week": "W18",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-03-04"
+ },
+ {
+  "date": "2027-05-07",
+  "week": "W18",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 21,
+  "label": "Steady Run · Aerobic Power",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 18000,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 9165,
+  "tl": 368,
+  "from": "2027-03-05",
+  "code": "P10541"
+ },
+ {
+  "date": "2027-05-08",
+  "week": "W18",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2027-03-06",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-05-09",
+  "week": "W18",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 27,
+  "label": "Long Run",
+  "kind": "long",
+  "note": "Fuel from 45 min (30–60 g/h), drink to thirst, sodium in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 27000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 13018,
+  "tl": 347,
+  "from": "2027-03-07",
+  "code": "P10594"
+ },
+ {
+  "date": "2027-05-10",
+  "week": "W19",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 10,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5199,
+  "tl": 129,
+  "from": "2027-03-08",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-05-11",
+  "week": "W19",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-03-09"
+ },
+ {
+  "date": "2027-05-12",
+  "week": "W19",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 10,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5199,
+  "tl": 129,
+  "from": "2027-03-10",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-05-13",
+  "week": "W19",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-03-11"
+ },
+ {
+  "date": "2027-05-14",
+  "week": "W19",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-03-12",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-05-15",
+  "week": "W19",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [
+   "CP6"
+  ],
+  "km": 9,
+  "label": "5K Time Trial",
+  "kind": "tt",
+  "note": "5K TT · cutback week · Sets B3",
+  "src": "lumpad",
+  "steps": [
+   {
+    "t": "wu",
+    "m": 2000,
+    "z": 2,
+    "note": "finish with 4 × 20 s strides"
+   },
+   {
+    "t": "tt",
+    "m": 5000,
+    "z": 5,
+    "pace": [
+     328,
+     338
+    ],
+    "note": "even effort, all out over the last km"
+   },
+   {
+    "t": "cd",
+    "m": 2000,
+    "z": 1
+   }
+  ],
+  "sec": 3545,
+  "tl": 139
+ },
+ {
+  "date": "2027-05-16",
+  "week": "W19",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-03-14",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-05-17",
+  "week": "W20",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 11,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 11000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5659,
+  "tl": 141,
+  "from": "2027-03-15",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-05-18",
+  "week": "W20",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-03-16"
+ },
+ {
+  "date": "2027-05-19",
+  "week": "W20",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2027-03-17",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-05-20",
+  "week": "W20",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 19.2,
+  "label": "Aerobic Power Alternations 6×1.6 km",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "rep": 6,
+    "steps": [
+     {
+      "t": "run",
+      "m": 1600,
+      "z": 2
+     },
+     {
+      "t": "run",
+      "m": 1600,
+      "z": 3
+     }
+    ]
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 8848,
+  "tl": 299,
+  "from": "2027-03-18",
+  "code": "P10544"
+ },
+ {
+  "date": "2027-05-21",
+  "week": "W20",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 10,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5199,
+  "tl": 129,
+  "from": "2027-03-19",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-05-22",
+  "week": "W20",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2027-03-20",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-05-23",
+  "week": "W20",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 24.1,
+  "label": "Long Run · Aerobic Power finish",
+  "kind": "long",
+  "note": "Fuel from 45 min (30–60 g/h), drink to thirst, sodium in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 21100,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 10403,
+  "tl": 424,
+  "from": "2027-03-21",
+  "code": "P10545"
+ },
+ {
+  "date": "2027-05-24",
+  "week": "W21",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 11,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 11000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5659,
+  "tl": 141,
+  "from": "2027-03-22",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-05-25",
+  "week": "W21",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-03-23"
+ },
+ {
+  "date": "2027-05-26",
+  "week": "W21",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 10,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5199,
+  "tl": 129,
+  "from": "2027-03-24",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-05-27",
+  "week": "W21",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 22.4,
+  "label": "Aerobic Power Alternations 7×1.6 km",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "rep": 7,
+    "steps": [
+     {
+      "t": "run",
+      "m": 1600,
+      "z": 2
+     },
+     {
+      "t": "run",
+      "m": 1600,
+      "z": 3
+     }
+    ]
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 10222,
+  "tl": 349,
+  "from": "2027-03-25",
+  "code": "P10544"
+ },
+ {
+  "date": "2027-05-28",
+  "week": "W21",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 10,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5199,
+  "tl": 129,
+  "from": "2027-03-26",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-05-29",
+  "week": "W21",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2027-03-27",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-05-30",
+  "week": "W21",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [
+   "CP7"
+  ],
+  "km": 27,
+  "label": "Long Run · Aerobic Power finish",
+  "kind": "long",
+  "note": "27 km (24 km in Z3) · race-fueling + head-cooling rehearsal · Fueling + sodium, race start time",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 24000,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 11561,
+  "tl": 477,
+  "from": "2027-03-28",
+  "code": "P10545"
+ },
+ {
+  "date": "2027-05-31",
+  "week": "W22",
+  "phase": "TAPER",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2027-03-29",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-06-01",
+  "week": "W22",
+  "phase": "TAPER",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-03-30"
+ },
+ {
+  "date": "2027-06-02",
+  "week": "W22",
+  "phase": "TAPER",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-03-31",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-06-03",
+  "week": "W22",
+  "phase": "TAPER",
+  "event": null,
+  "tags": [
+   "CP8"
+  ],
+  "km": 14,
+  "label": "10K Time Trial",
+  "kind": "tt",
+  "note": "10K TT · Jakim pace check · Sets B4 and the Jakim pacing (watch plan 4:50–4:52 = 6:52–6:55/km; official sub-5:00 needs ≤7:06/km)",
+  "src": "lumpad",
+  "steps": [
+   {
+    "t": "wu",
+    "m": 2000,
+    "z": 2,
+    "note": "finish with 4 × 20 s strides"
+   },
+   {
+    "t": "tt",
+    "m": 10000,
+    "z": 5,
+    "pace": [
+     332,
+     342
+    ],
+    "note": "even effort, all out over the last km"
+   },
+   {
+    "t": "cd",
+    "m": 2000,
+    "z": 1
+   }
+  ],
+  "sec": 5250,
+  "tl": 281
+ },
+ {
+  "date": "2027-06-04",
+  "week": "W22",
+  "phase": "TAPER",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-04-02",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-06-05",
+  "week": "W22",
+  "phase": "TAPER",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-04-03"
+ },
+ {
+  "date": "2027-06-06",
+  "week": "W22",
+  "phase": "TAPER",
+  "event": null,
+  "tags": [],
+  "km": 16,
+  "label": "Long Run · Aerobic Power finish",
+  "kind": "long",
+  "note": "Fuel from 45 min (30–60 g/h), drink to thirst, sodium in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 13000,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 7169,
+  "tl": 276,
+  "from": "2027-04-04",
+  "code": "P10545"
+ },
+ {
+  "date": "2027-06-07",
+  "week": "W23",
+  "phase": "RACE WEEK",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-04-05",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-06-08",
+  "week": "W23",
+  "phase": "RACE WEEK",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-04-06"
+ },
+ {
+  "date": "2027-06-09",
+  "week": "W23",
+  "phase": "RACE WEEK",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-04-07",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-06-10",
+  "week": "W23",
+  "phase": "RACE WEEK",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-04-08"
+ },
+ {
+  "date": "2027-06-11",
+  "week": "W23",
+  "phase": "RACE WEEK",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-04-09"
+ },
+ {
+  "date": "2027-06-12",
+  "week": "W23",
+  "phase": "RACE WEEK",
+  "event": null,
+  "tags": [],
+  "km": 3,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 1980,
+  "tl": 39,
+  "from": "2027-04-10",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-06-13",
+  "week": "W23",
+  "phase": "RACE WEEK",
+  "event": null,
+  "tags": [
+   "CP9"
+  ],
+  "km": 42.2,
+  "label": "Jakim FM · B-race",
+  "kind": "race",
+  "note": "CP9 · official sub-5:00 (2026: 6:53:03) · watch plan 4:50–4:52 = 6:52–6:55/km · registered · not a VDOT test",
+  "src": "lumpad",
+  "steps": [
+   {
+    "t": "race",
+    "m": 42200,
+    "z": 3,
+    "pace": [
+     412,
+     415
+    ],
+    "note": "even pace; walk the aid stations if needed"
+   }
+  ],
+  "sec": 17450,
+  "tl": 797
+ },
+ {
+  "date": "2027-06-14",
+  "week": "W24",
+  "phase": "RACE WEEK",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "Strength · upper body (light)",
+  "kind": "gym",
+  "note": "GYM ONLY Upper light",
+  "src": "lumpad"
+ },
+ {
+  "date": "2027-06-15",
+  "week": "W24",
+  "phase": "RACE WEEK",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "PT REST DAY",
+  "src": "lumpad"
+ },
+ {
+  "date": "2027-06-16",
+  "week": "W24",
+  "phase": "RACE WEEK",
+  "event": null,
+  "tags": [],
+  "km": 3,
+  "label": "G-MJM gate jog 20′",
+  "kind": "easy",
+  "note": "Gate for MJM, not a race: pain 0/10, Sleep HR ≤ 67, HRV not Reduced. Fail = MJM is skipped.",
+  "src": "lumpad",
+  "steps": [
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 1,
+    "note": "≈20 min · gate: pain 0/10, Sleep HR ≤ 67, HRV not Reduced"
+   }
+  ],
+  "sec": 1452,
+  "tl": 29
+ },
+ {
+  "date": "2027-06-17",
+  "week": "W24",
+  "phase": "RACE WEEK",
+  "event": null,
+  "tags": [],
+  "km": 5,
+  "label": "Recovery Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "lumpad",
+  "steps": [
+   {
+    "t": "run",
+    "m": 5000,
+    "z": 1
+   }
+  ],
+  "sec": 2421,
+  "tl": 48
+ },
+ {
+  "date": "2027-06-18",
+  "week": "W24",
+  "phase": "RACE WEEK",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "Family trip · Yogyakarta REST DAY",
+  "src": "lumpad"
+ },
+ {
+  "date": "2027-06-19",
+  "week": "W24",
+  "phase": "RACE WEEK",
+  "event": null,
+  "tags": [],
+  "km": 3,
+  "label": "Shakeout",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "lumpad",
+  "steps": [
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 1,
+    "note": "include 4 × 20 s relaxed strides"
+   }
+  ],
+  "sec": 1452,
+  "tl": 29
+ },
+ {
+  "date": "2027-06-20",
+  "week": "W24",
+  "phase": "RACE WEEK",
+  "event": null,
+  "tags": [],
+  "km": 42.2,
+  "label": "MJM FM · D-race",
+  "kind": "race",
+  "note": "D-race · no time target: finish before the cut-offs (COP / COT) · only if G-MJM passed · no race info yet",
+  "src": "lumpad",
+  "steps": [
+   {
+    "t": "race",
+    "m": 42200,
+    "z": 2,
+    "note": "run-walk allowed; stay ahead of the cut-offs"
+   }
+  ],
+  "sec": 19230,
+  "tl": 538
+ },
+ {
+  "date": "2027-06-21",
+  "week": "W25",
+  "phase": "RECOVERY",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "lumpad"
+ },
+ {
+  "date": "2027-06-22",
+  "week": "W25",
+  "phase": "RECOVERY",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "lumpad"
+ },
+ {
+  "date": "2027-06-23",
+  "week": "W25",
+  "phase": "RECOVERY",
+  "event": null,
+  "tags": [],
+  "km": 5,
+  "label": "Recovery Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "lumpad",
+  "steps": [
+   {
+    "t": "run",
+    "m": 5000,
+    "z": 1
+   }
+  ],
+  "sec": 2421,
+  "tl": 48
+ },
+ {
+  "date": "2027-06-24",
+  "week": "W25",
+  "phase": "RECOVERY",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "lumpad"
+ },
+ {
+  "date": "2027-06-25",
+  "week": "W25",
+  "phase": "RECOVERY",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "lumpad",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3562,
+  "tl": 83
+ },
+ {
+  "date": "2027-06-26",
+  "week": "W25",
+  "phase": "RECOVERY",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "lumpad",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3562,
+  "tl": 83
+ },
+ {
+  "date": "2027-06-27",
+  "week": "W25",
+  "phase": "RECOVERY",
+  "event": null,
+  "tags": [],
+  "km": 10,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "lumpad",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5157,
+  "tl": 128
+ },
+ {
+  "date": "2027-06-28",
+  "week": "W26",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 5000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 2900,
+  "tl": 64,
+  "from": "2026-12-14",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-06-29",
+  "week": "W26",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2026-12-15"
+ },
+ {
+  "date": "2027-06-30",
+  "week": "W26",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2026-12-16",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-07-01",
+  "week": "W26",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2026-12-17"
+ },
+ {
+  "date": "2027-07-02",
+  "week": "W26",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2026-12-18",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-07-03",
+  "week": "W26",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 9.5,
+  "label": "Steady Run · Aerobic Power",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4575,
+  "tl": 157,
+  "from": "2026-12-19",
+  "code": "P10541"
+ },
+ {
+  "date": "2027-07-04",
+  "week": "W26",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 5000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 2900,
+  "tl": 64,
+  "from": "2026-12-20",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-07-05",
+  "week": "W27",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2026-12-21",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-07-06",
+  "week": "W27",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 12,
+  "label": "Threshold Intervals 2×3 km",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "rep": 2,
+    "steps": [
+     {
+      "t": "run",
+      "m": 3000,
+      "z": 2
+     },
+     {
+      "t": "run",
+      "m": 3000,
+      "z": 4
+     }
+    ]
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5548,
+  "tl": 218,
+  "from": "2026-12-22",
+  "code": "P10547"
+ },
+ {
+  "date": "2027-07-07",
+  "week": "W27",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2026-12-23",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-07-08",
+  "week": "W27",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2026-12-24"
+ },
+ {
+  "date": "2027-07-09",
+  "week": "W27",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 13,
+  "label": "Steady Run · Aerobic Power",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5972,
+  "tl": 221,
+  "from": "2026-12-25",
+  "code": "P10541"
+ },
+ {
+  "date": "2027-07-10",
+  "week": "W27",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 5000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 2900,
+  "tl": 64,
+  "from": "2026-12-26",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-07-11",
+  "week": "W27",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 13,
+  "label": "Long Run",
+  "kind": "long",
+  "note": "Fuel from 45 min (30–60 g/h), drink to thirst, sodium in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 13000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 6579,
+  "tl": 167,
+  "from": "2026-12-27",
+  "code": "P10594"
+ },
+ {
+  "date": "2027-07-12",
+  "week": "W28",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2026-12-28",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-07-13",
+  "week": "W28",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 13.8,
+  "label": "Threshold Intervals 3×3 km",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "rep": 3,
+    "steps": [
+     {
+      "t": "run",
+      "m": 1600,
+      "z": 2
+     },
+     {
+      "t": "run",
+      "m": 3000,
+      "z": 4
+     }
+    ]
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 6091,
+  "tl": 273,
+  "from": "2026-12-29",
+  "code": "P10547"
+ },
+ {
+  "date": "2027-07-14",
+  "week": "W28",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2026-12-30",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-07-15",
+  "week": "W28",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2026-12-31"
+ },
+ {
+  "date": "2027-07-16",
+  "week": "W28",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 13,
+  "label": "Steady Run · Aerobic Power",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5972,
+  "tl": 221,
+  "from": "2027-01-01",
+  "code": "P10541"
+ },
+ {
+  "date": "2027-07-17",
+  "week": "W28",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 5000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 2900,
+  "tl": 64,
+  "from": "2027-01-02",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-07-18",
+  "week": "W28",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 16,
+  "label": "Long Run",
+  "kind": "long",
+  "note": "Fuel from 45 min (30–60 g/h), drink to thirst, sodium in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 16000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 7959,
+  "tl": 206,
+  "from": "2027-01-03",
+  "code": "P10594"
+ },
+ {
+  "date": "2027-07-19",
+  "week": "W29",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2027-01-04",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-07-20",
+  "week": "W29",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 13.8,
+  "label": "Threshold Intervals 3×3 km",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "rep": 3,
+    "steps": [
+     {
+      "t": "run",
+      "m": 1600,
+      "z": 2
+     },
+     {
+      "t": "run",
+      "m": 3000,
+      "z": 4
+     }
+    ]
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 6091,
+  "tl": 273,
+  "from": "2027-01-05",
+  "code": "P10547"
+ },
+ {
+  "date": "2027-07-21",
+  "week": "W29",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-01-06",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-07-22",
+  "week": "W29",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-01-07"
+ },
+ {
+  "date": "2027-07-23",
+  "week": "W29",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 14,
+  "label": "Steady Run · Aerobic Power",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 11000,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 6371,
+  "tl": 240,
+  "from": "2027-01-08",
+  "code": "P10541"
+ },
+ {
+  "date": "2027-07-24",
+  "week": "W29",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-01-09",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-07-25",
+  "week": "W29",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 18,
+  "label": "Long Run",
+  "kind": "long",
+  "note": "Fuel from 45 min (30–60 g/h), drink to thirst, sodium in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 18000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 8879,
+  "tl": 231,
+  "from": "2027-01-10",
+  "code": "P10594"
+ },
+ {
+  "date": "2027-07-26",
+  "week": "W30",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2027-01-11",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-07-27",
+  "week": "W30",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-01-12"
+ },
+ {
+  "date": "2027-07-28",
+  "week": "W30",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2027-01-13",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-07-29",
+  "week": "W30",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-01-14"
+ },
+ {
+  "date": "2027-07-30",
+  "week": "W30",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-01-15",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-07-31",
+  "week": "W30",
+  "phase": "BASE",
+  "event": null,
+  "tags": [
+   "CP10"
+  ],
+  "km": 9,
+  "label": "5K Time Trial",
+  "kind": "tt",
+  "note": "5K TT · post-June return · Sets B5; measures the cost of two FMs in 7 days",
+  "src": "lumpad",
+  "steps": [
+   {
+    "t": "wu",
+    "m": 2000,
+    "z": 2,
+    "note": "finish with 4 × 20 s strides"
+   },
+   {
+    "t": "tt",
+    "m": 5000,
+    "z": 5,
+    "pace": [
+     309,
+     319
+    ],
+    "note": "even effort, all out over the last km"
+   },
+   {
+    "t": "cd",
+    "m": 2000,
+    "z": 1
+   }
+  ],
+  "sec": 3450,
+  "tl": 131
+ },
+ {
+  "date": "2027-08-01",
+  "week": "W30",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-01-17",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-08-02",
+  "week": "W31",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 10,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5199,
+  "tl": 129,
+  "from": "2027-01-18",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-08-03",
+  "week": "W31",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 18.4,
+  "label": "Threshold Intervals 4×3 km",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "rep": 4,
+    "steps": [
+     {
+      "t": "run",
+      "m": 1600,
+      "z": 2
+     },
+     {
+      "t": "run",
+      "m": 3000,
+      "z": 4
+     }
+    ]
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 7921,
+  "tl": 364,
+  "from": "2027-01-19",
+  "code": "P10547"
+ },
+ {
+  "date": "2027-08-04",
+  "week": "W31",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-01-20",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-08-05",
+  "week": "W31",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-01-21"
+ },
+ {
+  "date": "2027-08-06",
+  "week": "W31",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 14,
+  "label": "Steady Run · Aerobic Power",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 11000,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 6371,
+  "tl": 240,
+  "from": "2027-01-22",
+  "code": "P10541"
+ },
+ {
+  "date": "2027-08-07",
+  "week": "W31",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-01-23",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-08-08",
+  "week": "W31",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 19,
+  "label": "Long Run",
+  "kind": "long",
+  "note": "Fuel from 45 min (30–60 g/h), drink to thirst, sodium in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 19000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 9339,
+  "tl": 244,
+  "from": "2027-01-24",
+  "code": "P10594"
+ },
+ {
+  "date": "2027-08-09",
+  "week": "W32",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 11,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 11000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5659,
+  "tl": 141,
+  "from": "2027-01-25",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-08-10",
+  "week": "W32",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 18.4,
+  "label": "Threshold Intervals 4×3 km",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "rep": 4,
+    "steps": [
+     {
+      "t": "run",
+      "m": 1600,
+      "z": 2
+     },
+     {
+      "t": "run",
+      "m": 3000,
+      "z": 4
+     }
+    ]
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 7921,
+  "tl": 364,
+  "from": "2027-01-26",
+  "code": "P10547"
+ },
+ {
+  "date": "2027-08-11",
+  "week": "W32",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2027-01-27",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-08-12",
+  "week": "W32",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-01-28"
+ },
+ {
+  "date": "2027-08-13",
+  "week": "W32",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 16,
+  "label": "Steady Run · Aerobic Power",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 13000,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 7169,
+  "tl": 276,
+  "from": "2027-01-29",
+  "code": "P10541"
+ },
+ {
+  "date": "2027-08-14",
+  "week": "W32",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-01-30",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-08-15",
+  "week": "W32",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 21.1,
+  "label": "Long Run",
+  "kind": "long",
+  "note": "Fuel from 45 min (30–60 g/h), drink to thirst, sodium in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 21100,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 10305,
+  "tl": 271,
+  "from": "2027-01-31",
+  "code": "P10594"
+ },
+ {
+  "date": "2027-08-16",
+  "week": "W33",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 11,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 11000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5659,
+  "tl": 141,
+  "from": "2027-02-01",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-08-17",
+  "week": "W33",
+  "phase": "BUILD",
+  "event": "Independence Run",
+  "tags": [],
+  "km": 18.4,
+  "label": "Threshold Intervals 4×3 km",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "rep": 4,
+    "steps": [
+     {
+      "t": "run",
+      "m": 1600,
+      "z": 2
+     },
+     {
+      "t": "run",
+      "m": 3000,
+      "z": 4
+     }
+    ]
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 7921,
+  "tl": 364,
+  "from": "2027-02-02",
+  "code": "P10547"
+ },
+ {
+  "date": "2027-08-18",
+  "week": "W33",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 10,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5199,
+  "tl": 129,
+  "from": "2027-02-03",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-08-19",
+  "week": "W33",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-02-04"
+ },
+ {
+  "date": "2027-08-20",
+  "week": "W33",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 18,
+  "label": "Steady Run · Aerobic Power",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 15000,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 7968,
+  "tl": 313,
+  "from": "2027-02-05",
+  "code": "P10541"
+ },
+ {
+  "date": "2027-08-21",
+  "week": "W33",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-02-06",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-08-22",
+  "week": "W33",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 23,
+  "label": "Long Run",
+  "kind": "long",
+  "note": "Fuel from 45 min (30–60 g/h), drink to thirst, sodium in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 23000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 11178,
+  "tl": 296,
+  "from": "2027-02-07",
+  "code": "P10594"
+ },
+ {
+  "date": "2027-08-23",
+  "week": "W34",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-02-08",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-08-24",
+  "week": "W34",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-02-09"
+ },
+ {
+  "date": "2027-08-25",
+  "week": "W34",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 10,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5199,
+  "tl": 129,
+  "from": "2027-02-10",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-08-26",
+  "week": "W34",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-02-11"
+ },
+ {
+  "date": "2027-08-27",
+  "week": "W34",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-02-12",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-08-28",
+  "week": "W34",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [
+   "CP11"
+  ],
+  "km": 25.1,
+  "label": "Half-marathon Time Trial",
+  "kind": "tt",
+  "note": "HM TT · ratio gate · Ratio ≥0.90 passes; <0.85 → re-target",
+  "src": "lumpad",
+  "steps": [
+   {
+    "t": "wu",
+    "m": 2000,
+    "z": 2,
+    "note": "finish with 4 × 20 s strides"
+   },
+   {
+    "t": "tt",
+    "m": 21100,
+    "z": 4,
+    "pace": [
+     348,
+     358
+    ],
+    "note": "even effort, all out over the last km"
+   },
+   {
+    "t": "cd",
+    "m": 2000,
+    "z": 1
+   }
+  ],
+  "sec": 9328,
+  "tl": 479
+ },
+ {
+  "date": "2027-08-29",
+  "week": "W34",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-02-14",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-08-30",
+  "week": "W35",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 11,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 11000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5659,
+  "tl": 141,
+  "from": "2027-02-15",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-08-31",
+  "week": "W35",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 14,
+  "label": "Threshold Intervals 4×3 km",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "rep": 4,
+    "steps": [
+     {
+      "t": "run",
+      "m": 500,
+      "z": 2
+     },
+     {
+      "t": "run",
+      "m": 3000,
+      "z": 4
+     }
+    ]
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5897,
+  "tl": 308,
+  "from": "2027-02-16",
+  "code": "P10547"
+ },
+ {
+  "date": "2027-09-01",
+  "week": "W35",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 10,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5199,
+  "tl": 129,
+  "from": "2027-02-17",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-09-02",
+  "week": "W35",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-02-18"
+ },
+ {
+  "date": "2027-09-03",
+  "week": "W35",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 18,
+  "label": "Steady Run · Aerobic Power",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 15000,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 7968,
+  "tl": 313,
+  "from": "2027-02-19",
+  "code": "P10541"
+ },
+ {
+  "date": "2027-09-04",
+  "week": "W35",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2027-02-20",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-09-05",
+  "week": "W35",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 24,
+  "label": "Long Run",
+  "kind": "long",
+  "note": "Fuel from 45 min (30–60 g/h), drink to thirst, sodium in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 24000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 11638,
+  "tl": 309,
+  "from": "2027-02-21",
+  "code": "P10594"
+ },
+ {
+  "date": "2027-09-06",
+  "week": "W36",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 11,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 11000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5659,
+  "tl": 141,
+  "from": "2027-02-22",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-09-07",
+  "week": "W36",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 17.5,
+  "label": "Threshold Intervals 5×3 km",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "rep": 5,
+    "steps": [
+     {
+      "t": "run",
+      "m": 500,
+      "z": 2
+     },
+     {
+      "t": "run",
+      "m": 3000,
+      "z": 4
+     }
+    ]
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 7222,
+  "tl": 385,
+  "from": "2027-02-23",
+  "code": "P10547"
+ },
+ {
+  "date": "2027-09-08",
+  "week": "W36",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 10,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5199,
+  "tl": 129,
+  "from": "2027-02-24",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-09-09",
+  "week": "W36",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-02-25"
+ },
+ {
+  "date": "2027-09-10",
+  "week": "W36",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 19,
+  "label": "Steady Run · Aerobic Power",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 16000,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 8367,
+  "tl": 331,
+  "from": "2027-02-26",
+  "code": "P10541"
+ },
+ {
+  "date": "2027-09-11",
+  "week": "W36",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2027-02-27",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-09-12",
+  "week": "W36",
+  "phase": "BUILD",
+  "event": null,
+  "tags": [
+   "CP12"
+  ],
+  "km": 26,
+  "label": "Long Run",
+  "kind": "long",
+  "note": "26 km long run · fuel 60 g/h · Pain 0/10; drift ≤5% in the last hour",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 26000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 12558,
+  "tl": 334,
+  "from": "2027-02-28",
+  "code": "P10594"
+ },
+ {
+  "date": "2027-09-13",
+  "week": "W37",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 11,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 11000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5659,
+  "tl": 141,
+  "from": "2027-03-01",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-09-14",
+  "week": "W37",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 19,
+  "label": "Threshold Intervals 5×3 km",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "rep": 5,
+    "steps": [
+     {
+      "t": "run",
+      "m": 800,
+      "z": 2
+     },
+     {
+      "t": "run",
+      "m": 3000,
+      "z": 4
+     }
+    ]
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 7912,
+  "tl": 404,
+  "from": "2027-03-02",
+  "code": "P10547"
+ },
+ {
+  "date": "2027-09-15",
+  "week": "W37",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 10,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5199,
+  "tl": 129,
+  "from": "2027-03-03",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-09-16",
+  "week": "W37",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-03-04"
+ },
+ {
+  "date": "2027-09-17",
+  "week": "W37",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 21,
+  "label": "Steady Run · Aerobic Power",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 18000,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 9165,
+  "tl": 368,
+  "from": "2027-03-05",
+  "code": "P10541"
+ },
+ {
+  "date": "2027-09-18",
+  "week": "W37",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2027-03-06",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-09-19",
+  "week": "W37",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [
+   "CP13"
+  ],
+  "km": 27,
+  "label": "Long Run",
+  "kind": "long",
+  "note": "27 km long run · Longest Z2 run of the JRF cycle",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 27000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 13018,
+  "tl": 347,
+  "from": "2027-03-07",
+  "code": "P10594"
+ },
+ {
+  "date": "2027-09-20",
+  "week": "W38",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 10,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5199,
+  "tl": 129,
+  "from": "2027-03-08",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-09-21",
+  "week": "W38",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-03-09"
+ },
+ {
+  "date": "2027-09-22",
+  "week": "W38",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 10,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5199,
+  "tl": 129,
+  "from": "2027-03-10",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-09-23",
+  "week": "W38",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-03-11"
+ },
+ {
+  "date": "2027-09-24",
+  "week": "W38",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-03-12",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-09-25",
+  "week": "W38",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [
+   "CP14"
+  ],
+  "km": 9,
+  "label": "5K Time Trial",
+  "kind": "tt",
+  "note": "5K TT · final benchmark B9 · Race pace for JRF from the B9 tier",
+  "src": "lumpad",
+  "steps": [
+   {
+    "t": "wu",
+    "m": 2000,
+    "z": 2,
+    "note": "finish with 4 × 20 s strides"
+   },
+   {
+    "t": "tt",
+    "m": 5000,
+    "z": 5,
+    "pace": [
+     294,
+     304
+    ],
+    "note": "even effort, all out over the last km"
+   },
+   {
+    "t": "cd",
+    "m": 2000,
+    "z": 1
+   }
+  ],
+  "sec": 3375,
+  "tl": 125
+ },
+ {
+  "date": "2027-09-26",
+  "week": "W38",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-03-14",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-09-27",
+  "week": "W39",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 11,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 11000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5659,
+  "tl": 141,
+  "from": "2027-03-15",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-09-28",
+  "week": "W39",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-03-16"
+ },
+ {
+  "date": "2027-09-29",
+  "week": "W39",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2027-03-17",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-09-30",
+  "week": "W39",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 19.2,
+  "label": "Aerobic Power Alternations 6×1.6 km",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "rep": 6,
+    "steps": [
+     {
+      "t": "run",
+      "m": 1600,
+      "z": 2
+     },
+     {
+      "t": "run",
+      "m": 1600,
+      "z": 3
+     }
+    ]
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 8848,
+  "tl": 299,
+  "from": "2027-03-18",
+  "code": "P10544"
+ },
+ {
+  "date": "2027-10-01",
+  "week": "W39",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 10,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5199,
+  "tl": 129,
+  "from": "2027-03-19",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-10-02",
+  "week": "W39",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2027-03-20",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-10-03",
+  "week": "W39",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [
+   "CP15"
+  ],
+  "km": 24.1,
+  "label": "Long Run · Aerobic Power finish",
+  "kind": "long",
+  "note": "24 km with 21 km in Z3 · marathon-effort block · Red → JRF on the 4:15 tier",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 21100,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 10403,
+  "tl": 424,
+  "from": "2027-03-21",
+  "code": "P10545"
+ },
+ {
+  "date": "2027-10-04",
+  "week": "W40",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 11,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 11000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5659,
+  "tl": 141,
+  "from": "2027-03-22",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-10-05",
+  "week": "W40",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-03-23"
+ },
+ {
+  "date": "2027-10-06",
+  "week": "W40",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 10,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5199,
+  "tl": 129,
+  "from": "2027-03-24",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-10-07",
+  "week": "W40",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 22.4,
+  "label": "Aerobic Power Alternations 7×1.6 km",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "rep": 7,
+    "steps": [
+     {
+      "t": "run",
+      "m": 1600,
+      "z": 2
+     },
+     {
+      "t": "run",
+      "m": 1600,
+      "z": 3
+     }
+    ]
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 10222,
+  "tl": 349,
+  "from": "2027-03-25",
+  "code": "P10544"
+ },
+ {
+  "date": "2027-10-08",
+  "week": "W40",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 10,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5199,
+  "tl": 129,
+  "from": "2027-03-26",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-10-09",
+  "week": "W40",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2027-03-27",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-10-10",
+  "week": "W40",
+  "phase": "PEAK",
+  "event": null,
+  "tags": [
+   "CP16"
+  ],
+  "km": 27,
+  "label": "Long Run · Aerobic Power finish",
+  "kind": "long",
+  "note": "27 km with 24 km in Z3 · dress rehearsal · Fuel plan locked at 60 g/h, race kit, race start time",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 24000,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 11561,
+  "tl": 477,
+  "from": "2027-03-28",
+  "code": "P10545"
+ },
+ {
+  "date": "2027-10-11",
+  "week": "W41",
+  "phase": "TAPER",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2027-03-29",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-10-12",
+  "week": "W41",
+  "phase": "TAPER",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-03-30"
+ },
+ {
+  "date": "2027-10-13",
+  "week": "W41",
+  "phase": "TAPER",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-03-31",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-10-14",
+  "week": "W41",
+  "phase": "TAPER",
+  "event": null,
+  "tags": [
+   "CP17"
+  ],
+  "km": 9.2,
+  "label": "Aerobic Power Alternations 2×3 km",
+  "kind": "quality",
+  "note": "Marathon-effort reps 2×3 km · Last rep within 5 s/km of the first",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "rep": 2,
+    "steps": [
+     {
+      "t": "run",
+      "m": 1600,
+      "z": 2
+     },
+     {
+      "t": "run",
+      "m": 3000,
+      "z": 3
+     }
+    ]
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4467,
+  "tl": 151,
+  "from": "2027-04-01",
+  "code": "P10544"
+ },
+ {
+  "date": "2027-10-15",
+  "week": "W41",
+  "phase": "TAPER",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-04-02",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-10-16",
+  "week": "W41",
+  "phase": "TAPER",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-04-03"
+ },
+ {
+  "date": "2027-10-17",
+  "week": "W41",
+  "phase": "TAPER",
+  "event": null,
+  "tags": [],
+  "km": 16,
+  "label": "Long Run · Aerobic Power finish",
+  "kind": "long",
+  "note": "Fuel from 45 min (30–60 g/h), drink to thirst, sodium in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 13000,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 7169,
+  "tl": 276,
+  "from": "2027-04-04",
+  "code": "P10545"
+ },
+ {
+  "date": "2027-10-18",
+  "week": "W42",
+  "phase": "RACE WEEK",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-04-05",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-10-19",
+  "week": "W42",
+  "phase": "RACE WEEK",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-04-06"
+ },
+ {
+  "date": "2027-10-20",
+  "week": "W42",
+  "phase": "RACE WEEK",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-04-07",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-10-21",
+  "week": "W42",
+  "phase": "RACE WEEK",
+  "event": null,
+  "tags": [
+   "CP18"
+  ],
+  "km": 0,
+  "label": "FM go/no-go gate",
+  "kind": "rest",
+  "note": "Pain 0/10, Sleep HR ≤67 ×3 nights, HRV normal, soreness ≤2/10; pain ≥2/10 = DNS · rest day",
+  "src": "coros",
+  "from": "2027-04-08"
+ },
+ {
+  "date": "2027-10-22",
+  "week": "W42",
+  "phase": "RACE WEEK",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-04-09"
+ },
+ {
+  "date": "2027-10-23",
+  "week": "W42",
+  "phase": "RACE WEEK",
+  "event": null,
+  "tags": [],
+  "km": 3,
+  "label": "Pre-race shakeout",
+  "kind": "easy",
+  "note": "≤ 3 km easy, then stop — the full marathon is tomorrow (the JRF half is not run)",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 1980,
+  "tl": 39,
+  "from": "2027-04-10",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-10-24",
+  "week": "W42",
+  "phase": "RACE WEEK",
+  "event": null,
+  "tags": [
+   "CP19"
+  ],
+  "km": 42.2,
+  "label": "JRF Full · A-RACE",
+  "kind": "race",
+  "note": "CP19 · sub-4:00 (5:36–5:41/km) · first 5 km by HR cap · date confirmed, registration not open yet",
+  "src": "lumpad",
+  "steps": [
+   {
+    "t": "race",
+    "m": 42200,
+    "z": 3,
+    "pace": [
+     336,
+     341
+    ],
+    "note": "first 5 km by HR cap (≤ zone 2), then goal pace"
+   }
+  ],
+  "sec": 14285,
+  "tl": 652
+ },
+ {
+  "date": "2027-10-25",
+  "week": "W43",
+  "phase": "RECOVERY",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "lumpad"
+ },
+ {
+  "date": "2027-10-26",
+  "week": "W43",
+  "phase": "RECOVERY",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "lumpad"
+ },
+ {
+  "date": "2027-10-27",
+  "week": "W43",
+  "phase": "RECOVERY",
+  "event": null,
+  "tags": [],
+  "km": 5,
+  "label": "Recovery Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "lumpad",
+  "steps": [
+   {
+    "t": "run",
+    "m": 5000,
+    "z": 1
+   }
+  ],
+  "sec": 2421,
+  "tl": 48
+ },
+ {
+  "date": "2027-10-28",
+  "week": "W43",
+  "phase": "RECOVERY",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "lumpad"
+ },
+ {
+  "date": "2027-10-29",
+  "week": "W43",
+  "phase": "RECOVERY",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "lumpad",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3562,
+  "tl": 83
+ },
+ {
+  "date": "2027-10-30",
+  "week": "W43",
+  "phase": "RECOVERY",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "lumpad",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3562,
+  "tl": 83
+ },
+ {
+  "date": "2027-10-31",
+  "week": "W43",
+  "phase": "RECOVERY",
+  "event": null,
+  "tags": [],
+  "km": 10,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "lumpad",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5157,
+  "tl": 128
+ },
+ {
+  "date": "2027-11-01",
+  "week": "W44",
+  "phase": "TAPER",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2027-03-29",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-11-02",
+  "week": "W44",
+  "phase": "TAPER",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-03-30"
+ },
+ {
+  "date": "2027-11-03",
+  "week": "W44",
+  "phase": "TAPER",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-03-31",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-11-04",
+  "week": "W44",
+  "phase": "TAPER",
+  "event": null,
+  "tags": [],
+  "km": 9.2,
+  "label": "Aerobic Power Alternations 2×3 km",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "rep": 2,
+    "steps": [
+     {
+      "t": "run",
+      "m": 1600,
+      "z": 2
+     },
+     {
+      "t": "run",
+      "m": 3000,
+      "z": 3
+     }
+    ]
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4467,
+  "tl": 151,
+  "from": "2027-04-01",
+  "code": "P10544"
+ },
+ {
+  "date": "2027-11-05",
+  "week": "W44",
+  "phase": "TAPER",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-04-02",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-11-06",
+  "week": "W44",
+  "phase": "TAPER",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-04-03"
+ },
+ {
+  "date": "2027-11-07",
+  "week": "W44",
+  "phase": "TAPER",
+  "event": null,
+  "tags": [],
+  "km": 16,
+  "label": "Long Run · Aerobic Power finish",
+  "kind": "long",
+  "note": "Fuel from 45 min (30–60 g/h), drink to thirst, sodium in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 13000,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 7169,
+  "tl": 276,
+  "from": "2027-04-04",
+  "code": "P10545"
+ },
+ {
+  "date": "2027-11-08",
+  "week": "W45",
+  "phase": "RACE WEEK",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-04-05",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-11-09",
+  "week": "W45",
+  "phase": "RACE WEEK",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-04-06"
+ },
+ {
+  "date": "2027-11-10",
+  "week": "W45",
+  "phase": "RACE WEEK",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2027-04-07",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-11-11",
+  "week": "W45",
+  "phase": "RACE WEEK",
+  "event": null,
+  "tags": [
+   "CP20"
+  ],
+  "km": 0,
+  "label": "Bormar go/no-go gate (C-race)",
+  "kind": "rest",
+  "note": "Pain 0/10, soreness ≤2/10, HRV normal; otherwise DNS · rest day",
+  "src": "coros",
+  "from": "2027-04-08"
+ },
+ {
+  "date": "2027-11-12",
+  "week": "W45",
+  "phase": "RACE WEEK",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2027-04-09"
+ },
+ {
+  "date": "2027-11-13",
+  "week": "W45",
+  "phase": "RACE WEEK",
+  "event": null,
+  "tags": [],
+  "km": 3,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 1980,
+  "tl": 39,
+  "from": "2027-04-10",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-11-14",
+  "week": "W45",
+  "phase": "RACE WEEK",
+  "event": null,
+  "tags": [],
+  "km": 42.2,
+  "label": "Bormar FM · C-race",
+  "kind": "race",
+  "note": "C-race · no time target: finish before the cut-offs (COP / COT) · 3 weeks after JRF · no race info yet",
+  "src": "lumpad",
+  "steps": [
+   {
+    "t": "race",
+    "m": 42200,
+    "z": 2,
+    "note": "run-walk allowed; stay ahead of the cut-offs"
+   }
+  ],
+  "sec": 19230,
+  "tl": 538
+ },
+ {
+  "date": "2027-11-15",
+  "week": "W46",
+  "phase": "RECOVERY",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "lumpad"
+ },
+ {
+  "date": "2027-11-16",
+  "week": "W46",
+  "phase": "RECOVERY",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "lumpad"
+ },
+ {
+  "date": "2027-11-17",
+  "week": "W46",
+  "phase": "RECOVERY",
+  "event": null,
+  "tags": [],
+  "km": 5,
+  "label": "Recovery Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "lumpad",
+  "steps": [
+   {
+    "t": "run",
+    "m": 5000,
+    "z": 1
+   }
+  ],
+  "sec": 2421,
+  "tl": 48
+ },
+ {
+  "date": "2027-11-18",
+  "week": "W46",
+  "phase": "RECOVERY",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "lumpad"
+ },
+ {
+  "date": "2027-11-19",
+  "week": "W46",
+  "phase": "RECOVERY",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "lumpad",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3562,
+  "tl": 83
+ },
+ {
+  "date": "2027-11-20",
+  "week": "W46",
+  "phase": "RECOVERY",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "lumpad",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3562,
+  "tl": 83
+ },
+ {
+  "date": "2027-11-21",
+  "week": "W46",
+  "phase": "RECOVERY",
+  "event": null,
+  "tags": [],
+  "km": 10,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "lumpad",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5157,
+  "tl": 128
+ },
+ {
+  "date": "2027-11-22",
+  "week": "W47",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2026-11-23",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-11-23",
+  "week": "W47",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2026-11-24"
+ },
+ {
+  "date": "2027-11-24",
+  "week": "W47",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2026-11-25",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-11-25",
+  "week": "W47",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "Free Run (by feel)",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "free",
+    "z": 2,
+    "note": "COROS free mode: run easy, end with the lap button"
+   }
+  ],
+  "sec": 0,
+  "tl": 0,
+  "from": "2026-11-26",
+  "code": "P10546"
+ },
+ {
+  "date": "2027-11-26",
+  "week": "W47",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2026-11-27",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-11-27",
+  "week": "W47",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2026-11-28"
+ },
+ {
+  "date": "2027-11-28",
+  "week": "W47",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 13,
+  "label": "Long Run",
+  "kind": "long",
+  "note": "Fuel from 45 min (30–60 g/h), drink to thirst, sodium in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 13000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 6579,
+  "tl": 167,
+  "from": "2026-11-29",
+  "code": "P10594"
+ },
+ {
+  "date": "2027-11-29",
+  "week": "W48",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 10,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5199,
+  "tl": 129,
+  "from": "2026-11-30",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-11-30",
+  "week": "W48",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2026-12-01"
+ },
+ {
+  "date": "2027-12-01",
+  "week": "W48",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2026-12-02",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-12-02",
+  "week": "W48",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 13,
+  "label": "Steady Run · Aerobic Power",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5972,
+  "tl": 221,
+  "from": "2026-12-03",
+  "code": "P10541"
+ },
+ {
+  "date": "2027-12-03",
+  "week": "W48",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2026-12-04",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-12-04",
+  "week": "W48",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2026-12-05",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-12-05",
+  "week": "W48",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 15,
+  "label": "Long Run",
+  "kind": "long",
+  "note": "Fuel from 45 min (30–60 g/h), drink to thirst, sodium in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 15000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 7499,
+  "tl": 193,
+  "from": "2026-12-06",
+  "code": "P10594"
+ },
+ {
+  "date": "2027-12-06",
+  "week": "W49",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 10,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5199,
+  "tl": 129,
+  "from": "2026-12-07",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-12-07",
+  "week": "W49",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2026-12-08"
+ },
+ {
+  "date": "2027-12-08",
+  "week": "W49",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2026-12-09",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-12-09",
+  "week": "W49",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 13,
+  "label": "Steady Run · Aerobic Power",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5972,
+  "tl": 221,
+  "from": "2026-12-10",
+  "code": "P10541"
+ },
+ {
+  "date": "2027-12-10",
+  "week": "W49",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2026-12-11",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-12-11",
+  "week": "W49",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2026-12-12",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-12-12",
+  "week": "W49",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 16,
+  "label": "Long Run",
+  "kind": "long",
+  "note": "Fuel from 45 min (30–60 g/h), drink to thirst, sodium in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 16000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 7959,
+  "tl": 206,
+  "from": "2026-12-13",
+  "code": "P10594"
+ },
+ {
+  "date": "2027-12-13",
+  "week": "W50",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 5000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 2900,
+  "tl": 64,
+  "from": "2026-12-14",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-12-14",
+  "week": "W50",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2026-12-15"
+ },
+ {
+  "date": "2027-12-15",
+  "week": "W50",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2026-12-16",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-12-16",
+  "week": "W50",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2026-12-17"
+ },
+ {
+  "date": "2027-12-17",
+  "week": "W50",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2026-12-18",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-12-18",
+  "week": "W50",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 9.5,
+  "label": "Steady Run · Aerobic Power",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4575,
+  "tl": 157,
+  "from": "2026-12-19",
+  "code": "P10541"
+ },
+ {
+  "date": "2027-12-19",
+  "week": "W50",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 5000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 2900,
+  "tl": 64,
+  "from": "2026-12-20",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-12-20",
+  "week": "W51",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2026-12-21",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-12-21",
+  "week": "W51",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 12,
+  "label": "Threshold Intervals 2×3 km",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "rep": 2,
+    "steps": [
+     {
+      "t": "run",
+      "m": 3000,
+      "z": 2
+     },
+     {
+      "t": "run",
+      "m": 3000,
+      "z": 4
+     }
+    ]
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5548,
+  "tl": 218,
+  "from": "2026-12-22",
+  "code": "P10547"
+ },
+ {
+  "date": "2027-12-22",
+  "week": "W51",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2026-12-23",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-12-23",
+  "week": "W51",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2026-12-24"
+ },
+ {
+  "date": "2027-12-24",
+  "week": "W51",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 13,
+  "label": "Steady Run · Aerobic Power",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5972,
+  "tl": 221,
+  "from": "2026-12-25",
+  "code": "P10541"
+ },
+ {
+  "date": "2027-12-25",
+  "week": "W51",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 5000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 2900,
+  "tl": 64,
+  "from": "2026-12-26",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-12-26",
+  "week": "W51",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 13,
+  "label": "Long Run",
+  "kind": "long",
+  "note": "Fuel from 45 min (30–60 g/h), drink to thirst, sodium in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 13000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 6579,
+  "tl": 167,
+  "from": "2026-12-27",
+  "code": "P10594"
+ },
+ {
+  "date": "2027-12-27",
+  "week": "W52",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 8,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 8000,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 4279,
+  "tl": 103,
+  "from": "2026-12-28",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-12-28",
+  "week": "W52",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 13.8,
+  "label": "Threshold Intervals 3×3 km",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "rep": 3,
+    "steps": [
+     {
+      "t": "run",
+      "m": 1600,
+      "z": 2
+     },
+     {
+      "t": "run",
+      "m": 3000,
+      "z": 4
+     }
+    ]
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 6091,
+  "tl": 273,
+  "from": "2026-12-29",
+  "code": "P10547"
+ },
+ {
+  "date": "2027-12-29",
+  "week": "W52",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 6.5,
+  "label": "Aerobic Endurance Run",
+  "kind": "easy",
+  "note": "Conversational: hold the HR zone, let pace float in heat.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 6500,
+    "z": 2
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 3590,
+  "tl": 84,
+  "from": "2026-12-30",
+  "code": "P10540"
+ },
+ {
+  "date": "2027-12-30",
+  "week": "W52",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 0,
+  "label": "",
+  "kind": "rest",
+  "note": "REST DAY",
+  "src": "coros",
+  "from": "2026-12-31"
+ },
+ {
+  "date": "2027-12-31",
+  "week": "W52",
+  "phase": "BASE",
+  "event": null,
+  "tags": [],
+  "km": 13,
+  "label": "Steady Run · Aerobic Power",
+  "kind": "quality",
+  "note": "Hold the zone evenly; recoveries stay in zone 2.",
+  "src": "coros",
+  "steps": [
+   {
+    "t": "wu",
+    "sec": 300
+   },
+   {
+    "t": "run",
+    "m": 3000,
+    "z": 2
+   },
+   {
+    "t": "run",
+    "m": 10000,
+    "z": 3
+   },
+   {
+    "t": "cd",
+    "sec": 300
+   }
+  ],
+  "sec": 5972,
+  "tl": 221,
+  "from": "2027-01-01",
+  "code": "P10541"
+ }
+]
