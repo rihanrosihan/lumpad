@@ -4,6 +4,7 @@ import { idb, mdb } from './db.js'
 import { ftsSearch, rrf, mmr, sortByEvidence, getMemory } from './memory.js'
 import { latestTwin } from './twin.js'
 import { listEdges } from './corr.js'
+import { OUTPUT_SCHEMA } from './schema.js'
 import { zMatrix, cosine, FEATURES } from './card.js'
 import { RACE_CALENDAR, RACE_CALENDAR_TEXT } from './racecal.js'
 import { ATHLETE, Z2_CEILING } from '../../src/lib/athlete.js'
@@ -103,18 +104,7 @@ export function retrieveRunnerContext({ intent = 'daily_brief', question = '', d
 }
 
 // ---- prompt + output contract (coach/1)
-export const OUTPUT_SCHEMA = {
-  type: 'object', required: ['summary', 'analysis_md', 'recommendations', 'flags', 'memory_writes', 'cited_ids'],
-  properties: {
-    summary: { type: 'string', maxLength: 900 }, analysis_md: { type: 'string', maxLength: 6000 },
-    recommendations: { type: 'array', maxItems: 8, items: { type: 'object', required: ['action', 'why', 'priority'], properties: { action: { type: 'string', maxLength: 400 }, why: { type: 'string', maxLength: 500 }, priority: { type: 'string', enum: ['now', 'this_week', 'later'] }, evidence_ids: { type: 'array', items: { type: 'integer' } }, needs_athlete_ok: { type: 'boolean' } } } },
-    flags: { type: 'array', maxItems: 8, items: { type: 'object', required: ['type', 'text'], properties: { type: { type: 'string', enum: ['gate', 'injury', 'load', 'heat', 'data_gap', 'rule', 'other'] }, text: { type: 'string', maxLength: 300 } } } },
-    memory_writes: { type: 'array', maxItems: 5, items: { type: 'object', required: ['tier', 'title', 'body', 'cites'], properties: { tier: { type: 'string', enum: ['episodic', 'semantic', 'procedural'] }, kind: { type: 'string', maxLength: 30 }, title: { type: 'string', maxLength: 140 }, body: { type: 'string', maxLength: 900 }, cites: { type: 'array', minItems: 1, items: { type: 'integer' } }, tags: { type: 'array', maxItems: 8, items: { type: 'string', maxLength: 40 } }, confidence: { type: 'number' } } } },
-    cited_ids: { type: 'array', items: { type: 'integer' } },
-    // optional (blueprint §4.3): suggested twin changes — shown to the athlete, never applied automatically
-    twin_state_patch: { type: 'object', properties: { current_ef_baseline: { type: 'number' }, shoe_alert: { type: 'string', maxLength: 300 }, readiness_modifier: { type: 'string', maxLength: 300 } } },
-  },
-}
+export { OUTPUT_SCHEMA } from './schema.js'
 export const coachLang = () => { try { return load('kv', {})['lumpad.coach.lang']?.value === 'id' ? 'id' : 'en' } catch { return 'en' } }
 export function renderPrompt(ctx, task, { lang = coachLang() } = {}) {
   const s = ctx.stable, system = [

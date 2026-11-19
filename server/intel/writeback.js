@@ -15,8 +15,8 @@ export function unverified(text, corpus) {
   for (const t of timesOf(text)) if (!tm.has(t)) bad.push(t)
   return bad
 }
-const tokens = (s) => new Set(String(s).toLowerCase().match(/[\p{L}\p{N}]{4,}/gu) || [])
-const jaccard = (a, b) => { let i = 0; for (const x of a) if (b.has(x)) i++; return i / (a.size + b.size - i || 1) }
+export const tokens = (s) => new Set(String(s).toLowerCase().match(/[\p{L}\p{N}]{4,}/gu) || [])
+export const jaccard = (a, b) => { let i = 0; for (const x of a) if (b.has(x)) i++; return i / (a.size + b.size - i || 1) }
 
 export function applyWriteback(parsed, { runId = null, itemIds = [], corpus = '', provider = 'deepseek' } = {}) {
   const out = { stored: [], merged: [], rejected: [] }, allowed = new Set(itemIds)

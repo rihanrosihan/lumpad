@@ -39,12 +39,16 @@ export function monthSpend(month = monthOf()) {
   for (let i = 1; i < s.length; i++) spend += Math.max(0, s[i - 1].b - s[i].b)   // drops only; top-ups (rises) are ignored
   return +spend.toFixed(4)
 }
-export function guard(intent, { month = monthOf() } = {}) {
-  const spend = monthSpend(month), cap = capCny(), maxCall = mdb.prepare('SELECT MAX(cost_cny) m FROM coach_run WHERE created_at >= ?').get(month + '-01').m || 0
+// pure decision (also the reference for the Go port): spend and the largest single call so far are inputs
+export function guardDecision({ intent, spend, cap, maxCall = 0 }) {
   if (spend >= cap) return { ok: false, level: 'paused', spend, cap, reason: `monthly cap ¥${cap} reached (spent ¥${spend}) — paused until next month` }
   if (cap - spend < maxCall) return { ok: false, level: 'paused', spend, cap, reason: `remaining ¥${(cap - spend).toFixed(2)} is below the largest call this month (¥${maxCall.toFixed(2)})` }
   if (spend >= 0.8 * cap && !['daily_brief', 'question'].includes(intent)) return { ok: false, level: 'limited', spend, cap, reason: `80 % of the ¥${cap} cap used — only the daily brief and asked questions run` }
   return { ok: true, level: spend >= 0.8 * cap ? 'limited' : 'ok', spend, cap }
+}
+export function guard(intent, { month = monthOf() } = {}) {
+  const spend = monthSpend(month), cap = capCny(), maxCall = mdb.prepare('SELECT MAX(cost_cny) m FROM coach_run WHERE created_at >= ?').get(month + '-01').m || 0
+  return guardDecision({ intent, spend, cap, maxCall })
 }
 export const guardStatus = () => ({ month: monthOf(), cap_cny: capCny(), spend_cny: monthSpend(), level: guard('daily_brief').level === 'paused' ? 'paused' : guard('weekly_review').level })
 

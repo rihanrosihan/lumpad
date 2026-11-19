@@ -1,7 +1,7 @@
 // Orchestrates one coach run: context → provider → schema validation (+1 repair) → write-back → coach_run row.
 import { mdb, idb } from './db.js'
 import { retrieveRunnerContext, renderPrompt, TASKS, OUTPUT_SCHEMA } from './context.js'
-import { validate } from './schema.js'
+import { validate, normalize } from './schema.js'
 import { complete as deepseek } from './llm.js'
 import { applyWriteback } from './writeback.js'
 import { audit } from './memory.js'
@@ -22,9 +22,7 @@ export function finishRun(runId, parsed, { provider, usage = null, model = null,
   mdb.prepare('UPDATE coach_run SET ok=1, response=?, parsed=?, usage=?, cost_cny=?, model=?, error=NULL WHERE id=?').run(raw, JSON.stringify({ ...parsed, _writeback: wb }), usage ? JSON.stringify(usage) : null, cost, model, runId)
   return { ok: true, parsed, writeback: wb }
 }
-const FLAG_TYPES = new Set(['gate', 'injury', 'load', 'heat', 'data_gap', 'rule', 'other'])
-// cosmetic normalisation only (flag category labels); anything that affects advice or memory stays strictly validated
-export const normalize = (j) => { if (j && Array.isArray(j.flags)) for (const f of j.flags) if (f && typeof f === 'object' && !FLAG_TYPES.has(f.type)) f.type = 'other'; return j }
+export { normalize } from './schema.js'
 // Safety pre-check: a reported red-flag symptom (in the question, or severe pain in the last two check-ins) gets a referral and NO model call.
 function safetyPre(question) {
   const flags = redFlags(question), log = idb.prepare("SELECT pain FROM daily_log WHERE pain IS NOT NULL ORDER BY date DESC LIMIT 2").all()
