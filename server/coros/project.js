@@ -6,7 +6,8 @@ import { applyIngest } from '../ingest.js'
 
 const RUN = new Set([100, 101, 102, 103])
 
-export function projectAll({ from = FROM } = {}) {
+// pure: the ingest payloads the archive projects to (no writes) — also the reference for the Go port
+export function buildProjection({ from = FROM } = {}) {
   const rows = new Map(), get = (d) => rows.get(d) || rows.set(d, { date: d }).get(d)
   const put = (list) => { for (const r of list) if (r.date >= from) Object.assign(get(r.date), r) }
   // order matters: the broad "last N days" summaries first, then the per-window official values on top
@@ -26,7 +27,11 @@ export function projectAll({ from = FROM } = {}) {
     if (p?.laps?.length) { a.laps = p.laps; a.cadence ??= p.cadence; a.power ??= p.power; a.max_hr ??= p.max_hr }
     return a
   })
+  return { health, fitness, acts }
+}
 
+export function projectAll({ from = FROM } = {}) {
+  const { health, fitness, acts } = buildProjection({ from })
   const out = { health: 0, fitness: 0, activities: 0, laps: 0, rejected: 0 }
   const ingest = (body) => { const r = applyIngest({ run: { trigger: 'backfill', started_at: new Date().toISOString(), notes: ['COROS archive projection'] }, ...body }); for (const k of ['health', 'activities', 'laps', 'fitness']) out[k] += r.counts[k] || 0; out.rejected += r.rejected.length }
   for (let i = 0; i < health.length; i += 700) ingest({ health: health.slice(i, i + 700) })

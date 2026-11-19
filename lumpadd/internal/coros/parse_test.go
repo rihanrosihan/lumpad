@@ -51,7 +51,8 @@ func parse(tool, text string) any {
 }
 
 // Replays every archived COROS response through the Go parsers and compares with the Node parsers' output.
-//   node tools/export_coros_parse.mjs   (with DATA_DIR) → COROS_PARSE_FIXTURE=../tools/golden/out/coros_parse.json go test ./internal/coros
+//
+//	node tools/export_coros_parse.mjs   (with DATA_DIR) → COROS_PARSE_FIXTURE=../tools/golden/out/coros_parse.json go test ./internal/coros
 func TestReplayArchivedResponses(t *testing.T) {
 	path := os.Getenv("COROS_PARSE_FIXTURE")
 	if path == "" {

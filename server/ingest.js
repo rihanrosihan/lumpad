@@ -43,47 +43,55 @@ function upsert(table, keys, vals) {
   db.prepare(sql).run(...Object.values(keys), ...Object.values(vals))
 }
 
-export function applyIngest(p) {
-  const now = new Date().toISOString(), counts = { health: 0, activities: 0, laps: 0, gear: 0 }, rejected = []
+// pure: payload → the exact writes (upserts, lap-set deletes) + counts + rejected records. Also the reference for the Go port.
+export function ingestOps(p, now = new Date().toISOString()) {
+  const counts = { health: 0, activities: 0, laps: 0, gear: 0 }, rejected = [], ops = []
   const arr = (k) => (Array.isArray(p?.[k]) ? p[k] : [])
   for (const k of Object.keys(LIM)) if (arr(k).length > LIM[k]) throw Object.assign(new Error(`${k}: too many items (max ${LIM[k]})`), { status: 413 })
+  const upsertOp = (table, keys, vals) => ops.push({ op: 'upsert', table, keys, vals })
+  for (const h of arr('health')) {
+    const r = DATE.test(h?.date) ? pick(h, R.health) : { ok: false, why: 'bad date' }
+    if (!r.ok) { rejected.push({ kind: 'health', date: h?.date, why: r.why }); continue }
+    upsertOp('health_daily', { date: h.date }, { ...r.v, pulled_at: now })
+    counts.health++
+  }
+  for (const a of arr('activities')) {
+    const okSrc = ['coros', 'strava'].includes(a?.source) && typeof a?.source_id === 'string' && /^[\w.-]{1,64}$/.test(a.source_id)
+    const r = okSrc && DATE.test(a?.date) ? pick(a, R.activity) : { ok: false, why: 'bad source/id/date' }
+    if (!r.ok) { rejected.push({ kind: 'activity', id: a?.source_id, why: r.why }); continue }
+    const id = `${a.source}:${a.source_id}`
+    const body = { source: a.source, source_id: a.source_id, date: a.date, ...r.v, ...(r.v.gear_id ? { gear_id: gearKey(r.v.gear_id) } : {}) }
+    upsertOp('activities', { id }, { ...body, pulled_at: now })
+    counts.activities++
+    if (Array.isArray(a.laps)) {
+      if (a.laps.length > LIM.laps) { rejected.push({ kind: 'laps', id, why: 'too many laps' }); continue }
+      ops.push({ op: 'delete_laps', id }) // laps are replaced as a set (lap count can change)
+      a.laps.forEach((l, i) => {
+        const lr = pick(l, R.lap)
+        if (!lr.ok) return rejected.push({ kind: 'lap', id, idx: i, why: lr.why })
+        upsertOp('laps', { activity_id: id, idx: i + 1 }, lr.v); counts.laps++
+      })
+    }
+  }
+  for (const g of arr('gear')) {
+    const r = typeof g?.id === 'string' && /^[\w.-]{1,64}$/.test(g.id) ? pick(g, R.gear) : { ok: false, why: 'bad id' }
+    if (!r.ok) { rejected.push({ kind: 'gear', id: g?.id, why: r.why }); continue }
+    const body = { ...r.v, ...(typeof g.retired === 'boolean' ? { retired: g.retired ? 1 : 0 } : {}) }
+    upsertOp('gear', { id: gearKey(g.id) }, { ...body, pulled_at: now })
+    counts.gear++
+  }
+  for (const f of arr('fitness')) {
+    const r = DATE.test(f?.date) ? pick(f, R.fitness) : { ok: false, why: 'bad date' }
+    if (!r.ok) { rejected.push({ kind: 'fitness', date: f?.date, why: r.why }); continue }
+    upsertOp('fitness_daily', { date: f.date }, { ...r.v, pulled_at: now }); counts.fitness = (counts.fitness || 0) + 1
+  }
+  return { ops, counts, rejected }
+}
+
+export function applyIngest(p) {
+  const now = new Date().toISOString(), { ops, counts, rejected } = ingestOps(p, now)
   tx(() => {
-    for (const h of arr('health')) {
-      const r = DATE.test(h?.date) ? pick(h, R.health) : { ok: false, why: 'bad date' }
-      if (!r.ok) { rejected.push({ kind: 'health', date: h?.date, why: r.why }); continue }
-      upsert('health_daily', { date: h.date }, { ...r.v, pulled_at: now })
-      counts.health++
-    }
-    for (const a of arr('activities')) {
-      const okSrc = ['coros', 'strava'].includes(a?.source) && typeof a?.source_id === 'string' && /^[\w.-]{1,64}$/.test(a.source_id)
-      const r = okSrc && DATE.test(a?.date) ? pick(a, R.activity) : { ok: false, why: 'bad source/id/date' }
-      if (!r.ok) { rejected.push({ kind: 'activity', id: a?.source_id, why: r.why }); continue }
-      const id = `${a.source}:${a.source_id}`
-      const body = { source: a.source, source_id: a.source_id, date: a.date, ...r.v, ...(r.v.gear_id ? { gear_id: gearKey(r.v.gear_id) } : {}) }
-      upsert('activities', { id }, { ...body, pulled_at: now })
-      counts.activities++
-      if (Array.isArray(a.laps)) {
-        if (a.laps.length > LIM.laps) { rejected.push({ kind: 'laps', id, why: 'too many laps' }); continue }
-        db.prepare('DELETE FROM laps WHERE activity_id = ?').run(id) // laps are replaced as a set (lap count can change)
-        a.laps.forEach((l, i) => {
-          const lr = pick(l, R.lap)
-          if (!lr.ok) return rejected.push({ kind: 'lap', id, idx: i, why: lr.why })
-          upsert('laps', { activity_id: id, idx: i + 1 }, lr.v); counts.laps++
-        })
-      }
-    }
-    for (const g of arr('gear')) {
-      const r = typeof g?.id === 'string' && /^[\w.-]{1,64}$/.test(g.id) ? pick(g, R.gear) : { ok: false, why: 'bad id' }
-      if (!r.ok) { rejected.push({ kind: 'gear', id: g?.id, why: r.why }); continue }
-      const body = { ...r.v, ...(typeof g.retired === 'boolean' ? { retired: g.retired ? 1 : 0 } : {}) }
-      upsert('gear', { id: gearKey(g.id) }, { ...body, pulled_at: now })
-      counts.gear++
-    }
-    for (const f of arr('fitness')) {
-      const r = DATE.test(f?.date) ? pick(f, R.fitness) : { ok: false, why: 'bad date' }
-      if (!r.ok) { rejected.push({ kind: 'fitness', date: f?.date, why: r.why }); continue }
-      upsert('fitness_daily', { date: f.date }, { ...r.v, pulled_at: now }); counts.fitness = (counts.fitness || 0) + 1
-    }
+    for (const o of ops) o.op === 'delete_laps' ? db.prepare('DELETE FROM laps WHERE activity_id = ?').run(o.id) : upsert(o.table, o.keys, o.vals)
     const notes = Array.isArray(p?.run?.notes) ? p.run.notes.slice(0, 30).map((s) => String(s).slice(0, 300)) : []
     db.prepare('INSERT INTO sync_runs (received_at, started_at, trigger, ok, counts, notes) VALUES (?,?,?,?,?,?)').run(
       now, typeof p?.run?.started_at === 'string' ? p.run.started_at.slice(0, 40) : null, ['daily', 'manual', 'backfill'].includes(p?.run?.trigger) ? p.run.trigger : 'manual',
