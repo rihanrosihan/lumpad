@@ -1039,3 +1039,20 @@ nav.tabbar {
 .detail-page { column-count: 1 !important; }
 .srv-host { font-size: .92rem !important; word-break: break-all !important; line-height: 1.25 !important; }
 .rail .rb { padding-right: 10px; }
+
+/* ===== Readiness v4.8 Prototype Parity (P0.4a MSK, 2x2 Breakdown, 6-Region Muscle Tiles) ===== */
+.rd-subgrid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 10px; }
+@media (min-width: 680px) { .rd-subgrid { grid-template-columns: 1fr 1fr; } }
+.rd-subbox { padding: 12px; border-radius: 14px; background: var(--surface2); border: 1px solid var(--line); }
+.rd-subbox.warn { background: color-mix(in srgb, var(--amber) 9%, var(--surface)); border-color: color-mix(in srgb, var(--amber) 32%, var(--line)); }
+.rd-lr-inputs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+.rd-kpi2x2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.rd-ktile { display: flex; justify-content: space-between; align-items: center; gap: 6px; padding: 10px 12px; border-radius: 12px; background: var(--surface2); border: 1px solid var(--line); font-size: .78rem; min-width: 0; }
+.rd-ktile.warn { background: color-mix(in srgb, var(--crimson) 10%, var(--surface)); border-color: color-mix(in srgb, var(--crimson) 32%, var(--line)); }
+.rd-ktile b { font-family: var(--f-mono); font-weight: 800; white-space: nowrap; }
+.rd-muscle-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.card .rd-mtile, .rd-mtile { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-radius: 12px; font-size: .8rem; font-weight: 600; min-height: 44px; border: 1px solid var(--line); width: 100%; }
+.card .rd-mtile.ok, .rd-mtile.ok { background: color-mix(in srgb, var(--green) 10%, var(--surface)); border-color: color-mix(in srgb, var(--green) 32%, var(--line)); color: var(--text); }
+.card .rd-mtile.ok b { color: var(--green-t); font-family: var(--f-mono); }
+.card .rd-mtile.warn, .rd-mtile.warn { background: color-mix(in srgb, var(--amber) 12%, var(--surface)); border-color: color-mix(in srgb, var(--amber) 36%, var(--line)); color: var(--text); }
+.card .rd-mtile.warn b { color: var(--amber-t); font-family: var(--f-mono); }

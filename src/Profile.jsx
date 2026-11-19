@@ -414,7 +414,7 @@ export default function Profile({ vdot, results, settings, setSettings, go }) {
     {/* ===== TAB 6: SERVER DETAILS ===== */}
     {tab === 'server' && <>
       <div className="bio-kpis">
-        <div className="kpi"><small>Production Host</small><b>lumpad.rihan.digital</b><em>Caddy HTTPS · 127.0.0.1:8787</em></div>
+        <div className="kpi"><small>Production Host</small><b className="srv-host">lumpad.rihan.digital</b><em>Caddy HTTPS · 127.0.0.1:8787</em></div>
         <div className="kpi"><small>Runtime</small><b>{srv.nodeVersion || 'Node 22'}</b><em>SQLite 3.46.1 · React 18.3</em></div>
         <div className="kpi"><small>Memory &amp; Uptime</small><b>{srv.memRssMb != null ? `${srv.memRssMb} MB` : '2 GB VPS'}</b><em>{srv.uptimeSec != null ? `Up ${Math.floor(srv.uptimeSec / 3600)}h ${Math.floor((srv.uptimeSec % 3600) / 60)}m` : '/opt/lumpad'}</em></div>
         <div className="kpi"><small>/api/health</small><b>{Health.data?.ok ? '200 OK' : Health.state === 'loading' ? 'Checking…' : 'Offline'}</b><em>Sync: {sync}</em></div>
