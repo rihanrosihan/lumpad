@@ -13,7 +13,8 @@ import (
 )
 
 // Golden diff (gate G2): load the snapshot the fixtures came from with `lumpadd load`, then
-//   GOLDEN_DATABASE_URL=postgres://… GOLDEN_DIR=../tools/golden/out go test ./internal/analytics
+//
+//	GOLDEN_DATABASE_URL=postgres://… GOLDEN_DIR=../tools/golden/out go test ./internal/analytics
 func goldenDB(t *testing.T) (context.Context, string, func(string) any) {
 	url, dir := os.Getenv("GOLDEN_DATABASE_URL"), os.Getenv("GOLDEN_DIR")
 	if url == "" || dir == "" {
@@ -99,5 +100,55 @@ func TestMatricesGolden(t *testing.T) {
 	diffJSON("matrices", roundtrip(got), read("matrices.json"), &diffs)
 	for _, d := range diffs {
 		t.Error(d)
+	}
+}
+
+func sessionsJSON(ss []Session) any {
+	nn := func(x float64) any {
+		if math.IsNaN(x) || math.IsInf(x, 0) {
+			return nil
+		}
+		return x
+	}
+	out := make([]any, len(ss))
+	for i, s := range ss {
+		ctl := make([]any, len(s.Ctl))
+		for j, c := range s.Ctl {
+			ctl[j] = nn(c)
+		}
+		y, x := map[string]any{}, map[string]any{}
+		for k, v := range s.Y {
+			y[k] = nn(v)
+		}
+		for k, v := range s.X {
+			x[k] = nn(v)
+		}
+		out[i] = map[string]any{"date": s.Date, "ctl": ctl, "y": y, "x": x}
+	}
+	return roundtrip(out)
+}
+
+func TestCorrelationGolden(t *testing.T) {
+	ctx, url, read := goldenDB(t)
+	pool, err := db.Connect(ctx, url)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer pool.Close()
+	ds, err := SessionDataset(ctx, pool)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := read("corr.json").(map[string]any)
+	var diffs []string
+	diffJSON("dataset", sessionsJSON(ds), want["dataset"], &diffs)
+	diffJSON("result", roundtrip(ComputeEdges(ds, 100, 7, 0)), want["result"], &diffs)
+	for i, d := range diffs {
+		if i < 20 {
+			t.Error(d)
+		}
+	}
+	if len(diffs) > 20 {
+		t.Errorf("… %d differences in total", len(diffs))
 	}
 }

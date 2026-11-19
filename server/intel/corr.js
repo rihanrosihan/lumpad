@@ -28,7 +28,10 @@ export function lagSql() {
   for (const e of EXPOSURES) for (const [lo, hi] of (e.windows || WINDOWS)) cols.push(`${e.agg}(${e.col}) OVER (ORDER BY date ROWS BETWEEN ${hi} PRECEDING AND ${lo} PRECEDING) AS ${e.id}__${lo}_${hi}`)
   return `SELECT date, ${cols.join(', ')} FROM daily_feat ORDER BY date`
 }
-export const lagRows = () => Object.fromEntries(idb.prepare(lagSql()).all().map((r) => [r.date, r]))
+// SQLite computes moving-window SUM/AVG incrementally (add + subtract), which leaves float noise (10.000000000000002) that splits genuine rank
+// ties; values are rounded to 1e-6 so equal exposures stay equal (and so the Postgres port, which recomputes each window, agrees)
+const r6 = (v) => (typeof v === 'number' ? Math.round(v * 1e6) / 1e6 : v)
+export const lagRows = () => Object.fromEntries(idb.prepare(lagSql()).all().map((r) => [r.date, Object.fromEntries(Object.entries(r).map(([k, v]) => [k, k === 'date' ? v : r6(v)]))]))
 
 const isoWeek = (d) => { const t = new Date(d + 'T12:00:00Z'), day = (t.getUTCDay() + 6) % 7; t.setUTCDate(t.getUTCDate() - day + 3); const y = t.getUTCFullYear(), j = new Date(Date.UTC(y, 0, 4)); return `${y}-W${Math.round(((t - j) / 864e5 - 3 + ((j.getUTCDay() + 6) % 7)) / 7) + 1}` }
 const finite = (...v) => v.every((x) => x != null && Number.isFinite(x))
@@ -60,7 +63,7 @@ export function computeEdges(sessions, { B = 300, seed = 7, minN = null } = {}) 
 
 // real data: build the per-session dataset from intel.db and run
 export function sessionDataset() {
-  const lags = lagRows(), rows = idb.prepare('SELECT s.*, w.wbgt, w.temp_c AS wx FROM fit_session s LEFT JOIN run_weather w ON w.label_id=s.label_id WHERE s.run_pace IS NOT NULL ORDER BY s.date').all()
+  const lags = lagRows(), rows = idb.prepare('SELECT s.*, w.wbgt, w.temp_c AS wx FROM fit_session s LEFT JOIN run_weather w ON w.label_id=s.label_id WHERE s.run_pace IS NOT NULL ORDER BY s.date, s.start_ms, s.label_id').all() // chronological; ties made deterministic (the Go port must match)
   const temp = (s) => s.wbgt ?? s.wx ?? s.temp_device_c, steady = rows.filter((s) => s.run_share >= 0.85 && s.distance_m >= 3000 && s.distance_m <= 21000 && s.ef != null && temp(s) != null)
   const fit = steady.length >= 20 ? ols(steady.map((s) => [s.run_pace, temp(s), s.elapsed_s / 60]), steady.map((s) => s.ef)) : null
   const efRes = (s) => (fit && s.ef != null && temp(s) != null && s.run_share >= 0.85 && s.distance_m >= 3000 ? s.ef - (fit.coef[0] + fit.coef[1] * s.run_pace + fit.coef[2] * temp(s) + fit.coef[3] * (s.elapsed_s / 60)) : null)

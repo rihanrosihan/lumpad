@@ -67,3 +67,21 @@ out.zones = cfgs.map((cfg) => {
 })
 fs.writeFileSync('lumpadd/internal/engine/testdata/vectors.json', JSON.stringify(out))
 console.log('pacing sims:', out.pacing.sims.length, 'zone cfgs:', out.zones.length)
+
+// ---- Phase 2-f: statistics library and the correlation engine on a synthetic dataset
+const ST = await import('../server/intel/stats.js'), CO = await import('../server/intel/corr.js')
+let s4 = 3; const r4 = () => ((s4 = (s4 * 1664525 + 1013904223) % 4294967296) / 4294967296)
+const R = ST.rng(12345), rngs = Array.from({ length: 20 }, () => R())
+const a = Array.from({ length: 30 }, () => Math.round(r4() * 10)), b = a.map((x) => x * 0.7 + r4() * 5), Zs = a.map(() => [r4() * 100, Math.round(r4() * 4), r4()])
+out.stats = { rng7: Array.from({ length: 5 }, ((g) => () => g())(ST.rng(7))), rngs, a, b, Z: Zs, rank: ST.rank(a), q: [0, 0.025, 0.5, 0.975, 1].map((q) => ST.quantile(b, q)), pearson: ST.pearson(a, b), spearman: ST.spearman(a, b),
+  ols: ST.ols(Zs, b), partial: ST.partialSpearman(a, b, Zs), acf1: ST.acf1(b), neff: ST.nEff(30, b), shift: ST.shiftP(a, b), boot: ST.blockBootstrapCI(a, b, a.map((x, i) => 'w' + Math.floor(i / 4)), ST.spearman, 50, 7),
+  bh: ST.bh([0.01, 0.04, 0.03, 0.2, 0.04, 0.9, 0.001]), weeks: ['2026-01-01', '2026-01-04', '2026-01-05', '2025-12-29', '2027-01-01', '2026-12-31', '2020-12-31', '2021-01-03'].map((d) => d) }
+// synthetic sessions: a planted association (thr_min 4–7 d → pace_hr150) so some edges are significant
+const keys = CO.EXPOSURES.flatMap((e) => (e.windows || CO.WINDOWS).map(([lo, hi]) => `${e.id}__${lo}_${hi}`))
+const syn = Array.from({ length: 70 }, (_, i) => { const x = Object.fromEntries(keys.map((k) => [k, r4() < 0.05 ? null : Math.round(r4() * 50)])), thr = x['thr_min__4_7'] ?? 0
+  return { date: new Date(Date.UTC(2026, 0, 1) + Math.floor(i * 2.5) * 864e5).toISOString().slice(0, 10), ctl: [330 + r4() * 60, 20 + r4() * 10, 30 + r4() * 90, 5 + r4() * 20],
+    y: { gct_fade: r4() < 0.1 ? null : r4() * 20, drift: r4() * 8, ef_resid: r4() < 0.5 ? null : r4() - 0.5, run_share_long: r4() < 0.6 ? null : 0.7 + r4() * 0.3, stride_fade: r4() * 0.1, pace_hr150: 420 - thr * 0.8 + r4() * 10, gct_avg: 260 + r4() * 30 }, x } })
+out.stats.weekLabels = out.stats.weeks.map((d) => { const t = new Date(d + 'T12:00:00Z'), day = (t.getUTCDay() + 6) % 7; t.setUTCDate(t.getUTCDate() - day + 3); const y = t.getUTCFullYear(), j = new Date(Date.UTC(y, 0, 4)); return `${y}-W${Math.round(((t - j) / 864e5 - 3 + ((j.getUTCDay() + 6) % 7)) / 7) + 1}` })
+out.corr = { sessions: syn, result: CO.computeEdges(syn, { B: 60, seed: 7 }) }
+fs.writeFileSync('lumpadd/internal/engine/testdata/vectors.json', JSON.stringify(out))
+console.log('corr synthetic: tested', out.corr.result.tested, 'significant', out.corr.result.edges.filter((e) => e.status !== 'none').length)

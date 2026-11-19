@@ -159,7 +159,7 @@ func toFixed(x float64, d int) string {
 	if d > 0 {
 		out += "." + fp
 	}
-	if neg && strings.Trim(out, "0.") != "" {
+	if neg { // JS keeps the sign even when the digits round to zero: (-0.001).toFixed(2) === "-0.00"
 		out = "-" + out
 	}
 	return out
