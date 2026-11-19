@@ -23,13 +23,13 @@ import { useApi } from './api.js'
 // Pages (each its own full page, no popups). `short` = label in the phone bottom bar.
 const PAGES = {
   home: { label: 'Home', icon: 'home' }, ready: { label: 'Readiness', icon: 'ready', short: 'Ready' }, activity: { label: 'Activities', icon: 'run', short: 'Activity' },
-  calendar: { label: 'Calendar', icon: 'cal' }, analysis: { label: 'Run Analysis', icon: 'run' }, plan: { label: 'Plan Sync', icon: 'sync', short: 'Sync' }, day: { label: 'Day Plan', icon: 'day' }, checkpoint: { label: 'Checkpoints', icon: 'bars' }, race: { label: 'Races', icon: 'flag' }, route: { label: 'Course', icon: 'run' },
-  coach: { label: 'AI Coach', icon: 'coach', short: 'Coach' }, biometrics: { label: 'Biometrics', icon: 'heart' }, profile: { label: 'Profile', icon: 'user' },
+  calendar: { label: 'Calendar', icon: 'cal', short: 'Plan' }, analysis: { label: 'Run Analysis', icon: 'run' }, plan: { label: 'Plan Sync', icon: 'sync', short: 'Sync' }, day: { label: 'Day Plan', icon: 'day' }, checkpoint: { label: 'Checkpoints', icon: 'bars' }, race: { label: 'Races', icon: 'flag' }, route: { label: 'Course', icon: 'run' },
+  coach: { label: 'AI Coach', icon: 'coach', short: 'Coach' }, biometrics: { label: 'Biometrics', icon: 'heart', short: 'Labs' }, profile: { label: 'Profile', icon: 'user' },
 }
 const GROUPS = [['Daily', ['home', 'ready', 'activity', 'analysis']], ['Planning', ['calendar', 'day', 'plan', 'checkpoint', 'race', 'route']], ['Intelligence', ['coach', 'biometrics', 'profile']]]
 // breadcrumb under the brand (mockup wording)
 const CRUMB = { home: 'Home Briefing', ready: 'Readiness & Load', activity: 'Activities Catalog', calendar: 'Macrocycle Calendar', plan: 'Plan Sync', day: 'Day Plan', checkpoint: 'Checkpoint Roadmap', race: 'Races Hub', route: 'Official Course', coach: 'AI Coach & Rules', biometrics: 'Biometrics & Labs', profile: 'Profile & Fleet' }
-const BOTTOM = ['home', 'ready', 'activity', 'calendar', 'coach', 'profile']
+const BOTTOM = ['home', 'ready', 'coach', 'calendar', 'race', 'biometrics', 'profile']
 const ROUTES = Object.keys(PAGES).filter((k) => k !== 'analysis')
 const RACES = PLAN.filter((d) => d.kind === 'race' && /FM|Full/.test(d.label || ''))
 const THEMES = ['auto', 'light', 'dark']
@@ -112,7 +112,7 @@ export default function App() {
     <header className="appbar">
       <div className="appbar-in">
         <button className="menubtn" onClick={() => setMenu(true)} aria-label="Open menu"><Icon n="menu" size={20} /></button>
-        <button className="brand" onClick={jump('home')} aria-label="LUMPAD — go Home"><span className="logo" aria-hidden="true"><i>SUB 4</i><small>COACH</small></span><span className="bt"><b>LUMPAD<em className="osv">OS 5.0 · Fluid Telemetry</em></b><small><i>{fmtLong(T).replace(/^(\w{3})\w*, (\w{3})\w* /, '$1, $2 ')}</i><u> · </u>{cur === 'activity-detail' ? 'Run Analysis & AI Narrative' : CRUMB[tab]}</small></span></button>
+        <button className="brand" onClick={jump('home')} aria-label="LUMPAD — go Home"><span className="logo" aria-hidden="true"><i>SUB 4</i><small>COACH</small></span><span className="bt"><b>LUMPAD<em className="osv">OS 4.5 · Fluid Telemetry</em></b><small><i>{fmtLong(T).replace(/^(\w{3})\w*, (\w{3})\w* /, '$1, $2 ')}</i><u> · </u>{cur === 'activity-detail' ? 'Run Analysis & AI Narrative' : CRUMB[tab]}</small></span></button>
         <Ribbon>
           <span className="rp"><i className={'dot ' + (last?.ok ? 'ok' : 'warn')} />COROS<b>{last ? wib(last.received_at) + ' WIB' : '—'}</b></span>
           <button className="rp" onClick={jump('profile')}>VDOT<b className="am">{vdot.v.toFixed(1)}</b>→<b>{TARGET.vdotNeeded}</b></button>
