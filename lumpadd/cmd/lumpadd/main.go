@@ -16,12 +16,14 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/rihanrosihan/lumpad/lumpadd/internal/coach"
 	"github.com/rihanrosihan/lumpad/lumpadd/internal/db"
+	"github.com/rihanrosihan/lumpad/lumpadd/internal/decision"
 	"github.com/rihanrosihan/lumpad/lumpadd/internal/loader"
 	"github.com/rihanrosihan/lumpad/lumpadd/internal/shadow"
 )
 
-var version = "0.1.0-phase1"
+var version = "0.2.0-phase5"
 
 func rssKB() int {
 	b, err := os.ReadFile("/proc/self/status")
@@ -118,6 +120,19 @@ func main() {
 			fmt.Printf("%s  %-4s  checks %3d  pulls %d  not identical %d  stale %d\n", d.Day, map[bool]string{true: "ok", false: "FAIL"}[d.OK], d.Checks, d.Pulls, d.Bad, d.Stale)
 		}
 		fmt.Printf("gate G3: %d consecutive identical day(s) with a replayed pull (needs 14) — %s\n", streak, map[bool]string{true: "PASS", false: "not yet"}[streak >= 14])
+	case "retrieve":
+		intent := "daily_brief"
+		q := ""
+		if len(os.Args) >= 3 {
+			intent = os.Args[2]
+		}
+		if len(os.Args) >= 4 {
+			q = strings.Join(os.Args[3:], " ")
+		}
+		ret := &coach.PGRetriever{Pool: pool}
+		res, err := ret.Retrieve(ctx, coach.RunInput{Intent: intent, Question: q})
+		must(err)
+		fmt.Printf("retrieve %s: %d rules, %d items, ~%d tokens\n", intent, len(res.Ctx.Rules), len(res.ItemIDs), res.TokensEst)
 	case "serve":
 		serve(ctx, pool)
 	default:
@@ -159,6 +174,39 @@ func serve(ctx context.Context, pool *pgxpool.Pool) {
 		runtime.ReadMemStats(&ms)
 		w.Header().Set("content-type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{"ok": dbOK, "version": version, "rss_kb": rssKB(), "heap_kb": ms.HeapAlloc / 1024, "go": runtime.Version()})
+	})
+	mux.HandleFunc("GET /api/v2/decisions", func(w http.ResponseWriter, r *http.Request) {
+		list, err := decision.ListDecisions(r.Context(), pool, 50)
+		w.Header().Set("content-type", "application/json")
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]any{"error": err.Error()})
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"decisions": list})
+	})
+	mux.HandleFunc("GET /api/v2/adherence", func(w http.ResponseWriter, r *http.Request) {
+		list, err := decision.ListAdherence(r.Context(), pool, 50)
+		w.Header().Set("content-type", "application/json")
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]any{"error": err.Error()})
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"adherence": list})
+	})
+	mux.HandleFunc("POST /api/v2/coach/retrieve", func(w http.ResponseWriter, r *http.Request) {
+		var in coach.RunInput
+		_ = json.NewDecoder(r.Body).Decode(&in)
+		ret := &coach.PGRetriever{Pool: pool}
+		res, err := ret.Retrieve(r.Context(), in)
+		w.Header().Set("content-type", "application/json")
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]any{"error": err.Error()})
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"item_ids": res.ItemIDs, "tokens_est": res.TokensEst, "rules": len(res.Ctx.Rules), "volatile": res.Ctx.Volatile})
 	})
 	srv := &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: 5 * time.Second}
 	go func() {
