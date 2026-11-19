@@ -152,7 +152,7 @@ export default function KnowledgeGraphPanel({ twin, matrices, status }) {
             const vis = isVisible(n), sel = n.id === selected
             return <g key={n.id} className="kg-node" opacity={vis ? 1 : 0.22} onClick={() => setSelected(n.id)} role="button" tabIndex={0} aria-label={`${n.label}: ${n.sub}`} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelected(n.id) } }}>
               {sel && <circle cx={n.x} cy={n.y} r={n.r + 7} fill={n.color} fillOpacity="0.2" stroke={n.color} strokeWidth="2" />}
-              <circle cx={n.x} cy={n.y} r={n.r} fill={n.color} stroke="var(--surface)" strokeWidth="2.5" />
+              <circle cx={n.x} cy={n.y} r={n.r} fill={n.color} stroke="#ffffff" strokeWidth="2.2" />
               <text x={n.x} y={n.y + 3} textAnchor="middle" fill="#fff" fontSize={n.id === 'twin' ? '10.5' : '9.5'} fontWeight="700">{n.label.split(' ')[0]}</text>
               <text x={n.x} y={n.y + n.r + 14} textAnchor="middle" className="kg-lbl">{n.label}</text>
               <text x={n.x} y={n.y + n.r + 26} textAnchor="middle" className="kg-sub">{n.sub}</text>

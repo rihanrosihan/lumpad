@@ -66,7 +66,9 @@ export default function Home({ vdot, settings, results, go, M: Mprop }) {
       <p className="h4-sum">{rd.score != null ? <><b>{tier.label}</b> — {tier.advice} </> : null}<span>{summary}</span></p>
       <div className="h4-tiles">
         {near && <button className="cd g" onClick={() => go('race')} aria-label={`Nearest race ${near.label}, ${diffDays(near.date, T)} days`}><small>NEAREST RACE ({(RACE_BY_DATE[near.date]?.cls || 'C')}-RACE)</small><b>D-{diffDays(near.date, T)}</b><span>{near.label.split(' · ')[0]} · {fmtShort(near.date)}</span></button>}
+        {aRace && toRace > 0 && <button className="cd r" onClick={() => go('race')} aria-label={`Primary A-Race JRF Sub-4, ${toRace} days`}><small>PRIMARY GOAL (A-RACE)</small><b>D-{toRace}</b><span>JRF Sub-4 · {fmtShort(aRace)}</span></button>}
         {nextCp && <button className="cd n" onClick={() => go('calendar', { view: 'cp', id: nextCp.id })}><small>NEXT CHECKPOINT ({diffDays(nextCp.date, T)}D)</small><span><b>CP{nextCp.id} · {nextCp.name}</b> <Icon n="chev" size={16} /></span></button>}
+        <button className="cd h" onClick={() => go('biometrics')} aria-label="Open Biometrics & Labs"><small>BIOMETRICS &amp; LABS</small><span><b>Body Comp · BP · Glu</b> <Icon n="chev" size={16} /></span></button>
       </div>
     </div>
 

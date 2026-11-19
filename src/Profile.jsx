@@ -149,18 +149,24 @@ export default function Profile({ vdot, results, settings, setSettings, go }) {
     { id: 'server', label: 'Server Details', badge: 'VPS' },
   ]
 
-  return <Screen title="Profile & System Hub" sub="Athlete baselines, VDOT zones, shoe vault, COROS/Strava connections, AI settings, and VPS status">
-    <Card className="prof-cmd">
+  return <section className="screen">
+    <div className="card prof-cmd">
       <div className="prof-cmd-top">
+        <div>
+          <h1>Profile &amp; System Hub</h1>
+          <p className="sub">Athlete baselines, VDOT zones, shoe vault, COROS/Strava connections, AI settings, and VPS status</p>
+        </div>
         <div className="prof-chips">
           <StatusPill tone="cobalt">{settings.bodyMassKg || 75.3} kg{settings.bodyFatPct ? ` · BF ${settings.bodyFatPct}%` : ''}</StatusPill>
           <StatusPill tone="green">VDOT {vdot.v.toFixed(1)} → {TARGET.vdotNeeded}</StatusPill>
           <StatusPill tone="amber">A-Race D-{toRace > 0 ? toRace : 0}</StatusPill>
+          {go && <button type="button" className="btn sm" onClick={() => go('biometrics')}>Biometrics &amp; Labs →</button>}
         </div>
-        {go && <button type="button" className="btn sm" onClick={() => go('biometrics')}>Open Biometrics &amp; Labs →</button>}
       </div>
-      <SegmentedTabs tabs={TABS} value={tab} onChange={setTab} label="Profile sections" />
-    </Card>
+      <div className="prof-cmd-bar">
+        <SegmentedTabs tabs={TABS} value={tab} onChange={setTab} label="Profile sections" />
+      </div>
+    </div>
 
     {/* ===== TAB 1: ATHLETE PROFILE ===== */}
     {tab === 'athlete' && <>
@@ -220,12 +226,12 @@ export default function Profile({ vdot, results, settings, setSettings, go }) {
     {tab === 'vdot' && <>
       <Card title="Daniels 6-pace grid & physiological baselines" right={<span className="chips" style={{ margin: 0 }}><ProvenanceBadge type="MODEL" /><Chip>VDOT {vdot.v.toFixed(1)}</Chip></span>}>
         <div className="vdot-grid">
-          <div className="vdot-tile"><small>E · Easy</small><b>{fmtPace(p.E[1])}–{fmtPace(p.E[0])}</b><em>HR ≤ 148 bpm</em></div>
-          <div className="vdot-tile"><small>M · Marathon</small><b>{fmtPace(p.M)}/km</b><em>Current VDOT {vdot.v.toFixed(1)}</em></div>
-          <div className="vdot-tile"><small>T · Threshold</small><b>{fmtPace(p.T)}/km</b><em>LTHR {settings.lthr || ZONE_DEFAULTS.lthr} bpm</em></div>
-          <div className="vdot-tile"><small>I · Interval</small><b>{fmtPace(p.I)}/km</b><em>3–5 min reps</em></div>
-          <div className="vdot-tile"><small>R · Repetition</small><b>{fmtPace(p.R)}/km</b><em>Economy &amp; strides</em></div>
-          <div className="vdot-tile"><small>Target MP Sub-4</small><b>{fmtPace(pt.M)}/km</b><em>Goal VDOT {TARGET.vdotNeeded}</em></div>
+          <div className="vdot-tile vt-e"><small>E · Easy</small><b>{fmtPace(p.E[1])}–{fmtPace(p.E[0])}</b><em>HR ≤ 148 bpm</em></div>
+          <div className="vdot-tile vt-m"><small>M · Marathon</small><b>{fmtPace(p.M)}/km</b><em>Current VDOT {vdot.v.toFixed(1)}</em></div>
+          <div className="vdot-tile vt-t"><small>T · Threshold</small><b>{fmtPace(p.T)}/km</b><em>LTHR {settings.lthr || ZONE_DEFAULTS.lthr} bpm</em></div>
+          <div className="vdot-tile vt-i"><small>I · Interval</small><b>{fmtPace(p.I)}/km</b><em>3–5 min reps</em></div>
+          <div className="vdot-tile vt-r"><small>R · Repetition</small><b>{fmtPace(p.R)}/km</b><em>Economy &amp; strides</em></div>
+          <div className="vdot-tile vt-goal"><small>Target MP Sub-4</small><b>{fmtPace(pt.M)}/km</b><em>Goal VDOT {TARGET.vdotNeeded}</em></div>
         </div>
         <div className="score-grid">
           <div><small>LTHR</small><b>{settings.lthr || ZONE_DEFAULTS.lthr} bpm</b><em>{settings.lthr ? 'user set' : 'estimate'}</em></div>
@@ -442,5 +448,5 @@ export default function Profile({ vdot, results, settings, setSettings, go }) {
         </div>
       </Card>
     </>}
-  </Screen>
+  </section>
 }

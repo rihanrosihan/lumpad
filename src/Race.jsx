@@ -66,11 +66,11 @@ const RACE_HISTORY = [
 ]
 
 const ARC_10K = [
-  { label: 'Milo Dec 24', min: 89.75, vdot: 20.1 },
-  { label: 'Soekarno Jan 25', min: 81.08, vdot: 22.4 },
-  { label: 'Milo Dec 25', min: 72.73, vdot: 25.8 },
-  { label: 'H&S Jul 26 PB', min: 60.92, vdot: 31.7 },
-  { label: 'Milo Sep 26', min: 61.35, vdot: 31.4 },
+  { label: "Dec '24", min: 89.75, vdot: 20.1 },
+  { label: "Jan '25", min: 81.08, vdot: 22.4 },
+  { label: "Dec '25", min: 72.73, vdot: 25.8 },
+  { label: "Jul '26 PB", min: 60.92, vdot: 31.7 },
+  { label: "Sep '26", min: 61.35, vdot: 31.4 },
 ]
 
 function wbgtFlag(w) {
@@ -153,15 +153,18 @@ export default function Race({ settings, go }) {
   ]
 
   return <>
-    <Card>
+    <div className="card prof-cmd">
       <div className="prof-cmd-top">
         <div>
-          <h2 style={{ fontSize: '1.15rem' }}>Races Hub</h2>
-          <p className="muted">Confirmed registrations, unbooked 2027 roadmap, and validated 2024–2026 race ledger</p>
+          <h1>Races</h1>
+          <p className="sub">Confirmed registrations, unbooked 2027 roadmap, and validated 2024–2026 race ledger</p>
         </div>
-        <SegmentedTabs tabs={TABS} value={tab} onChange={setTab} label="Race categories" />
+        <div className="prof-chips">
+          <SegmentedTabs tabs={TABS} value={tab} onChange={setTab} label="Race categories" />
+          <button type="button" className="hb v" onClick={() => go('route')}>Official course →</button>
+        </div>
       </div>
-    </Card>
+    </div>
 
     {/* ===== TAB 1: UPCOMING (REGISTERED ONLY) ===== */}
     {tab === 'upcoming' && upcoming.map((r) => {
@@ -201,7 +204,7 @@ export default function Race({ settings, go }) {
               <small>BIB Number (Race Pack Collection)</small>
               <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
                 <input type="text" placeholder="Enter BIB at RPC" value={bibDraft || bib} onChange={(e) => { setBibDraft(e.target.value.slice(0, 16)); setBibSaved(false) }} aria-label="Jakim BIB number" />
-                <button type="button" className="btn sm primary" style={{ width: 'auto', flex: 'none' }} onClick={() => { setBib((bibDraft || bib).trim()); setBibSaved(true) }}>{bibSaved ? 'Saved ✓' : 'Save'}</button>
+                <button type="button" className="btn sm reg-save" style={{ width: 'auto', flex: 'none' }} onClick={() => { setBib((bibDraft || bib).trim()); setBibSaved(true) }}>{bibSaved ? 'Saved ✓' : 'Save'}</button>
               </div>
             </div>
             <div className="reg-box warn">
