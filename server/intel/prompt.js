@@ -1,0 +1,45 @@
+// The coach prompt, pure (no database): privacy redaction, the stable athlete block, definitions, task wording and renderPrompt().
+// Kept apart from context.js so the Go port can be generated from it and checked byte for byte (tools/sync_go_data.mjs → coach/data/stable.json
+// and prompt_probe.json; src/lib/godata.test.js fails while the copies are stale).
+import { RACE_CALENDAR } from './racecal.js'
+import { ATHLETE, Z2_CEILING } from '../../src/lib/athlete.js'
+
+// privacy: nothing that identifies the athlete leaves the VPS (names, employer, e-mail, phone, URLs, tokens, family details)
+export function redact(t) {
+  return String(t).replace(/\bRihan(?:\s+Rosihan)?\b/gi, 'the athlete').replace(/\bRosihan\b/gi, 'the athlete').replace(/Pizza Hut(?: Indonesia)?/gi, 'the employer').replace(/[\w.+-]+@[\w-]+\.[\w.-]+/g, '[email]')
+    .replace(/https?:\/\/\S+/g, '[url]').replace(/\b(?:sk|pk)-[A-Za-z0-9]{16,}\b/g, '[secret]').replace(/\b[0-9a-f]{32,}\b/gi, '[secret]').replace(/\b(?:\+?62|0)8\d{8,11}\b/g, '[phone]')
+}
+export const STABLE_ATHLETE = {
+  race_calendar_2027: RACE_CALENDAR,
+  race_calendar_note: 'Authoritative and current: older knowledge-base notes about the Jakim race class or pacing (for example C-race, run-walk from km 1, < 6:00/km) are superseded. The G-MJM jog is a gate, not a race. JRF half marathon: cancelled.',
+  goal: 'Sub-4:00 marathon at JRF (Jakarta) on 24 Oct 2027 (MP 5:41/km). Needs fitness VDOT ≈ 39.9 at realization ratio 0.95; baseline VDOT 31.7 (10K 1:00:55, Jul 2026).',
+  facts: [`Male, 31 y, ${ATHLETE.height_cm} cm, ${ATHLETE.weight_kg} kg; Jakarta-area tropical heat; pre-dawn running; devices: ${ATHLETE.devices.join('; ')}`,
+    `Thresholds: LTHR ${ATHLETE.lthr} bpm, HRmax ${ATHLETE.hrmax}, resting HR setting ${ATHLETE.rhr}, threshold pace ${Math.floor(ATHLETE.tpace_s / 60)}:${String(ATHLETE.tpace_s % 60).padStart(2, '0')}/km (COROS 18 Nov 2026; earlier 6:07), COROS VO2max ${ATHLETE.vo2max_coros}. Judge every intensity against LTHR ${ATHLETE.lthr} and that threshold pace; an easy run averaging > ${Z2_CEILING} bpm = intensity creep (grey zone)`,
+    'Training methodology: ' + ATHLETE.methodology.join('; '),
+    'Personal bests: ' + Object.entries(ATHLETE.pbs).map(([k, v]) => `${k} ${v}`).join(', '),
+    'Race history: ' + ATHLETE.races.map((r) => `${r.date} ${r.name}`).join('; '), 'HR at 8:00/km baseline 143.1 ± 5.0 bpm (Jan–Sep 2026, n=26); pace at HR≈150 ≈ 7:56',
+    'Marathon history: Jakim 14 Jun 2026 6:53:03 (realization ratio 0.59, n=1); JRF FM 25 Oct 2026 DNF km 9.16 (pain 2/10); Borobudur FM 15 Nov 2026 DNF by black flag at ~35 km (heat), run-walk from km 5, nausea from km 25', 'Injury sites: left VMO (Oct 2026), Achilles (Oct 2026), plantar (Jakim 2026), tibia/MTSS history', 'Main limiter found in the data: DURABILITY (share of time spent running after km 20), not running economy; opening too hot; heat; GI trouble in heat; poor readiness before races'],
+}
+export const DEFINITIONS = { run_share: 'share of elapsed time spent running (moving and cadence ≥ 125 spm); stop = distance did not advance; walk = moving at cadence < 125', ef: 'efficiency factor = run-phase speed (m/min) ÷ HR', 'drift_pahr': 'Pa:HR drift = EF loss first→second half of a STEADY ≥ 45 min effort; null when not steady', fade: 'last vs first quarter of running seconds', hr_at_800: 'HR at 8:00/km on steady blocks, slope-corrected', evidence_tags: 'VALIDATED > MEASURED > CALCULATED > CLINICIAN > KB > REPORTED > LITERATURE > HYPOTHESIS', rules: 'locked rules always win over any analysis' }
+export const INTENT_QUERY = { daily_brief: 'readiness sleep HR HRV pain gate load session today heat recovery', session_review: 'long run durability fade pacing HR cap mechanical trigger', weekly_review: 'weekly volume load progression long run durability recovery injury',
+  race_plan: 'race plan pacing HR cap fueling heat cut-off COP opening', question: '' }
+
+export function renderPromptPure(ctx, task, lang = 'en') {
+  const s = ctx.stable, system = [
+    'You are the running coach inside Lumpad for ONE athlete aiming at a sub-4:00 marathon on 24 Oct 2027. Be direct, specific and honest about uncertainty; the athlete asked for evidence-based reality checks, not reassurance.',
+    'RULES OF EVIDENCE: use only the numbers in the context; if something is missing say "belum ditarik" (not pulled) instead of guessing; never present a hypothesis as fact; correlation edges are associations, not causes; the P(sub-4) scenarios are illustrative models.',
+    'LOCKED RULES (always win over any analysis; never contradict, never propose editing them):', ...s.rules.filter((r) => r.locked).map((r) => `- [${r.id}] ${r.title}: ${r.rule}`),
+    'OTHER ACTIVE RULES:', ...s.rules.filter((r) => !r.locked).map((r) => `- [${r.id}] ${r.title}: ${r.rule}`),
+    'ATHLETE: ' + s.athlete.goal, ...s.athlete.facts.map((f) => '- ' + f), 'DEFINITIONS: ' + JSON.stringify(s.definitions),
+    'OUTPUT: reply with ONE JSON object only, exactly these keys: summary (≤120 words), analysis_md (markdown), recommendations[{action,why,priority: exactly one of now|this_week|later,evidence_ids,needs_athlete_ok}], flags[{type: one of gate|injury|load|heat|data_gap|rule|other, text}], memory_writes[{tier,kind,title,body,cites}], cited_ids[]. Reply in the language of the question (Indonesian or English).',
+    'ANALYSIS STRUCTURE (analysis_md, markdown headings in this order): ## Twin snapshot & anomaly check — compare with twin.baselines (30-day vs 90-day: EF, HR@8:00, pace@HR150, cadence, GCT, stride, vertical ratio) and twin.intensity; ## Multi-variable correlations — internal load (HR, % LTHR, zones), Pod 2 biomechanics (GCT, cadence, stride, vertical ratio), cumulative load (CTL/ATL/TSB, readiness) and external factors (shoe, elevation, heat, gym in the 72 h before) — use correlation_edges and twin.strength_to_run_transfer, as associations; ## Historical mirroring — the most similar past sessions/races from episodes and telemetry, with exact deltas, and what worked or failed then; ## Precise prescription — the next session: target pace per km, HR ceiling in bpm, a shoe from the active rotation, any gym change.',
+    'Check every session: if Pa:HR drift > 5 % or late GCT rises > 10 ms, say whether the likely trigger is local muscle fatigue (gym 1–3 days before), heat/dehydration, or shoe wear — and say when the data cannot tell.',
+    'twin_state_patch (optional): {current_ef_baseline, shoe_alert, readiness_modifier} — only when the context supports it; it is shown to the athlete as a suggestion, never applied automatically.',
+    'memory_writes: at most 5; only durable, non-obvious findings that are directly supported by the cited items; every body number must appear in a cited item; cites = item ids from the context. They are stored as unconfirmed hypotheses.',
+    lang === 'id' ? 'LANGUAGE: write summary, analysis_md, recommendations and flags in Bahasa Indonesia (sharp, data-driven, direct); keep metric names (EF, Pa:HR, GCT, TSB) and JSON keys in English.' : 'LANGUAGE: English.',
+  ].join('\n')
+  const v = ctx.volatile, user = [`TASK (${v.intent}, as of ${v.as_of}): ${task}`, v.question ? `QUESTION: ${v.question}` : '', 'CONTEXT JSON:', JSON.stringify({ query: v.query, twin: v.twin, correlation_edges: v.correlation_edges, episodes: v.episodes, facts: v.facts, telemetry: v.telemetry }), 'Cite item ids ([id]) for every claim drawn from episodes/facts.'].filter(Boolean).join('\n')
+  return { system, user }
+}
+export const TASKS = { daily_brief: 'Give today\'s brief: can the athlete run, what to run (given gates/load/readiness), the one thing to watch, and any data gap that matters. Keep it short.', session_review: 'Review the focus session: what happened, how it compares with similar sessions, what it says about durability/heat/pacing, and what to change.',
+  weekly_review: 'Review the last week: load vs the guard rules, durability progress, injury state, readiness trend, and the plan for the next week.', race_plan: 'Build or critique the race plan: opening cap, pacing by segment, heat and fuelling protocol, go/no-go gates.', question: 'Answer the question using the context.' }

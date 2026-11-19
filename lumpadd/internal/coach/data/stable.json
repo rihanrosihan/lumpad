@@ -1,0 +1,46 @@
+{
+ "athlete": {
+  "race_calendar_2027": [
+   "Jakim FM 2027-06-13 = B-race, target sub 5:00 (official time); plan the watch for 4:50–4:52 (6:52–6:55/km); 2026 official 6:53:03; registered",
+   "MJM FM 2027-06-20 = D-race, no time target: finish before the cut-offs (COP/COT); no race info yet",
+   "JRF Full 2027-10-24 = A-race, target sub 4:00 (official time); date confirmed, registration not open",
+   "Bormar FM 2027-11-14 = C-race, no time target: finish before the cut-offs (COP/COT); no race info yet"
+  ],
+  "race_calendar_note": "Authoritative and current: older knowledge-base notes about the Jakim race class or pacing (for example C-race, run-walk from km 1, < 6:00/km) are superseded. The G-MJM jog is a gate, not a race. JRF half marathon: cancelled.",
+  "goal": "Sub-4:00 marathon at JRF (Jakarta) on 24 Oct 2027 (MP 5:41/km). Needs fitness VDOT ≈ 39.9 at realization ratio 0.95; baseline VDOT 31.7 (10K 1:00:55, Jul 2026).",
+  "facts": [
+   "Male, 31 y, 178 cm, 75.3 kg; Jakarta-area tropical heat; pre-dawn running; devices: COROS Apex 4 (42 mm); COROS Pod 2 (GCT, stride, vertical ratio, power); Garmin Forerunner 265S; Magene H303 chest-strap HRM (when worn; otherwise wrist optical HR)",
+   "Thresholds: LTHR 168 bpm, HRmax 189, resting HR setting 47, threshold pace 5:56/km (COROS 18 Nov 2026; earlier 6:07), COROS VO2max 47. Judge every intensity against LTHR 168 and that threshold pace; an easy run averaging > 148 bpm = intensity creep (grey zone)",
+   "Training methodology: block periodization; Norwegian-style double-threshold days; road (TMII, GBK), trail (Sentul) and treadmill (Bodimax) running; gym: single-leg calf raises, step-ups, hack squats, lying leg curls, core stability",
+   "Personal bests: 400m 1:58, 1K 5:07, mile 8:27, 5K 31:42, 10K 1:00:55 (26 Jul 2026), 15K 1:55:56, HM 2:54:11",
+   "Race history: 2025-06-15 LPS Half Marathon; 2025-08-17 Semarak 17 Agustus Fun Trail 17K, Sentul (+1780 m); 2025-10-25 JRF Half Marathon 2025; 2025-11-16 Borobudur Marathon 2025 (FM); 2026-06-14 Jakim 2026 (FM) — 6:53:03 official; 2026-10-25 JRF 2026 (FM) — DNF km 9.16; 2026-11-15 Borobudur Marathon 2026 (FM) — black-flag DNF ~35 km",
+   "HR at 8:00/km baseline 143.1 ± 5.0 bpm (Jan–Sep 2026, n=26); pace at HR≈150 ≈ 7:56",
+   "Marathon history: Jakim 14 Jun 2026 6:53:03 (realization ratio 0.59, n=1); JRF FM 25 Oct 2026 DNF km 9.16 (pain 2/10); Borobudur FM 15 Nov 2026 DNF by black flag at ~35 km (heat), run-walk from km 5, nausea from km 25",
+   "Injury sites: left VMO (Oct 2026), Achilles (Oct 2026), plantar (Jakim 2026), tibia/MTSS history",
+   "Main limiter found in the data: DURABILITY (share of time spent running after km 20), not running economy; opening too hot; heat; GI trouble in heat; poor readiness before races"
+  ]
+ },
+ "definitions": {
+  "run_share": "share of elapsed time spent running (moving and cadence ≥ 125 spm); stop = distance did not advance; walk = moving at cadence < 125",
+  "ef": "efficiency factor = run-phase speed (m/min) ÷ HR",
+  "drift_pahr": "Pa:HR drift = EF loss first→second half of a STEADY ≥ 45 min effort; null when not steady",
+  "fade": "last vs first quarter of running seconds",
+  "hr_at_800": "HR at 8:00/km on steady blocks, slope-corrected",
+  "evidence_tags": "VALIDATED > MEASURED > CALCULATED > CLINICIAN > KB > REPORTED > LITERATURE > HYPOTHESIS",
+  "rules": "locked rules always win over any analysis"
+ },
+ "tasks": {
+  "daily_brief": "Give today's brief: can the athlete run, what to run (given gates/load/readiness), the one thing to watch, and any data gap that matters. Keep it short.",
+  "session_review": "Review the focus session: what happened, how it compares with similar sessions, what it says about durability/heat/pacing, and what to change.",
+  "weekly_review": "Review the last week: load vs the guard rules, durability progress, injury state, readiness trend, and the plan for the next week.",
+  "race_plan": "Build or critique the race plan: opening cap, pacing by segment, heat and fuelling protocol, go/no-go gates.",
+  "question": "Answer the question using the context."
+ },
+ "intent_query": {
+  "daily_brief": "readiness sleep HR HRV pain gate load session today heat recovery",
+  "session_review": "long run durability fade pacing HR cap mechanical trigger",
+  "weekly_review": "weekly volume load progression long run durability recovery injury",
+  "race_plan": "race plan pacing HR cap fueling heat cut-off COP opening",
+  "question": ""
+ }
+}
