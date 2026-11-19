@@ -8,6 +8,7 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"path/filepath"
@@ -65,7 +66,25 @@ func (r *runner) setState(k, v string) {
 }
 
 // Run does one shadow pass over dataDir (the Node app's server/data).
+// ErrBusy: another shadow pass holds the lock (the timer and a manual run, or two timers, must never overlap: both reload the mirror tables).
+var ErrBusy = errors.New("another shadow pass is running")
+
+const lockKey = 7461001 // arbitrary application-wide advisory lock id
+
 func Run(ctx context.Context, pg *pgxpool.Pool, dataDir string) (Summary, error) {
+	conn, err := pg.Acquire(ctx) // advisory locks belong to a session: hold one connection for the whole pass
+	if err != nil {
+		return Summary{}, err
+	}
+	defer conn.Release()
+	var got bool
+	if err := conn.QueryRow(ctx, `SELECT pg_try_advisory_lock($1)`, lockKey).Scan(&got); err != nil {
+		return Summary{}, err
+	}
+	if !got {
+		return Summary{}, ErrBusy
+	}
+	defer func() { _, _ = conn.Exec(context.Background(), `SELECT pg_advisory_unlock($1)`, lockKey) }()
 	r := &runner{ctx: ctx, pg: pg, dir: dataDir}
 	if err := pg.QueryRow(ctx, `SELECT COALESCE(MAX(run_id), 0) + 1 FROM analytics.shadow_check`).Scan(&r.sum.RunID); err != nil {
 		return r.sum, err

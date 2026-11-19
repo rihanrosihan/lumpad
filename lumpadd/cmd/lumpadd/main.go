@@ -4,6 +4,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"net/http"
@@ -91,6 +92,10 @@ func main() {
 			os.Exit(2)
 		}
 		sum, err := shadow.Run(ctx, pool, os.Args[2])
+		if errors.Is(err, shadow.ErrBusy) {
+			fmt.Println("skipped:", err) // not a failure: the other pass will record its own results
+			return
+		}
 		must(err)
 		bad := 0
 		for kind, st := range sum.Counts() {
