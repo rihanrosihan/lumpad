@@ -49,7 +49,7 @@ Budget while both systems run: Node app ~125 MB · Postgres ≤ 450 MB (`deploy/
 | Load (CTL/ATL/TSB, ACWR, monotony, ramp, projection) | **done** | JS vectors (`tools/gen_engine_vectors.mjs`), 10 series incl. empty / all-zero |
 | HRV / RHR / sleep states, distance progression, composite readiness (pillars, phase weights, caps) | **done** | JS vectors: 60 random cases with gaps and nulls, every field identical; mutation check catches a 1-point score change in all 34 scored cases |
 | VDOT and pace formatting | **done** | JS vectors |
-| Pacing (heat penalty, run-walk simulator), zones (client library) | next | unit tests from src/lib/*.test.js |
+| Race-pace simulator (heat penalty, run-walk, COP margins), zone ranges, per-lap zone seconds, workout duration + training-load estimate | **done** | JS vectors: 40 simulator inputs (incl. invalid), 3 zone configs × 8 zones, 90 laps, 12 step lists with repeats; UI text helpers (describe/summary) stay in the client |
 | Correlation engine, matrices, twin builder | after | golden: edges.json, matrices.json, twin.json |
 
 Notes from the port: JS `Math.round` rounds halves up (Go's rounds away from zero) so `jsRound` is used; `mean()` over `null` counts null as 0 in `fadeOnset` (kept, because the golden data depends on it); the Node parser reports `speed`, not `enhanced_speed` (they differ by 1 mm/s on some seconds); COROS 'Effort Pace' is a developer field found through `field_description`.

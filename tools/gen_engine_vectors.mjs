@@ -47,3 +47,23 @@ for (let c = 0; c < 60; c++) {
 }
 fs.writeFileSync('lumpadd/internal/engine/testdata/vectors.json', JSON.stringify(out))
 console.log('health/readiness cases:', out.health.length)
+
+// ---- Phase 2-d: race-pace simulator, zone ranges, per-lap zone seconds, workout estimate
+const P2 = await import('../src/lib/pacing.js'), Z = await import('../src/lib/zones.js')
+let s3 = 5; const r3 = () => ((s3 = (s3 * 1664525 + 1013904223) % 4294967296) / 4294967296), pk = (a) => a[Math.floor(r3() * a.length)]
+const COPS = [['COP 1', 10, '05:40'], ['COP 2', 21.1, '06:45'], ['COP 3', 30, '07:50'], ['Finish', 42.195, '09:00']]
+out.pacing = { heat: [null, 0, 8, 8.1, 12, 20, 28, 40, 60].map((w) => ({ w, p: P2.heatPenalty(w) })), sims: [], hms: [0, 59.4, 59.5, 3599.5, 14399.4, 24783.2, 86399].map((s) => ({ s, f: P2.fmtHMS(s) })) }
+for (let i = 0; i < 40; i++) {
+  const inp = { runPace: pk([0, -1, 300, 341, 380.5, 420, 455]), walkPace: pk([0, 540, 600, 720.3]), runS: pk([0, 60, 240, 300, 600]), walkS: pk([0, 30, 60, 90]), wbgt: pk([0, 18, 24.5, 29, 33]), gunMin: pk([240, 270, 300]), cops: COPS.slice(0, pk([0, 2, 4])), goalS: pk([14400, 18000]) }
+  out.pacing.sims.push({ inp, out: P2.simulate(inp) })
+}
+const cfgs = [{ lthr: 168, tpace: 356 }, { lthr: 172, tpace: 367 }, { lthr: 155.5, tpace: 301 }]
+out.zones = cfgs.map((cfg) => {
+  const laps = Array.from({ length: 30 }, () => ({ duration_s: pk([null, 0, 300, 365.4, 420]), avg_hr: pk([null, 0, 90, 109, 110, 140, 150, 151, 158, 160, 165, 171, 180]), avg_pace_s_km: pk([null, 0, 300, 330, 356, 380, 400, 460, 520, 600]) }))
+  const steps = [[{ t: 'wu', sec: 600 }, { t: 'run', m: 3000, z: 2 }, { rep: 4, steps: [{ t: 'run', m: 1000, z: 4 }, { t: 'rec', sec: 120, z: 1 }] }, { t: 'cd', sec: 300 }],
+    [{ t: 'free' , sec: 1800 }], [{ t: 'run', m: 10000, pace: [340, 350], z: 3 }, { t: 'run', m: 500 }, { t: 'rec', sec: 0, z: 1 }, { t: 'tt', m: 5000, z: 6 }],
+    [{ rep: 3, steps: [{ t: 'run', sec: 480, z: 5 }, { t: 'rec', m: 400, z: 1 }] }]]
+  return { cfg, ranges: [0, 1, 2, 3, 4, 5, 6, 7].map((z) => ({ z, hr: Z.hrRange(z, cfg), pace: Z.paceRange(z, cfg) })), laps, zs: Z.zoneSeconds(laps, cfg), steps: steps.map((s) => ({ s, est: Z.estimate(s, cfg), km: Z.stepKm(s) })) }
+})
+fs.writeFileSync('lumpadd/internal/engine/testdata/vectors.json', JSON.stringify(out))
+console.log('pacing sims:', out.pacing.sims.length, 'zone cfgs:', out.zones.length)
