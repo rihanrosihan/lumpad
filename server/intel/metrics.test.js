@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert'
 import fs from 'node:fs'
-process.env.DATA_DIR = '/tmp/lumpad-test-data'
+process.env.DATA_DIR = (await import('node:fs')).mkdtempSync((await import('node:path')).join((await import('node:os')).tmpdir(), 'lumpad-test-data-'))
 const { toSeries, parseFitFile } = await import('./fit.js')
 const M = await import('./metrics.js')
 

@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert'
-process.env.LUMPAD_DB = ':memory:'; process.env.DATA_DIR = '/tmp/lumpad-test-data'; process.env.LUMPAD_TOKEN_KEY = 'cd'.repeat(32)
+process.env.LUMPAD_DB = ':memory:'; process.env.DATA_DIR = (await import('node:fs')).mkdtempSync((await import('node:path')).join((await import('node:os')).tmpdir(), 'lumpad-test-data-')); process.env.LUMPAD_TOKEN_KEY = 'cd'.repeat(32)
 const { pullRange, addDays } = await import('./pull.js'), kvdb = await import('../db.js'), { db } = await import('../store.js'), jobs = await import('../jobs.js')
 
 const dh = (d, hr) => `--- ${d.replace(/-/g, '')} ---\nSteps: 100 | Calories: 1 kcal | Exercise: 0 min\nStress: Avg 30\nSleep Summary:\n  Total: 7h 0min | Deep: 1h 0min | Light: 4h 0min | REM: 1h 30min | Awake: 30 min\n  Sleep HR: Avg ${hr} bpm | Min 45 bpm | Max 80 bpm\n`

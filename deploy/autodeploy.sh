@@ -37,7 +37,7 @@ main() {  # wrapped in a function so bash has read the whole script before git r
   own "$stage"
   local tmp; tmp=$(as mktemp -d)
   if ! ( cd "$stage" && as npm ci --no-audit --no-fund >"$STATE/stage.log" 2>&1 && as env DATA_DIR="$tmp" npm test >>"$STATE/stage.log" 2>&1 && as npm run build >>"$STATE/stage.log" 2>&1 ); then
-    log "GAGAL di tes/build — TIDAK di-deploy. Ekor log:"; tail -n 15 "$STATE/stage.log"
+    log "GAGAL di tes/build — TIDAK di-deploy. Tes yang gagal:"; grep -A12 "^not ok" "$STATE/stage.log" | grep -v "^  *duration_ms\|^  *type:\|^  *\.\.\.$" | head -n 60; log "Ekor log:"; tail -n 15 "$STATE/stage.log"
     echo "$new" >"$STATE/failed"; rm -rf "$tmp"; git worktree remove --force "$stage" 2>/dev/null; exit 1
   fi
   rm -rf "$tmp"; git worktree remove --force "$stage" 2>/dev/null; log "tes + build lulus"

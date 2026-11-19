@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert'
-process.env.LUMPAD_DB = ':memory:'; process.env.DATA_DIR = '/tmp/lumpad-test-data'; process.env.LUMPAD_TOKEN_KEY = 'ab'.repeat(32)
+process.env.LUMPAD_DB = ':memory:'; process.env.DATA_DIR = (await import('node:fs')).mkdtempSync((await import('node:path')).join((await import('node:os')).tmpdir(), 'lumpad-test-data-')); process.env.LUMPAD_TOKEN_KEY = 'ab'.repeat(32)
 const { db } = await import('./store.js')
 const { applyIngest } = await import('./ingest.js')
 const strava = await import('./strava.js')

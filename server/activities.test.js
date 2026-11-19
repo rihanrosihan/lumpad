@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert'
-process.env.LUMPAD_DB = ':memory:'; process.env.DATA_DIR = '/tmp/lumpad-test-data'
+process.env.LUMPAD_DB = ':memory:'; process.env.DATA_DIR = (await import('node:fs')).mkdtempSync((await import('node:path')).join((await import('node:os')).tmpdir(), 'lumpad-test-data-'))
 const { mergeActivities, readinessData } = await import('./activities.js'), { applyIngest } = await import('./ingest.js')
 const run = (source, id, extra = {}) => ({ source, id: `${source}:${id}`, date: '2027-01-05', sport: 'Run', distance_m: 6060, duration_s: 2693, start_ts: 1800000000, ...extra })
 

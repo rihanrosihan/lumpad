@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert'
 import http from 'node:http'
 import zlib from 'node:zlib'
-process.env.LUMPAD_DB = ':memory:'; process.env.DATA_DIR = '/tmp/lumpad-test-data'; process.env.LUMPAD_TOKEN_KEY = 'ef'.repeat(32)
+process.env.LUMPAD_DB = ':memory:'; process.env.DATA_DIR = (await import('node:fs')).mkdtempSync((await import('node:path')).join((await import('node:os')).tmpdir(), 'lumpad-test-data-')); process.env.LUMPAD_TOKEN_KEY = 'ef'.repeat(32)
 const { McpServer } = await import('@modelcontextprotocol/sdk/server/mcp.js')
 const { StreamableHTTPServerTransport } = await import('@modelcontextprotocol/sdk/server/streamableHttp.js')
 const { z } = await import('zod')

@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
-process.env.INTEL_DB = ':memory:'; process.env.MEMORY_DB = ':memory:'; process.env.DATA_DIR = '/tmp/lumpad-test-data-eval'; process.env.LUMPAD_DB = ':memory:'
+process.env.INTEL_DB = ':memory:'; process.env.MEMORY_DB = ':memory:'; process.env.DATA_DIR = (await import('node:fs')).mkdtempSync((await import('node:path')).join((await import('node:os')).tmpdir(), 'lumpad-test-data-eval-')); process.env.LUMPAD_DB = ':memory:'
 process.env.DEEPSEEK_API_KEY = 'sk-test'; process.env.DEEPSEEK_MODEL = 'deepseek-flash'
 fs.rmSync(process.env.DATA_DIR, { recursive: true, force: true })
 const S = await import('../safety.js'), W = await import('../writeback.js'), X = await import('./scenarios.js')

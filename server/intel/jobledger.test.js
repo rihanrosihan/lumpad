@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-process.env.INTEL_DB = ':memory:'; process.env.MEMORY_DB = ':memory:'; process.env.DATA_DIR = '/tmp/lumpad-test-data-jobs'; process.env.LUMPAD_DB = ':memory:'
+process.env.INTEL_DB = ':memory:'; process.env.MEMORY_DB = ':memory:'; process.env.DATA_DIR = (await import('node:fs')).mkdtempSync((await import('node:path')).join((await import('node:os')).tmpdir(), 'lumpad-test-data-jobs-')); process.env.LUMPAD_DB = ':memory:'
 const J = await import('./jobledger.js')
 
 test('a failing job is attempted at most twice per day, 30 min then 2 h apart (was: every 5 minutes, 67 paid calls)', () => {

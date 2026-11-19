@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert'
 import fs from 'node:fs'
-process.env.INTEL_DB = ':memory:'; process.env.MEMORY_DB = ':memory:'; process.env.DATA_DIR = '/tmp/lumpad-test-data-coach'; process.env.LUMPAD_DB = ':memory:'
+process.env.INTEL_DB = ':memory:'; process.env.MEMORY_DB = ':memory:'; process.env.DATA_DIR = (await import('node:fs')).mkdtempSync((await import('node:path')).join((await import('node:os')).tmpdir(), 'lumpad-test-data-coach-')); process.env.LUMPAD_DB = ':memory:'
 process.env.DEEPSEEK_API_KEY = 'sk-test'; process.env.DEEPSEEK_MONTHLY_CAP_CNY = '15'; process.env.DEEPSEEK_MODEL = 'auto-flash'
 fs.rmSync(process.env.DATA_DIR, { recursive: true, force: true })
 const L = await import('./llm.js'), W = await import('./writeback.js'), M = await import('./memory.js'), { validate } = await import('./schema.js'), C = await import('./context.js'), { mdb } = await import('./db.js')

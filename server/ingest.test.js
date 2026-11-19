@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert'
 process.env.LUMPAD_DB = ':memory:'
-process.env.DATA_DIR = '/tmp/lumpad-test-data'
+process.env.DATA_DIR = (await import('node:fs')).mkdtempSync((await import('node:path')).join((await import('node:os')).tmpdir(), 'lumpad-test-data-'))
 process.env.INGEST_TOKEN = 'x'.repeat(40)
 const { applyIngest, checkToken, syncStatus, coverage, healthRange, activitiesRange, lapsOf } = await import('./ingest.js')
 const req = (auth, ip = '1.1.1.1') => ({ headers: { authorization: auth, 'x-forwarded-for': ip }, socket: {} })

@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert'
 import http from 'node:http'
 import crypto from 'node:crypto'
-process.env.LUMPAD_DB = ':memory:'; process.env.DATA_DIR = '/tmp/lumpad-test-data'
+process.env.LUMPAD_DB = ':memory:'; process.env.DATA_DIR = (await import('node:fs')).mkdtempSync((await import('node:path')).join((await import('node:os')).tmpdir(), 'lumpad-test-data-'))
 process.env.LUMPAD_TOKEN_KEY = 'ab'.repeat(32)
 
 // ---- fake COROS authorization server (shape taken from the real discovery documents)
