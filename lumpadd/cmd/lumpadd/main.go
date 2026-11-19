@@ -19,11 +19,12 @@ import (
 	"github.com/rihanrosihan/lumpad/lumpadd/internal/coach"
 	"github.com/rihanrosihan/lumpad/lumpadd/internal/db"
 	"github.com/rihanrosihan/lumpad/lumpadd/internal/decision"
+	"github.com/rihanrosihan/lumpad/lumpadd/internal/graph"
 	"github.com/rihanrosihan/lumpad/lumpadd/internal/loader"
 	"github.com/rihanrosihan/lumpad/lumpadd/internal/shadow"
 )
 
-var version = "0.2.0-phase5"
+var version = "0.3.0-auradb-rag"
 
 func rssKB() int {
 	b, err := os.ReadFile("/proc/self/status")
@@ -129,10 +130,30 @@ func main() {
 		if len(os.Args) >= 4 {
 			q = strings.Join(os.Args[3:], " ")
 		}
-		ret := &coach.PGRetriever{Pool: pool}
+		aura, _ := graph.NewFromEnv()
+		ret := &coach.PGRetriever{Pool: pool, Graph: aura}
 		res, err := ret.Retrieve(ctx, coach.RunInput{Intent: intent, Question: q})
 		must(err)
-		fmt.Printf("retrieve %s: %d rules, %d items, ~%d tokens\n", intent, len(res.Ctx.Rules), len(res.ItemIDs), res.TokensEst)
+		fmt.Printf("retrieve %s (graph=%v): %d rules, %d items, ~%d tokens\n", intent, aura != nil, len(res.Ctx.Rules), len(res.ItemIDs), res.TokensEst)
+	case "graph-sync":
+		aura, err := graph.NewFromEnv()
+		must(err)
+		if aura == nil {
+			fmt.Fprintln(os.Stderr, "NEO4J_URI is not set in environment")
+			os.Exit(2)
+		}
+		must(aura.Ping(ctx))
+		st, err := graph.SyncAll(ctx, pool, aura, coach.Redact)
+		must(err)
+		ov, err := graph.Overview(ctx, aura)
+		must(err)
+		b, _ := json.MarshalIndent(map[string]any{"synced": st, "overview": ov}, "", "  ")
+		fmt.Println(string(b))
+	case "sub4":
+		rep, err := buildSub4Report(ctx, pool)
+		must(err)
+		b, _ := json.MarshalIndent(rep, "", "  ")
+		fmt.Println(string(b))
 	case "serve":
 		serve(ctx, pool)
 	default:
@@ -198,7 +219,8 @@ func serve(ctx context.Context, pool *pgxpool.Pool) {
 	mux.HandleFunc("POST /api/v2/coach/retrieve", func(w http.ResponseWriter, r *http.Request) {
 		var in coach.RunInput
 		_ = json.NewDecoder(r.Body).Decode(&in)
-		ret := &coach.PGRetriever{Pool: pool}
+		aura, _ := graph.NewFromEnv()
+		ret := &coach.PGRetriever{Pool: pool, Graph: aura}
 		res, err := ret.Retrieve(r.Context(), in)
 		w.Header().Set("content-type", "application/json")
 		if err != nil {
@@ -207,6 +229,31 @@ func serve(ctx context.Context, pool *pgxpool.Pool) {
 			return
 		}
 		_ = json.NewEncoder(w).Encode(map[string]any{"item_ids": res.ItemIDs, "tokens_est": res.TokensEst, "rules": len(res.Ctx.Rules), "volatile": res.Ctx.Volatile})
+	})
+	mux.HandleFunc("GET /api/v2/graph/overview", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("content-type", "application/json")
+		aura, err := graph.NewFromEnv()
+		if err != nil || aura == nil {
+			_ = json.NewEncoder(w).Encode(map[string]any{"configured": false})
+			return
+		}
+		ov, err := graph.Overview(r.Context(), aura)
+		if err != nil {
+			w.WriteHeader(http.StatusBadGateway)
+			_ = json.NewEncoder(w).Encode(map[string]any{"configured": true, "error": err.Error()})
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"configured": true, "overview": ov})
+	})
+	mux.HandleFunc("GET /api/v2/sub4", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("content-type", "application/json")
+		rep, err := buildSub4Report(r.Context(), pool)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]any{"error": err.Error()})
+			return
+		}
+		_ = json.NewEncoder(w).Encode(rep)
 	})
 	srv := &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: 5 * time.Second}
 	go func() {
@@ -219,4 +266,47 @@ func serve(ctx context.Context, pool *pgxpool.Pool) {
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		must(err)
 	}
+}
+
+func buildSub4Report(ctx context.Context, pool *pgxpool.Pool) (map[string]any, error) {
+	var stateStr string
+	var ver int64
+	_ = pool.QueryRow(ctx, `SELECT version, state FROM athlete.state_snapshot ORDER BY version DESC LIMIT 1`).Scan(&ver, &stateStr)
+	vdot := 31.7
+	runShare20 := 0.28
+	if stateStr != "" {
+		var tw map[string]any
+		if json.Unmarshal([]byte(stateStr), &tw) == nil {
+			if prof, ok := tw["profile"].(map[string]any); ok {
+				if v, ok := prof["vdot"].(float64); ok && v > 20 {
+					vdot = v
+				}
+			}
+		}
+	}
+	jakim := decision.RaceReadinessRange(decision.RaceInput{
+		RaceName: "Jakim FM 2027 (B-Race)", VDOT: vdot, RunShareAfter20K: runShare20,
+		ForecastWBGT: 27.5, RealizationRatio: 0.59, LongRunsOver20K: 3, FMCount: 1,
+	})
+	jrfCurrent := decision.RaceReadinessRange(decision.RaceInput{
+		RaceName: "myBCA JRF 2027 (Current Fitness)", VDOT: vdot, RunShareAfter20K: runShare20,
+		ForecastWBGT: 26.5, RealizationRatio: 0.75, LongRunsOver20K: 3, FMCount: 1,
+	})
+	jrfTarget := decision.RaceReadinessRange(decision.RaceInput{
+		RaceName: "myBCA JRF 2027 (Sub-4 Target State)", VDOT: 39.9, RunShareAfter20K: 0.92,
+		ForecastWBGT: 26.5, RealizationRatio: 0.95, LongRunsOver20K: 10, FMCount: 3,
+	})
+	out := map[string]any{
+		"twin_version": ver,
+		"vdot_current": vdot,
+		"vdot_needed":  39.9,
+		"vdot_gap":     39.9 - vdot,
+		"ranges":       []decision.RaceRange{jakim, jrfCurrent, jrfTarget},
+	}
+	if aura, err := graph.NewFromEnv(); err == nil && aura != nil {
+		if ov, err := graph.Overview(ctx, aura); err == nil {
+			out["auradb"] = ov
+		}
+	}
+	return out, nil
 }

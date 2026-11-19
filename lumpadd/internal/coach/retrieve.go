@@ -12,6 +12,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/rihanrosihan/lumpad/lumpadd/internal/graph"
 )
 
 // Phase 4-e: PostgreSQL Retrieval & RAG implementing coach.Retriever.
@@ -318,8 +319,9 @@ func compactTwinMap(state map[string]any) map[string]any {
 
 type PGRetriever struct {
 	Pool        *pgxpool.Pool
-	TokenBudget int // 0 = use per-intent budget (IntentBudget)
-	SinceDays   int // default 400
+	Graph       *graph.Client // optional Neo4j AuraDB hybrid RAG expansion (1.5s timeout, PG fallback)
+	TokenBudget int           // 0 = use per-intent budget (IntentBudget)
+	SinceDays   int           // default 400
 }
 
 func (r *PGRetriever) Retrieve(ctx context.Context, in RunInput) (Retrieved, error) {
@@ -578,7 +580,14 @@ func (r *PGRetriever) Retrieve(ctx context.Context, in RunInput) (Retrieved, err
 			epiIDs[i] = x.ID
 			poolMap[x.ID] = x
 		}
-		fused := RRF([][]int64{semIDs, epiIDs}, 60)
+		var graphMemIDs []int64
+		if r.Graph != nil && intent != "daily_brief" {
+			if gh, gerr := graph.ExpandContext(ctx, r.Graph, intent, dq.Topics, focus); gerr == nil {
+				_ = epiByLabels(gh.SessionLabels, "graph multi-hop")
+				graphMemIDs = gh.MemoryIDs
+			}
+		}
+		fused := RRF([][]int64{semIDs, epiIDs, graphMemIDs}, 60)
 		ranked := make([]RetrievedItem, 0, len(fused))
 		for _, f := range fused {
 			if it, ok := poolMap[f.ID]; ok {
