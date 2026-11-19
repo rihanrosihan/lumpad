@@ -88,7 +88,12 @@ failure never fails the Node deploy. Postgres is a verified mirror during Phase 
 | Prompt builder | **done (4-b)** | 10 sentinel prompts byte for byte; Node edits fail a drift test until Go matches |
 | Model gateway: DeepSeek / OpenAI-compatible provider | **done (4-c1)** | 28 scripted scenarios of the real Node client: identical requests, delays, results; 8 mutations caught |
 | Anthropic provider (cached system block, optional extended thinking), price-based cost, router (chain per intent, fallback on failure or rejected answer, budget guard, daily cap for unknown-cost providers), ledger (`coach.llm_call`), config | **done (4-c2)** | fake-server tests incl. WIB month boundary and PostgreSQL ledger; 13 mutations caught |
-| Coach orchestration (context → router → repair → validate → safety → write-back), eval suite on the Go path | next (4-d) | the 51 eval scenarios, replayed |
+| Coach orchestration (safety pre-check → context → provider chain with one repair attempt each → validation → gate and wording checks → memory write-back) | **done (4-d)** | 36 flow tests with scripted providers (repair, fallback, budget stop, gate, referral without a model call); write-back identical to the real Node `applyWriteback` on 22 scenarios (25 stored, 5 merged, 7 rejected rows, hash, payload text and audit trail compared) |
+| Gate G4 evaluation suite on the Go path | **passes (4-d)** | all Node eval scenarios: safety 19, gate 11, wording 3, verifier 3, plus the end-to-end referral (no model call, zero cost, logged) |
+
+The run log and memory are interfaces (`coach.Store`, `coach.MemoryStore`) with in-memory implementations: the PostgreSQL coach/memory tables are mirrors rewritten by the shadow pass until cutover, so the PostgreSQL stores arrive with cutover (Phase 6).
+
+**Finding — the number check is almost inert on a real prompt.** The Node app (and, for equivalence, the Go default) accepts a number in a memory write when ANY number in the whole prompt is within ±0.051 or 1.1 %. A real context holds about 1,000 numbers, so on the athlete's data 100 % of invented values from 0.01 to 0.99 and 78–87 % from 10 to 199 pass. `Coach.StrictNumbers` switches to `UnverifiedStrict`: a number must equal, at the precision it is written with, a number in the *cited items* (what the prompt already tells the model to do). Memory writes are only ever unconfirmed candidates, so nothing unsafe was happening, but the check was not protecting what it claims to.
 | Retrieval (query decomposition, memory search, RAG) on PostgreSQL | after (4-e) | overlap with Node's picks on real questions |
 
 Adding a second provider needs no code: copy `deploy/v2/llm.example.json` to `server/data/llm.json`, put the key in `.env.v2`, fill in prices.

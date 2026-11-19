@@ -139,3 +139,63 @@ func jsLower(s string) string {
 	}
 	return b.String()
 }
+
+// ---- strict check
+// The Node check accepts a number when ANY number in the whole prompt (about 1,000 of them on a real context) is within ±0.051 or 1.1 %:
+// on the athlete's data every invented value from 0.01 to 0.99 passes, and about 80 % of invented values from 10 to 199. The strict check
+// enforces the rule the prompt states ("every body number must appear in a cited item"): a number must equal, at the precision it is written
+// with, a number in the cited items. Rounding is allowed (36.92 may be written 36.9), invention is not.
+
+var reNumberTok = regexp.MustCompile(`-?\d+(?:[.,]\d+)?`)
+
+type numTok struct {
+	v   float64
+	dec int
+}
+
+func numToks(t string) []numTok {
+	out := []numTok{}
+	for _, m := range reNumberTok.FindAllString(strip(t), -1) {
+		s := strings.Replace(m, ",", ".", 1)
+		f, err := strconv.ParseFloat(s, 64)
+		if err != nil || math.IsInf(f, 0) {
+			continue
+		}
+		dec := 0
+		if i := strings.IndexByte(s, '.'); i >= 0 {
+			dec = len(s) - i - 1
+		}
+		out = append(out, numTok{f, dec})
+	}
+	return out
+}
+
+// UnverifiedStrict: numbers and times of text that the evidence (the cited items) does not contain. Years 2024–2030 and whole numbers up to 12 are exempt, as before.
+func UnverifiedStrict(text, evidence string) []string {
+	have, tm, bad := numToks(evidence), map[string]bool{}, []string{}
+	for _, t := range TimesOf(evidence) {
+		tm[t] = true
+	}
+	for _, n := range numToks(text) {
+		if (n.dec == 0 && trivial(n.v)) || (n.v >= 2024 && n.v <= 2030) {
+			continue
+		}
+		ok := false
+		for _, h := range have {
+			d := min(n.dec, h.dec) // compare at the coarser of the two precisions
+			if math.Abs(n.v-h.v) <= 0.5*math.Pow(10, -float64(d))+1e-9 {
+				ok = true
+				break
+			}
+		}
+		if !ok {
+			bad = append(bad, JSNum(n.v))
+		}
+	}
+	for _, t := range TimesOf(text) {
+		if !tm[t] {
+			bad = append(bad, t)
+		}
+	}
+	return bad
+}
