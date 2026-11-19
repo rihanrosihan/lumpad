@@ -41,7 +41,7 @@ export default function Home({ vdot, settings, results, go, M: Mprop }) {
   const actWeek = M.acts.filter((a) => a.sport_class === 'run' && a.date >= mon && a.date <= T).reduce((s, a) => s + (a.distance_m || 0) / 1000, 0)
   const actPrev = M.acts.filter((a) => a.sport_class === 'run' && a.date >= addDays(mon, -7) && a.date <= addDays(T, -7)).reduce((s, a) => s + (a.distance_m || 0) / 1000, 0)
   const planWeek = Array.from({ length: 7 }, (_, i) => BY_DATE[addDays(mon, i)]?.km || 0).reduce((a, b) => a + b, 0)
-  const loads7 = Array.from({ length: 7 }, (_, i) => { const d = addDays(mon, i), a = M.series.find((x) => x.date === d)?.load; return { date: d, value: d <= T ? a || 0 : 0, plan: plannedLoad(BY_DATE[d], M.ratios) || undefined, tick: ['S', 'S', 'R', 'K', 'J', 'S', 'M'][i] } })
+  const loads7 = Array.from({ length: 7 }, (_, i) => { const d = addDays(mon, i), a = M.series.find((x) => x.date === d)?.load; return { date: d, value: d <= T ? a || 0 : 0, plan: plannedLoad(BY_DATE[d], M.ratios) || undefined, tick: ['M', 'T', 'W', 'T', 'F', 'S', 'S'][i] } })
   const nextCp = CHECKPOINTS.find((c) => c.date >= T), th = nextCp && thresholds(nextCp), dist = nextCp && cpDistance(nextCp)
   const last = M.acts.filter((a) => a.sport_class === 'run')[0] || M.acts[0], dc = last ? decoupling(M.lapsById[last.id] || []) : null
   const lastSteady = last && ['easy', 'long', 'social'].includes(BY_DATE[last.date]?.kind)

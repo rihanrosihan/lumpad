@@ -98,6 +98,7 @@ export default function App() {
 
   return <>
     <a className="skip" href="#main" onClick={(e) => { e.preventDefault(); mainRef.current?.focus() }}>Skip to content</a>
+    <div className="stripe" aria-hidden="true" />
     <header className="appbar">
       <div className="appbar-in">
         <button className="menubtn" onClick={() => setMenu(true)} aria-label="Open menu"><Icon n="menu" size={20} /></button>
@@ -123,9 +124,9 @@ export default function App() {
         {sync === 'offline' && <div className="offbar" role="status">Offline — changes are saved only in this browser and will be sent when you are back online</div>}
         <main id="main" ref={mainRef} tabIndex={-1}>
           {tab === 'home' && <Home vdot={vdot} settings={settings} results={results} go={go} M={M} />}
-          {tab === 'ready' && <Readiness vdot={vdot} settings={settings} focus={focus} />}
+          {tab === 'ready' && <Readiness vdot={vdot} settings={settings} focus={focus} M={M} />}
           {tab === 'activity' && <Activity vdot={vdot} focus={focus} go={go} settings={settings} />}
-          {tab === 'coach' && <Coach go={go} />}
+          {tab === 'coach' && <Coach go={go} focus={focus} />}
           {tab === 'calendar' && <Calendar view="month" vdot={vdot} results={results} setResults={setResults} focus={null} settings={settings} go={go} />}
           {tab === 'plan' && <PlanSync go={go} />}
           {tab === 'route' && <Course go={go} settings={settings} />}
@@ -133,7 +134,7 @@ export default function App() {
           {tab === 'checkpoint' && <Calendar view="cp" vdot={vdot} results={results} setResults={setResults} focus={focus} settings={settings} go={go} />}
           {tab === 'race' && <Calendar view="race" vdot={vdot} results={results} setResults={setResults} focus={focus} settings={settings} go={go} />}
           {tab === 'biometrics' && <Biometrics settings={settings} setSettings={setSettings} />}
-          {tab === 'profile' && <Profile vdot={vdot} results={results} settings={settings} setSettings={setSettings} />}
+          {tab === 'profile' && <Profile vdot={vdot} results={results} settings={settings} setSettings={setSettings} go={go} />}
         </main>
       </div>
     </div>

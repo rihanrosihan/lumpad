@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Card, Chip, Screen, Sheet } from './ui.jsx'
 import LagExplorer from './LagExplorer.jsx'
 import ShoeDegradation from './ShoeDegradation.jsx'
+import KnowledgeGraphPanel from './KnowledgeGraph.jsx'
 import { useApi, fmtDur, fmtPaceS } from './api.js'
 import { fmtShort } from './lib/calendar.js'
 
@@ -64,8 +65,10 @@ function Status({ st }) {
   </Card>
 }
 
-function Ask({ st }) {
-  const [intent, setIntent] = useState('daily_brief'), [q, setQ] = useState(''), [busy, setBusy] = useState(false), [res, setRes] = useState(null), [err, setErr] = useState(''), [showCtx, setShowCtx] = useState(false)
+const INTENT_ALIAS = { activity_review: 'session_review', race_strategy: 'race_plan' }
+function Ask({ st, initIntent }) {
+  const [intent, setIntent] = useState(() => INTENT_ALIAS[initIntent] || initIntent || 'daily_brief'), [q, setQ] = useState(''), [busy, setBusy] = useState(false), [res, setRes] = useState(null), [err, setErr] = useState(''), [showCtx, setShowCtx] = useState(false)
+  useEffect(() => { if (initIntent) setIntent(INTENT_ALIAS[initIntent] || initIntent) }, [initIntent])
   const P = useApi(showCtx ? `/api/coach/preview?intent=${encodeURIComponent(intent)}&question=${encodeURIComponent(q)}` : '', showCtx)
   const run = () => { setBusy(true); setErr(''); setRes(null); post('/api/coach/run', { intent, question: q }).then(setRes).catch((e) => setErr(e.message)).finally(() => setBusy(false)) }
   const p = res?.parsed
@@ -340,13 +343,17 @@ function Memory() {
   </>
 }
 
-const SECTIONS = [['cs-ask', 'Ask the coach'], ['cs-twin', 'Digital Twin & Monte Carlo'], ['cs-lag', 'Lag explorer'], ['cs-mem', 'Memory & rules'], ['cs-dur', 'Durability'], ['cs-shoe', 'Shoe fleet'], ['cs-sys', 'System']]
+const SECTIONS = [['cs-ask', 'Ask the coach'], ['cs-kg', 'Knowledge graph'], ['cs-twin', 'Digital Twin & Monte Carlo'], ['cs-lag', 'Lag explorer'], ['cs-mem', 'Memory & rules'], ['cs-dur', 'Durability'], ['cs-shoe', 'Shoe fleet'], ['cs-sys', 'System']]
 const jumpTo = (id) => () => { const el = document.getElementById(id); el?.scrollIntoView({ behavior: 'smooth', block: 'start' }); el?.focus({ preventScroll: true }) }
-export default function Coach({ go }) {
-  const st = useApi('/api/intel/status')
-  return <Screen title="AI Coach, Digital Twin & Validated Rules" sub="Hybrid RAG · Digital Twin · athlete memory · every module on one page">
+export default function Coach({ go, focus }) {
+  const st = useApi('/api/intel/status'), twin = useApi('/api/twin'), mat = useApi('/api/intel/matrices')
+  useEffect(() => {
+    if (focus?.section === 'kg') setTimeout(() => { const el = document.getElementById('cs-kg'); el?.scrollIntoView({ behavior: 'smooth', block: 'start' }); el?.focus({ preventScroll: true }) }, 120)
+  }, [focus])
+  return <Screen title="AI Coach, Digital Twin & Validated Rules" sub="Hybrid RAG · Knowledge Graph · Digital Twin · athlete memory">
     <nav className="chipjump" aria-label="Jump to section">{SECTIONS.map(([id, l]) => <button key={id} onClick={jumpTo(id)}>{l}</button>)}</nav>
-    <div id="cs-ask" tabIndex={-1} className="rgrid coachtop"><Ask st={st.data} /><Recent /></div>
+    <div id="cs-ask" tabIndex={-1} className="rgrid coachtop"><Ask st={st.data} initIntent={focus?.intent} /><Recent /></div>
+    <div id="cs-kg" tabIndex={-1}><KnowledgeGraphPanel twin={twin.data} matrices={mat.data} status={st.data} /></div>
     <div id="cs-twin" tabIndex={-1}><TwinSnapshot /><Twin go={go} /></div>
     <div id="cs-lag" tabIndex={-1}><LagExplorer /></div>
     <div id="cs-mem" tabIndex={-1}><Memory /></div>
@@ -368,7 +375,7 @@ export function HomeCoach({ go }) {
       {g != null && <Chip tone={g > 10 ? 'red' : 'green'}>Km vs 4 wk: {g > 0 ? '+' : ''}{g}% (limit +10%)</Chip>}
       {sc && <Chip>Sub-4: {pct(sc[0].p_sub4)} · {pct(sc[1].p_sub4)} · {pct(sc[2].p_sub4)} [MODEL]</Chip>}
     </div>}
-    <div className="coachq" role="group" aria-label="Ask the coach">{[['Morning brief', 'daily_brief'], ['Run review', 'activity_review'], ['Weekly review', 'weekly_review'], ['Race strategy', 'race_strategy']].map(([l, k]) => <button key={k} onClick={() => go('coach', { intent: k })}>{l}</button>)}</div>
+    <div className="coachq" role="group" aria-label="Ask the coach">{[['Morning brief', 'daily_brief'], ['Run review', 'session_review'], ['Weekly review', 'weekly_review'], ['Race plan', 'race_plan']].map(([l, k]) => <button key={k} onClick={() => go('coach', { intent: k })}>{l}</button>)}</div>
     <button className="link coachgo" onClick={() => go('coach')}>Open AI Coach →</button>
   </div>
 }

@@ -123,12 +123,7 @@ export default function Readiness({ vdot, settings, focus }) {
       <div><small>Form (TSB) <Info k="TSB" /></small><b>{sign(cur?.tsb)}</b><em>{fz ? `${cur.tsbPct}% · ${fz.label}` : ''}</em></div>
     </div>
 
-    {wg.blocked && <>
-    <Card title="Weekly gate · ◇ Thursday tempo" tone={wg.blocked ? 'red' : 'green'}>
-      <p><b>{wg.blocked ? 'Thursday stays strides / hills' : 'No reason to hold back the ◇ tempo'}</b></p>
-      <p className="muted">{wg.bad} nights with Sleep HR &gt; 67 / HRV Reduced in the last 7 days{wg.pain ? ' · pain / tibia positive' : ''}.</p>
-    </Card>
-    </>}
+
 
     </>}
 

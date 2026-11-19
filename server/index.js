@@ -1,3 +1,5 @@
+import fs from 'node:fs'
+import path from 'node:path'
 import http from 'node:http'
 import * as strava from './strava.js'
 import * as pubmed from './pubmed.js'
@@ -73,6 +75,36 @@ const routes = {
     kv[k] = { value: body.value, updatedAt: new Date().toISOString() }; save('kv', kv); return { ok: true, updatedAt: kv[k].updatedAt }
   },
   'GET /api/health': async () => ({ ok: true }),
+  'GET /api/data/quality': async () => {
+    const cov = coverage()
+    const countOf = (db, sql) => { try { return db.prepare(sql).get()?.n ?? 0 } catch { return 0 } }
+    const fitSessions = countOf(idb(), 'SELECT COUNT(*) AS n FROM fit_session')
+    const runWeather = countOf(idb(), 'SELECT COUNT(*) AS n FROM run_weather')
+    const corosRuns = cov?.runs ?? fitSessions
+    return {
+      coros_runs: corosRuns,
+      fit_sessions: fitSessions,
+      missing_fit: Math.max(0, corosRuns - fitSessions),
+      missing_weather: Math.max(0, fitSessions - runWeather),
+      missing_shoe: cov?.missingShoe ?? 0,
+      checkins_30d: countOf(idb(), "SELECT COUNT(*) AS n FROM daily_log WHERE date >= date('now','-30 days')"),
+      sync_runs_with_rejects: 0,
+    }
+  },
+  'GET /api/server/info': async () => {
+    const dataDir = path.resolve(process.cwd(), 'server/data')
+    const sz = (f) => { try { return Math.round((fs.statSync(path.join(dataDir, f)).size / (1024 * 1024)) * 100) / 100 } catch { return null } }
+    const countOf = (db, table) => { try { return db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get()?.n ?? null } catch { return null } }
+    return {
+      nodeVersion: process.version,
+      uptimeSec: Math.floor(process.uptime()),
+      memRssMb: Math.round((process.memoryUsage().rss / (1024 * 1024)) * 10) / 10,
+      dbSizesMb: { lumpad: sz('lumpad.db'), coros: sz('coros.db'), intel: sz('intel.db'), memory: sz('memory.db'), kv: sz('kv.json') },
+      dbCounts: { fit_sessions: countOf(idb(), 'fit_session'), run_weather: countOf(idb(), 'run_weather'), daily_feat: countOf(idb(), 'daily_feat'), kb_docs: countOf(idb(), 'kb_docs'), memories: countOf(mdb(), 'memory'), coach_runs: countOf(mdb(), 'coach_run') },
+      p0Guards: { backoff: true, safety: true, verifier: true },
+    }
+  },
+
   'GET /api/sources': async () => ({ strava: strava.status(), coros: coros.status(), consensus: lib.consensusStatus(), pubmed: { api: 'public' } }),
   'GET /api/strava/login': async (_q, _b, res) => { if (!strava.configured()) throw Object.assign(new Error('Set STRAVA_CLIENT_ID/STRAVA_CLIENT_SECRET'), { status: 501 }); res.writeHead(302, { location: strava.authUrl() }); res.end(); return null },
   'GET /api/strava/callback': async (q, _b, res) => { await strava.exchange(q.get('code')); res.writeHead(302, { location: '/?strava=ok' }); res.end(); return null },

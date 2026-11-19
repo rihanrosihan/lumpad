@@ -27,6 +27,45 @@ export const Card = ({ title, right, tone, children, className = '' }) => <div c
   {(title || right) && <div className="ch"><h2>{title}</h2>{right}</div>}{children}</div>
 export const Stat = ({ k, v, sub }) => <div className="stat"><span>{k}</span><b>{v}</b>{sub && <small>{sub}</small>}</div>
 
+// Reusable segmented horizontal tab bar (Profile 6-tab & Races 3-tab bars)
+export function SegmentedTabs({ tabs, value, onChange, label = 'Sections', className = '' }) {
+  return <div className={`segtabs ${className}`} role="tablist" aria-label={label}>
+    {tabs.map((t) => {
+      const active = value === t.id
+      return <button key={t.id} type="button" role="tab" aria-selected={active} className={`segtab ${active ? 'on' : ''} ${t.tone ? 'tone-' + t.tone : ''}`} onClick={() => onChange(t.id)}>
+        <span>{t.label}</span>
+        {t.badge != null && <em className="segbdg">{t.badge}</em>}
+      </button>
+    })}
+  </div>
+}
+
+// Reusable progress bar with semantic tone
+export function ProgressBar({ value = 0, max = 100, tone = 'cobalt', label, height = 8 }) {
+  const pct = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0
+  return <div className="pbar-v6" style={{ height }} role="progressbar" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100} aria-label={label || `${Math.round(pct)}%`}>
+    <i className={'pb-' + tone} style={{ width: pct + '%' }} />
+  </div>
+}
+
+// Semantic status pill with optional live dot
+export function StatusPill({ tone = 'neutral', dot = false, children, className = '' }) {
+  return <span className={`spill sp-${tone} ${className}`}>{dot && <i className="spdot" aria-hidden="true" />}{children}</span>
+}
+
+// Explicit provenance badge: [ACTUAL], [MODEL], [AI], [RULE]
+const PROV_META = {
+  ACTUAL: ['green', 'Measured from wearable / FIT'],
+  MODEL: ['cobalt', 'Calculated / Twin / VDOT model estimate'],
+  AI: ['purple', 'AI Coach synthesis'],
+  RULE: ['amber', 'Deterministic safety & gate rule'],
+}
+export function ProvenanceBadge({ type = 'ACTUAL' }) {
+  const key = String(type || 'ACTUAL').toUpperCase()
+  const [tone, title] = PROV_META[key] || PROV_META.ACTUAL
+  return <span className={`prov-b prov-${tone}`} title={title}>[{key}]</span>
+}
+
 export function Sheet({ open, onClose, label, children }) {
   const ref = useRef(), closeRef = useRef()
   useEffect(() => {
