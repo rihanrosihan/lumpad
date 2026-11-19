@@ -47,15 +47,19 @@ type APIError struct {
 	Truncated bool
 	Text      string
 	CostCNY   *float64
+	Permanent bool // retrying cannot help (for example the API key is not set)
 }
 
 func (e *APIError) Error() string { return e.Msg }
 
-// Retryable: a failure another attempt, or another provider, can fix.
+// Retryable: a failure another attempt can fix (rate limit, server error, network error). A missing key or a truncated answer is not.
 func (e *APIError) Retryable() bool {
+	if e.Permanent || e.Truncated {
+		return false
+	}
 	switch e.Status {
 	case 429, 500, 502, 503, 504, 0:
-		return e.Status != 0 || e.Truncated == false
+		return true
 	}
 	return false
 }

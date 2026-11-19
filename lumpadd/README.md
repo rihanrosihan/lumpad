@@ -80,3 +80,15 @@ second OAuth client (a parallel client could clash with refresh-token rotation).
 Server: `sudo bash /opt/lumpad/deploy/v2/setup-v2.sh` once (real Postgres cluster with the 2 GB config and limits, role/db `lumpad` over the
 local socket, build, migrate, shadow timer every 15 min). After that every auto-deploy rebuilds and migrates (`/etc/lumpad-v2.enabled`); a v2
 failure never fails the Node deploy. Postgres is a verified mirror during Phase 3 — it can be rebuilt from SQLite at any time.
+
+## Phase 4 — the AI layer (gate G4: everything the coach does today, identical or better)
+| Piece | Status | Check |
+| --- | --- | --- |
+| Answer validation, safety layer (red flags EN/ID, check-in flags, referral, gate from twin, gate check, diagnosis wording), number verification, spend guard | **done (4-a)** | vectors from the real Node code: eval scenarios + ~1,600 randomised cases, 5 mutations caught |
+| Prompt builder | **done (4-b)** | 10 sentinel prompts byte for byte; Node edits fail a drift test until Go matches |
+| Model gateway: DeepSeek / OpenAI-compatible provider | **done (4-c1)** | 28 scripted scenarios of the real Node client: identical requests, delays, results; 8 mutations caught |
+| Anthropic provider (cached system block, optional extended thinking), price-based cost, router (chain per intent, fallback on failure or rejected answer, budget guard, daily cap for unknown-cost providers), ledger (`coach.llm_call`), config | **done (4-c2)** | fake-server tests incl. WIB month boundary and PostgreSQL ledger; 13 mutations caught |
+| Coach orchestration (context → router → repair → validate → safety → write-back), eval suite on the Go path | next (4-d) | the 51 eval scenarios, replayed |
+| Retrieval (query decomposition, memory search, RAG) on PostgreSQL | after (4-e) | overlap with Node's picks on real questions |
+
+Adding a second provider needs no code: copy `deploy/v2/llm.example.json` to `server/data/llm.json`, put the key in `.env.v2`, fill in prices.

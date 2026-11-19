@@ -32,6 +32,9 @@ type OpenAI struct {
 	HTTP         *http.Client
 	Models       func(ctx context.Context) (ModelInfo, error) // resolves the model for a call
 	Meter        CostMeter
+	Prices       *Prices // price-based cost when there is no balance meter
+	TokenParam   string  // "max_tokens" (default) or "max_completion_tokens"
+	NoJSONMode   bool    // provider rejects response_format
 	Sleep        func(time.Duration)
 	Now          func() time.Time
 }
@@ -55,7 +58,7 @@ func (p *OpenAI) client() *http.Client {
 func (p *OpenAI) api(ctx context.Context, method, path string, body any, timeout time.Duration) (map[string]any, error) {
 	key, err := p.Key()
 	if err != nil {
-		return nil, &APIError{Status: 503, Msg: err.Error()}
+		return nil, &APIError{Status: 503, Msg: err.Error(), Permanent: true}
 	}
 	var rd io.Reader
 	if body != nil {
@@ -167,7 +170,14 @@ func (p *OpenAI) once(ctx context.Context, r Request, effort string, maxTokens i
 	if msgs == nil {
 		msgs = []Message{{"system", r.System}, {"user", r.User}}
 	}
-	body := map[string]any{"model": model.ID, "messages": msgs, "response_format": map[string]any{"type": "json_object"}, "max_tokens": maxTokens, "stream": false}
+	tp := p.TokenParam
+	if tp == "" {
+		tp = "max_tokens"
+	}
+	body := map[string]any{"model": model.ID, "messages": msgs, tp: maxTokens, "stream": false}
+	if !p.NoJSONMode {
+		body["response_format"] = map[string]any{"type": "json_object"}
+	}
 	for _, e := range model.Efforts {
 		if e == effort {
 			body["reasoning_effort"] = effort
@@ -215,6 +225,9 @@ func (p *OpenAI) once(ctx context.Context, r Request, effort string, maxTokens i
 		}
 	}
 	cost := costOf(pre, post)
+	if p.Meter == nil && p.Prices != nil {
+		cost = p.Prices.Cost(openAITokens(j["usage"]), 0)
+	}
 	if finish == "length" {
 		return Response{}, &APIError{Status: 502, Msg: "response truncated (max_tokens) — the model used its whole budget before finishing", Truncated: true, Text: text, CostCNY: cost}
 	}

@@ -1,0 +1,6 @@
+{
+  "providers": {
+    "deepseek": { "kind": "deepseek", "base": "https://api.deepseek.com", "key_env": "DEEPSEEK_API_KEY", "model_env": "DEEPSEEK_MODEL" }
+  },
+  "routes": { "default": ["deepseek"] }
+}

@@ -101,3 +101,12 @@ func KeyFromEnv(name string) func() (string, error) {
 		return "", errors.New(name + " not set")
 	}
 }
+
+// NewOpenAICompat: any other OpenAI-compatible API with one fixed model; spend comes from the price table (there is no balance endpoint to rely on).
+func NewOpenAICompat(name, base string, key func() (string, error), model string, efforts []string, prices *Prices) *OpenAI {
+	p := &OpenAI{ProviderName: name, Base: base, Key: key, Prices: prices, Now: time.Now}
+	p.Models = func(context.Context) (ModelInfo, error) {
+		return ModelInfo{ID: model, Name: model, Efforts: efforts, Pinned: true}, nil
+	}
+	return p
+}

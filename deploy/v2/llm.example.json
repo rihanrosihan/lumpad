@@ -1,0 +1,21 @@
+{
+  "_comment": "Copy to /opt/lumpad/server/data/llm.json to add providers or change routes. Without this file only DeepSeek is used, as today. Keys are NOT stored here: key_env names an environment variable in /opt/lumpad/.env.v2. Prices (per million tokens) are yours to fill in from the provider's price page; with prices the monthly cap counts the provider's spend, without them its calls are limited by max_calls_per_day instead.",
+  "monthly_cap_cny": 15,
+  "providers": {
+    "deepseek": { "kind": "deepseek", "base": "https://api.deepseek.com", "key_env": "DEEPSEEK_API_KEY", "model_env": "DEEPSEEK_MODEL" },
+    "claude": {
+      "kind": "anthropic", "base": "https://api.anthropic.com", "key_env": "ANTHROPIC_API_KEY", "model": "claude-sonnet-5-5",
+      "thinking": { "high": 8000 },
+      "prices": { "input_per_m": 0, "output_per_m": 0, "cache_read_per_m": 0, "cache_write_per_m": 0, "fx_to_cny": 7.2 },
+      "max_calls_per_day": 20
+    }
+  },
+  "routes": {
+    "daily_brief": ["deepseek"],
+    "question": ["deepseek", "claude"],
+    "session_review": ["deepseek", "claude"],
+    "weekly_review": ["deepseek", "claude"],
+    "race_plan": ["claude", "deepseek"],
+    "default": ["deepseek"]
+  }
+}
