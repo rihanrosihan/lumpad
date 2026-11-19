@@ -146,10 +146,27 @@ export default function Home({ vdot, settings, results, go, M: Mprop }) {
 
     {briefDays.length > 0 && <div className="sbwrap"><label className="sbsel"><span>Preview session</span><select value={pvDay?.date || ''} onChange={(e) => setPv(e.target.value)} aria-label="Preview session for the smart brief">{briefDays.map((d) => <option key={d.date} value={d.date}>{d.date === T ? 'Today' : fmtShort(d.date)} · {d.label || KIND[d.kind].label} · {d.km} km</option>)}</select></label>
       <SessionBrief day={pvDay} readiness={rd} healthRow={M.health?.at(-1)} dailyCheckin={pvDay?.date === T ? f : EMPTY_DAY} twinLoad={M.cur} vdot={vdot} /></div>}
-    {last && <button className="card rowbtn plain strip-last" onClick={() => go('activity', { id: last.ids[0] })} aria-label={`Last activity ${last.name}`}>
-      <span className={`kdot k-a${String(last.sport_class).split(':')[0]}`} />
-      <span><b>{last.name}</b><small>{fmtShort(last.date)} · {last.distance_m ? (last.distance_m / 1000).toFixed(2) + ' km' : fmtDur(last.duration_s)}{last.avg_pace_s_km && last.sport_class === 'run' ? ` · ${fmtPaceS(last.avg_pace_s_km)}/km` : ''}{last.avg_hr ? ` · ${last.avg_hr} bpm` : ''}{last.training_load ? ` · TL ${last.training_load}` : ''}</small></span>
-      {dc && lastSteady ? <Chip tone={dc.band}>Pa:Hr {dc.pct}%</Chip> : <Icon n="chev" size={18} />}
-    </button>}
+    {last && <div className="card">
+      <div className="prof-cmd-top">
+        <div>
+          <div className="chips" style={{ margin: "0 0 6px" }}>
+            <Chip>{fmtShort(last.date)}</Chip>
+            {last.training_load && <Chip tone="red">TL {last.training_load}</Chip>}
+            {dc && lastSteady && <Chip tone={dc.band}>Pa:Hr {dc.pct}%</Chip>}
+          </div>
+          <h3 style={{ margin: 0 }}>{last.name}</h3>
+          <p className="muted" style={{ margin: "3px 0 0", fontSize: ".82rem" }}>
+            {last.distance_m ? (last.distance_m / 1000).toFixed(2) + " km" : fmtDur(last.duration_s)}
+            {last.duration_s && last.distance_m ? ` · ${fmtDur(last.duration_s)}` : ""}
+            {last.avg_pace_s_km && last.sport_class === "run" ? ` · Pace ${fmtPaceS(last.avg_pace_s_km)}/km` : ""}
+            {last.avg_hr ? ` · HR ${last.avg_hr} bpm` : ""}
+          </p>
+        </div>
+        <div className="prof-chips">
+          <button type="button" className="btn primary sm" onClick={() => go("activity", { id: last.ids[0] })}>Open Full Run Analysis →</button>
+          <button type="button" className="btn sm" onClick={() => go("activity")}>All Activities</button>
+        </div>
+      </div>
+    </div>}
   </section>
 }

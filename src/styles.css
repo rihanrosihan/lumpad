@@ -1012,3 +1012,13 @@ nav.tabbar {
   table td, table th { padding: 7px 8px; font-size: 0.78rem; white-space: nowrap; }
   .iconbtn { min-width: 32px !important; min-height: 32px !important; width: 32px; height: 32px; padding: 0 !important; }
 }
+
+/* ===== Checkpoints 4-col grid & inspector + Home Last-Run highlight ===== */
+.cp-inspector { border: 2px solid color-mix(in srgb, var(--crimson) 60%, var(--line)) !important; }
+.stepper button.cp-sel { outline: 2px solid var(--cobalt); outline-offset: 1px; }
+.cp-grid4 { display: grid; grid-template-columns: 1fr; gap: 10px; }
+@media (min-width: 680px) { .cp-grid4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1120px) { .cp-grid4 { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.cp-card4 { padding: 12px 14px; border-radius: 14px; background: var(--surface2); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 4px; text-align: left; min-width: 0; }
+.cp-card4.on { border: 2px solid var(--cobalt); background: color-mix(in srgb, var(--cobalt) 8%, var(--surface)); }
+.cp-card4:hover { border-color: var(--cobalt); }

@@ -1,18 +1,19 @@
-import { useEffect, useRef, useState } from 'react'
-import { CHECKPOINTS, tone, killGate, TARGET } from './lib/plan.js'
-import { vdotFromRace, parseTime, fmtTime } from './lib/vdot.js'
+import { useEffect, useState } from 'react'
+import { CHECKPOINTS, tone, killGate, TARGET, cpDistance } from './lib/plan.js'
+import { vdotFromRace, parseTime } from './lib/vdot.js'
 import { today, diffDays, parse, fmtShort, DAYS3, RACE_DATE } from './lib/calendar.js'
-import { cpDistance } from './lib/plan.js'
 import { thresholds } from './Home.jsx'
-import { Card, Chip, Screen, Icon } from './ui.jsx'
+import { Card, Chip, Icon, StatusPill, ProvenanceBadge } from './ui.jsx'
 
 const KIND_LABEL = { tt: 'Time trial', lr: 'Long run', race: 'Race', ratio: 'HM ratio', gate: 'Gate' }
 const T0 = CHECKPOINTS[0].date, CP3 = CHECKPOINTS.find((c) => c.id === 3), DAYS = diffDays(RACE_DATE, T0)
 
 function PathChart({ results }) {
-  const W = 340, H = 170, L = 30, R = 8, Tp = 8, B = 22, y0 = 30, y1 = 41
-  const X = (d) => L + (diffDays(d, T0) / DAYS) * (W - L - R), Y = (v) => Tp + (1 - (v - y0) / (y1 - y0)) * (H - Tp - B)
-  const req = CHECKPOINTS.filter((c) => c.line && c.kind === 'tt').map((c) => [X(c.date), Y(c.line)]), reqEnd = [X(RACE_DATE), Y(TARGET.vdotNeeded)]
+  const W = 340, H = 175, L = 30, R = 8, Tp = 8, B = 22, y0 = 30, y1 = 41
+  const X = (d) => L + (diffDays(d, T0) / DAYS) * (W - L - R)
+  const Y = (v) => Tp + (1 - (v - y0) / (y1 - y0)) * (H - Tp - B)
+  const req = CHECKPOINTS.filter((c) => c.line && c.kind === 'tt').map((c) => [X(c.date), Y(c.line)])
+  const reqEnd = [X(RACE_DATE), Y(TARGET.vdotNeeded)]
   const mo = (d) => diffDays(d, CP3.date) / 30.44
   const best = (d) => 33.0 + 0.74 * mo(d)
   const pts = CHECKPOINTS.filter((c) => results[c.id]?.vdot != null).map((c) => ({ x: X(c.date), y: Y(results[c.id].vdot), t: tone(results[c.id].vdot, c.line), id: c.id }))
@@ -28,10 +29,10 @@ function PathChart({ results }) {
   </svg>
 }
 
-// Time-trial result: explicit Save (Enter also works) with inline validation, so a typo is never silently dropped
+// Time-trial result: explicit Save (Enter also works) with inline validation
 function TimeEntry({ c, r, upd }) {
   const [v, setV] = useState(r.time || ''), [err, setErr] = useState('')
-  useEffect(() => setV(r.time || ''), [r.time])
+  useEffect(() => setV(r.time || ''), [r.time, c.id])
   const save = () => {
     const s = v.trim(); if (!s) { setErr(''); return upd(c.id, { time: '', vdot: null }) }
     if (!/^\d{1,2}(:\d{2}){1,2}$/.test(s)) return setErr('Format: mm:ss or h:mm:ss, e.g. 29:18')
@@ -39,59 +40,107 @@ function TimeEntry({ c, r, upd }) {
     if (!isFinite(vd) || vd < 20 || vd > 80) return setErr('This time does not make sense for that distance — check it again')
     setErr(''); upd(c.id, { time: s, vdot: vd })
   }
-  return <div className="te"><label className="fld"><span>TT time (mm:ss or h:mm:ss)</span>
-    <input value={v} placeholder="mis. 29:18" inputMode="numeric" enterKeyHint="done" aria-invalid={!!err} onChange={(e) => setV(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && save()} />
+  return <div className="te"><label className="fld"><span>TT Result (mm:ss or h:mm:ss)</span>
+    <input value={v} placeholder="e.g. 29:18" inputMode="numeric" enterKeyHint="done" aria-invalid={!!err} onChange={(e) => setV(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && save()} />
     {err && <small className="err" role="alert">{err}</small>}</label>
-    <button className="btn sm" onClick={save}>Save</button></div>
+    <button className="btn primary sm" onClick={save}>Save</button></div>
 }
 
-export default function Checkpoints({ vdot, results, setResults, focus }) {
+export default function Checkpoints({ vdot, results, setResults, focus, go }) {
   const T = today(), kg = killGate(results)
-  const next = CHECKPOINTS.find((c) => c.date >= T)?.id
-  const [open, setOpen] = useState(focus || next)
-  const pastList = CHECKPOINTS.filter((c) => c.date < T && c.id !== next)
-  const [showPast, setShowPast] = useState(false)
-  const refs = useRef({})
-  useEffect(() => { if (focus) { setOpen(focus); setTimeout(() => refs.current[focus]?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50) } }, [focus])
+  const next = CHECKPOINTS.find((c) => c.date >= T)?.id || CHECKPOINTS[0].id
+  const [selId, setSelId] = useState(focus || next)
+  useEffect(() => { if (focus) setSelId(focus) }, [focus])
   const upd = (id, patch) => setResults({ ...results, [id]: { ...results[id], ...patch } })
 
-  return <>
-    <Card className={kg.fired ? 'c-red' : ''}>
-      <div className="ch"><h2>Kill gate</h2><Chip tone={kg.fired ? 'red' : 'green'}>{kg.fired ? 'ACTIVE' : 'not triggered'}</Chip></div>
-      <p className="muted">{kg.fired ? kg.why + ' → move to a measured tier (4:15 / 4:30 / finish-first). The race is still run.' : 'Two consecutive red TTs from CP4, or CP11 ratio < 0.85.'}</p>
-    </Card>
-    <div className="stepper" role="group" aria-label="Checkpoint pipeline">{CHECKPOINTS.map((c) => { const r = results[c.id] || {}, t = (c.kind === 'tt' || c.kind === 'ratio') && r.vdot != null ? tone(r.vdot, c.line) : null, st = t || (r.vdot != null || r.ratio != null ? 'done' : c.id === next ? 'next' : '')
-      return <button key={c.id} className={'s-' + st} onClick={() => { setOpen(c.id); setShowPast(true); setTimeout(() => refs.current[c.id]?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50) }} aria-label={`CP${c.id} ${c.name}${t ? ', result ' + t : ''}`}><b>CP{c.id}</b>{c.date.slice(5)}</button> })}</div>
-    <Card title="Fitness path (VDOT)" right={<span className="muted">now {vdot.v.toFixed(1)}</span>}>
-      <PathChart results={results} />
-      <div className="legend"><span><i className="ll req" />Required line</span><span><i className="ll best" />Best observed pace (0.74/mo)</span><span><i className="kdot k-easy" />TT result (green / yellow / red)</span></div>
-    </Card>
+  const active = CHECKPOINTS.find((c) => c.id === selId) || CHECKPOINTS[0]
+  const ar = results[active.id] || {}
+  const aTT = active.kind === 'tt'
+  const aTone = (aTT || active.kind === 'ratio') && ar.vdot != null ? tone(ar.vdot, active.line) : null
+  const aTh = thresholds(active)
+  const aDate = parse(active.date)
+  const aAway = diffDays(active.date, T)
 
-    <ol className="tl">
-      {pastList.length > 0 && <li><button className="grp" aria-expanded={showPast} onClick={() => setShowPast(!showPast)}><span>Past ({pastList.length})</span><span>{showPast ? 'Hide' : 'Show'}</span></button></li>}
-      {CHECKPOINTS.filter((c) => showPast || !pastList.includes(c) || open === c.id).map((c) => {
-        const r = results[c.id] || {}, tt = c.kind === 'tt', t = (tt || c.kind === 'ratio') && r.vdot != null ? tone(r.vdot, c.line) : null
-        const logged = r.vdot != null || r.ratio != null || ['Sleep HR', 'HRV', 'Pain', '°C', 'RH %'].some((k) => r[k])
-        const past = c.date < T, d = parse(c.date), th = thresholds(c), isOpen = open === c.id
-        const status = t ? t : logged ? 'done' : c.id === next ? 'next' : past ? 'miss' : 'todo'
-        return <li key={c.id} ref={(el) => (refs.current[c.id] = el)} className={`tli s-${status}`}>
-          <button className="tlh" onClick={() => setOpen(isOpen ? null : c.id)} aria-expanded={isOpen}>
-            <span className="tld"><b>{d.getDate()}</b><small>{fmtShort(c.date).split(' ')[0]}</small><small>{DAYS3[d.getDay()]}</small></span>
-            <span className="tlt"><small>CP{c.id} · {KIND_LABEL[c.kind]}</small><b>{c.name}</b>
-              <small>{past ? (logged ? 'logged' : 'not logged') : diffDays(c.date, T) === 0 ? 'today' : diffDays(c.date, T) + ' days away'}{c.line ? ` · line ${c.line.toFixed(1)}` : ''}</small></span>
-            <span className={`st st-${status}`} aria-label={status}>{t ? t[0].toUpperCase() : status === 'done' ? <Icon n="check" size={14} /> : status === 'next' ? '▶' : ''}</span>
+  return <div className="screen">
+    {/* Unified Checkpoint Command Header + Horizontal CP1–CP20 Ribbon */}
+    <div className="card prof-cmd">
+      <div className="prof-cmd-top">
+        <div>
+          <div className="chips" style={{ margin: '0 0 6px' }}>
+            <StatusPill tone={kg.fired ? 'red' : 'green'}>{kg.fired ? 'Kill Gate: ACTIVE' : 'Kill Gate: Inactive'}</StatusPill>
+            <ProvenanceBadge type="MODEL" />
+          </div>
+          <h1>2027 Checkpoint Roadmap (CP1 – CP20)</h1>
+          <p className="sub">{kg.fired ? `${kg.why} → recalibrate to measured tier (4:15 / 4:30 / finish-first).` : 'Kill Gate Rule: Two consecutive Red TTs starting from CP4, or HM conversion ratio < 0.85 at CP11, automatically recalibrates target pace.'}</p>
+        </div>
+        <div className="prof-chips">
+          <StatusPill tone="cobalt">VDOT {vdot.v.toFixed(1)} → {TARGET.vdotNeeded}</StatusPill>
+          {go && <button type="button" className="btn sm" onClick={() => go('calendar')}>Calendar →</button>}
+        </div>
+      </div>
+
+      <div className="stepper prof-cmd-bar" style={{ marginBottom: 0 }} role="group" aria-label="Checkpoint pipeline">
+        {CHECKPOINTS.map((c) => {
+          const r = results[c.id] || {}
+          const t = (c.kind === 'tt' || c.kind === 'ratio') && r.vdot != null ? tone(r.vdot, c.line) : null
+          const st = t || (r.vdot != null || r.ratio != null ? 'done' : c.id === next ? 'next' : '')
+          const isSel = c.id === active.id
+          return <button key={c.id} className={`s-${st} ${isSel ? 'cp-sel' : ''}`} aria-pressed={isSel} onClick={() => setSelId(c.id)} aria-label={`CP${c.id} ${c.name}`}>
+            <b>CP{c.id}</b>{c.date.slice(5)}
           </button>
-          {isOpen && <div className="tlb">
-            <p className="note">{c.note}</p>
-            {th && <p className="thr"><Chip tone="green">Green ≤ {th.G}</Chip> <Chip tone="red">Red &gt; {th.R}</Chip></p>}
-            {tt && <TimeEntry c={c} r={r} upd={upd} />}
-            {t && <p role="status"><Chip tone={t}>{t === 'green' ? 'Green' : t === 'yellow' ? 'Yellow' : 'Red'}</Chip> VDOT {r.vdot.toFixed(1)} · {(r.vdot - c.line).toFixed(1)} from the line</p>}
-            {c.kind === 'ratio' && <label className="fld"><span>HM ratio (HM VDOT ÷ latest 5K/10K VDOT)</span>
-              <input type="number" step="0.01" inputMode="decimal" value={r.ratio ?? ''} onChange={(e) => upd(c.id, { ratio: e.target.value === '' ? null : +e.target.value })} /></label>}
-            <div className="form five">{['Sleep HR', 'HRV', 'Pain', '°C', 'RH %'].map((k) => <label key={k} className="fld"><span>{k}</span><input value={r[k] || ''} onChange={(e) => upd(c.id, { [k]: e.target.value })} /></label>)}</div>
-          </div>}
-        </li>
-      })}
-    </ol>
-  </>
+        })}
+      </div>
+    </div>
+
+    {/* Top 2-Col Row: VDOT Trajectory Chart (7) + Active Checkpoint Inspector & Logger (5) */}
+    <div className="bio-split-75">
+      <Card title="VDOT Fitness Trajectory (Jan – Oct 2027)" right={<StatusPill tone="red">Oct Target: {TARGET.vdotNeeded}</StatusPill>}>
+        <PathChart results={results} />
+        <div className="legend">
+          <span><i className="ll req" />Required Sub-4 line</span>
+          <span><i className="ll best" />Best observed pace (0.74/mo)</span>
+          <span><i className="kdot k-easy" />Logged TT result</span>
+        </div>
+      </Card>
+
+      <Card className="cp-inspector" title={`CP${active.id} · ${KIND_LABEL[active.kind]}`} right={<Chip tone={aTone || (active.id === next ? 'red' : undefined)}>{aTone ? aTone.toUpperCase() : aAway > 0 ? `in ${aAway}d` : aAway === 0 ? 'TODAY' : 'past'}</Chip>}>
+        <p className="muted" style={{ margin: '0 0 4px', fontFamily: 'var(--f-mono)', fontSize: '.78rem' }}>
+          {DAYS3[aDate.getDay()]}, {fmtShort(active.date)} {active.date.slice(0, 4)}{active.line ? ` · VDOT Line ${active.line.toFixed(1)}` : ''}
+        </p>
+        <h3 style={{ margin: '0 0 8px', fontSize: '1.05rem' }}>{active.name}</h3>
+        {active.note && <p className="note" style={{ margin: '0 0 10px' }}>{active.note}</p>}
+        {aTh && <div className="chips" style={{ margin: '0 0 10px' }}><Chip tone="green">Green ≤ {aTh.G}</Chip><Chip tone="red">Red &gt; {aTh.R}</Chip></div>}
+        {aTT && <TimeEntry c={active} r={ar} upd={upd} />}
+        {aTone && <p role="status" style={{ margin: '8px 0' }}><Chip tone={aTone}>{aTone.toUpperCase()}</Chip> VDOT <b>{ar.vdot.toFixed(1)}</b> ({(ar.vdot - active.line >= 0 ? '+' : '')}{(ar.vdot - active.line).toFixed(1)} vs line)</p>}
+        {active.kind === 'ratio' && <label className="fld" style={{ marginBottom: 8 }}><span>HM ratio (HM VDOT ÷ latest 5K/10K VDOT)</span>
+          <input type="number" step="0.01" inputMode="decimal" value={ar.ratio ?? ''} onChange={(e) => upd(active.id, { ratio: e.target.value === '' ? null : +e.target.value })} /></label>}
+        <div className="form five" style={{ marginTop: 10 }}>
+          {['Sleep HR', 'HRV', 'Pain', '°C', 'RH %'].map((k) => <label key={k} className="fld"><span>{k}</span><input value={ar[k] || ''} onChange={(e) => upd(active.id, { [k]: e.target.value })} /></label>)}
+        </div>
+      </Card>
+    </div>
+
+    {/* All 20 Macrocycle Checkpoints 4-Column Grid */}
+    <Card title={`All ${CHECKPOINTS.length} Macrocycle Checkpoints (2027)`} right={<span className="muted">Tap any card to inspect or log</span>}>
+      <div className="cp-grid4">
+        {CHECKPOINTS.map((c) => {
+          const r = results[c.id] || {}
+          const t = (c.kind === 'tt' || c.kind === 'ratio') && r.vdot != null ? tone(r.vdot, c.line) : null
+          const away = diffDays(c.date, T)
+          const isSel = c.id === active.id
+          return <button key={c.id} type="button" className={`cp-card4 ${isSel ? 'on' : ''}`} onClick={() => { setSelId(c.id); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>
+            <div className="kpi-top">
+              <small style={{ color: 'var(--cobalt-t)', fontWeight: 800 }}>CP{c.id} · {KIND_LABEL[c.kind]}</small>
+              <span className="muted mono" style={{ fontSize: '.72rem' }}>{fmtShort(c.date)}</span>
+            </div>
+            <b style={{ fontSize: '.86rem', textAlign: 'left', margin: '4px 0' }}>{c.name}</b>
+            <div className="kpi-top" style={{ marginTop: 'auto', paddingTop: 6, borderTop: '1px solid var(--line)' }}>
+              <small className="muted">{t ? `Logged: ${r.time || r.vdot.toFixed(1)}` : away > 0 ? `${away}d left` : away === 0 ? 'Today' : 'Past'}</small>
+              {c.line && <Chip tone={t || 'green'}>VDOT {c.line.toFixed(1)}</Chip>}
+            </div>
+          </button>
+        })}
+      </div>
+    </Card>
+  </div>
 }

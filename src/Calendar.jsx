@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { paces } from './lib/vdot.js'
-import { BY_DATE, WEEKS, weekOf, today, parse, iso, addDays, mondayOf, MONTHS, MON3, DAYS3, fmtShort, fmtLong, KIND, PHASE_NAME, PLAN_START, PLAN_END, PLAN_KM, PLAN_MONTHS, monthLabel } from './lib/calendar.js'
-import { Chip, Screen, Icon } from './ui.jsx'
+import { BY_DATE, WEEKS, weekOf, today, iso, addDays, mondayOf, MON3, DAYS3, fmtShort, fmtLong, KIND, PHASE_NAME, PLAN_START, PLAN_END, PLAN_KM, PLAN_MONTHS, monthLabel, PLAN } from './lib/calendar.js'
+import { Chip, Icon, SegmentedTabs, StatusPill } from './ui.jsx'
 import { useApi } from './api.js'
 import Checkpoints from './Checkpoints.jsx'
 import Race from './Race.jsx'
@@ -9,7 +9,6 @@ import { Gantt, Combo } from './charts2.jsx'
 import { effectiveDay } from './lib/scaler.js'
 import { compliance } from './lib/analysis.js'
 import { dailyLoadSeries, pmc } from './lib/load.js'
-import { PLAN } from './lib/calendar.js'
 import { useStore } from './store.js'
 import { WorkoutLine, mainTarget, metaFor } from './Workout.jsx'
 import { cfgOf, fmtDur } from './lib/zones.js'
@@ -19,12 +18,11 @@ const monthOfWeek = (w) => w.days[Math.floor(w.days.length / 2)].date.slice(0, 7
 const cpOf = (d) => d?.tags.find((t) => /^CP\d+$/.test(t))
 const describe = (s, x) => `${fmtLong(s)}: ${x ? (x.label || KIND[x.kind].label) + (x.km ? `, ${x.km} km` : '') + (cpOf(x) ? `, ${cpOf(x)}` : '') : 'no session'}`
 
-// One big touch target instead of 53 five-pixel bars: tap or drag anywhere to jump to that week's month.
 function Season({ month, setMonth, T }) {
   const ref = useRef(), max = Math.max(...WEEKS.map((w) => w.km)), cur = weekOf(T)?.id
   const pick = (e) => { const r = ref.current.getBoundingClientRect(), x = Math.min(0.999, Math.max(0, (e.clientX - r.left) / r.width)); setMonth(monthOfWeek(WEEKS[Math.floor(x * WEEKS.length)])) }
   return <>
-    <div ref={ref} className="season" role="group" aria-label="Weekly volume across the season. Touch or drag to change month, or use the month buttons below."
+    <div ref={ref} className="season" role="group" aria-label="Weekly volume across the season. Touch or drag to change month."
       onPointerDown={(e) => { e.currentTarget.setPointerCapture?.(e.pointerId); pick(e) }} onPointerMove={(e) => e.buttons && pick(e)}>
       {WEEKS.map((w) => <span key={w.id} aria-hidden="true" className={`sb ph-${w.phase.replace(/[^A-Z]/g, '')} ${w.id === cur ? 'cur' : ''} ${monthOfWeek(w) === month ? 'inm' : ''}`}><i style={{ height: Math.max(4, (w.km / max) * 100) + '%' }} /></span>)}
     </div>
@@ -33,7 +31,7 @@ function Season({ month, setMonth, T }) {
 }
 
 function MonthView({ vdot, focus, raceDate, onOpen }) {
-  const T = today(), p = paces(vdot.v), [scale] = useStore('lumpad.scale', {})
+  const T = today(), [scale] = useStore('lumpad.scale', {})
   const inPlan = T >= PLAN_START && T <= PLAN_END
   const [month, setMonth] = useState(inPlan ? T.slice(0, 7) : PLAN_MONTHS[0].key)
   useEffect(() => { if (focus && BY_DATE[focus]) setMonth(focus.slice(0, 7)) }, [focus])
@@ -60,86 +58,114 @@ function MonthView({ vdot, focus, raceDate, onOpen }) {
       return { id: w.id, mon, plan: w.km, actual: mon <= T ? Math.round(actual * 10) / 10 : null, load: mon <= T ? ds.reduce((s, d) => s + (loads[d] || 0), 0) : null, ctl: ctlAt[ds.find((d) => ctlAt[d] != null && d <= T && d >= ds[0]) || ''] ?? null,
         longPct: actual ? Math.round((longest / actual) * 100) : null, mark: w.days.some((d) => d.kind === 'race') ? 'race' : w.days.some((d) => d.tags.some((t) => /^CP\d+$/.test(t))) ? 'cp' : null, current: ds.includes(T) } })
   }, [YA.data, YR.data, T])
-  const segs = useMemo(() => { const out = []; for (const d of PLAN) { const c = d.phase.replace(/[^A-Z]/g, ''); if (out.at(-1)?.cls === c) out.at(-1).n++; else out.push({ cls: c, label: PHASE_NAME[d.phase] || d.phase, n: 1 }) } return out.map((s) => ({ ...s, frac: s.n / PLAN.length })) }, [])
-  const todayFrac = T >= PLAN[0].date && T <= PLAN.at(-1).date ? PLAN.findIndex((d) => d.date === T) / PLAN.length : null
   const ws = wsel && weekStats.find((w) => w.mon === wsel)
+
   return <>
-    <p className="sub" style={{ marginTop: -4, marginBottom: 10 }}>{PHASE_NAME[phase] || ''} · {monthKm(month)} km this month · {PLAN_KM.toLocaleString('en-US')} km in the season</p>
-    <Gantt segs={segs} todayFrac={todayFrac} label={'Phases: ' + segs.map((s) => s.label).join(' → ')} />
-    <Season month={month} setMonth={setMonth} T={T} />
+    <div className="card">
+      <div className="prof-cmd-top" style={{ marginBottom: 8 }}>
+        <span className="muted" style={{ fontSize: '.82rem' }}><b>{PHASE_NAME[phase] || ''}</b> · {monthKm(month)} km this month</span>
+        <StatusPill tone="cobalt">{monthLabel(mo)}</StatusPill>
+      </div>
+      <Season month={month} setMonth={setMonth} T={T} />
+    </div>
     <details className="card fold" open={macro} onToggle={(e) => setMacro(e.currentTarget.open)}><summary>Volume vs load (full season)</summary>
       {YA.state === 'loading' ? <div className="skel" /> : <><Combo weeks={weekStats} label="Weekly km planned vs actual with training load and fitness" />
       <div className="legend"><span><i className="kdot" style={{ border: '1px dashed var(--muted)', background: 'transparent' }} />Planned km</span><span><i className="kdot" style={{ background: 'var(--c-long)' }} />Actual km</span><span><i className="ll" style={{ borderColor: 'var(--c-quality)' }} />Training load</span><span><i className="ll" style={{ borderColor: 'var(--c-tt)', borderTopStyle: 'dashed' }} />Fitness (CTL×7)</span><span>◆ CP · <b style={{ color: 'var(--accent)' }}>◆</b> race</span></div></>}
     </details>
-    <div className="monthbar">
-      <button disabled={mi === 0} onClick={() => setMonth(PLAN_MONTHS[mi - 1].key)} aria-label="Previous month"><Icon n="left" /></button>
-      <div className="mid"><h2 aria-live="polite">{monthLabel(mo)}</h2>{inPlan && <button onClick={() => { setMonth(todayMonth) }}>Go to today</button>}</div>
-      <button disabled={mi === PLAN_MONTHS.length - 1} onClick={() => setMonth(PLAN_MONTHS[mi + 1].key)} aria-label="Next month" className="flip"><Icon n="left" /></button>
+    <div className="card">
+      <div className="monthbar" style={{ marginTop: 0 }}>
+        <button disabled={mi === 0} onClick={() => setMonth(PLAN_MONTHS[mi - 1].key)} aria-label="Previous month"><Icon n="left" /></button>
+        <div className="mid"><h2 aria-live="polite">{monthLabel(mo)}</h2>{inPlan && <button onClick={() => { setMonth(todayMonth) }}>Go to today</button>}</div>
+        <button disabled={mi === PLAN_MONTHS.length - 1} onClick={() => setMonth(PLAN_MONTHS[mi + 1].key)} aria-label="Next month" className="flip"><Icon n="left" /></button>
+      </div>
+      <div className="cal" role="group" aria-label={`${monthLabel(mo)} calendar`}>
+        <div className="calh" aria-hidden="true"><span title="Week and total km">Wk</span>{['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((x) => <span key={x}>{x}</span>)}</div>
+        {weeks.map((wk, i) => { const w = weekOf(wk.find((x) => BY_DATE[x]) || ''); return <div className="calw" key={i}>
+          <button className="wl" onClick={() => w && setWsel(mondayOf(wk[0]) === wsel ? null : mondayOf(wk[0]))} aria-label={w ? `Week ${w.id.slice(1)}, planned ${Math.round(w.km)} km` : undefined}><b>{w?.id || ''}</b><small>{w ? Math.round(w.km) : ''}</small></button>
+          {wk.map((s) => { const x = effectiveDay(BY_DATE[s], scale.items?.[s], T), inm = s.startsWith(month), c = cpOf(x)
+            return <button key={s} disabled={!x} aria-label={describe(s, x) + (done[s] ? `, already ran ${done[s].toFixed(1)} km` : '')} aria-current={s === T ? 'date' : undefined}
+              className={`cell ${x ? 'k-' + x.kind : 'k-none'} ${x ? 'cmp-' + compliance(x.km, done[s] || 0, s < T) : ''} ${inm ? '' : 'out'} ${s === T ? 'today' : ''} ${s === raceDate ? 'raceday' : ''}`} onClick={() => onOpen(s)}>
+              <i>{+s.slice(8)}</i>{done[s] ? <span className="done" aria-hidden="true">✓</span> : null}<b>{x && x.km ? x.km : ''}</b>{c && <em>{c}</em>}{!c && x && <u>{KIND[x.kind].short}</u>}</button> })}
+        </div> })}
+      </div>
+      <div className="legend" aria-label="Workout legend">{['easy', 'long', 'quality', 'tt', 'speed', 'race', 'rest'].map((k) => <span key={k}><i className={`kdot k-${k}`} />{KIND[k].label} <b>({KIND[k].short})</b></span>)}</div>
+      <p className="src-note">Number = planned km · ✓ = already run · tap any day for its dedicated workout page, or tap a week number for its summary.</p>
     </div>
-    <div className="cal" role="group" aria-label={`${monthLabel(mo)} calendar`}>
-      <div className="calh" aria-hidden="true"><span title="Week and total km">Wk</span>{['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((x) => <span key={x}>{x}</span>)}</div>
-      {weeks.map((wk, i) => { const w = weekOf(wk.find((x) => BY_DATE[x]) || ''); return <div className="calw" key={i}>
-        <button className="wl" onClick={() => w && setWsel(mondayOf(wk[0]) === wsel ? null : mondayOf(wk[0]))} aria-label={w ? `Week ${w.id.slice(1)}, planned ${Math.round(w.km)} km. Week summary` : undefined}><b>{w?.id || ''}</b><small>{w ? Math.round(w.km) : ''}</small></button>
-        {wk.map((s) => { const x = effectiveDay(BY_DATE[s], scale.items?.[s], T), inm = s.startsWith(month), c = cpOf(x)
-          return <button key={s} disabled={!x} aria-label={describe(s, x) + (done[s] ? `, already ran ${done[s].toFixed(1)} km` : '')} aria-current={s === T ? 'date' : undefined}
-            className={`cell ${x ? 'k-' + x.kind : 'k-none'} ${x ? 'cmp-' + compliance(x.km, done[s] || 0, s < T) : ''} ${inm ? '' : 'out'} ${s === T ? 'today' : ''} ${s === raceDate ? 'raceday' : ''}`} onClick={() => onOpen(s)}>
-            <i>{+s.slice(8)}</i>{done[s] ? <span className="done" aria-hidden="true">✓</span> : null}<b>{x && x.km ? x.km : ''}</b>{c && <em>{c}</em>}{!c && x && <u>{KIND[x.kind].short}</u>}</button> })}
-      </div> })}
-    </div>
-    <div className="legend" aria-label="Keterangan warna">{['easy', 'long', 'quality', 'tt', 'speed', 'race', 'rest'].map((k) => <span key={k}><i className={`kdot k-${k}`} />{KIND[k].label} <b>({KIND[k].short})</b></span>)}</div>
     {ws && <div className="card" role="region" aria-label="Week summary"><div className="ch"><h2>{ws.id} · starts {ws.mon.slice(5)}</h2><button className="link" onClick={() => setWsel(null)}>Close</button></div>
       <div className="score-grid"><div><small>Planned</small><b>{ws.plan}</b><em>km</em></div><div><small>Actual</small><b>{ws.actual ?? '—'}</b><em>{ws.actual != null && ws.plan ? Math.round((ws.actual / ws.plan) * 100) + '%' : 'km'}</em></div><div><small>Training load</small><b>{ws.load ?? '—'}</b></div>
         <div><small>Long run</small><b>{ws.longPct != null ? ws.longPct + '%' : '—'}</b><em>of volume</em></div></div></div>}
-    <p className="muted">Number = planned km · ✓ = already run · frame: green ±10% · yellow 10–30% · red further off · dashed = missed. Tap the week number for a summary.</p>
-
   </>
 }
 
-// COROS-style week view: weekly totals, load trend across the season, and every day with its structure and main target
 const weekTotals = (w, cfg) => w.days.reduce((a, d) => { const m = metaFor(d, cfg); return { km: a.km + d.km, sec: a.sec + (m?.sec || 0), tl: a.tl + (m?.tl || 0), runs: a.runs + (d.km > 0 ? 1 : 0) } }, { km: 0, sec: 0, tl: 0, runs: 0 })
 function Trend({ sel, setSel, T, cfg }) {
   const tot = useMemo(() => WEEKS.map((w) => ({ id: w.id, ...weekTotals(w, cfg), phase: w.phase })), [cfg])
   const W = 640, H = 120, maxT = Math.max(...tot.map((x) => x.tl)), maxK = Math.max(...tot.map((x) => x.km)), bw = W / tot.length, cur = weekOf(T)?.id
   const line = tot.map((x, i) => `${i ? 'L' : 'M'}${(i + 0.5) * bw},${H - 16 - (x.km / maxK) * (H - 30)}`).join('')
-  return <figure className="trend"><svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Season trend: weekly training load (bars) and distance (line)">
+  return <figure className="trend"><svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Season trend: weekly training load and distance">
     {tot.map((x, i) => <rect key={x.id} x={i * bw + 1} y={H - 16 - (x.tl / maxT) * (H - 30)} width={bw - 2} height={(x.tl / maxT) * (H - 30)} className={`trb ph-${x.phase.replace(/[^A-Z]/g, '')} ${x.id === sel ? 'on' : ''} ${x.id === cur ? 'cur' : ''}`} onClick={() => setSel(x.id)} />)}
     <path d={line} className="tl" />
     {WEEKS.filter((w, i) => i % 8 === 0).map((w) => <text key={w.id} x={(WEEKS.indexOf(w) + 0.5) * bw} y={H - 3} className="gt" textAnchor="middle">{fmtShort(w.days[0].date)}</text>)}
-  </svg><figcaption className="legend"><span><i className="kdot" style={{ background: 'var(--c-quality)' }} />Training load / week (colour = phase)</span><span><i className="ll" style={{ borderColor: 'var(--text)' }} />Distance</span><span>Tap a bar to open that week</span></figcaption></figure>
+  </svg><figcaption className="legend"><span><i className="kdot" style={{ background: 'var(--c-quality)' }} />Training load / week</span><span><i className="ll" style={{ borderColor: 'var(--text)' }} />Distance</span><span>Tap a bar to open that week</span></figcaption></figure>
 }
+
 function WeekView({ T, settings, onOpen }) {
   const cfg = cfgOf(settings), [sel, setSel] = useState(() => weekOf(T)?.id || WEEKS[0].id), i = Math.max(0, WEEKS.findIndex((w) => w.id === sel)), w = WEEKS[i]
   const t = weekTotals(w, cfg), p = i > 0 ? weekTotals(WEEKS[i - 1], cfg) : null, pct = (a, b) => (b ? `${a >= b ? '+' : ''}${Math.round((a / b - 1) * 100)}%` : '')
   return <>
-    <Trend sel={sel} setSel={setSel} T={T} cfg={cfg} />
-    <div className="monthbar">
-      <button disabled={i === 0} onClick={() => setSel(WEEKS[i - 1].id)} aria-label="Previous week"><Icon n="left" /></button>
-      <div className="mid"><h2 aria-live="polite">{w.id} · {fmtShort(w.days[0].date)} – {fmtShort(w.days.at(-1).date)}</h2><small className="muted">{PHASE_NAME[w.phase] || w.phase}</small>{weekOf(T) && <button onClick={() => setSel(weekOf(T).id)}>This week</button>}</div>
-      <button disabled={i === WEEKS.length - 1} onClick={() => setSel(WEEKS[i + 1].id)} aria-label="Next week" className="flip"><Icon n="left" /></button>
+    <div className="card"><Trend sel={sel} setSel={setSel} T={T} cfg={cfg} /></div>
+    <div className="card">
+      <div className="monthbar" style={{ marginTop: 0 }}>
+        <button disabled={i === 0} onClick={() => setSel(WEEKS[i - 1].id)} aria-label="Previous week"><Icon n="left" /></button>
+        <div className="mid"><h2 aria-live="polite">{w.id} · {fmtShort(w.days[0].date)} – {fmtShort(w.days.at(-1).date)}</h2><small className="muted">{PHASE_NAME[w.phase] || w.phase}</small>{weekOf(T) && <button onClick={() => setSel(weekOf(T).id)}>This week</button>}</div>
+        <button disabled={i === WEEKS.length - 1} onClick={() => setSel(WEEKS[i + 1].id)} aria-label="Next week" className="flip"><Icon n="left" /></button>
+      </div>
+      <div className="wmeta wk4"><div><small>Distance</small><b>{Math.round(t.km * 10) / 10}</b><em>km {p ? pct(t.km, p.km) : ''}</em></div><div><small>Duration</small><b>{fmtDur(t.sec)}</b><em>est.</em></div><div><small>Training load</small><b>{t.tl}</b><em>TL {p ? pct(t.tl, p.tl) : ''}</em></div><div><small>Runs</small><b>{t.runs}</b><em>days</em></div></div>
+      <div className="wlist">{w.days.map((d) => { const m = metaFor(d, cfg), cp = cpOf(d), mt = mainTarget(d, cfg); return <button key={d.date} className={`wday ${d.date === T ? 'today' : ''}`} onClick={() => onOpen(d.date)} aria-label={describe(d.date, d)}>
+        <span className="wdd"><b>{DAYS3[(new Date(d.date + 'T12:00:00').getDay())]}</b><small>{+d.date.slice(8)}</small></span>
+        <span className={`kbar k-${d.kind}`} aria-hidden="true" />
+        <span className="wdm"><b>{d.label || KIND[d.kind].label}{cp && <Chip tone="cp">{cp}</Chip>}</b>
+          {d.km > 0 ? <small>{d.km} km · {fmtDur(m?.sec)} · {m?.tl} TL</small> : <small>{d.kind === 'gym' ? 'strength / no running' : d.note && d.note !== 'REST DAY' ? d.note : 'rest'}</small>}
+          <WorkoutLine day={d} />{mt && <small className="wtg">{mt}</small>}</span>
+        <Icon n="chev" size={18} /></button> })}</div>
     </div>
-    <div className="wmeta wk4"><div><small>Distance</small><b>{Math.round(t.km * 10) / 10}</b><em>km {p ? pct(t.km, p.km) : ''}</em></div><div><small>Duration</small><b>{fmtDur(t.sec)}</b><em>est.</em></div><div><small>Training load</small><b>{t.tl}</b><em>TL {p ? pct(t.tl, p.tl) : ''}</em></div><div><small>Runs</small><b>{t.runs}</b><em>days</em></div></div>
-    <div className="wlist">{w.days.map((d) => { const m = metaFor(d, cfg), cp = cpOf(d), mt = mainTarget(d, cfg); return <button key={d.date} className={`wday ${d.date === T ? 'today' : ''}`} onClick={() => onOpen(d.date)} aria-label={describe(d.date, d)}>
-      <span className="wdd"><b>{DAYS3[(new Date(d.date + 'T12:00:00').getDay())]}</b><small>{+d.date.slice(8)}</small></span>
-      <span className={`kbar k-${d.kind}`} aria-hidden="true" />
-      <span className="wdm"><b>{d.label || KIND[d.kind].label}{cp && <Chip tone="cp">{cp}</Chip>}</b>
-        {d.km > 0 ? <small>{d.km} km · {fmtDur(m?.sec)} · {m?.tl} TL</small> : <small>{d.kind === 'gym' ? 'strength / no running' : d.note && d.note !== 'REST DAY' ? d.note : 'rest'}</small>}
-        <WorkoutLine day={d} />{mt && <small className="wtg">{mt}</small>}</span>
-      <Icon n="chev" size={18} /></button> })}</div>
   </>
 }
 
-function CalSwitch({ vdot, focus, settings, go }) {
-  const [mode, setMode] = useStore('lumpad.calmode', 'week'), T = today()
-  return <>
-    <div className="seg" role="group" aria-label="Calendar view">{[['week', 'Week'], ['month', 'Month']].map(([k, l]) => <button key={k} className={mode === k ? 'on' : ''} aria-pressed={mode === k} onClick={() => setMode(k)}>{l}</button>)}</div>
-    {mode === 'week' ? <WeekView T={T} settings={settings} onOpen={(d) => go('calendar', d)} /> : <MonthView vdot={vdot} focus={focus} raceDate={settings.raceDate} onOpen={(d) => go('calendar', d)} />}
-  </>
-}
-const TITLES = { month: ['Macrocycle Calendar (23 Nov 2026 – 31 Dec 2027)', 'Season plan · tap any date for its dedicated workout page'], cp: ['Checkpoint Roadmap (CP1 – CP20)', 'Tests, gates and the VDOT path to sub-4'], race: ['Race Calendar & Strategy', 'From the nearest race to the A-race: sub-4 at JRF'] }
 export default function Calendar({ view = 'month', vdot, results, setResults, focus, settings, go }) {
+  const [mode, setMode] = useStore('lumpad.calmode', 'month')
+  const T = today()
+  const segs = useMemo(() => { const out = []; for (const d of PLAN) { const c = d.phase.replace(/[^A-Z]/g, ''); if (out.at(-1)?.cls === c) out.at(-1).n++; else out.push({ cls: c, label: PHASE_NAME[d.phase] || d.phase, n: 1 }) } return out.map((s) => ({ ...s, frac: s.n / PLAN.length })) }, [])
+  const todayFrac = T >= PLAN[0].date && T <= PLAN.at(-1).date ? PLAN.findIndex((d) => d.date === T) / PLAN.length : null
+
   if (view === 'race') return <section className="screen"><Race vdot={vdot} results={results} settings={settings} go={go} /></section>
-  return <Screen title={TITLES[view][0]} sub={TITLES[view][1]} right={view === 'month' ? <div className="hdracts"><button className="hb v" onClick={() => go('checkpoint')}>Open checkpoints →</button><button className="hb r" onClick={() => go('race')}>Open races hub →</button></div> : <div className="hdracts"><button className="hb v" onClick={() => go('calendar')}>Calendar →</button></div>}>
-    {view === 'month' && <CalSwitch vdot={vdot} focus={typeof focus === 'string' ? focus : null} settings={settings} go={go} />}
-    {view === 'cp' && <Checkpoints vdot={vdot} results={results} setResults={setResults} focus={focus?.id} />}
-  </Screen>
+  if (view === 'cp') return <Checkpoints vdot={vdot} results={results} setResults={setResults} focus={focus?.id} go={go} />
+
+  return <section className="screen">
+    {/* Unified Macrocycle Command Header + Annual Phase Ribbon */}
+    <div className="card prof-cmd">
+      <div className="prof-cmd-top">
+        <div>
+          <h1>2027 Macrocycle Calendar ({PLAN_KM.toLocaleString('en-US')} km)</h1>
+          <p className="sub">Click any date cell to open its dedicated full-page workout prescription (VDOT paces, gates &amp; shoe pairing)</p>
+        </div>
+        <div className="prof-chips">
+          <button type="button" className="btn sm" onClick={() => go('checkpoint')}>Checkpoints (CP1–20) →</button>
+          <button type="button" className="btn primary sm" onClick={() => go('race')}>Races Hub →</button>
+        </div>
+      </div>
+
+      <div style={{ marginTop: 12 }}>
+        <Gantt segs={segs} todayFrac={todayFrac} label={'Phases: ' + segs.map((s) => s.label).join(' → ')} />
+      </div>
+
+      <div className="prof-cmd-bar">
+        <SegmentedTabs tabs={[{ id: 'month', label: 'Month Grid' }, { id: 'week', label: 'Week Detail' }]} value={mode} onChange={setMode} label="Calendar view" />
+      </div>
+    </div>
+
+    {mode === 'week'
+      ? <WeekView T={T} settings={settings} onOpen={(d) => go('calendar', d)} />
+      : <MonthView vdot={vdot} focus={typeof focus === 'string' ? focus : null} raceDate={settings.raceDate} onOpen={(d) => go('calendar', d)} />}
+  </section>
 }
