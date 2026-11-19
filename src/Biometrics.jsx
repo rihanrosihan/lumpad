@@ -108,7 +108,7 @@ export default function Biometrics({ settings, setSettings }) {
         <div>
           <div className="chips" style={{ margin: '0 0 6px' }}>
             <StatusPill tone="cobalt">HEALTH DICTIONARY · INTEGRATED BIOMETRICS</StatusPill>
-            <ProvenanceBadge tag="ACTUAL" />
+            <ProvenanceBadge type="ACTUAL" />
           </div>
           <h1>Body Composition, Blood Pressure &amp; Glucose</h1>
           <p className="sub">
@@ -150,7 +150,7 @@ export default function Biometrics({ settings, setSettings }) {
       {drawerOpen && <div className="bio-drawer">
         <div className="prof-cmd-top" style={{ marginBottom: 10 }}>
           <b style={{ fontSize: '.9rem' }}>Quick Daily Biometric Log</b>
-          <SegmentedTabs items={TYPES.map(([id, label]) => ({ id, label }))} value={type} onChange={pick} label="Measurement type" />
+          <SegmentedTabs tabs={TYPES.map(([id, label]) => ({ id, label }))} value={type} onChange={pick} label="Measurement type" />
         </div>
         <div className="bio-drawer-grid">
           <Field label="Date"><input type="date" value={form.d} max={T} onChange={set('d')} /></Field>
@@ -207,7 +207,7 @@ export default function Biometrics({ settings, setSettings }) {
       </div>
 
       <div className="kpi">
-        <div className="kpi-top"><small style={{ color: 'var(--red-t)', fontWeight: 700, textTransform: 'uppercase' }}>4. VDOT &amp; Pace Impact</small><ProvenanceBadge tag="RULE" /></div>
+        <div className="kpi-top"><small style={{ color: 'var(--red-t)', fontWeight: 700, textTransform: 'uppercase' }}>4. VDOT &amp; Pace Impact</small><ProvenanceBadge type="RULE" /></div>
         <b>{paceSecImpact > 0 ? `~${paceSecImpact} s/km` : w ? `${w.kg} kg` : '—'}<span className="u">{fmMinImpact ? ` (~${fmMinImpact}m FM)` : ''}</span></b>
         <em>{w ? <>
           {kgDeltaVsLeanest > 0 ? `+${kgDeltaVsLeanest} kg vs leanest (${leanest.kg} kg) · rule ±1 kg ≈ 2–3 s/km` : dW ? `${dW.kg > 0 ? '+' : ''}${dW.kg} kg vs ${fmtShort(dW.since)} · ±1 kg ≈ 2–3 s/km` : 'Rule of thumb: ±1 kg ≈ 2–3 s/km'}
@@ -296,7 +296,7 @@ export default function Biometrics({ settings, setSettings }) {
       </div>
 
       <Card title="Complete Biometric Measurement Logs" right={<span className="muted">{total} total</span>}>
-        <SegmentedTabs items={logTabs} value={logTab} onChange={setLogTab} label="Log category" />
+        <SegmentedTabs tabs={logTabs} value={logTab} onChange={setLogTab} label="Log category" />
         {!activeLogs.length ? <p className="muted" style={{ marginTop: 10 }}>No entries in this category yet. Use “+ Log New Measurement” or import your Health Dictionary (.xlsx).</p> : (
           <div className="scroll" style={{ maxHeight: 420, marginTop: 10 }} tabIndex={0}>
             <table className="lapt">

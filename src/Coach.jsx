@@ -126,9 +126,9 @@ function TwinMonteCarlo({ twin }) {
   const [view, setView] = useState('scenarios')
   const t = twin?.state, P = t?.projection
   if (!t) return null
-  return <Card title="Versioned AthleteDigitalTwin & P(Sub-4) Monte Carlo" right={<span className="chips" style={{ margin: 0 }}><ProvenanceBadge tag="MODEL" /><Chip>v{twin.version}</Chip></span>}>
+  return <Card title="Versioned AthleteDigitalTwin & P(Sub-4) Monte Carlo" right={<span className="chips" style={{ margin: 0 }}><ProvenanceBadge type="MODEL" /><Chip>v{twin.version}</Chip></span>}>
     <div style={{ marginBottom: 10 }}>
-      <SegmentedTabs items={[{ id: 'scenarios', label: '3 Scenarios' }, { id: 'json', label: `twin/${twin.version} JSON` }]} value={view} onChange={setView} label="Twin view" />
+      <SegmentedTabs tabs={[{ id: 'scenarios', label: '3 Scenarios' }, { id: 'json', label: `twin/${twin.version} JSON` }]} value={view} onChange={setView} label="Twin view" />
     </div>
     {view === 'scenarios' && P ? <>
       <p className="muted" style={{ marginTop: 0 }}>Illustrative scenarios under stated assumptions — not a prediction. Marathon realisation ratio is the dominant factor (observed 0.59, n=1).</p>
@@ -262,7 +262,7 @@ function CorrelationMatrices({ data }) {
   ]
   return <Card title="Multi-Context Physiological & Biomechanical Matrices" right={<Chip>{d.sessions} FIT</Chip>}>
     <div style={{ marginBottom: 10 }}>
-      <SegmentedTabs items={tabs} value={tab} onChange={setTab} label="Physiological matrix" />
+      <SegmentedTabs tabs={tabs} value={tab} onChange={setTab} label="Physiological matrix" />
     </div>
     {tab === 'z2' && <div className="scroll" tabIndex={0}><table className="lapt">
       <thead><tr><th>Zone regime (≤15 km, Z2 ≤{d.z2_ceiling} bpm)</th><th>n</th><th>Mean HR</th><th>Mean EF</th><th>Pa:HR drift</th><th>GCT fade</th></tr></thead>
@@ -395,7 +395,7 @@ function MemoryQueue({ pending, onAct }) {
   const epiCount = pending.filter((m) => m.tier === 'episodic').length
   const shown = tierFilter === 'all' ? pending : pending.filter((m) => m.tier === tierFilter)
   return <>
-    <Card title={`Athlete Memory & Hypothesis Confirmation Queue (${pending.length})`} right={<SegmentedTabs items={[{ id: 'all', label: 'All', badge: pending.length }, { id: 'semantic', label: 'Semantic', badge: semCount }, { id: 'episodic', label: 'Episodic', badge: epiCount }]} value={tierFilter} onChange={setTierFilter} label="Hypothesis tier" />}>
+    <Card title={`Athlete Memory & Hypothesis Confirmation Queue (${pending.length})`} right={<SegmentedTabs tabs={[{ id: 'all', label: 'All', badge: pending.length }, { id: 'semantic', label: 'Semantic', badge: semCount }, { id: 'episodic', label: 'Episodic', badge: epiCount }]} value={tierFilter} onChange={setTierFilter} label="Hypothesis tier" />}>
       <p className="muted" style={{ marginTop: 0 }}>Coach findings are stored as hypotheses. Only those you approve (or that repeat 3×) become active. Locked rules cannot be overwritten by the coach.</p>
       {shown.length > 0 ? <div className="hyp-grid">
         {shown.map((m) => <div key={m.id} className="hyp-card">

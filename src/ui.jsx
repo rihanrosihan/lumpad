@@ -28,9 +28,10 @@ export const Card = ({ title, right, tone, children, className = '' }) => <div c
 export const Stat = ({ k, v, sub }) => <div className="stat"><span>{k}</span><b>{v}</b>{sub && <small>{sub}</small>}</div>
 
 // Reusable segmented horizontal tab bar (Profile 6-tab & Races 3-tab bars)
-export function SegmentedTabs({ tabs, value, onChange, label = 'Sections', className = '' }) {
+export function SegmentedTabs({ tabs, items, value, onChange, label = 'Sections', className = '' }) {
+  const list = tabs || items || []
   return <div className={`segtabs ${className}`} role="tablist" aria-label={label}>
-    {tabs.map((t) => {
+    {list.map((t) => {
       const active = value === t.id
       return <button key={t.id} type="button" role="tab" aria-selected={active} className={`segtab ${active ? 'on' : ''} ${t.tone ? 'tone-' + t.tone : ''}`} onClick={() => onChange(t.id)}>
         <span>{t.label}</span>
@@ -60,8 +61,8 @@ const PROV_META = {
   AI: ['purple', 'AI Coach synthesis'],
   RULE: ['amber', 'Deterministic safety & gate rule'],
 }
-export function ProvenanceBadge({ type = 'ACTUAL' }) {
-  const key = String(type || 'ACTUAL').toUpperCase()
+export function ProvenanceBadge({ type, tag }) {
+  const key = String(type || tag || 'ACTUAL').toUpperCase()
   const [tone, title] = PROV_META[key] || PROV_META.ACTUAL
   return <span className={`prov-b prov-${tone}`} title={title}>[{key}]</span>
 }
