@@ -11,7 +11,7 @@ CGO_ENABLED=0 "$GO" build -ldflags="-s -w" -o lumpadd.new ./cmd/lumpadd && mv lu
 CGO_ENABLED=0 "$GO" build -ldflags="-s -w" -o fitbench.new ./cmd/fitbench && mv fitbench.new fitbench
 chown lumpad:lumpad lumpadd fitbench
 sudo -u lumpad bash -c "set -a; . $APP/.env.v2; set +a; $APP/lumpadd/lumpadd migrate" | sed 's/^/v2 migrate: /'
-cp "$APP/deploy/v2/systemd/lumpadd-shadow.service" "$APP/deploy/v2/systemd/lumpadd-shadow.timer" /etc/systemd/system/
+cp "$APP/deploy/v2/systemd/lumpadd-shadow.service" "$APP/deploy/v2/systemd/lumpadd-shadow.timer" "$APP/deploy/v2/systemd/lumpadd-graph-sync.service" "$APP/deploy/v2/systemd/lumpadd-graph-sync.timer" /etc/systemd/system/
 systemctl daemon-reload
-systemctl enable --now lumpadd-shadow.timer >/dev/null
+systemctl enable --now lumpadd-shadow.timer lumpadd-graph-sync.timer >/dev/null
 echo "v2: built $(git -C $APP rev-parse --short HEAD), migrated, shadow timer active"

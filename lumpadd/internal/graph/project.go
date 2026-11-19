@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
+	"sort"
 	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -21,7 +23,9 @@ type SyncStats struct {
 	Rules     int `json:"rules"`
 	Memories  int `json:"memories"`
 	Decisions int `json:"decisions"`
-	PlanDays  int `json:"plan_days"`
+	PlanDays      int `json:"plan_days"`
+	SimilarEdges  int `json:"similar_edges"`
+	ConflictEdges int `json:"conflict_edges"`
 }
 
 type OverviewStats struct {
@@ -360,6 +364,198 @@ func SyncAll(ctx context.Context, pool *pgxpool.Pool, aura *Client, redact func(
 		return st, fmt.Errorf("plan_days: %w", err)
 	}
 	st.PlanDays = len(pdRows)
+
+
+	// 10. SIMILAR_TO edges (top-3 14-D z-scored kNN earlier runs > 3 km)
+	knnKeys := []string{"log_dist", "log_dur", "run_pace", "run_hr", "ef", "run_share", "drift", "gct_fade", "stride_fade", "vr_fade", "temp", "gain_km", "tl_min", "hrv_dev"}
+	type sFeat struct {
+		lid, dt string
+		distM   float64
+		f       map[string]*float64
+	}
+	var sFeats []sFeat
+	if rows, err := pool.Query(ctx, `SELECT label_id, COALESCE(to_char(date,'YYYY-MM-DD'),''), COALESCE(distance_m,0), COALESCE(features,'{}') FROM train.session_metric WHERE distance_m > 3000`); err == nil {
+		for rows.Next() {
+			var lid, dt, fj string
+			var dm float64
+			if rows.Scan(&lid, &dt, &dm, &fj) == nil {
+				fm := map[string]*float64{}
+				_ = json.Unmarshal([]byte(fj), &fm)
+				sFeats = append(sFeats, sFeat{lid, dt, dm, fm})
+			}
+		}
+		rows.Close()
+	}
+	if len(sFeats) > 1 {
+		mean := make([]float64, len(knnKeys))
+		sd := make([]float64, len(knnKeys))
+		for ki, k := range knnKeys {
+			var vs []float64
+			for _, sf := range sFeats {
+				if p := sf.f[k]; p != nil && !math.IsNaN(*p) && !math.IsInf(*p, 0) {
+					vs = append(vs, *p)
+				}
+			}
+			if len(vs) == 0 {
+				sd[ki] = 1
+				continue
+			}
+			sum := 0.0
+			for _, v := range vs {
+				sum += v
+			}
+			m := sum / float64(len(vs))
+			mean[ki] = m
+			sq := 0.0
+			for _, v := range vs {
+				d := v - m
+				sq += d * d
+			}
+			s := math.Sqrt(sq / float64(max(1, len(vs)-1)))
+			if s == 0 {
+				s = 1
+			}
+			sd[ki] = s
+		}
+		zvecs := make([][]float64, len(sFeats))
+		for i, sf := range sFeats {
+			v := make([]float64, len(knnKeys))
+			for ki, k := range knnKeys {
+				if p := sf.f[k]; p != nil && !math.IsNaN(*p) && !math.IsInf(*p, 0) {
+					v[ki] = (*p - mean[ki]) / sd[ki]
+				}
+			}
+			zvecs[i] = v
+		}
+		cosSim := func(a, b []float64) float64 {
+			d, na, nb := 0.0, 0.0, 0.0
+			for i := range a {
+				d += a[i] * b[i]
+				na += a[i] * a[i]
+				nb += b[i] * b[i]
+			}
+			if na == 0 || nb == 0 {
+				return 0
+			}
+			return d / math.Sqrt(na*nb)
+		}
+		var simRows []map[string]any
+		for i := range sFeats {
+			type pair struct {
+				lid string
+				sim float64
+			}
+			var cands []pair
+			for j := range sFeats {
+				if i == j || sFeats[j].dt >= sFeats[i].dt {
+					continue
+				}
+				cands = append(cands, pair{sFeats[j].lid, cosSim(zvecs[i], zvecs[j])})
+			}
+			sort.Slice(cands, func(a, b int) bool { return cands[a].sim > cands[b].sim })
+			for k := 0; k < len(cands) && k < 3; k++ {
+				if cands[k].sim >= 0.45 {
+					simRows = append(simRows, map[string]any{
+						"a": sFeats[i].lid, "b": cands[k].lid, "sim": math.Round(cands[k].sim*1000) / 1000,
+					})
+				}
+			}
+		}
+		if err := runBatches(ctx, aura, simRows, 200, `
+			UNWIND $rows AS r
+			MATCH (a:Session {label_id: r.a}), (b:Session {label_id: r.b})
+			MERGE (a)-[rel:SIMILAR_TO]->(b)
+			SET rel.sim = r.sim`); err != nil {
+			return st, fmt.Errorf("similar_to: %w", err)
+		}
+		st.SimilarEdges = len(simRows)
+	}
+
+	// 11. CONTRADICTS edges between semantic memories sharing topic tokens with opposite polarity
+	posW := []string{"improv", "better", "faster", "stable", "controlled", "optimal", "dropped", "lower"}
+	negW := []string{"worsen", "worse", "slower", "fade", "drift", "spike", "higher", "creep", "pain"}
+	polarity := func(txt string) int {
+		lo := strings.ToLower(txt)
+		p, n := 0, 0
+		for _, w := range posW {
+			if strings.Contains(lo, w) {
+				p++
+			}
+		}
+		for _, w := range negW {
+			if strings.Contains(lo, w) {
+				n++
+			}
+		}
+		if p > n {
+			return 1
+		}
+		if n > p {
+			return -1
+		}
+		return 0
+	}
+	var semMems []struct {
+		id  int64
+		pol int
+		tok map[string]bool
+	}
+	for _, m := range memRows {
+		if m["tier"] != "semantic" || m["status"] != "active" {
+			continue
+		}
+		txt, _ := m["title"].(string)
+		body, _ := m["body"].(string)
+		pol := polarity(txt + " " + body)
+		if pol == 0 {
+			continue
+		}
+		toks := map[string]bool{}
+		for _, w := range strings.Fields(strings.ToLower(txt)) {
+			w = strings.Trim(w, ".,:;!?()[]\"'")
+			if len(w) >= 5 {
+				toks[w] = true
+			}
+		}
+		id, _ := m["id"].(int64)
+		if len(toks) > 0 && id > 0 {
+			semMems = append(semMems, struct {
+				id  int64
+				pol int
+				tok map[string]bool
+			}{id, pol, toks})
+		}
+	}
+	var confRows []map[string]any
+	for i := 0; i < len(semMems); i++ {
+		for j := i + 1; j < len(semMems); j++ {
+			if semMems[i].pol == semMems[j].pol {
+				continue
+			}
+			shared := 0
+			for w := range semMems[i].tok {
+				if semMems[j].tok[w] {
+					shared++
+				}
+			}
+			if shared >= 2 {
+				confRows = append(confRows, map[string]any{"a": semMems[i].id, "b": semMems[j].id})
+				if len(confRows) >= 40 {
+					break
+				}
+			}
+		}
+		if len(confRows) >= 40 {
+			break
+		}
+	}
+	if err := runBatches(ctx, aura, confRows, 100, `
+		UNWIND $rows AS r
+		MATCH (a:Memory {id: r.a}), (b:Memory {id: r.b})
+		MERGE (a)-[:CONTRADICTS]-(b)`); err != nil {
+		return st, fmt.Errorf("contradicts: %w", err)
+	}
+	st.ConflictEdges = len(confRows)
 
 	return st, nil
 }

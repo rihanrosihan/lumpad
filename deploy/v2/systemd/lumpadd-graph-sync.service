@@ -1,0 +1,10 @@
+[Unit]
+Description=Lumpad v2 Neo4j AuraDB daily redacted graph sync (keep-warm)
+After=postgresql.service network-online.target
+
+[Service]
+Type=oneshot
+User=lumpad
+WorkingDirectory=/opt/lumpad/lumpadd
+MemoryMax=128M
+ExecStart=/usr/bin/bash -c 'set -a; . /opt/lumpad/.env.v2; set +a; [ -n "${NEO4J_URI:-}" ] && /opt/lumpad/lumpadd/lumpadd graph-sync || echo "NEO4J_URI unset, skipping"'

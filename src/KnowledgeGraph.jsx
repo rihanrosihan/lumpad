@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Card, Chip, ProvenanceBadge } from './ui.jsx'
+import { Card, Chip, ProvenanceBadge, StatusPill } from './ui.jsx'
+import { useApi } from './api.js'
 
 const KG_NODES = [
   { id: 'twin', label: 'Digital Twin', sub: 'Central State', cat: 'core', x: 380, y: 200, r: 34, color: '#4658D6', db: 'intel.db:twin_state', summary: 'Synthesizes physiological readiness, CTL/ATL/TSB, aerobic efficiency (HR@800), and shoe OLS slopes into one structured coaching state.' },
@@ -36,6 +37,7 @@ export default function KnowledgeGraphPanel({ twin, matrices, status }) {
   const ver = twin?.version ?? 6
   const [selected, setSelected] = useState('twin')
   const [filter, setFilter] = useState('all')
+  const aura = useApi('/api/graph/overview')
   const t = twin?.state || twin || null
   const c = status?.counts || {}
   const memTotal = (status?.memory || []).reduce((s, m) => s + (m.n || 0), 0)
@@ -130,6 +132,10 @@ export default function KnowledgeGraphPanel({ twin, matrices, status }) {
 
   return <Card title="Athlete Coaching Knowledge Graph" right={<span className="chips" style={{ margin: 0 }}><ProvenanceBadge type="MODEL" /><Chip>9 Nodes · 14 Edges</Chip></span>}>
     <p className="muted">Click any node to inspect its backing SQLite table, connected edges, and how AI Coach retrieves it during Hybrid RAG reasoning.</p>
+    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginTop: 8, marginBottom: 8, padding: '8px 10px', borderRadius: 10, background: 'var(--surface2)', border: '1px solid var(--line)', fontSize: '.78rem' }}>
+      <StatusPill tone={aura.data?.connected ? 'green' : 'amber'}>{aura.data?.connected ? `Neo4j AuraDB Live · ${aura.data.total_nodes} nodes · ${aura.data.total_edges} edges` : aura.data?.configured ? 'Neo4j AuraDB Standby (PG16 active)' : 'Local PG16 + SQLite Graph'}</StatusPill>
+      {aura.data?.connected && Object.entries(aura.data.nodes || {}).slice(0, 8).map(([k, v]) => <Chip key={k}>{k}: {v}</Chip>)}
+    </div>
     <div className="chiprow" role="group" aria-label="Knowledge graph layers" style={{ marginTop: 8 }}>
       {FILTERS.map(([k, l]) => <button key={k} type="button" aria-pressed={filter === k} onClick={() => setFilter(k)}>{l}</button>)}
     </div>

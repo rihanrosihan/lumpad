@@ -1,0 +1,9 @@
+[Unit]
+Description=Daily Neo4j AuraDB graph sync at 02:15 WIB (prevents 72h AuraDB Free auto-pause)
+
+[Timer]
+OnCalendar=*-*-* 02:15:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
