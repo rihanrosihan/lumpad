@@ -29,6 +29,8 @@ Budget while both systems run: Node app ~125 MB · Postgres ≤ 450 MB (`deploy/
 1. Install PostgreSQL 16 (pgdg apt repo), then optionally `timescaledb-2-postgresql-16` and `postgresql-16-pgvector`. Do not start tuning the live cluster yet.
 2. Build or copy the static `lumpadd` and `fitbench` binaries to `/opt/lumpad/lumpadd/`.
 3. `sudo bash /opt/lumpad/deploy/v2/bench-memory.sh` — prints peak memory with the live app running and `RESULT: PASS` if the peak stays under 75 % of RAM.
+**Result 19 Nov 2026 (VPS, live app running): PASS.** Peak used 787 MB of 1962 MB (40 %), lowest available 1174 MB, swap unchanged at 115 MB; all 31 tables verified identical, load 1.1 s; FIT decode 207 files / 627,517 records in 954 ms, peak RSS 42 MB. PostgreSQL 16.16 + pgvector 0.8.7 installed (default cluster disabled); TimescaleDB not installed, so `0004` is skipped and native partitioning is the plan.
+
 4. If it fails: use native partitioning instead of TimescaleDB, lower `shared_buffers`, and rerun; if still failing, stop and decide before Phase 2.
 
 ## Phase 1 measurements (sandbox, same 169 FIT files, 528,827 records)
@@ -44,8 +46,10 @@ Budget while both systems run: Node app ~125 MB · Postgres ≤ 450 MB (`deploy/
 | Module | Status | Check |
 | --- | --- | --- |
 | FIT → 1 Hz series, session metrics (classify, grade, per-km, steady blocks, drift, fades, onset, six zones, pacing) | **done** | all 99 sessions: every metric and per-km row identical to Node (`golden`, `go test ./internal/engine`); 99 sessions decode + compute in 1.4 s (Node: ~9.3 s for the nightly FIT step) |
-| Load (CTL/ATL/TSB, ACWR, monotony), readiness, HRV/RHR/sleep states | next | golden: twin.json |
-| VDOT, pacing, zones (client library) | next | unit tests from src/lib/*.test.js |
+| Load (CTL/ATL/TSB, ACWR, monotony, ramp, projection) | **done** | JS vectors (`tools/gen_engine_vectors.mjs`), 10 series incl. empty / all-zero |
+| HRV / RHR / sleep states, distance progression, composite readiness (pillars, phase weights, caps) | **done** | JS vectors: 60 random cases with gaps and nulls, every field identical; mutation check catches a 1-point score change in all 34 scored cases |
+| VDOT and pace formatting | **done** | JS vectors |
+| Pacing (heat penalty, run-walk simulator), zones (client library) | next | unit tests from src/lib/*.test.js |
 | Correlation engine, matrices, twin builder | after | golden: edges.json, matrices.json, twin.json |
 
 Notes from the port: JS `Math.round` rounds halves up (Go's rounds away from zero) so `jsRound` is used; `mean()` over `null` counts null as 0 in `fadeOnset` (kept, because the golden data depends on it); the Node parser reports `speed`, not `enhanced_speed` (they differ by 1 mm/s on some seconds); COROS 'Effort Pace' is a developer field found through `field_description`.
