@@ -97,7 +97,8 @@ function RunCompare({ a, id, history }) {
   const [pick, setPick] = useState('prev')
   const kind = typeOf(a), runs = history.filter((h) => h.sport_class === 'run' && !h.ids?.includes(id) && (h.distance_m || 0) >= 1000 && h.date <= a.date).sort((x, y) => y.date.localeCompare(x.date))
   const same = runs.filter((h) => kind && typeOf(h) === kind)
-  const bench = pick === 'prev' ? same[0] : pick === 'longest' ? [...runs].sort((x, y) => (y.distance_m || 0) - (x.distance_m || 0))[0] : pick === 'bestEF' ? [...same].filter((h) => efOf(h)).sort((x, y) => efOf(y) - efOf(x))[0] : runs.find((h) => h.ids?.[0] === pick || h.id === pick)
+  const pool = same.length ? same : runs
+  const bench = pick === 'prev' ? pool[0] : pick === 'longest' ? [...runs].sort((x, y) => (y.distance_m || 0) - (x.distance_m || 0))[0] : pick === 'bestEF' ? [...pool].filter((h) => efOf(h)).sort((x, y) => efOf(y) - efOf(x))[0] : runs.find((h) => h.ids?.[0] === pick || h.id === pick)
   const rows = [['Distance (km)', (a.distance_m || 0) / 1000, (bench?.distance_m || 0) / 1000, 2, 'neutral'], ['Avg pace (s/km)', a.avg_pace_s_km, bench?.avg_pace_s_km, 0, 'lower'], ['Avg HR (bpm)', a.avg_hr, bench?.avg_hr, 0, 'lower'], ['EF', efOf(a), bench ? efOf(bench) : null, 3, 'higher'], ['Training load', a.training_load, bench?.training_load, 0, 'neutral']]
   const fmt = (label, v, d) => (v == null ? '—' : label.startsWith('Avg pace') ? fmtPaceS(v) : (+v).toFixed(d))
   return <Card title="Pinned Side-by-Side Benchmark Comparison" right={<select aria-label="Benchmark run" value={pick} onChange={(e) => setPick(e.target.value)}><option value="prev">Previous {kind || 'run'}</option><option value="longest">Longest run</option><option value="bestEF">Best EF{kind ? ` (${kind})` : ''}</option>{runs.slice(0, 20).map((h) => <option key={h.ids?.[0] || h.id} value={h.ids?.[0] || h.id}>{h.date.slice(5)} · {((h.distance_m || 0) / 1000).toFixed(1)} km</option>)}</select>}>
@@ -194,22 +195,22 @@ function Detail({ id, gear, vdot, history, go, settings }) {
 
       {laps.length > 1 && <Card title="Per-Lap Multi-Channel Telemetry"><MultiTrack laps={laps} tracks={[{ key: 'avg_pace_s_km', label: 'Pace', color: 'var(--c-long)', invert: true, fmt: fmtPaceS }, { key: 'avg_hr', label: 'HR', color: 'var(--red)' }, { key: 'cadence', label: 'Cadence', color: 'var(--c-quality)' }, { key: 'power', label: 'Power', color: 'var(--c-tt)' }, { key: 'stride_m', label: 'Stride', color: 'var(--c-social)' }]} /></Card>}
 
-      {/* Side-by-side Splits (7) + Zones & Running Dynamics (5) */}
-      <div className="bio-split-75">
+      {/* Side-by-side Splits + HR vs Pace Zone Distribution */}
+      <div className="rgrid">
         {laps.length > 0 && <Card title={`Splits per km (${laps.length} laps)`} right={laps.length >= 10 && <SegmentedTabs tabs={[{ id: '5k', label: '5K Blocks' }, { id: 'all', label: `All ${laps.length} Laps` }]} value={lapMode} onChange={setLapMode} label="Split grouping" />}>
-          <div className="scroll" style={{ maxHeight: 520 }} tabIndex={0}><table className="lapt"><thead><tr><th>Lap</th><th>Pace</th><th>HR</th><th>Cad</th><th>GCT</th></tr></thead><tbody>
+          <div className="scroll" style={{ maxHeight: 460 }} tabIndex={0}><table className="lapt"><thead><tr><th>Lap</th><th>Pace</th><th>HR</th><th>Cad</th><th>GCT</th></tr></thead><tbody>
             {shownLaps.map((l) => <tr key={l.idx}><td>{l.idx}{lapMode === 'all' && l.distance_m < 990 ? <small className="muted"> ({(l.distance_m / 1000).toFixed(2)})</small> : ''}</td><td className={'pbar-td ' + (l.avg_pace_s_km === minPace ? 'fast' : '')}><i style={{ width: (maxPace ? (l.avg_pace_s_km / maxPace) * 100 : 0) + '%' }} /><span>{fmtPaceS(l.avg_pace_s_km)}</span></td><td>{l.avg_hr ?? '—'}</td><td>{l.cadence ?? '—'}</td><td>{l.gct_ms ?? '—'}</td></tr>)}
           </tbody></table></div>
         </Card>}
 
-        <div>
-          {(pz || hz) && <Card title="Heart Rate vs. Pace Zone Distribution">
-            {hz && <ZoneBars title={`HR zones (LTHR ${zcfg.lthr} bpm)`} rows={ZROWS(zcfg, 'hr').map((r, i) => ({ ...r, s: zs.hr[i] }))} />}
-            {pz && <ZoneBars title={`Pace zones (T-Pace ${fmtPaceS(zcfg.tpace)}/km)`} rows={ZROWS(zcfg, 'pace').map((r, i) => ({ ...r, s: zs.pace[i] }))} />}
-            {hz && pz && (() => { const top = (arr) => arr.indexOf(Math.max(...arr)), dh = top(zs.hr), dp = top(zs.pace); return dh - dp >= 2 ? <p className="banner">HR sat {dh - dp} zones higher than pace (HR Z{dh} vs pace {dp ? 'Z' + dp : '<Z1'}): judge by HR, not pace.</p> : null })()}
-          </Card>}
+        {(pz || hz) && <Card title="Heart Rate vs. Pace Zone Distribution">
+          {hz && <ZoneBars title={`HR zones (LTHR ${zcfg.lthr} bpm)`} rows={ZROWS(zcfg, 'hr').map((r, i) => ({ ...r, s: zs.hr[i] }))} />}
+          {pz && <ZoneBars title={`Pace zones (T-Pace ${fmtPaceS(zcfg.tpace)}/km)`} rows={ZROWS(zcfg, 'pace').map((r, i) => ({ ...r, s: zs.pace[i] }))} />}
+          {hz && pz && (() => { const top = (arr) => arr.indexOf(Math.max(...arr)), dh = top(zs.hr), dp = top(zs.pace); return dh - dp >= 2 ? <p className="banner">HR sat {dh - dp} zones higher than pace (HR Z{dh} vs pace {dp ? 'Z' + dp : '<Z1'}): judge by HR, not pace.</p> : null })()}
+        </Card>}
+      </div>
 
-          <Card title="Running Dynamics & Session Log">
+      <Card title="Running Dynamics & Session Log">
             <div className="score-grid"><div><small>GCT</small><b>{dyn('gct_ms') ?? '—'}</b><em>ms</em></div><div><small>Vert Osc</small><b>{dyn('vo_cm') ?? '—'}</b><em>cm</em></div><div><small>Vert Ratio</small><b>{dyn('vratio_pct') ?? '—'}</b><em>%</em></div>
               <div><small>Stride</small><b>{dyn('stride_m') ?? '—'}</b><em>m</em></div></div>
             <div className="form two" style={{ marginTop: 12 }}>
@@ -228,9 +229,7 @@ function Detail({ id, gear, vdot, history, go, settings }) {
               <label className="fld"><span>Actual carbs (g)</span><input inputMode="numeric" type="number" value={ctx.cho_g} onChange={(e) => setC({ cho_g: e.target.value === '' ? '' : +e.target.value })} /></label></div>
             {ctx.cho_g !== '' && a.duration_s > 0 && <p className="muted">≈ {Math.round(ctx.cho_g / (a.duration_s / 3600))} g/h (target &gt;90 min: 30–60 g/h)</p>}
             <label className="fld" style={{ display: 'block', marginTop: 10 }}><span>Session notes</span><input type="text" placeholder="Pacing, heat, mechanical feel…" value={ctx.note || ''} onChange={(e) => setC({ note: e.target.value })} /></label>
-          </Card>
-        </div>
-      </div>
+      </Card>
     </>}
   </div>
 }

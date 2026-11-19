@@ -1022,3 +1022,15 @@ nav.tabbar {
 .cp-card4 { padding: 12px 14px; border-radius: 14px; background: var(--surface2); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 4px; text-align: left; min-width: 0; }
 .cp-card4.on { border: 2px solid var(--cobalt); background: color-mix(in srgb, var(--cobalt) 8%, var(--surface)); }
 .cp-card4:hover { border-color: var(--cobalt); }
+
+/* ===== Live QA v4.6 Fixes (topbar, btn.primary.sm, chipjump, server host, rail) ===== */
+.btn.primary.sm, .prof-chips .btn.primary, .te .btn.primary { width: auto !important; flex: none; white-space: nowrap; }
+.te { display: flex; align-items: flex-end; gap: 8px; flex-wrap: nowrap; }
+.te .fld { flex: 1; min-width: 0; }
+.prof-chips { flex-wrap: wrap; align-items: center; }
+.appbar-in { min-width: 0; }
+.syncbtn, .themebtn { flex: none; white-space: nowrap; }
+@media (max-width: 1360px) { .ribbon { display: none; } }
+@media (min-width: 641px) { .chipjump { flex-wrap: wrap !important; overflow-x: visible !important; } }
+.rail { padding-right: 14px; }
+.score-grid b { overflow-wrap: anywhere; }

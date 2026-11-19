@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Card, Chip, ProvenanceBadge } from './ui.jsx'
 
 const KG_NODES = [
-  { id: 'twin', label: 'Digital Twin v6', sub: 'Central State', cat: 'core', x: 380, y: 200, r: 34, color: '#4658D6', db: 'intel.db:twin_state', summary: 'Synthesizes physiological readiness, CTL/ATL/TSB, aerobic efficiency (HR@800), and shoe OLS slopes into one structured coaching state.' },
+  { id: 'twin', label: 'Digital Twin', sub: 'Central State', cat: 'core', x: 380, y: 200, r: 34, color: '#4658D6', db: 'intel.db:twin_state', summary: 'Synthesizes physiological readiness, CTL/ATL/TSB, aerobic efficiency (HR@800), and shoe OLS slopes into one structured coaching state.' },
   { id: 'fit', label: 'FIT Telemetry', sub: '1-Hz · 16-D kNN', cat: 'telemetry', x: 150, y: 85, r: 26, color: '#10B981', db: 'intel.db:fit_session', summary: '1-Hz GPS, HR, GCT, stride, pooled fade curves, and 16-dimensional cosine kNN similarity matching across past runs.' },
   { id: 'weather', label: 'WBGT Weather', sub: 'Heat Enrichment', cat: 'telemetry', x: 115, y: 215, r: 24, color: '#10B981', db: 'intel.db:run_weather', summary: 'Hourly temperature, humidity, dew point, and WBGT °C matched to run timestamps to normalize cardiac drift in tropical heat.' },
   { id: 'health', label: 'Daily Health', sub: 'HRV · RHR · Sleep', cat: 'telemetry', x: 165, y: 330, r: 25, color: '#10B981', db: 'lumpad.db:health_daily + daily_feat', summary: 'Nocturnal HRV, RHR, sleep stages, stress, and strength split tags powering readiness and lag correlations.' },
@@ -154,7 +154,7 @@ export default function KnowledgeGraphPanel({ twin, matrices, status }) {
               {sel && <circle cx={n.x} cy={n.y} r={n.r + 7} fill={n.color} fillOpacity="0.2" stroke={n.color} strokeWidth="2" />}
               <circle cx={n.x} cy={n.y} r={n.r} fill={n.color} stroke="#ffffff" strokeWidth="2.2" />
               <text x={n.x} y={n.y + 3} textAnchor="middle" fill="#fff" fontSize={n.id === 'twin' ? '10.5' : '9.5'} fontWeight="700">{n.label.split(' ')[0]}</text>
-              <text x={n.x} y={n.y + n.r + 14} textAnchor="middle" className="kg-lbl">{n.label}</text>
+              <text x={n.x} y={n.y + n.r + 14} textAnchor="middle" className="kg-lbl">{n.id === 'twin' ? `Digital Twin v${ver}` : n.label}</text>
               <text x={n.x} y={n.y + n.r + 26} textAnchor="middle" className="kg-sub">{n.sub}</text>
             </g>
           })}

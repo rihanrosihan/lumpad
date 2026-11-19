@@ -122,7 +122,7 @@ const SHAPES = { // front: quads, shins; back: hams, glutes, calves, achilles, b
 export function BodyMap({ load, overrides = {}, onTap }) {
   const lv = (k) => overrides[k] ?? load[k] ?? 0, cls = (v) => (v >= 2 ? 'bm-hi' : v >= 1 ? 'bm-mid' : v > 0.3 ? 'bm-lo' : 'bm-0')
   return <div className="bodymap"><svg viewBox="0 0 280 230" role="img" aria-label={'Muscle load: ' + REGIONS.map(([k, n]) => `${n} ${lv(k).toFixed(1)}`).join(', ')}>
-    <text x="70" y="14" textAnchor="middle" className="gt">Depan</text><text x="212" y="14" textAnchor="middle" className="gt">Belakang</text>
+    <text x="70" y="14" textAnchor="middle" className="gt">Front</text><text x="212" y="14" textAnchor="middle" className="gt">Back</text>
     <ellipse cx="70" cy="40" rx="14" ry="16" className="bm-body" /><rect x="48" y="58" width="44" height="40" rx="8" className="bm-body" /><ellipse cx="212" cy="40" rx="14" ry="16" className="bm-body" />
     {Object.entries(SHAPES).map(([k, rs]) => rs.map((r, i) => <rect key={k + i} x={r[0]} y={r[1]} width={r[2]} height={r[3]} rx="6" className={'bm ' + cls(lv(k)) + (overrides[k] != null ? ' ov' : '')} onClick={() => onTap?.(k)} />))}
   </svg>

@@ -32,7 +32,7 @@ const JRF_RULES = [
 
 // Canonical 2027 race catalog: registered races appear ONLY in Upcoming; unbooked appear ONLY in Plan
 const RACES_2027 = [
-  { id: 'jakim2027', date: '2027-06-13', name: 'Jakarta International Marathon 2027 (Jakim FM)', cls: 'CP9 · C-RACE', registered: true, dist: '42.195 km National', route: 'Northwest Monas → GBK Main Stadium', orderId: '1999-4455281747', bibName: 'IRFAN', kit: 'Jersey L · Finisher M', target: '< 6:00 · >8:00/km (Run-Walk · Healthy Finish)' },
+  { id: 'jakim2027', date: '2027-06-13', name: 'Jakarta International Marathon 2027 (Jakim FM)', cls: 'CP9 · B-RACE', registered: true, dist: '42.195 km National', route: 'Northwest Monas → GBK Main Stadium', orderId: '1999-4455281747', bibName: 'IRFAN', kit: 'Jersey L · Finisher M', target: 'Sub-5:00 · 6:54/km (Healthy Finish)' },
   { id: 'mjm2027', date: '2027-06-20', dateSpan: 'Jun 19–20, 2027', name: 'Mandiri Jogja Marathon (MJM FM & B-MJM)', cls: 'PLAN · C-RACE', registered: false, desc: 'B-MJM 30′ jog (Sat) + MJM FM 42.2 km (Sun) · Yogyakarta family trip', note: 'Gated by Wed Jun 16 (D+3 post-Jakim)' },
   { id: 'jrf2027', date: '2027-10-24', dateSpan: 'Oct 24, 2027', name: 'myBCA JRF — HYDROPLUS Marathon', cls: 'PEAK A-RACE · WA LABEL', registered: false, arace: true, desc: 'Target Sub-4:00 (Corral 2 Pacers) · Official COT 5h 00m (09:00 WIB) · Sat HM ≤5K bib-jog', note: '04:00 Mass Start · Arrive 02:45 · Istora GBK' },
   { id: 'bormar2027', date: '2027-11-14', dateSpan: 'Nov 14, 2027', name: 'Borobudur FM (Bormar)', cls: 'PLAN · SYNC NEEDED', registered: false, desc: '42.195 km · Magelang · Falls D+21 post-JRF A-Race', note: 'Flagged for W45 recovery reconciliation in 06.4 v4.4' },
@@ -184,7 +184,7 @@ export default function Race({ settings, go }) {
             </div>
             <div className="race-cd-box">
               <div><small>COUNTDOWN</small><b>D-{daysLeft}</b></div>
-              <div><small>STRATEGY</small><b style={{ fontSize: '1.05rem', color: '#fcd34d' }}>&lt; 6:00 · &gt;8:00/km</b><small>Run-Walk · Healthy Finish</small></div>
+              <div><small>STRATEGY</small><b style={{ fontSize: '1.05rem', color: '#fcd34d' }}>Sub-5:00 · 6:54/km</b><small>B-Race · Healthy Finish</small></div>
             </div>
           </div>
 

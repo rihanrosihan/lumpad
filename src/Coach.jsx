@@ -126,7 +126,7 @@ function TwinMonteCarlo({ twin }) {
   const [view, setView] = useState('scenarios')
   const t = twin?.state, P = t?.projection
   if (!t) return null
-  return <Card title="Versioned AthleteDigitalTwin & P(Sub-4) Monte Carlo" right={<span className="chips" style={{ margin: 0 }}><ProvenanceBadge type="MODEL" /><Chip>v{twin.version}</Chip></span>}>
+  return <Card title="Versioned Athlete Digital Twin & P(Sub-4) Monte Carlo" right={<span className="chips" style={{ margin: 0 }}><ProvenanceBadge type="MODEL" /><Chip>v{twin.version}</Chip></span>}>
     <div style={{ marginBottom: 10 }}>
       <SegmentedTabs tabs={[{ id: 'scenarios', label: '3 Scenarios' }, { id: 'json', label: `twin/${twin.version} JSON` }]} value={view} onChange={setView} label="Twin view" />
     </div>

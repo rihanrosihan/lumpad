@@ -231,7 +231,7 @@ export default function Profile({ vdot, results, settings, setSettings, go }) {
           <div className="vdot-tile vt-t"><small>T · Threshold</small><b>{fmtPace(p.T)}/km</b><em>LTHR {settings.lthr || ZONE_DEFAULTS.lthr} bpm</em></div>
           <div className="vdot-tile vt-i"><small>I · Interval</small><b>{fmtPace(p.I)}/km</b><em>3–5 min reps</em></div>
           <div className="vdot-tile vt-r"><small>R · Repetition</small><b>{fmtPace(p.R)}/km</b><em>Economy &amp; strides</em></div>
-          <div className="vdot-tile vt-goal"><small>Target MP Sub-4</small><b>{fmtPace(pt.M)}/km</b><em>Goal VDOT {TARGET.vdotNeeded}</em></div>
+          <div className="vdot-tile vt-goal"><small>Target MP Sub-4</small><b>{fmtPace(pt.M)}/km</b><em>VDOT {TARGET.vdotNeeded} (heat-adj · flat 5:41)</em></div>
         </div>
         <div className="score-grid">
           <div><small>LTHR</small><b>{settings.lthr || ZONE_DEFAULTS.lthr} bpm</b><em>{settings.lthr ? 'user set' : 'estimate'}</em></div>

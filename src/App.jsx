@@ -94,7 +94,7 @@ export default function App() {
   const lastRunId = lastRun ? (lastRun.ids?.[0] || lastRun.id) : null
   const BADGE = {
     calendar: seasonKm ? seasonKm.toLocaleString('en-US') + ' km' : null, analysis: 'AI + FIT', profile: nShoes ? nShoes + ' Shoes' : null, coach: nRules ? nRules + ' Rules' : 'AI',
-    home: nextRace ? 'D-' + dNext : null, ready: rd.score != null ? `${rd.score} · ${rd.caps.length ? 'GATE' : rd.tier.label.toUpperCase().slice(0, 4)}` : null, activity: `${Math.round(monthKm * 10) / 10} km`,
+    home: nextRace ? 'D-' + dNext : null, ready: rd.score != null ? `${rd.score} · ${rd.caps.length ? 'GATE' : ({ prime: 'PRM', optimal: 'OPT', compromised: 'LOW', depleted: 'RED' }[rd.tier.id] || 'OK')}` : null, activity: `${Math.round(monthKm * 10) / 10} km`,
     checkpoint: nextCp ? 'CP1–' + CHECKPOINTS.length : null, biometrics: (bio.bp?.length || 0) + (bio.glu?.length || 0) + (bio.weight?.length || 0) + (bio.lab?.length || 0) ? 'LABS' : null, race: nextRace ? 'D-' + dNext : null,
   }
   const cur = tab === 'activity' && focus?.id ? 'activity-detail' : tab

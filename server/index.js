@@ -78,8 +78,8 @@ const routes = {
   'GET /api/data/quality': async () => {
     const cov = coverage()
     const countOf = (db, sql) => { try { return db.prepare(sql).get()?.n ?? 0 } catch { return 0 } }
-    const fitSessions = countOf(idb(), 'SELECT COUNT(*) AS n FROM fit_session')
-    const runWeather = countOf(idb(), 'SELECT COUNT(*) AS n FROM run_weather')
+    const fitSessions = countOf(idb, 'SELECT COUNT(*) AS n FROM fit_session')
+    const runWeather = countOf(idb, 'SELECT COUNT(*) AS n FROM run_weather')
     const corosRuns = cov?.runs ?? fitSessions
     return {
       coros_runs: corosRuns,
@@ -87,7 +87,7 @@ const routes = {
       missing_fit: Math.max(0, corosRuns - fitSessions),
       missing_weather: Math.max(0, fitSessions - runWeather),
       missing_shoe: cov?.missingShoe ?? 0,
-      checkins_30d: countOf(idb(), "SELECT COUNT(*) AS n FROM daily_log WHERE date >= date('now','-30 days')"),
+      checkins_30d: countOf(idb, "SELECT COUNT(*) AS n FROM daily_log WHERE date >= date('now','-30 days')"),
       sync_runs_with_rejects: 0,
     }
   },
@@ -100,7 +100,7 @@ const routes = {
       uptimeSec: Math.floor(process.uptime()),
       memRssMb: Math.round((process.memoryUsage().rss / (1024 * 1024)) * 10) / 10,
       dbSizesMb: { lumpad: sz('lumpad.db'), coros: sz('coros.db'), intel: sz('intel.db'), memory: sz('memory.db'), kv: sz('kv.json') },
-      dbCounts: { fit_sessions: countOf(idb(), 'fit_session'), run_weather: countOf(idb(), 'run_weather'), daily_feat: countOf(idb(), 'daily_feat'), kb_docs: countOf(idb(), 'kb_docs'), memories: countOf(mdb(), 'memory'), coach_runs: countOf(mdb(), 'coach_run') },
+      dbCounts: { fit_sessions: countOf(idb, 'fit_session'), run_weather: countOf(idb, 'run_weather'), daily_feat: countOf(idb, 'daily_feat'), kb_docs: countOf(idb, 'kb_docs'), memories: countOf(mdb, 'memory'), coach_runs: countOf(mdb, 'coach_run') },
       p0Guards: { backoff: true, safety: true, verifier: true },
     }
   },
