@@ -125,8 +125,8 @@ export default function Profile({ vdot, results, settings, setSettings, go }) {
   const corosRows = COROS_CATALOG.filter((r) => corosCat === 'all' ? true : corosCat === 'synced' ? r.synced : r.cat === corosCat)
   const qd = Qual.data || {}
   const srv = Srv.data || {}
-  const fitTotal = Arch.data?.activities || qd.coros_runs || 456
-  const fitDone = Arch.data?.fit || 0
+  const fitTotal = Arch.data?.activities?.n ?? (typeof Arch.data?.activities === 'number' ? Arch.data.activities : null) ?? qd.coros_runs ?? 456
+  const fitDone = Arch.data?.fit?.files ?? (typeof Arch.data?.fit === 'number' ? Arch.data.fit : 0)
   const fitParsed = srv.dbCounts?.fit_sessions ?? qd.fit_sessions ?? 0
   const weatherDone = srv.dbCounts?.run_weather ?? (fitParsed && qd.missing_weather != null ? Math.max(0, fitParsed - qd.missing_weather) : 0)
   const shoeMatched = qd.coros_runs != null && qd.missing_shoe != null ? Math.max(0, qd.coros_runs - qd.missing_shoe) : null
@@ -319,7 +319,7 @@ export default function Profile({ vdot, results, settings, setSettings, go }) {
           <CorosCard />
           <StravaCard />
           <Card title="Devices & data export">
-            {(Dv.data?.value?.devices || ['COROS APEX 4 42mm', 'COROS POD 2']).map((d) => <div key={d} className="apipill"><i className="dot2 on" /><span>{d}</span><small className="muted">connected</small></div>)}
+            {(Array.isArray(Dv.data?.value?.devices) && Dv.data.value.devices.length ? Dv.data.value.devices : ['COROS APEX 4 42mm', 'COROS POD 2']).map((d, idx) => { const label = typeof d === 'string' ? d : (d?.name || d?.model || String(d)); return <div key={label + idx} className="apipill"><i className="dot2 on" /><span>{label}</span><small className="muted">connected</small></div> })}
             <h3>Export local backup</h3>
             <div className="row2"><a className="btn sm" href={exp('activities', 'csv')}>Activities CSV</a><a className="btn sm" href={exp('activities', 'json')}>Activities JSON</a><a className="btn sm" href={exp('health', 'csv')}>Health CSV</a><a className="btn sm" href={exp('health', 'json')}>Health JSON</a></div>
           </Card>

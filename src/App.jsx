@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Component, useEffect, useMemo, useRef, useState } from 'react'
 import { useStore, useSyncStatus, useSettings } from './store.js'
 import { Icon, Sheet } from './ui.jsx'
 import Home from './Home.jsx'
@@ -43,6 +43,16 @@ function latestVdot(results) {
   const done = CHECKPOINTS.filter((c) => results[c.id]?.vdot != null && (c.kind === 'tt'))
   const last = done[done.length - 1]
   return last ? { v: results[last.id].vdot, src: `CP${last.id} (${last.date})` } : { v: TARGET.baseline, src: 'official 10K baseline 1:00:55 (CP1 not run yet)' }
+}
+
+
+class PageBoundary extends Component {
+  constructor(p) { super(p); this.state = { err: null } }
+  static getDerivedStateFromError(err) { return { err } }
+  render() {
+    if (!this.state.err) return this.props.children
+    return <div className="screen"><div className="card"><h2>Section error</h2><p className="err">{String(this.state.err?.message || this.state.err)}</p><button className="btn sm" onClick={() => this.setState({ err: null })}>Retry</button></div></div>
+  }
 }
 
 export default function App() {
@@ -122,7 +132,7 @@ export default function App() {
       </aside>
       <div className="app">
         {sync === 'offline' && <div className="offbar" role="status">Offline — changes are saved only in this browser and will be sent when you are back online</div>}
-        <main id="main" ref={mainRef} tabIndex={-1}>
+        <main id="main" ref={mainRef} tabIndex={-1}><PageBoundary key={tab}>
           {tab === 'home' && <Home vdot={vdot} settings={settings} results={results} go={go} M={M} />}
           {tab === 'ready' && <Readiness vdot={vdot} settings={settings} focus={focus} M={M} />}
           {tab === 'activity' && <Activity vdot={vdot} focus={focus} go={go} settings={settings} />}
@@ -135,7 +145,7 @@ export default function App() {
           {tab === 'race' && <Calendar view="race" vdot={vdot} results={results} setResults={setResults} focus={focus} settings={settings} go={go} />}
           {tab === 'biometrics' && <Biometrics settings={settings} setSettings={setSettings} />}
           {tab === 'profile' && <Profile vdot={vdot} results={results} settings={settings} setSettings={setSettings} go={go} />}
-        </main>
+        </PageBoundary></main>
       </div>
     </div>
     <nav className="tabbar" aria-label="Main menu">{BOTTOM.map((k) => navBtn(k, 'nb'))}</nav>
