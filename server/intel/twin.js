@@ -22,7 +22,7 @@ const PLAN_BY = Object.fromEntries(PLAN.map((d) => [d.date, d]))
 const addDays = (s, n) => { const d = new Date(s + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10) }
 const wibDate = () => new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10)
 const r = (x, d = 1) => (x == null || !isFinite(x) ? null : Math.round(x * 10 ** d) / 10 ** d)
-const sessions = (since) => idb.prepare('SELECT s.*, w.wbgt, w.temp_c AS wx_temp, w.indoor FROM fit_session s LEFT JOIN run_weather w ON w.label_id = s.label_id WHERE s.date >= ? ORDER BY s.date').all(since)
+const sessions = (since) => idb.prepare('SELECT s.*, w.wbgt, w.temp_c AS wx_temp, w.indoor FROM fit_session s LEFT JOIN run_weather w ON w.label_id = s.label_id WHERE s.date >= ? ORDER BY s.date, s.start_ms, s.label_id').all(since) // chronological, deterministic for same-day runs
 
 // ---- load + readiness: the same code and inputs as the client (src/lib), so the numbers agree
 function loadAndReadiness(T) {
@@ -111,7 +111,7 @@ function injury(T) {
 function plan(T, kv) {
   const day = PLAN_BY[T] || null, results = kv['lumpad.results']?.value || {}, next = CHECKPOINTS.find((c) => c.date >= T)
   let kg = null; try { kg = killGate(results) } catch {}
-  return { phase: day?.phase ?? null, week: day?.week ?? null, today: day ? { km: day.km, kind: day.kind, label: day.label } : null, next_cp: next ? { id: next.id, date: next.date, name: next.name, line: next.line ?? null } : null, kill_gate: kg ? (kg.triggered ? 'triggered' : kg.warn ? 'warn' : 'ok') : 'ok', race_date: '2027-10-24' }
+  return { phase: day?.phase ?? null, week: day?.week ?? null, today: day ? { km: day.km, kind: day.kind, label: day.label } : null, next_cp: next ? { id: next.id, date: next.date, name: next.name, line: next.line ?? null } : null, kill_gate: kg?.fired ? 'triggered' : 'ok' /* killGate returns { fired, why }; it read .triggered/.warn before, so it always said 'ok' */, race_date: '2027-10-24' }
 }
 // P(sub-4) Monte Carlo [MODEL]: illustrative scenarios, NOT a prediction. Fitness gain per month ~ N(rate, 0.25) clipped ≥ 0; the FM realises
 // fitness × ratio (KB 06.5: FM VDOT 37.9 needs fitness 39.9 at ratio 0.95). Observed ratio: 0.59 (Jakim, n=1, confounded); the plan assumes 0.95.

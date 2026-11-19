@@ -8,7 +8,7 @@ Redesign Phase 1 (foundation). The current Node app keeps running and coaching; 
 | `lumpadd load <server/data>` | Copies lumpad.db, coros.db, intel.db, memory.db and kv.json into Postgres and verifies **every table**: row count and a SHA-256 over all rows must match. Repeatable (truncates first). Exit code 1 on any mismatch. |
 | `lumpadd serve` | Health endpoint `GET /api/v2/health` on 127.0.0.1:8788 (db ping, version, RSS). Real API arrives phase by phase. |
 | `fitbench <fit dir>` | Decode benchmark (muktihari/fit). |
-| `GOLDEN_DATABASE_URL=… GOLDEN_DIR=../tools/golden/out go test ./internal/analytics` | Diffs matrices and the correlation engine against the golden fixtures (load the snapshot they came from first). |
+| `GOLDEN_DATABASE_URL=… GOLDEN_DIR=../tools/golden/out go test ./internal/analytics` | Diffs matrices, the correlation engine and the twin against the golden fixtures (load the snapshot they came from first). |
 | `golden <sessions.json> <fit dir>` | Diffs the Go engine against the golden fixtures from the Node engine (gate G2): every session metric and per-km row. |
 
 `DATABASE_URL=postgres://user@host/db?sslmode=disable` is required.
@@ -53,8 +53,10 @@ Budget while both systems run: Node app ~125 MB · Postgres ≤ 450 MB (`deploy/
 | Race-pace simulator (heat penalty, run-walk, COP margins), zone ranges, per-lap zone seconds, workout duration + training-load estimate | **done** | JS vectors: 40 simulator inputs (incl. invalid), 3 zone configs × 8 zones, 90 laps, 12 step lists with repeats; UI text helpers (describe/summary) stay in the client |
 | Matrices (gym→stride, gym lag, Z2 discipline, modalities, threshold blocks, race fade) | **done** | golden `matrices.json`: identical (80 sessions) |
 | Statistics (mulberry32 RNG, ranks, OLS, partial Spearman, shift-permutation p, block bootstrap, BH) and the correlation engine (lag SQL, dataset with EF residual, edges) | **done** | JS vectors (287 synthetic tests incl. seeded bootstrap CIs) and golden `corr.json` on real data: dataset of 97 sessions and all 136 edges identical; 0.45 s |
-| Twin builder | next | golden: twin.json |
+| Twin builder (load + readiness, profile, baselines, intensity, strength transfer, aerobic, durability, heat bootstrap, shoe bootstraps, fade curves, races, injury, plan + kill gate, Monte Carlo projection, data gaps) | **done** | golden `twin_build.json` (fresh Node build of the snapshot for its date): every field identical, incl. the seeded bootstraps and 12,000 Monte Carlo draws; 60 ms vs Node 73 ms |
 
-Two JS fixes came out of the correlation port (both applied to the Node app too): same-date sessions are ordered by start time (SQLite left their order undefined, which changed split halves and permutation p), and lagged exposures are rounded to 1e-6 (SQLite's incremental window SUM left float noise such as 10.000000000000002 that split genuine rank ties).
+**Gate G2: PASS (19 Nov 2026).** Every engine module reproduces the Node output on the golden snapshot or on JS-generated vectors.
+
+Fixes that came out of the port (all applied to the Node app too): the twin's kill gate read `.triggered`/`.warn` but `killGate()` returns `{ fired }`, so it always showed 'ok' (now 'triggered' when it fires; unit-tested in Go); twin sessions are ordered by start time within a day. Two from the correlation port (both applied to the Node app too): same-date sessions are ordered by start time (SQLite left their order undefined, which changed split halves and permutation p), and lagged exposures are rounded to 1e-6 (SQLite's incremental window SUM left float noise such as 10.000000000000002 that split genuine rank ties).
 
 Notes from the port: JS `Math.round` rounds halves up (Go's rounds away from zero) so `jsRound` is used; `mean()` over `null` counts null as 0 in `fadeOnset` (kept, because the golden data depends on it); the Node parser reports `speed`, not `enhanced_speed` (they differ by 1 mm/s on some seconds); COROS 'Effort Pace' is a developer field found through `field_description`.

@@ -152,3 +152,27 @@ func TestCorrelationGolden(t *testing.T) {
 		t.Errorf("… %d differences in total", len(diffs))
 	}
 }
+
+func TestTwinGolden(t *testing.T) {
+	ctx, url, read := goldenDB(t)
+	pool, err := db.Connect(ctx, url)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer pool.Close()
+	want := read("twin_build.json").(map[string]any)
+	got, err := BuildTwin(ctx, pool, want["as_of"].(string))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var diffs []string
+	diffJSON("twin", roundtrip(got), want, &diffs)
+	for i, d := range diffs {
+		if i < 40 {
+			t.Error(d)
+		}
+	}
+	if len(diffs) > 40 {
+		t.Errorf("… %d differences in total", len(diffs))
+	}
+}
