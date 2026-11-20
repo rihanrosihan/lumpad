@@ -10,6 +10,7 @@
     "test": "node --test src/lib/*.test.js server/*.test.js server/coros/*.test.js server/intel/*.test.js server/intel/eval/*.test.js",
     "server": "node server/index.js",
     "intel": "node --env-file=.env server/intel/cli.js run",
+    "fit:import": "node --env-file=.env server/coros/fitimport-cli.js",
     "coach:context": "node --env-file=.env server/intel/cli.js context",
     "coach:writeback": "node --env-file=.env server/intel/cli.js writeback"
   },
