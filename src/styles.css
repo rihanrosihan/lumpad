@@ -1335,3 +1335,23 @@ select.actv56-wtag-select[data-wtag="Race"] { background-color: color-mix(in srg
 .feed-kpis b { display: block; margin-top: 2px; font-size: 13px; font-weight: 800; font-family: var(--f-mono, monospace); white-space: nowrap; }
 .feed-search input[type="search"] { flex: 1 1 120px; width: auto; min-width: 0; max-width: none; margin: 0; }
 .feed-search select { width: auto; flex: 0 0 auto; margin: 0; }
+
+/* Activity detail 4.5: inline title/note edit, map zoom, conditions card */
+.actv-title-edit { display: flex; align-items: center; gap: 7px; flex: 1; min-width: 0; flex-wrap: wrap; }
+.actv-title-input { flex: 1; min-width: 150px; font-size: 17px; font-weight: 800; color: var(--text); background: var(--surface2); border: 1.5px solid var(--cobalt, #4658D6); border-radius: 10px; padding: 5px 10px; }
+.actv-inline { border: 1px solid var(--line); background: var(--surface2); color: var(--text); font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; cursor: pointer; white-space: nowrap; flex-shrink: 0; width: auto; }
+.actv-inline.save { background: var(--cobalt, #4658D6); border-color: var(--cobalt, #4658D6); color: #fff; }
+.actv-note-h { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+.actv-note-view { background: var(--surface2); border: 1px solid var(--line); border-radius: 11px; padding: 9px 11px; font-size: 13px; line-height: 1.45; min-height: 40px; white-space: pre-wrap; }
+.actv-zoom { position: absolute; right: 12px; bottom: 16px; z-index: 450; display: flex; flex-direction: column; gap: 6px; }
+.actv-zoom button { width: 34px; height: 34px; border-radius: 50%; border: 1px solid rgba(255,255,255,.24); background: rgba(15,23,42,.76); backdrop-filter: blur(10px); color: #fff; font-size: 16px; font-weight: 700; line-height: 1; cursor: pointer; padding: 0; }
+.actv-env-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.actv-env-tile { background: var(--surface2); border: 1px solid var(--line); border-radius: 14px; padding: 11px 12px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.actv-env-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.actv-env-tile b { font-size: 16px; font-family: var(--f-mono, monospace); }
+.actv-env-tile small { font-size: 11px; color: var(--text); opacity: .8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.actv-sign { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 999px; text-transform: none; letter-spacing: 0; }
+.actv-sign i { width: 6px; height: 6px; border-radius: 50%; display: inline-block; background: currentColor; }
+.actv-sign.good { background: color-mix(in srgb, var(--green) 14%, transparent); color: var(--green); }
+.actv-sign.normal { background: color-mix(in srgb, var(--yellow) 16%, transparent); color: var(--yellow); }
+.actv-sign.high { background: color-mix(in srgb, var(--red) 13%, transparent); color: var(--red); }

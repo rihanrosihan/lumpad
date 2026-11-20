@@ -164,6 +164,15 @@ const routes = {
   'GET /api/library': async () => lib.list(),
   'POST /api/library': async (_q, req) => lib.add(JSON.parse((await readBody(req, 1e5)).toString())),
   'DELETE /api/library': async (q) => lib.remove(q.get('id')),
+  // weather during one run (Open-Meteo, already stored per session) + the air and weather right now at that 0.1° cell (Google, when configured)
+  'GET /api/env/activity': async (q) => {
+    const id = String(q.get('id') || '').replace(/^coros:/, ''), s = idb.prepare('SELECT label_id, lat1, lon1 FROM fit_session WHERE label_id=? OR activity_id=?').get(id, q.get('id'))
+    if (!s) return { found: false }
+    const run = idb.prepare('SELECT temp_c, dew_c, rh, wind_ms, rad_wm2, wbgt, indoor FROM run_weather WHERE label_id=?').get(s.label_id) || null
+    let now = null
+    if (s.lat1 != null && s.lon1 != null) { const G = await import('./google.js'); if (G.configured()) { try { now = await G.conditions(s.lat1, s.lon1) } catch {} } }
+    return { found: true, run, now, cell: s.lat1 != null ? `${(Math.round(s.lat1 * 10) / 10).toFixed(1)},${(Math.round(s.lon1 * 10) / 10).toFixed(1)}` : null }
+  },
   'GET /api/map/status': async () => { const G = await import('./google.js'); return G.status() },
   'GET /api/map/tile': async (q, req, res) => {
     const G = await import('./google.js'), t = await G.tile(q)

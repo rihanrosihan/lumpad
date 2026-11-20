@@ -358,7 +358,7 @@ function extractRouteCoords(a) {
 
 function ActivityHeroMap({ a, laps, route, onShare }) {
   const elRef = useRef(null)
-  const mapRef = useRef(null)
+  const mapRef = useRef(null), lineRef = useRef(null)
   const [style, setStyle] = useState('clean')
   const [mapKey] = useStore('lumpad.mapkey', '')
   const GM = useApi('/api/map/status'), google = !!(GM.data?.configured && GM.data.used_today < GM.data.cap) // server-side Google tiles: the key never reaches the browser
@@ -378,6 +378,7 @@ function ActivityHeroMap({ a, laps, route, onShare }) {
     if (end[0] !== coords[0][0] || end[1] !== coords[0][1]) {
       L.circleMarker(end, { radius: 6.5, fillColor: '#EA3A3A', color: '#fff', weight: 2.5, fillOpacity: 1 }).addTo(map).bindTooltip('Finish')
     }
+    lineRef.current = line
     map.fitBounds(line.getBounds(), { padding: [30, 30] })
     setTimeout(() => map.invalidateSize(), 120)
     return () => { if (mapRef.current) { mapRef.current.remove(); mapRef.current = null } }
@@ -392,6 +393,11 @@ function ActivityHeroMap({ a, laps, route, onShare }) {
           {style === 'clean' ? 'Clean Map' : 'Street Map'}
         </button>}
         <button type="button" className="actv60-map-pill" onClick={onShare}>Share ↗</button>
+      </div>
+      <div className="actv-zoom" role="group" aria-label="Map zoom controls">
+        <button type="button" aria-label="Zoom in" onClick={() => mapRef.current?.zoomIn()}>+</button>
+        <button type="button" aria-label="Zoom out" onClick={() => mapRef.current?.zoomOut()}>−</button>
+        <button type="button" aria-label="Fit route" onClick={() => lineRef.current && mapRef.current?.fitBounds(lineRef.current.getBounds(), { padding: [30, 30] })}>⌖</button>
       </div>
     </div>
   }
@@ -409,6 +415,28 @@ function ActivityHeroMap({ a, laps, route, onShare }) {
   </div>
 }
 
+// Conditions & course intel: the weather during THIS run (Open-Meteo, stored per session), the elevation profile from the FIT stream, and the air quality
+// right now at the run's 0.1° cell (Google; current values, not the run's hour, and labelled so).
+function ConditionsIntel({ id, a, stream }) {
+  const E = useApi(id ? `/api/env/activity?id=${encodeURIComponent(id)}` : '', !!id && a?.sport_class === 'run'), d = E.data
+  const run = d?.run && !d.run.indoor ? d.run : null, now = d?.now?.available ? d.now : null
+  let gain = null, loss = null, peak = null
+  if (stream?.has_alt) { const al = stream.alt.filter((x) => x != null); gain = 0; loss = 0; for (let i = 1; i < al.length; i++) { const dz = al[i] - al[i - 1]; if (dz > 0) gain += dz; else loss -= dz } peak = Math.round(Math.max(...al)) }
+  if (!run && !now && gain == null) return null
+  const band = (w) => (w == null ? ['', ''] : w >= 28 ? ['high', 'High'] : w >= 23 ? ['normal', 'Moderate'] : ['good', 'Low'])
+  const [wc, wl] = band(run?.wbgt), aq = now?.air?.local || now?.air?.universal
+  return <article className="card actv-env">
+    <div className="actv56-card-head"><div><h3 className="actv56-card-title">Conditions &amp; Course Intel</h3><p className="muted" style={{ margin: '2px 0 0', fontSize: 12 }}>{d?.cell ? `Near ${d.cell} (0.1° cell)` : 'Weather, air quality and elevation'}</p></div>
+      {run?.wbgt != null && <span className="actv56-pill cobalt">WBGT ≥ {run.wbgt}°C (shade)</span>}</div>
+    <div className="actv-env-grid">
+      {run && <div className="actv-env-tile"><div className="actv-env-top"><span>Weather · this run</span>{wl && <span className={`actv-sign ${wc}`}><i />{wl}</span>}</div><b>{run.temp_c != null ? `${run.temp_c}°C` : '—'}</b><small>RH {run.rh ?? '—'}% · dew {run.dew_c ?? '—'}°C</small><small>Wind {run.wind_ms != null ? `${(run.wind_ms * 3.6).toFixed(0)} km/h` : '—'}</small></div>}
+      {aq && <div className="actv-env-tile"><div className="actv-env-top"><span>Air quality · now</span></div><b>{now.air.local ? `${now.air.local.name.replace(/\s*\(.*\)/, '')} ${now.air.local.aqi}` : `AQI ${aq.aqi}`}</b><small>{aq.category}</small><small>{now.air.pm25 != null ? `PM2.5 ${now.air.pm25} µg/m³` : ''}</small></div>}
+      {gain != null && <div className="actv-env-tile"><div className="actv-env-top"><span>Elevation · FIT</span></div><b>▲ {Math.round(gain)} m</b><small>▼ {Math.round(loss)} m</small><small>High point {peak} m</small></div>}
+    </div>
+    <p className="src-note">Run weather: Open-Meteo hourly (WBGT is the shade estimate, a lower bound in the sun). Air quality: Google, current values at this place, not at the run&apos;s hour. Elevation: the FIT file&apos;s altitude stream.</p>
+  </article>
+}
+
 function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
   const D = useApi(id ? `/api/activities/detail?id=${encodeURIComponent(id)}` : '', !!id), a = D.data
   const ST = useApi(id ? `/api/intel/stream?id=${encodeURIComponent(id)}` : '', !!id && a?.sport_class === 'run'), stream = ST.data?.found ? ST.data : null // real per-second data from the FIT file
@@ -416,7 +444,7 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
     rpe: '', gels: '', cho_g: '', note: '', tag: '', feels: [], official_bib: '', official_url: '', official_net: '',
   })
   const [offStore] = useStore('lumpad.official', {}), OFFICIAL_RACES = useMemo(() => ({ ...OFFICIAL_BASE, ...(offStore && typeof offStore === 'object' ? offStore : {}) }), [offStore])
-  const [toast, setToast] = useState('')
+  const [toast, setToast] = useState(''), [editTitle, setEditTitle] = useState(false), [titleDraft, setTitleDraft] = useState(''), [editNote, setEditNote] = useState(false)
   useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(''), 2400); return () => clearTimeout(t) }, [toast])
   const [tab, setTab] = useState('overview')
   const [lapMode, setLapMode] = useState('all')
@@ -439,8 +467,10 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
   const zcfg = cfgOf(settings || {}), zs = laps.length ? zoneSeconds(laps, zcfg) : null, pz = zs && zs.pace.some((x) => x > 0), hz = zs && zs.hr.some((x) => x > 0)
 
   const activeTag = ctx.tag || defaultTagFor(a, plan)
-  const isRace = activeTag === 'Race'
   const officialBase = a ? OFFICIAL_RACES[a.date] : null
+  const baseTitle = !a ? '' : officialBase && (!a.name || /^outdoor run$/i.test(a.name.trim())) ? officialBase.event : a.name, shownTitle = ctx.title || baseTitle
+  const saveTitle = () => { const v = titleDraft.trim(); if (v) { setC({ title: v }); setToast('Activity title saved') } setEditTitle(false) }
+  const isRace = activeTag === 'Race'
   const activeTab = !isRace && tab === 'official' ? 'overview' : tab
 
   const baseLaps = lapMode === '5k' && laps.length >= 10 ? group5k(laps) : laps
@@ -492,20 +522,23 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
         <div className="card actv60-hero-col">
           <div>
             <div className="actv56-title-row">
-              <h2 className="actv56-title">{officialBase && (!a.name || /^outdoor run$/i.test(a.name.trim())) ? officialBase.event : a.name}</h2>
-              {a.training_load != null && <span className="actv56-pill cobalt">TL {a.training_load}</span>}
+              {editTitle
+                ? <div className="actv-title-edit"><input type="text" className="actv-title-input" aria-label="Activity title" value={titleDraft} autoFocus onChange={(e) => setTitleDraft(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') saveTitle(); if (e.key === 'Escape') setEditTitle(false) }} />
+                    <button type="button" className="actv-inline save" onClick={saveTitle}>Save</button><button type="button" className="actv-inline" onClick={() => setEditTitle(false)}>Cancel</button></div>
+                : <div className="actv-title-edit"><h2 className="actv56-title">{shownTitle}</h2><button type="button" className="actv-inline" aria-label="Edit activity title" onClick={() => { setTitleDraft(shownTitle); setEditTitle(true) }}>✎ Edit</button></div>}
             </div>
 
             <div className="actv56-badges">
-              <StatusPill tone="green">{SPORT_LABEL[a.sport_class] || a.sport}</StatusPill>
-              {(a.sources || []).map((s) => <span key={s} className="actv56-pill">{s}</span>)}
-              {a.temp_c != null && <span className="actv56-pill amber">{a.temp_c}°C · RH {a.humidity ?? '—'}%</span>}
+              {a.training_load != null && <span className="actv56-pill cobalt">TL {a.training_load}</span>}
               <div className="actv56-tag-wrap">
                 <span className="actv56-tag-lbl">Tag</span>
                 <select className="actv56-wtag-select" data-wtag={activeTag} aria-label="Workout type tag" value={activeTag} onChange={(e) => { setC({ tag: e.target.value }); setToast(`Tagged workout as "${e.target.value}"`) }}>
                   {WORKOUT_TAGS.map((t) => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
+              <StatusPill tone="green">{SPORT_LABEL[a.sport_class] || a.sport}</StatusPill>
+              {(a.sources || []).map((s) => <span key={s} className="actv56-pill">{s}</span>)}
+              {a.temp_c != null && <span className="actv56-pill amber">{a.temp_c}°C · RH {a.humidity ?? '—'}%</span>}
             </div>
 
             <p className="actv56-meta">
@@ -513,27 +546,6 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
               {(ctx.gear_id || a.gear_id) && gear[ctx.gear_id || a.gear_id] ? ` · 👟 ${gear[ctx.gear_id || a.gear_id]}` : ''}
               {officialBase ? ` · 🏷️ ${ctx.official_bib || officialBase.bib}` : ''}
             </p>
-
-            {/* Compact Intervals.icu Intensity Ribbon inside Header */}
-            <div className="actv60-ribbon-box">
-              <div className="actv56-ribbon-top">
-                <span>INTENSITY RIBBON (HR / LAPS)</span>
-                <span>{laps.length ? `${laps.length} laps` : fmtDur(a.duration_s)}</span>
-              </div>
-              <div className="actv56-ribbon-bars" aria-label="Per-lap intensity ribbon">
-                {(laps.length ? laps : [{ avg_hr: a.avg_hr }]).map((l, i) => {
-                  const hr = l.avg_hr || a.avg_hr || 140
-                  const h = Math.max(24, Math.min(100, Math.round(((hr - 105) / 85) * 100)))
-                  return <div key={i} className="actv56-rbar" title={`Lap ${i + 1}: ${hr} bpm`} style={{ height: `${h}%`, background: ribbonZoneColor(hr, zcfg.lthr) }} />
-                })}
-              </div>
-              <div className="actv56-ribbon-stats">
-                <span>Time <b>{fmtDur(a.duration_s)}</b></span>
-                {ef != null && <span>EF <b>{ef}</b></span>}
-                {dc && steady && <span>Pa:Hr <b>{dc.pct}%</b></span>}
-                {a.adjusted_pace_s_km && <span>GAP <b>{fmtPaceS(a.adjusted_pace_s_km)}/km</b></span>}
-              </div>
-            </div>
 
             {officialBase && <div className="actv56-ach-pill" onClick={() => { setC({ tag: 'Race' }); setTab('official') }} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setC({ tag: 'Race' }); setTab('official') } }} role="button" tabIndex={0}>
               <span>♥ {officialBase.status} · {officialBase.net}</span>
@@ -572,6 +584,7 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
       {/* TAB 1: OVERVIEW (1-Col Mobile, 2-Col Desktop) */}
       {activeTab === 'overview' && <div className="actv56-overview-grid">
         <div>
+          <ConditionsIntel id={id} a={a} stream={stream} />
           <div className="card actv56-insight-wrap">
             <div className="actv56-card-head">
               <div>
@@ -632,7 +645,11 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
               <label className="fld"><span>Actual carbs (g)</span><input inputMode="numeric" type="number" value={ctx.cho_g} onChange={(e) => setC({ cho_g: e.target.value === '' ? '' : +e.target.value })} /></label>
             </div>
             {ctx.cho_g !== '' && a.duration_s > 0 && <p className="muted">≈ {Math.round(ctx.cho_g / (a.duration_s / 3600))} g/h (target &gt;90 min: 30–60 g/h)</p>}
-            <label className="fld" style={{ display: 'block', marginTop: 10 }}><span>Session notes</span><input type="text" placeholder="Pacing, heat, mechanical feel…" value={ctx.note || ''} onChange={(e) => setC({ note: e.target.value })} /></label>
+            <div className="fld" style={{ marginTop: 10 }}>
+              <div className="actv-note-h"><span>Session notes</span>{editNote ? <span><button type="button" className="actv-inline save" onClick={() => { setEditNote(false); setToast('Notes saved') }}>Save</button></span> : <button type="button" className="actv-inline" onClick={() => setEditNote(true)}>✎ Edit</button>}</div>
+              {editNote ? <textarea rows={3} autoFocus placeholder="Pacing, heat, mechanical feel…" value={ctx.note || ''} onChange={(e) => setC({ note: e.target.value })} />
+                : <div className="actv-note-view">{ctx.note || 'No notes yet. Tap Edit to add.'}</div>}
+            </div>
           </Card>
         </div>
       </div>}
