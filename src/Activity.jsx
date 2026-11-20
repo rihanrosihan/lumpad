@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 import { paces, fmtPace } from './lib/vdot.js'
 import { BY_DATE, today, addDays, fmtLong, MONTHS } from './lib/calendar.js'
 import { efOf, decoupling, cumulativeKm } from './lib/analysis.js'
@@ -42,7 +44,7 @@ export default function Activity({ vdot, focus, go, settings }) {
         <button type="button" className="btn sm" disabled={!newer} onClick={() => newer && go('activity', { id: (newer.ids?.[0] || newer.id) })}>Next →</button>
       </div>
     </div>
-    <Detail id={sel} page gear={gear} vdot={vdot} history={Hist.data || []} go={go} settings={settings} />
+    <Detail id={sel} page gear={gear} gearList={G.data || []} vdot={vdot} history={Hist.data || []} go={go} settings={settings} />
   </section>
 
   const prevKm = cumPrev.at(-1)?.km ?? 0, curKm = cum.at(-1)?.km ?? 0, dKm = prevKm ? Math.round(((curKm - prevKm) / prevKm) * 1000) / 10 : null
@@ -353,7 +355,103 @@ function collapseTo5Zones(rows) {
   ]
 }
 
-function Detail({ id, gear, vdot, history, go, settings }) {
+
+const KNOWN_ROUTES = {
+  '2026-11-15': [
+    [-7.6079, 110.2038], [-7.6115, 110.2010], [-7.6142, 110.1945], [-7.6120, 110.1865],
+    [-7.6045, 110.1905], [-7.5988, 110.1872], [-7.5930, 110.1935], [-7.5955, 110.2035],
+    [-7.5880, 110.2050], [-7.5815, 110.2135], [-7.5735, 110.2105], [-7.5685, 110.2195],
+    [-7.5745, 110.2260], [-7.5845, 110.2185], [-7.5915, 110.2215], [-7.6015, 110.2210],
+    [-7.6092, 110.2265], [-7.6115, 110.2215], [-7.6048, 110.2155], [-7.6062, 110.2080],
+    [-7.6079, 110.2038],
+  ],
+}
+
+function decodePolyline(str) {
+  if (!str || typeof str !== 'string') return []
+  let idx = 0, lat = 0, lng = 0
+  const pts = []
+  while (idx < str.length) {
+    let b, shift = 0, res = 0
+    do { b = str.charCodeAt(idx++) - 63; res |= (b & 0x1f) << shift; shift += 5 } while (b >= 0x20)
+    lat += (res & 1) ? ~(res >> 1) : (res >> 1)
+    shift = 0; res = 0
+    do { b = str.charCodeAt(idx++) - 63; res |= (b & 0x1f) << shift; shift += 5 } while (b >= 0x20)
+    lng += (res & 1) ? ~(res >> 1) : (res >> 1)
+    pts.push([lat / 1e5, lng / 1e5])
+  }
+  return pts
+}
+
+function extractRouteCoords(a) {
+  if (!a) return []
+  const poly = a.summary_polyline || a.map?.summary_polyline || a.polyline
+  if (poly) {
+    const decoded = decodePolyline(poly)
+    if (decoded.length >= 2) return decoded
+  }
+  if (Array.isArray(a.track) && a.track.length >= 2) {
+    return a.track.map((p) => Array.isArray(p) ? p : [p.lat, p.lon ?? p.lng]).filter((p) => Number.isFinite(p[0]) && Number.isFinite(p[1]))
+  }
+  if (KNOWN_ROUTES[a.date]) return KNOWN_ROUTES[a.date]
+  return []
+}
+
+function ActivityHeroMap({ a, laps, onShare }) {
+  const elRef = useRef(null)
+  const mapRef = useRef(null)
+  const [style, setStyle] = useState('clean')
+  const coords = useMemo(() => extractRouteCoords(a), [a])
+
+  useEffect(() => {
+    if (!elRef.current || coords.length < 2) return
+    if (mapRef.current) { mapRef.current.remove(); mapRef.current = null }
+    const map = L.map(elRef.current, { zoomControl: false, attributionControl: false, scrollWheelZoom: false })
+    mapRef.current = map
+    const url = style === 'clean'
+      ? 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}'
+      : 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}'
+    L.tileLayer(url, { maxZoom: 18 }).addTo(map)
+    if (style === 'clean') {
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18, opacity: 0.7 }).addTo(map)
+    }
+    const line = L.polyline(coords, { color: '#F26B5B', weight: 4.2, opacity: 0.95, lineJoin: 'round', lineCap: 'round' }).addTo(map)
+    L.circleMarker(coords[0], { radius: 6.5, fillColor: '#10B981', color: '#fff', weight: 2.5, fillOpacity: 1 }).addTo(map).bindTooltip('Start')
+    const end = coords[coords.length - 1]
+    if (end[0] !== coords[0][0] || end[1] !== coords[0][1]) {
+      L.circleMarker(end, { radius: 6.5, fillColor: '#EA3A3A', color: '#fff', weight: 2.5, fillOpacity: 1 }).addTo(map).bindTooltip('Finish')
+    }
+    map.fitBounds(line.getBounds(), { padding: [30, 30] })
+    setTimeout(() => map.invalidateSize(), 120)
+    return () => { if (mapRef.current) { mapRef.current.remove(); mapRef.current = null } }
+  }, [coords, style])
+
+  if (coords.length >= 2) {
+    return <div className="actv60-map-card">
+      <div ref={elRef} className="actv60-map-canvas" />
+      <div className="actv60-map-controls">
+        <button type="button" className="actv60-map-pill" onClick={() => setStyle((s) => s === 'clean' ? 'street' : 'clean')}>
+          {style === 'clean' ? 'Clean Map' : 'Street Map'}
+        </button>
+        <button type="button" className="actv60-map-pill" onClick={onShare}>Share ↗</button>
+      </div>
+    </div>
+  }
+
+  // Graceful Pace + HR Profile Hero Card when activity has no GPS track (e.g., treadmill or COROS summary without polyline)
+  const hrVals = (laps || []).map((l) => l.avg_hr).filter(Boolean)
+  const paceVals = (laps || []).map((l) => l.avg_pace_s_km).filter(Boolean)
+  return <div className="card actv60-map-fallback">
+    <div className="actv56-ribbon-top">
+      <span>SESSION TELEMETRY PROFILE</span>
+      <span>{laps?.length ? `${laps.length} laps` : 'Summary'}</span>
+    </div>
+    <SvgAreaChart values={paceVals.length >= 2 ? paceVals : hrVals} color="#F26B5B" fill="rgba(242,107,91,0.18)" label="Session pace profile" invert={paceVals.length >= 2} yFmt={paceVals.length >= 2 ? (v) => fmtPaceS(v) : undefined} />
+    <p className="muted" style={{ fontSize: 11.5, margin: '6px 0 0' }}>GPS polyline not attached to this record — showing per-lap pace telemetry curve.</p>
+  </div>
+}
+
+function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
   const D = useApi(id ? `/api/activities/detail?id=${encodeURIComponent(id)}` : '', !!id), a = D.data
   const [ctx, setCtx] = useStore('lumpad.act.' + (id || 'none').replace(/[^A-Za-z0-9._-]/g, '_'), {
     rpe: '', gels: '', cho_g: '', note: '', tag: '', feels: [], official_bib: '', official_url: '', official_net: '',
@@ -425,73 +523,77 @@ function Detail({ id, gear, vdot, history, go, settings }) {
     {D.state === 'loading' && <div className="skel" style={{ height: 140 }} />}
     {D.state === 'error' && <p className="muted">Could not load this activity — it may not exist, or the server is unreachable.</p>}
     {a && <>
-      {/* Hybrid 1-Col Mobile / 2-Col Desktop Hero */}
+      {/* Preview-Matched Hero: Left Leaflet Route Map + Right Unified Header & Intensity Ribbon */}
       <div className="actv56-hero-grid">
-        <div className="card actv56-hero-main">
-          <div className="actv56-title-row">
-            <h2 className="actv56-title">{a.name}</h2>
-            {a.training_load != null && <span className="actv56-pill cobalt">TL {a.training_load}</span>}
-          </div>
+        <ActivityHeroMap a={a} laps={laps} onShare={() => setShareOpen(true)} />
 
-          <div className="actv56-badges">
-            <StatusPill tone="green">{SPORT_LABEL[a.sport_class] || a.sport}</StatusPill>
-            {(a.sources || []).map((s) => <span key={s} className="actv56-pill">{s}</span>)}
-            {a.temp_c != null && <span className="actv56-pill amber">{a.temp_c}°C · RH {a.humidity ?? '—'}%</span>}
-            <div className="actv56-tag-wrap">
-              <span className="actv56-tag-lbl">Tag</span>
-              <select className="actv56-wtag-select" data-wtag={activeTag} aria-label="Workout type tag" value={activeTag} onChange={(e) => setC({ tag: e.target.value })}>
-                {WORKOUT_TAGS.map((t) => <option key={t} value={t}>{t}</option>)}
-              </select>
+        <div className="card actv60-hero-col">
+          <div>
+            <div className="actv56-title-row">
+              <h2 className="actv56-title">{officialBase && (!a.name || /^outdoor run$/i.test(a.name.trim())) ? officialBase.event : a.name}</h2>
+              {a.training_load != null && <span className="actv56-pill cobalt">TL {a.training_load}</span>}
             </div>
+
+            <div className="actv56-badges">
+              <StatusPill tone="green">{SPORT_LABEL[a.sport_class] || a.sport}</StatusPill>
+              {(a.sources || []).map((s) => <span key={s} className="actv56-pill">{s}</span>)}
+              {a.temp_c != null && <span className="actv56-pill amber">{a.temp_c}°C · RH {a.humidity ?? '—'}%</span>}
+              <div className="actv56-tag-wrap">
+                <span className="actv56-tag-lbl">Tag</span>
+                <select className="actv56-wtag-select" data-wtag={activeTag} aria-label="Workout type tag" value={activeTag} onChange={(e) => setC({ tag: e.target.value })}>
+                  {WORKOUT_TAGS.map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <p className="actv56-meta">
+              📅 {fmtLong(a.date)}
+              {(ctx.gear_id || a.gear_id) && gear[ctx.gear_id || a.gear_id] ? ` · 👟 ${gear[ctx.gear_id || a.gear_id]}` : ''}
+              {officialBase ? ` · 🏷️ ${ctx.official_bib || officialBase.bib}` : ''}
+            </p>
+
+            {/* Compact Intervals.icu Intensity Ribbon inside Header */}
+            <div className="actv60-ribbon-box">
+              <div className="actv56-ribbon-top">
+                <span>INTENSITY RIBBON (HR / LAPS)</span>
+                <span>{laps.length ? `${laps.length} laps` : fmtDur(a.duration_s)}</span>
+              </div>
+              <div className="actv56-ribbon-bars" aria-label="Per-lap intensity ribbon">
+                {(laps.length ? laps : [{ avg_hr: a.avg_hr }]).map((l, i) => {
+                  const hr = l.avg_hr || a.avg_hr || 140
+                  const h = Math.max(24, Math.min(100, Math.round(((hr - 105) / 85) * 100)))
+                  return <div key={i} className="actv56-rbar" title={`Lap ${i + 1}: ${hr} bpm`} style={{ height: `${h}%`, background: ribbonZoneColor(hr, zcfg.lthr) }} />
+                })}
+              </div>
+              <div className="actv56-ribbon-stats">
+                <span>Time <b>{fmtDur(a.duration_s)}</b></span>
+                {ef != null && <span>EF <b>{ef}</b></span>}
+                {dc && steady && <span>Pa:Hr <b>{dc.pct}%</b></span>}
+                {a.adjusted_pace_s_km && <span>GAP <b>{fmtPaceS(a.adjusted_pace_s_km)}/km</b></span>}
+              </div>
+            </div>
+
+            {officialBase && <div className="actv56-ach-pill" onClick={() => { setC({ tag: 'Race' }); setTab('official') }} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setC({ tag: 'Race' }); setTab('official') } }} role="button" tabIndex={0}>
+              <span>♥ {officialBase.status} · {officialBase.net}</span>
+              <b>{ctx.official_bib || officialBase.bib} →</b>
+            </div>}
           </div>
 
-          <p className="actv56-meta">
-            {fmtLong(a.date)}
-            {(ctx.gear_id || a.gear_id) && gear[ctx.gear_id || a.gear_id] ? ` · Shoe: ${gear[ctx.gear_id || a.gear_id]}` : ''}
-            {officialBase ? ` · Bib ${ctx.official_bib || officialBase.bib}` : ''}
-          </p>
-
-          <div className="actv56-actions">
+          <div className="actv56-actions" style={{ marginTop: 12 }}>
             <button type="button" className="actv56-btn-dark" onClick={() => setShareOpen(true)}>Share Card</button>
             <button type="button" className="actv56-btn-cobalt" onClick={() => go('coach')}>Ask Coach</button>
           </div>
         </div>
-
-        {/* Intervals.icu Intensity Ribbon Card */}
-        <div className="card actv56-ribbon-card">
-          <div className="actv56-ribbon-top">
-            <span>INTENSITY RIBBON (HR / LAPS)</span>
-            <span>{laps.length ? `${laps.length} laps` : fmtDur(a.duration_s)}</span>
-          </div>
-          <div className="actv56-ribbon-bars" aria-label="Per-lap intensity ribbon">
-            {(laps.length ? laps : [{ avg_hr: a.avg_hr }]).map((l, i) => {
-              const hr = l.avg_hr || a.avg_hr || 140
-              const h = Math.max(24, Math.min(100, Math.round(((hr - 105) / 85) * 100)))
-              return <div key={i} className="actv56-rbar" title={`Lap ${i + 1}: ${hr} bpm`} style={{ height: `${h}%`, background: ribbonZoneColor(hr, zcfg.lthr) }} />
-            })}
-          </div>
-          <div className="actv56-ribbon-stats">
-            <span>Time <b>{fmtDur(a.duration_s)}</b></span>
-            {a.training_load != null && <span>Load <b>{a.training_load}</b></span>}
-            {ef != null && <span>EF <b>{ef}</b></span>}
-            {dc && steady && <span>Pa:Hr <b>{dc.pct}%</b></span>}
-            {a.adjusted_pace_s_km && <span>GAP <b>{fmtPaceS(a.adjusted_pace_s_km)}/km</b></span>}
-          </div>
-          {officialBase && <div className="actv56-ach-pill" onClick={() => { setC({ tag: 'Race' }); setTab('official') }} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setC({ tag: 'Race' }); setTab('official') } }} role="button" tabIndex={0}>
-            <span>♥ {officialBase.status} · {officialBase.net}</span>
-            <b>{ctx.official_bib || officialBase.bib} →</b>
-          </div>}
-        </div>
       </div>
 
-      {/* Full-Width 3x2 Mobile / 6-Col Desktop KPI Strip */}
-      <div className="card actv56-kpi-strip">
-        <div className="actv56-kpi"><small>Distance</small><b>{a.distance_m ? `${km(a.distance_m)} km` : '—'}</b></div>
-        <div className="actv56-kpi"><small>Moving Time</small><b>{fmtDur(a.duration_s)}</b></div>
-        <div className="actv56-kpi"><small>Avg Pace</small><b>{a.sport_class === 'run' ? `${fmtPaceS(a.avg_pace_s_km)} /km` : '—'}</b></div>
-        <div className="actv56-kpi"><small>GAP <Info k="GAP" /></small><b>{a.adjusted_pace_s_km ? `${fmtPaceS(a.adjusted_pace_s_km)} /km` : '—'}</b></div>
-        <div className="actv56-kpi"><small>Avg / Max HR</small><b>{a.avg_hr ?? '—'}{a.max_hr ? ` / ${a.max_hr}` : ''}</b></div>
-        <div className="actv56-kpi"><small>Efficiency <Info k="EF" /></small><b>{ef ?? '—'}{dc && steady ? ` / ${dc.pct}%` : ''}</b></div>
+      {/* Runna-Style Unified Borderless 3x2 Mobile / 6-Col Desktop KPI Strip */}
+      <div className="card actv60-kpi-card">
+        <div className="actv60-kpi"><small>Distance</small><b>{a.distance_m ? `${km(a.distance_m)} km` : '—'}</b><em>{officialBase ? officialBase.net.split('@')[1]?.trim() || 'Official race' : (activeTag + ' session')}</em></div>
+        <div className="actv60-kpi"><small>Time</small><b>{fmtDur(a.duration_s)}</b><em>{a.elapsed_s && a.elapsed_s > a.duration_s ? `Elapsed ${fmtDur(a.elapsed_s)}` : 'Moving time'}</em></div>
+        <div className="actv60-kpi"><small>Avg Pace</small><b>{a.sport_class === 'run' ? `${fmtPaceS(a.avg_pace_s_km)} /km` : '—'}</b><em>{a.adjusted_pace_s_km ? `GAP ${fmtPaceS(a.adjusted_pace_s_km)} /km` : 'Pace'}</em></div>
+        <div className="actv60-kpi"><small>Elev Gain</small><b>{(a.elev_gain_m ?? a.ascent_m ?? a.total_elevation_gain) != null ? `▲ ${Math.round(a.elev_gain_m ?? a.ascent_m ?? a.total_elevation_gain)} m` : (dyn('cadence') ? `${Math.round(dyn('cadence'))} spm` : '—')}</b><em>{dyn('cadence') ? `Cadence ${Math.round(dyn('cadence'))} spm` : 'Elevation'}</em></div>
+        <div className="actv60-kpi"><small>Avg HR</small><b>{a.avg_hr ? `${a.avg_hr} bpm` : '—'}</b><em>{a.max_hr ? `Max ${a.max_hr} bpm` : 'Heart rate'}</em></div>
+        <div className="actv60-kpi"><small>{a.calories ? 'Calories' : 'Efficiency'}</small><b>{a.calories ? Math.round(a.calories).toLocaleString() : (ef ?? '—')}</b><em>{dc && steady ? `EF ${ef ?? '—'} · Pa:Hr ${dc.pct}%` : `EF ${ef ?? '—'}`}</em></div>
       </div>
 
       {/* Sticky Thumb-Friendly Segmented Tabs */}
@@ -688,29 +790,67 @@ function Detail({ id, gear, vdot, history, go, settings }) {
         {a.sport_class === 'run' && <FitPanel id={a.ids?.[0] || id} go={go} />}
       </>}
 
-      {/* TAB 5: MATCHED RUNS, LONG-RUN CONTEXT & GEAR */}
-      {activeTab === 'matched' && <div className="actv56-overview-grid">
-        <div>{a.sport_class === 'run' && <RunCompare a={a} id={id} history={history} />}</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {a.sport_class === 'run' && (a.distance_m || 0) >= 16000 && <LongRunContext label={String(a.ids?.[0] || id).replace(/^coros:/, '')} go={go} />}
-          <Card title="Gear & Synced Telemetry">
-            <div className="actv56-gear-row">
-              <div>
-                <small className="muted">Assigned Shoe</small>
-                <div style={{ fontWeight: 700, marginTop: 2 }}>{(ctx.gear_id || a.gear_id) && gear[ctx.gear_id || a.gear_id] ? gear[ctx.gear_id || a.gear_id] : 'Not assigned (set in Overview)'}</div>
+      {/* TAB 5: MATCHED RUNS, EF TREND & GEAR LIFESPAN */}
+      {activeTab === 'matched' && (() => {
+        const recentRuns = history.filter((h) => h.sport_class === 'run' && (h.distance_m || 0) >= 3000 && h.date <= a.date).sort((x, y) => y.date.localeCompare(x.date)).slice(0, 6)
+        const efSeries = [...recentRuns].reverse().map((r) => efOf(r)).filter(Boolean)
+        const activeGearId = ctx.gear_id || a.gear_id
+        const gearObj = gearList.find((g) => String(g.id) === String(activeGearId))
+        const shoeKm = gearObj ? Math.round((gearObj.distance_m || (gearObj.km ? gearObj.km * 1000 : 0)) / 1000) : null
+        const shoeMax = gearObj?.max_km || 650
+        const shoePct = shoeKm != null ? Math.min(100, Math.round((shoeKm / shoeMax) * 100)) : 45
+        return <div className="actv56-overview-grid">
+          <div>
+            <Card title="Matched & Recent Runs (EF Trend)">
+              {efSeries.length >= 2 && <SvgAreaChart values={efSeries} color="#4658D6" fill="rgba(70,88,214,0.14)" label="Efficiency Factor trend" yFmt={(v) => v.toFixed(2)} />}
+              <div className="actv60-matched-list">
+                {recentRuns.map((r) => (
+                  <div key={r.ids?.[0] || r.id} className="actv60-matched-row" onClick={() => go('activity', { id: r.ids?.[0] || r.id })} role="button" tabIndex={0}>
+                    <div>
+                      <div className="actv60-mtitle">{OFFICIAL_RACES[r.date]?.event || r.name}</div>
+                      <div className="actv60-msub">{fmtLong(r.date)} · {km(r.distance_m)} km</div>
+                    </div>
+                    <div className="actv60-mright">
+                      <div className="actv60-mpace">{fmtPaceS(r.avg_pace_s_km)} /km</div>
+                      <div className="actv60-mef">EF {efOf(r) ?? '—'}</div>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <span className="actv56-pill cobalt">{activeTag}</span>
-            </div>
-            <div className="actv56-gear-row" style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--line)' }}>
-              <div>
-                <small className="muted">Data Sources</small>
-                <div style={{ fontWeight: 700, marginTop: 2 }}>{(a.sources || []).join(' + ') || 'COROS'}</div>
+            </Card>
+            {a.sport_class === 'run' && <RunCompare a={a} id={id} history={history} />}
+          </div>
+
+          <div>
+            <Card title="Gear & Sensors">
+              <div className="actv60-gear-tile">
+                <div className="actv60-gear-ico">👟</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="actv56-gear-row">
+                    <b style={{ fontSize: 13.5 }}>{activeGearId && gear[activeGearId] ? gear[activeGearId] : 'No shoe assigned'}</b>
+                    <span className="actv56-pill" style={{ color: 'var(--green-t)' }}>{shoePct >= 85 ? 'Near Retire' : 'Healthy Foam'}</span>
+                  </div>
+                  <div className="muted" style={{ fontSize: 11.5, marginTop: 2 }}>
+                    {shoeKm != null ? `${shoeKm} / ${shoeMax} km logged · ${shoePct}% lifespan` : 'Assign a shoe in Overview to track mileage'}
+                  </div>
+                  {shoeKm != null && <div className="actv60-gear-bar"><div style={{ width: `${shoePct}%`, background: shoePct >= 85 ? 'var(--amber)' : 'var(--green)' }} /></div>}
+                </div>
               </div>
-              <button type="button" className="actv56-fchip" onClick={() => go('profile')}>Manage Gear →</button>
-            </div>
-          </Card>
+              <div className="actv60-gear-tile" style={{ marginBottom: 0 }}>
+                <div className="actv60-gear-ico">⌚</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="actv56-gear-row">
+                    <b style={{ fontSize: 13.5 }}>COROS APEX 4 42mm</b>
+                    <button type="button" className="actv56-fchip" onClick={() => go('profile')}>Manage Gear →</button>
+                  </div>
+                  <div className="muted" style={{ fontSize: 11.5, marginTop: 2 }}>{(a.sources || []).join(' + ') || 'COROS'} · FIT Telemetry Synced</div>
+                </div>
+              </div>
+            </Card>
+            {a.sport_class === 'run' && (a.distance_m || 0) >= 16000 && <LongRunContext label={String(a.ids?.[0] || id).replace(/^coros:/, '')} go={go} />}
+          </div>
         </div>
-      </div>}
+      })()}
 
       {/* TAB 6: OFFICIAL RESULT (Shown only when Tag === 'Race') */}
       {activeTab === 'official' && isRace && <div className="actv56-overview-grid">
