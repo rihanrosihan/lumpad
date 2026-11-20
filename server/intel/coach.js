@@ -1,7 +1,8 @@
 // Orchestrates one coach run: context → provider → schema validation (+1 repair) → write-back → coach_run row.
 import { mdb, idb } from './db.js'
 import { retrieveRunnerContext, renderPrompt, TASKS, OUTPUT_SCHEMA } from './context.js'
-import { validate, normalize } from './schema.js'
+import { validate, normalize as norm0, softClamp } from './schema.js'
+const normalize = (j) => softClamp(norm0(j))
 import { complete as deepseek } from './llm.js'
 import { applyWriteback } from './writeback.js'
 import { audit } from './memory.js'

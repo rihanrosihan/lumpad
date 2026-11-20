@@ -27,3 +27,21 @@ export const OUTPUT_SCHEMA = {
 const FLAG_TYPES = new Set(['gate', 'injury', 'load', 'heat', 'data_gap', 'rule', 'other'])
 // cosmetic normalisation only (flag category labels); anything that affects advice or memory stays strictly validated
 export const normalize = (j) => { if (j && Array.isArray(j.flags)) for (const f of j.flags) if (f && typeof f === 'object' && !FLAG_TYPES.has(f.type)) f.type = 'other'; return j }
+
+// A coach answer that is only too long is not a failed answer: cut the display fields to their limit at a sentence boundary (or a space) instead of
+// burning a repair call. Structure, enums and memory writes stay strictly validated. Returns the same object.
+const clipText = (t, max) => {
+  if (typeof t !== 'string' || t.length <= max) return t
+  const cut = t.slice(0, max - 1), at = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('\n'), cut.lastIndexOf('; '))
+  return (at > max * 0.6 ? cut.slice(0, at + 1) : cut.replace(/\s+\S*$/, '')) + '…'
+}
+export function softClamp(j, S = OUTPUT_SCHEMA) {
+  if (!j || typeof j !== 'object') return j
+  for (const k of ['summary', 'analysis_md']) if (typeof j[k] === 'string') j[k] = clipText(j[k], S.properties[k].maxLength)
+  for (const [k, fields] of [['recommendations', ['action', 'why']], ['flags', ['text']]]) {
+    const sp = S.properties[k]; if (!Array.isArray(j[k])) continue
+    if (j[k].length > sp.maxItems) j[k] = j[k].slice(0, sp.maxItems)
+    for (const it of j[k]) if (it && typeof it === 'object') for (const f of fields) if (typeof it[f] === 'string') it[f] = clipText(it[f], sp.items.properties[f].maxLength)
+  }
+  return j
+}

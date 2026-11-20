@@ -80,3 +80,23 @@ test('redact(): names, employer, e-mail, URLs and secrets never leave (fake look
   const t = C.redact(`Rihan Rosihan works at Pizza Hut Indonesia, mail a.b@example.com, see https://x.y/z token ${fakeKey} and ${fakeHex}`)
   assert.ok(!/Rihan|Rosihan|Pizza|example\.com|https|a1b2c3d4|ab12cd34/.test(t), t)
 })
+test('complete(): a brief truncated at low effort is retried once with twice the budget', async () => {
+  const calls = []
+  const fetchFn = async (url, opt) => {
+    if (url.endsWith('/models')) return ok(models)
+    if (url.endsWith('/user/balance')) return ok({ is_available: true, balance_infos: [{ currency: 'CNY', total_balance: '10.00' }] })
+    const b = JSON.parse(opt.body); calls.push(b.max_tokens); const first = calls.length === 1
+    return ok({ choices: [{ message: { content: first ? '' : '{"a":3}' }, finish_reason: first ? 'length' : 'stop' }], usage: {} })
+  }
+  const r = await L.complete({ system: 's', user: 'u', effort: 'low', intent: 'daily_brief', fetchFn })
+  assert.deepEqual(r.json, { a: 3 }); assert.equal(calls.length, 2); assert.equal(calls[1], calls[0] * 2)
+})
+test('softClamp: over-long display text is cut at a sentence, so a long answer is not a failed one; structure stays strict', async () => {
+  const S = await import('./schema.js')
+  const long = 'Sentence one is here. ' + 'word '.repeat(2000)
+  const j = S.softClamp({ summary: 'ok', analysis_md: long, recommendations: Array.from({ length: 12 }, () => ({ action: 'a'.repeat(900), why: 'b', priority: 'now' })), flags: [], memory_writes: [], cited_ids: [] })
+  assert.ok(j.analysis_md.length <= 6000 && j.analysis_md.endsWith('…')); assert.equal(j.recommendations.length, 8); assert.ok(j.recommendations[0].action.length <= 400)
+  assert.deepEqual(S.validate(j, S.OUTPUT_SCHEMA).filter((e) => /longer|more than/.test(e)), [])
+  const mw = S.softClamp({ memory_writes: [{ tier: 'semantic', title: 't', body: 'x'.repeat(2000), cites: [1] }] })
+  assert.equal(mw.memory_writes[0].body.length, 2000) // memory writes are never trimmed
+})

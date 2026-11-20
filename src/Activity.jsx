@@ -6,6 +6,7 @@ import { BY_DATE, today, addDays, fmtLong, MONTHS } from './lib/calendar.js'
 import { efOf, decoupling, cumulativeKm } from './lib/analysis.js'
 import { mean } from './lib/stats.js'
 import { useStore } from './store.js'
+import { tileSpec } from './lib/tiles.js'
 import { Card, Chip, Icon, Evidence, Info, SegmentedTabs, StatusPill } from './ui.jsx'
 import { useApi, fmtDur, fmtPaceS } from './api.js'
 import { cfgOf, hrRange, paceRange, zoneSeconds, ZONES } from './lib/zones.js'
@@ -401,6 +402,8 @@ function ActivityHeroMap({ a, laps, onShare }) {
   const elRef = useRef(null)
   const mapRef = useRef(null)
   const [style, setStyle] = useState('clean')
+  const [mapKey] = useStore('lumpad.mapkey', '')
+  const keyed = tileSpec(mapKey, false).keyed
   const coords = useMemo(() => extractRouteCoords(a), [a])
 
   useEffect(() => {
@@ -408,13 +411,8 @@ function ActivityHeroMap({ a, laps, onShare }) {
     if (mapRef.current) { mapRef.current.remove(); mapRef.current = null }
     const map = L.map(elRef.current, { zoomControl: false, attributionControl: false, scrollWheelZoom: false })
     mapRef.current = map
-    const url = style === 'clean'
-      ? 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}'
-      : 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}'
-    L.tileLayer(url, { maxZoom: 18 }).addTo(map)
-    if (style === 'clean') {
-      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18, opacity: 0.7 }).addTo(map)
-    }
+    const sp = tileSpec(mapKey, false, style)
+    L.tileLayer(sp.url, { maxZoom: 18, subdomains: sp.subdomains || 'abc', attribution: '' }).addTo(map)
     const line = L.polyline(coords, { color: '#F26B5B', weight: 4.2, opacity: 0.95, lineJoin: 'round', lineCap: 'round' }).addTo(map)
     L.circleMarker(coords[0], { radius: 6.5, fillColor: '#10B981', color: '#fff', weight: 2.5, fillOpacity: 1 }).addTo(map).bindTooltip('Start')
     const end = coords[coords.length - 1]
@@ -424,15 +422,16 @@ function ActivityHeroMap({ a, laps, onShare }) {
     map.fitBounds(line.getBounds(), { padding: [30, 30] })
     setTimeout(() => map.invalidateSize(), 120)
     return () => { if (mapRef.current) { mapRef.current.remove(); mapRef.current = null } }
-  }, [coords, style])
+  }, [coords, style, mapKey])
 
   if (coords.length >= 2) {
     return <div className="actv60-map-card">
+      {!keyed && <div className="actv60-map-note">OpenStreetMap tiles. Add your CARTO key in Profile for the Clean and Street styles.</div>}
       <div ref={elRef} className="actv60-map-canvas" />
       <div className="actv60-map-controls">
-        <button type="button" className="actv60-map-pill" onClick={() => setStyle((s) => s === 'clean' ? 'street' : 'clean')}>
+        {keyed && <button type="button" className="actv60-map-pill" onClick={() => setStyle((s) => s === 'clean' ? 'street' : 'clean')}>
           {style === 'clean' ? 'Clean Map' : 'Street Map'}
-        </button>
+        </button>}
         <button type="button" className="actv60-map-pill" onClick={onShare}>Share ↗</button>
       </div>
     </div>
