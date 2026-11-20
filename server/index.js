@@ -233,6 +233,8 @@ const routes = {
   'GET /api/library': async () => lib.list(),
   'POST /api/library': async (_q, req) => lib.add(JSON.parse((await readBody(req, 1e5)).toString())),
   'DELETE /api/library': async (q) => lib.remove(q.get('id')),
+  'GET /api/v2/sub4': async () => { try { const r = await fetch('http://127.0.0.1:8788/api/v2/sub4'); if (r.ok) return await r.json() } catch {} return { ok: false, offline: true } },
+  'GET /api/v2/decisions': async (q) => { try { const qs = q.toString(); const r = await fetch('http://127.0.0.1:8788/api/v2/decisions' + (qs ? '?' + qs : '')); if (r.ok) return await r.json() } catch {} return { items: [], offline: true } },
 }
 
 http.createServer(async (req, res) => {
