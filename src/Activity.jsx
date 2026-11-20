@@ -26,7 +26,7 @@ const shiftMonth = (ym, n) => { const [y, m] = ym.split('-').map(Number), d = ne
 const SPORT_LABEL = { run: 'Run', walk: 'Walk', strength: 'Gym' }
 
 export default function Activity({ vdot, focus, go, settings }) {
-  const T = today(), [ym, setYm] = useState(T.slice(0, 7)), [sport, setSport] = useState('all'), [type, setType] = useState('all'), sel = focus?.id || null
+  const T = today(), [ym, setYm] = useState(T.slice(0, 7)), [sport, setSport] = useState('all'), [type, setType] = useState('all'), [query, setQuery] = useState(''), [sort, setSort] = useState('newest'), sel = focus?.id || null
   const [from, to] = monthRange(ym), prevYm = shiftMonth(ym, -1), [pf] = monthRange(prevYm)
   const A = useApi(`/api/activities/merged?from=${pf}&to=${to}`), G = useApi('/api/gear'), Hist = useApi(`/api/activities/merged?from=${addDays(T, -180)}&to=${T}`)
   const gear = useMemo(() => Object.fromEntries((G.data || []).map((g) => [g.id, g.name])), [G.data])
@@ -50,42 +50,81 @@ export default function Activity({ vdot, focus, go, settings }) {
   </section>
 
   const prevKm = cumPrev.at(-1)?.km ?? 0, curKm = cum.at(-1)?.km ?? 0, dKm = prevKm ? Math.round(((curKm - prevKm) / prevKm) * 1000) / 10 : null
-  const cnt = (k) => all.filter((a) => a.sport_class === k).length, hhmm = (a) => (a.start_ts ? new Date(a.start_ts * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' }) : null)
-  const longest = (a) => a.sport_class === 'run' && typeOf(a) === 'long'
+  const cnt = (k) => all.filter((a) => a.sport_class === k).length
+  const tagLabel = (a) => (typeOf(a) ? TYPES.find((x) => x[0] === typeOf(a))?.[1]?.replace('TT / race', 'Race') : (a.sport_class === 'strength' ? 'Gym' : null))
+  const cond = (a) => [a.temp_c != null ? `${Math.round(a.temp_c)}°C` : null, a.humidity != null ? `RH ${a.humidity}%` : null].filter(Boolean).join(' · ') || (a.sport_class === 'strength' ? 'Indoor' : null)
+  // hours by sport (Run, Walk, Gym, Others) of the month, the same set the cards are filtered from
+  const hrs = { Run: 0, Walk: 0, Gym: 0, Others: 0 }
+  for (const a of all) hrs[{ run: 'Run', walk: 'Walk', strength: 'Gym' }[a.sport_class] || 'Others'] += (a.duration_s || 0) / 3600
+  const hrsTot = Object.values(hrs).reduce((x, y) => x + y, 0), HCOL = { Run: 'var(--cobalt, #4658D6)', Walk: 'var(--green)', Gym: 'var(--yellow)', Others: 'var(--c-quality)' }
+  const weeks = Math.max(1, new Date(+ym.slice(0, 4), +ym.slice(5), 0).getDate() / 7), runKm = all.filter((a) => a.sport_class === 'run').reduce((x, a) => x + (a.distance_m || 0), 0) / 1000
+  const allTl = all.reduce((x, a) => x + (a.training_load || 0), 0)
+  const q = query.trim().toLowerCase()
+  const feed = list.filter((a) => !q || [a.name, a.location, a.gear_id && gear[a.gear_id], tagLabel(a)].filter(Boolean).join(' ').toLowerCase().includes(q))
+    .sort((x, y) => sort === 'longest' ? (y.distance_m || 0) - (x.distance_m || 0) : sort === 'fastest' ? (x.avg_pace_s_km || 1e9) - (y.avg_pace_s_km || 1e9) : sort === 'load' ? (y.training_load || 0) - (x.training_load || 0) : (y.date + (y.start_ts || '')).localeCompare(x.date + (x.start_ts || '')))
+  const dateShort = (d) => `${MONTHS[+d.slice(5, 7) - 1].slice(0, 3)} ${d.slice(8)}`
 
-  return <section className="screen acts">
-    <div className="actgrid">
-      <div className="card acthead">
-        <div className="monthbar slim">
-          <button onClick={() => setYm(shiftMonth(ym, -1))} aria-label="Previous month"><Icon n="left" /></button>
-          <div className="mid"><h1 aria-live="polite">All Activities — {MONTHS[+ym.slice(5) - 1]} {ym.slice(0, 4)}</h1><p className="sub">Merged COROS + Strava · click any card to open its dedicated full-page analysis</p></div>
-          <button onClick={() => setYm(shiftMonth(ym, 1))} aria-label="Next month" className="flip"><Icon n="left" /></button>
-        </div>
-        <div className="bigkm"><b>{curKm} km</b><small>{prevKm ? `vs ${prevKm} km last month${dKm != null ? ` (${dKm > 0 ? '+' : ''}${dKm}%)` : ''}` : 'no comparison yet'}</small>{ym !== T.slice(0, 7) && <button className="link" onClick={() => setYm(T.slice(0, 7))}>Go to this month</button>}</div>
-        <BandLine data={curve} keys={[{ key: 'cur', color: 'var(--c-long)' }, { key: 'prev', color: 'var(--muted)', cls: 'dash' }]} height={130} label={`Cumulative run km this month ${curKm} vs last month ${prevKm}`} />
-        <div className="legend"><span><i className="ll" style={{ borderColor: 'var(--c-long)' }} />This month ({curKm} km)</span><span><i className="ll" style={{ borderColor: 'var(--muted)', borderTopStyle: 'dashed' }} />Last month ({prevKm} km)</span></div>
-      </div>
-      <div className="card actsum">
-        <h2>Monthly Summary &amp; Sport Filter</h2><p className="sub">Filter activities by sport or workout type</p>
-        <div className="sumtiles"><div><small>Activities</small><b>{tot.n}</b></div><div><small>Run distance</small><b className="gr">{tot.km.toFixed(1)} km</b></div><div><small>Total time</small><b>{fmtDur(tot.time)}</b></div><div><small>Total load</small><b className="cr">{tot.tl || '—'}</b></div></div>
-        <div className="chipfilter" role="group" aria-label="Sport filter">{SPORTS.map(([k, l]) => <button key={k} aria-pressed={sport === k} onClick={() => setSport(k)}>{l}{k === 'all' ? ` (${all.length})` : ` (${cnt(k)})`}</button>)}</div>
-        <div className="chipfilter" role="group" aria-label="Workout type filter" style={{ marginTop: 6 }}>{TYPES.map(([k, l]) => <button key={k} aria-pressed={type === k} onClick={() => setType(k)}>{l}</button>)}</div>
+  return <section className="screen acts feed56">
+    <div className="feed-head">
+      <div><h1>Activities</h1><p className="sub">All synced runs, walks, and gym sessions</p></div>
+      <div className="feed-monthnav" role="group" aria-label="Select month">
+        <button type="button" onClick={() => setYm(shiftMonth(ym, -1))} aria-label="Previous month">‹</button>
+        <span aria-live="polite">{MONTHS[+ym.slice(5) - 1].slice(0, 3)} {ym.slice(0, 4)}</span>
+        <button type="button" onClick={() => setYm(shiftMonth(ym, 1))} disabled={ym >= T.slice(0, 7)} aria-label="Next month">›</button>
       </div>
     </div>
 
+    <div className="feed-hero">
+      <div className="card">
+        <div className="feed-bigrow"><div><small>Monthly run volume</small><b>{curKm} km</b></div>{dKm != null ? <span className={`feed-delta ${dKm >= 0 ? 'pos' : 'neg'}`}>{dKm > 0 ? '+' : ''}{dKm}% vs prev</span> : <span className="muted">no comparison yet</span>}</div>
+        <BandLine data={curve} keys={[{ key: 'cur', color: 'var(--c-long)' }, { key: 'prev', color: 'var(--muted)', cls: 'dash' }]} height={130} label={`Cumulative run km this month ${curKm} vs last month ${prevKm}`} />
+        <div className="legend"><span><i className="ll" style={{ borderColor: 'var(--c-long)' }} />This month ({curKm} km)</span><span><i className="ll" style={{ borderColor: 'var(--muted)', borderTopStyle: 'dashed' }} />Last month ({prevKm} km)</span></div>
+      </div>
+      <div className="card">
+        <h2 className="feed-h2">Monthly Summary</h2><p className="sub" style={{ margin: '0 0 8px' }}>{MONTHS[+ym.slice(5) - 1]} {ym.slice(0, 4)} · {Math.round(weeks * 10) / 10} weeks</p>
+        <div className="feed-sum">
+          <div><small>Activities</small><b>{all.length}</b></div>
+          <div><small>Run distance</small><b className="gr">{runKm.toFixed(1)} km</b></div>
+          <div><small>Avg weekly</small><b>{(runKm / weeks).toFixed(1)} km</b></div>
+          <div><small>Total load</small><b style={{ color: 'var(--cobalt, #4658D6)' }}>{allTl || '—'}</b></div>
+        </div>
+        <div className="feed-hours"><div className="feed-hours-h"><span>Total hours by sport</span><b>{hrsTot.toFixed(1)}h total</b></div>
+          <div className="feed-hours-g">{Object.entries(hrs).map(([k, h]) => <div key={k}><small>{k}</small><b>{h.toFixed(1)}h</b><i><u style={{ width: (h > 0 ? Math.max(10, Math.round((h / hrsTot) * 100)) : 0) + '%', background: HCOL[k] }} /></i></div>)}</div></div>
+      </div>
+    </div>
+
+    <div className="feed-filter">
+      <div className="feed-search">
+        <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search run, race, location, shoe…" aria-label="Search activities" />
+        <select value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort activities"><option value="newest">Newest</option><option value="longest">Longest</option><option value="fastest">Fastest</option><option value="load">Highest TL</option></select>
+      </div>
+      <div className="feed-pills" role="group" aria-label="Filters">
+        {SPORTS.map(([k, l]) => <button type="button" key={k} className={sport === k ? 'on' : ''} aria-pressed={sport === k} onClick={() => setSport(k)}>{l} ({k === 'all' ? all.length : cnt(k)})</button>)}
+        <span className="fdiv" aria-hidden="true" />
+        {TYPES.map(([k, l]) => <button type="button" key={k} className={type === k ? 'on' : ''} aria-pressed={type === k} onClick={() => setType(k)}>{k === 'all' ? 'All tags' : l}</button>)}
+      </div>
+    </div>
+    <div className="feed-meta"><span>Showing {feed.length} {feed.length === 1 ? 'activity' : 'activities'}</span><span>Tap any card for full analysis</span></div>
+
     {A.state === 'loading' && <><div className="skel" style={{ height: 72 }} /><div className="skel" style={{ height: 72 }} /></>}
     {A.state === 'error' && <div className="card empty"><b>Failed to load</b>Server unreachable.</div>}
-    {A.state === 'ok' && !list.length && <div className="card empty"><b>{all.length ? 'No activities for this filter' : 'No activities this month yet'}</b>{all.length ? 'Try “All”.' : 'Check Profile › Devices & Connections.'}</div>}
-    <div className="acards">{list.map((a) => { const t = typeOf(a), g = a.gear_id && gear[a.gear_id]; return <button key={a.id} className={`acard ${CLS(a)}`} onClick={() => go('activity', { id: (a.ids?.[0] || a.id) })} aria-label={`${fmtLong(a.date)}: ${a.name}`}>
-      <div className="ac-top">
-        <div><span className="chip t-sport">{SPORT_LABEL[a.sport_class] || a.sport}{t ? ' · ' + TYPES.find((x) => x[0] === t)[1] : ''}</span> <small className="mono">{fmtLong(a.date).replace(/^(\w{3})\w*, (\w{3})\w* /, '$1, $2 ')}{hhmm(a) ? ` · ${hhmm(a)}` : ''}</small></div>
-        <div className="ac-km"><b>{a.distance_m ? km(a.distance_m) + ' km' : fmtDur(a.duration_s)}</b>{a.training_load ? <span className="tlb2">TL {a.training_load}</span> : null}</div>
-      </div>
-      <h3>{a.name || SPORT_LABEL[a.sport_class] || a.sport}</h3>
-      <p className="muted">{[g ? 'Shoe: ' + g : null, a.temp_c != null ? `${a.temp_c}°C · RH ${a.humidity ?? '—'}%` : null, a.location].filter(Boolean).join(' · ') || (longest(a) ? 'Long run' : '—')}</p>
-      <div className="ac-stats"><div><small>Duration</small><b>{fmtDur(a.duration_s)}</b></div><div><small>Pace</small><b>{a.avg_pace_s_km && a.sport_class === 'run' ? fmtPaceS(a.avg_pace_s_km) + ' /km' : '—'}</b></div><div><small>Avg HR</small><b>{a.avg_hr ? a.avg_hr + ' bpm' : '—'}</b></div><span className="ac-go">Open Analysis →</span></div>
-    </button> })}</div>
+    {A.state === 'ok' && !feed.length && <div className="card empty"><b>{all.length ? 'No activities match your current filters.' : 'No activities this month yet'}</b>{all.length ? 'Try “All”.' : 'Check Profile › Devices & Connections.'}</div>}
+    <div className="feed-grid">{feed.map((a) => { const tg = tagLabel(a), g = a.gear_id && gear[a.gear_id], c = cond(a), poly = a.summary_polyline || a.map?.summary_polyline
+      return <button type="button" key={a.id} className="feed-card" onClick={() => go('activity', { id: (a.ids?.[0] || a.id) })} aria-label={`Open ${a.name || a.sport}, ${a.date}`}>
+        <div className="feed-card-top"><div className="feed-badges">{a.training_load ? <span className="fpill tl">TL {a.training_load}</span> : null}{tg && <span className={`fpill tag-${tg.replace(/\W+/g, '')}`}>{tg}</span>}{c && <span className="fpill cond">{c}</span>}</div><span className="feed-date">{dateShort(a.date)}</span></div>
+        <div className="feed-card-mid"><div style={{ minWidth: 0 }}><h3>{a.name || SPORT_LABEL[a.sport_class] || a.sport}</h3><div className="feed-loc">{[a.location, g ? 'Shoe: ' + g : null].filter(Boolean).join(' · ') || '—'}</div></div>
+          <div className="feed-mini" aria-hidden="true">{poly ? <MiniRoute poly={poly} /> : <span>{a.sport_class === 'strength' ? '🏋️' : a.sport_class === 'walk' ? '🚶' : '🏃'}</span>}</div></div>
+        <div className="feed-kpis"><div><small>Distance</small><b>{a.distance_m ? km(a.distance_m) + ' km' : '—'}</b></div><div><small>Time</small><b>{fmtDur(a.duration_s)}</b></div><div><small>Avg pace</small><b>{a.avg_pace_s_km && a.sport_class === 'run' ? fmtPaceS(a.avg_pace_s_km) + '/km' : '—'}</b></div><div><small>Avg HR</small><b>{a.avg_hr ? a.avg_hr + ' bpm' : '—'}</b></div></div>
+      </button> })}</div>
   </section>
+}
+
+// route outline from an encoded polyline (only when the activity carries one; no polyline = no drawing, never an invented shape)
+function MiniRoute({ poly }) {
+  const pts = decodePolyline(poly); if (pts.length < 2) return null
+  const la = pts.map((p) => p[0]), lo = pts.map((p) => p[1]), a0 = Math.min(...la), a1 = Math.max(...la), o0 = Math.min(...lo), o1 = Math.max(...lo), sc = Math.max(a1 - a0, o1 - o0) || 1
+  const d = pts.filter((_, i) => i % Math.ceil(pts.length / 60) === 0).map((p, i) => `${i ? 'L' : 'M'}${(4 + ((p[1] - o0) / sc) * 56).toFixed(1)},${(38 - ((p[0] - a0) / sc) * 34).toFixed(1)}`).join('')
+  return <svg viewBox="0 0 64 42" width="56" height="36"><path d={d} fill="none" stroke="#F26B5B" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
 }
 
 function RunCompare({ a, id, history }) {
