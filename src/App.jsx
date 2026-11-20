@@ -10,6 +10,7 @@ import Coach from './Coach.jsx'
 import DayPage from './DayPage.jsx'
 import Biometrics from './Biometrics.jsx'
 import PlanSync from './PlanSync.jsx'
+import { HubHeader, PlanView } from './SeasonHub.jsx'
 import { EMPTY_BIO, latest, classifyBP } from './lib/bio.js'
 import { CHECKPOINTS, TARGET } from './lib/plan.js'
 import { paces, fmtPace } from './lib/vdot.js'
@@ -22,13 +23,13 @@ import { useApi } from './api.js'
 // Pages (each its own full page, no popups). `short` = label in the phone bottom bar.
 const PAGES = {
   home: { label: 'Home', icon: 'home' }, ready: { label: 'Readiness', icon: 'ready', short: 'Ready' }, activity: { label: 'Activities', icon: 'run', short: 'Activity' },
-  calendar: { label: 'Calendar', icon: 'cal', short: 'Plan' }, analysis: { label: 'Run Analysis', icon: 'run' }, plan: { label: 'Plan Sync', icon: 'sync', short: 'Sync' }, day: { label: 'Day Plan', icon: 'day' }, checkpoint: { label: 'Checkpoints', icon: 'bars' }, race: { label: 'Races', icon: 'flag' },
+  calendar: { label: 'Calendar', icon: 'cal', short: 'Calendar' }, season: { label: 'Season Plan', icon: 'cal', short: 'Plan' }, analysis: { label: 'Run Analysis', icon: 'run' }, plan: { label: 'Plan Sync', icon: 'sync', short: 'Sync' }, day: { label: 'Day Plan', icon: 'day' }, checkpoint: { label: 'Checkpoints', icon: 'bars' }, race: { label: 'Races', icon: 'flag' },
   coach: { label: 'AI Coach', icon: 'coach', short: 'Coach' }, biometrics: { label: 'Biometrics', icon: 'heart', short: 'Labs' }, profile: { label: 'Profile', icon: 'user' },
 }
-const GROUPS = [['Daily', ['home', 'ready', 'activity', 'analysis']], ['Planning', ['calendar', 'day', 'plan', 'checkpoint', 'race']], ['Intelligence', ['coach', 'biometrics', 'profile']]]
+const GROUPS = [['Daily', ['home', 'ready', 'activity', 'analysis']], ['Planning', ['calendar', 'season', 'day', 'plan', 'checkpoint', 'race']], ['Intelligence', ['coach', 'biometrics', 'profile']]]
 // breadcrumb under the brand (mockup wording)
-const CRUMB = { home: 'Home Briefing', ready: 'Readiness & Load', activity: 'Activities Catalog', calendar: 'Macrocycle Calendar', plan: 'Plan Sync', day: 'Day Plan', checkpoint: 'Checkpoint Roadmap', race: 'Races Hub', coach: 'AI Coach & Rules', biometrics: 'Biometrics & Labs', profile: 'Profile & Fleet' }
-const BOTTOM = ['home', 'ready', 'coach', 'calendar', 'race', 'biometrics', 'profile']
+const CRUMB = { season: 'Season Plan', home: 'Home Briefing', ready: 'Readiness & Load', activity: 'Activities Catalog', calendar: 'Macrocycle Calendar', plan: 'Plan Sync', day: 'Day Plan', checkpoint: 'Checkpoint Roadmap', race: 'Races Hub', coach: 'AI Coach & Rules', biometrics: 'Biometrics & Labs', profile: 'Profile & Fleet' }
+const BOTTOM = ['home', 'ready', 'activity', 'calendar', 'coach']
 const ROUTES = Object.keys(PAGES).filter((k) => k !== 'analysis')
 const RACES = PLAN.filter((d) => d.kind === 'race' && /FM|Full/.test(d.label || ''))
 const THEMES = ['auto', 'light', 'dark']
@@ -112,8 +113,8 @@ export default function App() {
     checkpoint: nextCp ? 'CP1–' + CHECKPOINTS.length : null, biometrics: (bio.bp?.length || 0) + (bio.glu?.length || 0) + (bio.weight?.length || 0) + (bio.lab?.length || 0) ? 'LABS' : null, race: nextRace ? 'D-' + dNext : null,
   }
   const cur = tab === 'activity' && focus?.id ? 'activity-detail' : tab
-  const subOf = { day: 'calendar', plan: 'calendar', analysis: 'activity' }
-  const navBtn = (k, cls) => <button key={k} className={`${cls} ${(k === 'analysis' ? cur === 'activity-detail' : tab === k && !(k === 'activity' && cur === 'activity-detail')) ? 'on' : ''} ${subOf[k] ? 'sub' : ''}`} aria-current={(k === 'analysis' ? cur === 'activity-detail' : tab === k) ? 'page' : undefined}
+  const subOf = { day: 'calendar', plan: 'calendar', season: 'calendar', checkpoint: 'calendar', race: 'calendar', analysis: 'activity' }
+  const navBtn = (k, cls) => <button key={k} className={`${cls} ${(k === 'analysis' ? cur === 'activity-detail' : (tab === k || (cls === 'nb' && subOf[tab] === k)) && !(k === 'activity' && cur === 'activity-detail')) ? 'on' : ''} ${subOf[k] ? 'sub' : ''}`} aria-current={(k === 'analysis' ? cur === 'activity-detail' : tab === k) ? 'page' : undefined}
     onClick={() => (k === 'analysis' ? (lastRunId ? go('activity', { id: lastRunId }) : go('activity')) : go(k, k === 'day' ? T : null))}><Icon n={PAGES[k].icon} size={cls === 'rb' ? 18 : 22} /><span>{cls === 'nb' ? PAGES[k].short || PAGES[k].label : PAGES[k].label}</span></button>
   const grouped = (cls) => GROUPS.map(([g, ks]) => <div key={g} className="ngroup"><p className="ngl">{g}</p>{ks.map((k) => navBtn(k, cls))}</div>)
   const gate = rd.score == null ? ['none', 'NO DATA', 'Not enough data for today\'s score yet.'] : rd.caps.length ? ['caution', 'CAUTION', rd.caps[0].why] : ['ok', rd.tier.label.toUpperCase(), rd.tier.advice]
@@ -152,6 +153,7 @@ export default function App() {
           {tab === 'activity' && <Activity vdot={vdot} focus={focus} go={go} settings={settings} />}
           {tab === 'coach' && <Coach go={go} focus={focus} />}
           {tab === 'calendar' && <Calendar view="month" vdot={vdot} results={results} setResults={setResults} focus={null} settings={settings} go={go} />}
+          {tab === 'season' && <section className="screen"><HubHeader active="season" go={go} /><PlanView vdot={vdot} settings={settings} go={go} /></section>}
           {tab === 'plan' && <PlanSync go={go} />}
           {tab === 'day' && <DayPage date={focus || T} vdot={vdot} settings={settings} go={go} />}
           {tab === 'checkpoint' && <Calendar view="cp" vdot={vdot} results={results} setResults={setResults} focus={focus} settings={settings} go={go} />}

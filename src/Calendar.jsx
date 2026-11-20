@@ -5,6 +5,7 @@ import { Chip, Icon, SegmentedTabs, StatusPill } from './ui.jsx'
 import { useApi } from './api.js'
 import Checkpoints from './Checkpoints.jsx'
 import Race from './Race.jsx'
+import { HubHeader } from './SeasonHub.jsx'
 import { Gantt, Combo } from './charts2.jsx'
 import { effectiveDay } from './lib/scaler.js'
 import { compliance } from './lib/analysis.js'
@@ -138,20 +139,17 @@ export default function Calendar({ view = 'month', vdot, results, setResults, fo
   const segs = useMemo(() => { const out = []; for (const d of PLAN) { const c = d.phase.replace(/[^A-Z]/g, ''); if (out.at(-1)?.cls === c) out.at(-1).n++; else out.push({ cls: c, label: PHASE_NAME[d.phase] || d.phase, n: 1 }) } return out.map((s) => ({ ...s, frac: s.n / PLAN.length })) }, [])
   const todayFrac = T >= PLAN[0].date && T <= PLAN.at(-1).date ? PLAN.findIndex((d) => d.date === T) / PLAN.length : null
 
-  if (view === 'race') return <section className="screen"><Race vdot={vdot} results={results} settings={settings} go={go} /></section>
-  if (view === 'cp') return <Checkpoints vdot={vdot} results={results} setResults={setResults} focus={focus?.id} go={go} />
+  if (view === 'race') return <section className="screen"><HubHeader active="race" go={go} /><Race vdot={vdot} results={results} settings={settings} go={go} /></section>
+  if (view === 'cp') return <section className="screen"><HubHeader active="checkpoint" go={go} /><Checkpoints vdot={vdot} results={results} setResults={setResults} focus={focus?.id} go={go} /></section>
 
   return <section className="screen">
+    <HubHeader active="calendar" go={go} />
     {/* Unified Macrocycle Command Header + Annual Phase Ribbon */}
     <div className="card prof-cmd">
       <div className="prof-cmd-top">
         <div>
           <h1>2027 Macrocycle Calendar ({PLAN_KM.toLocaleString('en-US')} km)</h1>
           <p className="sub">Click any date cell to open its dedicated full-page workout prescription (VDOT paces, gates &amp; shoe pairing)</p>
-        </div>
-        <div className="prof-chips">
-          <button type="button" className="btn sm" onClick={() => go('checkpoint')}>Checkpoints (CP1–20) →</button>
-          <button type="button" className="btn primary sm" onClick={() => go('race')}>Races Hub →</button>
         </div>
       </div>
 
