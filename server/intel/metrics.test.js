@@ -67,3 +67,10 @@ test('altitude comes from enhanced_altitude when the file has no plain altitude 
   rec.forEach((r) => { delete r.enhanced_altitude })
   assert.equal(toSeries({ records: rec }).alt[10], 99)
 })
+test('speed falls back to enhanced_speed when the file has no plain speed (Garmin), like the Go decoder', () => {
+  const t0 = Date.UTC(2026, 0, 1), rec = []
+  for (let i = 0; i < 60; i++) rec.push({ timestamp: new Date(t0 + i * 1000), distance: i * 3, heart_rate: 140, enhanced_speed: 3.1 })
+  assert.equal(toSeries({ records: rec }).speed[10], 3.1)
+  rec.forEach((r) => { r.speed = 3.0 })
+  assert.equal(toSeries({ records: rec }).speed[10], 3.0) // plain speed wins when present, as in Go
+})

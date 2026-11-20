@@ -4,7 +4,7 @@ import fs from 'node:fs'
 import FitParserMod from 'fit-file-parser'
 const FitParser = FitParserMod.default || FitParserMod
 
-export const PARSER_VERSION = 3 // 3: altitude from enhanced_altitude first (Garmin files carry only that field); 2: six-zone HR/pace time, pacing discipline, % LTHR
+export const PARSER_VERSION = 4 // 4: speed falls back to enhanced_speed (Garmin); 3: altitude from enhanced_altitude first; 2: six-zone HR/pace time, pacing discipline, % LTHR
 const NUM = (x) => (typeof x === 'number' && isFinite(x) ? x : NaN)
 
 export function parseFitBuffer(buf) {
@@ -24,7 +24,7 @@ export function toSeries(d) {
   for (const r of rec) {
     const i = Math.round((r.timestamp.getTime() - t0) / 1000); if (i < 0 || i >= n) continue
     S.paused[i] = 0
-    S.speed[i] = NUM(r.speed); S.dist[i] = NUM(r.distance); S.hr[i] = NUM(r.heart_rate); S.alt[i] = NUM(r.enhanced_altitude ?? r.altitude); S.power[i] = NUM(r.power)
+    S.speed[i] = NUM(r.speed); if (isNaN(S.speed[i])) S.speed[i] = NUM(r.enhanced_speed); S.dist[i] = NUM(r.distance); S.hr[i] = NUM(r.heart_rate); S.alt[i] = NUM(r.enhanced_altitude ?? r.altitude); S.power[i] = NUM(r.power)
     const c = NUM(r.cadence); S.cad[i] = isNaN(c) ? NaN : (c + (NUM(r.fractional_cadence) || 0)) * 2
     const g = NUM(r.stance_time); S.gct[i] = g > 0 ? g : NaN
     const vo = NUM(r.vertical_oscillation); S.vo[i] = vo > 0 ? vo : NaN
