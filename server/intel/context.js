@@ -17,7 +17,7 @@ const wibDate = () => new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 1
 const addDays = (s, n) => { const d = new Date(s + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10) }
 
 export { redact, STABLE_ATHLETE, DEFINITIONS, INTENT_QUERY, TASKS } from './prompt.js'
-function compactTwin(state) {
+export function compactTwin(state) {
   const t = JSON.parse(JSON.stringify(state)); delete t.fade_curves; if (t.durability) delete t.durability.run_share_by_km; if (t.races) t.races.fm_attempts = (t.races.fm_attempts || []).slice(-3)
   t.shoes = (t.shoes || []).filter((s) => s.n > 0 || !s.retired).slice(0, 6); return t
 }

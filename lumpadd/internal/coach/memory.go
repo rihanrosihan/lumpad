@@ -4,9 +4,9 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"regexp"
-	"sort"
 	"strings"
 	"time"
 	"unicode"
@@ -26,6 +26,7 @@ type Memory struct {
 	N          int
 	Confidence *float64
 	Status     string // candidate | active | proposal | …
+	ValidFrom  string // date the item is valid from (YYYY-MM-DD); "" = none
 	Locked     bool
 	Source     string
 	CreatedBy  string
@@ -90,7 +91,7 @@ func ftsTerms(text string) [][]string {
 			continue
 		}
 		seen[w] = true
-		out = append(out, splitTokens(w))
+		out = append(out, fts5Tokens(w)) // FTS5 runs the query through the same tokenizer as the documents
 	}
 	return out
 }
@@ -116,41 +117,11 @@ func hasPhrase(doc, phrase []string) bool {
 	return false
 }
 
-// Similar emulates the FTS match: an item qualifies when any query term occurs in its title or body; ranked by how many terms hit, then by id.
+// Similar: BM25 over every item (corpus statistics as in FTS5), filtered by tier and status, best first.
 func (m *MemMemory) Similar(_ context.Context, text string, tiers, statuses []string, limit int) ([]Memory, error) {
-	terms := ftsTerms(text)
-	in := func(list []string, v string) bool {
-		for _, x := range list {
-			if x == v {
-				return true
-			}
-		}
-		return false
-	}
-	type hit struct {
-		m Memory
-		n int
-	}
-	var hits []hit
-	for _, it := range m.Items {
-		if !in(tiers, it.Tier) || !in(statuses, it.Status) {
-			continue
-		}
-		doc := splitTokens(jsLower(it.Title + " " + it.Body))
-		n := 0
-		for _, t := range terms {
-			if hasPhrase(doc, t) {
-				n++
-			}
-		}
-		if n > 0 {
-			hits = append(hits, hit{it, n})
-		}
-	}
-	sort.SliceStable(hits, func(a, b int) bool { return hits[a].n > hits[b].n })
-	out := []Memory{}
-	for i := 0; i < len(hits) && i < limit; i++ {
-		out = append(out, hits[i].m)
+	var out []Memory
+	for _, h := range NewBM25Index(m.Items).Search(text, BM25Filter{Tiers: tiers, Statuses: statuses, Limit: limit}) {
+		out = append(out, h.Mem)
 	}
 	return out, nil
 }
@@ -199,3 +170,5 @@ func (m *MemMemory) Audit(_ context.Context, action string, id *int64, detail ma
 	m.Audits = append(m.Audits, AuditRow{action, id, detail, runID})
 	return nil
 }
+
+func jsonUnmarshal(b []byte, v any) error { return json.Unmarshal(b, v) }

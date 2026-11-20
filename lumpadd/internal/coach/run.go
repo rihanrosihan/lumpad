@@ -24,6 +24,11 @@ type Retrieved struct {
 	ItemIDs   []int64
 	Twin      map[string]any
 	TokensEst int
+	// details for inspection and comparison (not used by the prompt)
+	Items     []CtxItem
+	Edges     []CtxEdge
+	Telemetry []CtxTelemetry
+	Focus     string
 }
 type Retriever interface {
 	Retrieve(ctx context.Context, in RunInput) (Retrieved, error)

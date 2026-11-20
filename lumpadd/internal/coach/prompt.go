@@ -26,6 +26,15 @@ type Stable struct {
 	IntentQuery map[string]string `json:"intent_query"`
 }
 
+// StableRaw: the same file as raw JSON pieces (athlete block, definitions) — their serialised length counts towards the context token estimate.
+var StableRaw = func() map[string]json.RawMessage {
+	var m map[string]json.RawMessage
+	if err := json.Unmarshal(stableJSON, &m); err != nil {
+		panic("stable.json: " + err.Error())
+	}
+	return m
+}()
+
 // StableData is the embedded copy of the stable athlete block, definitions and task wording (kept current by tools/sync_go_data.mjs).
 var StableData = func() Stable {
 	var s Stable
