@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import SessionBrief from './SessionBrief.jsx'
+import Conditions from './Conditions.jsx'
 import { useStore } from './store.js'
 import { paces, raceTime, fmtTime, fmtPace } from './lib/vdot.js'
 import { evaluate, EMPTY_DAY, hasInput } from './lib/gate.js'
@@ -90,6 +91,7 @@ export default function Home({ vdot, settings, results, go, M: Mprop }) {
             <div className="pillc"><small>Form (TSB)</small><b>{sign(M.cur?.tsb)}</b><em>{fz ? fz.label : 'none yet'}</em><em>CTL {M.cur?.ctl ?? '—'} · ATL {M.cur?.atl ?? '—'}</em></div>
           </div>
         </button>
+        <Conditions />
         {day && <Card className={`sess g-sess k-${day.kind}`}>
       <div className="sess-top"><Chip kind={day.kind}>{KIND[day.kind].label}</Chip>{day.scaled && <Chip tone="yellow">auto-scaled · was {day.plannedLabel}{day.plannedKm ? ` ${day.plannedKm} km` : ''}</Chip>}<span className="muted">{wk?.id} · {PHASE_NAME[day.phase] || day.phase}</span></div>
       <h2 className="sess-title">{day.label || KIND[day.kind].label}</h2>

@@ -58,3 +58,35 @@ export async function probe({ lat = -7.6, lon = 110.2, fetchFn = fetch } = {}) {
   await call('elevation', `https://maps.googleapis.com/maps/api/elevation/json?locations=${la},${lo}&key=${k}`)
   return out
 }
+
+// ---- current conditions at a 0.1° cell: Google Weather (current) + Air Quality (universal AQI and the local index, e.g. ISPU in Indonesia).
+// Response shapes were checked on the real server via /api/google/probe. WBGT is the same shade approximation as weather.js (a lower bound in the sun).
+import { wbgtShade } from './intel/weather.js'
+const memo = new Map() // cell → { at, v }
+const num = (x) => (typeof x === 'number' && Number.isFinite(x) ? x : null)
+const kmh = (w) => { const v = num(w?.speed?.value); if (v == null) return null; const u = w.speed.unit; return u === 'MILES_PER_HOUR' ? +(v * 1.609).toFixed(1) : +v.toFixed(1) }
+export function shapeConditions(w, a) {
+  const t = num(w?.temperature?.degrees), rh = num(w?.relativeHumidity), idx = Array.isArray(a?.indexes) ? a.indexes : []
+  const uaqi = idx.find((i) => i.code === 'uaqi'), local = idx.find((i) => i.code !== 'uaqi'), pm = (a?.pollutants || []).find((p) => p.code === 'pm25')
+  return {
+    available: true, at: w?.currentTime || a?.dateTime || null,
+    weather: w ? { text: w.weatherCondition?.description?.text || null, temp_c: t, feels_c: num(w.feelsLikeTemperature?.degrees), dew_c: num(w.dewPoint?.degrees), rh, wind_kmh: kmh(w.wind), uv: num(w.uvIndex),
+      rain_pct: num(w.precipitation?.probability?.percent), cloud_pct: num(w.cloudCover), daytime: typeof w.isDaytime === 'boolean' ? w.isDaytime : null, wbgt_shade: t != null && rh != null ? +wbgtShade(t, rh).toFixed(1) : null } : null,
+    air: a ? { universal: uaqi ? { aqi: num(uaqi.aqi), category: uaqi.category || null, dominant: uaqi.dominantPollutant || null } : null, local: local ? { name: local.displayName || local.code, aqi: num(local.aqi), category: local.category || null } : null,
+      pm25: pm ? num(pm.concentration?.value) : null } : null,
+  }
+}
+export async function conditions(lat, lon, { fetchFn = fetch, ttlMs = 20 * 60e3 } = {}) {
+  if (!configured()) throw Object.assign(new Error('GOOGLE_MAPS_API_KEY not set'), { status: 503 })
+  const la = Math.round(Number(lat) * 10) / 10, lo = Math.round(Number(lon) * 10) / 10
+  if (!(Math.abs(la) <= 90) || !(Math.abs(lo) <= 180) || !Number.isFinite(la) || !Number.isFinite(lo)) throw Object.assign(new Error('bad coordinates'), { status: 400 })
+  const cell = `${la.toFixed(1)},${lo.toFixed(1)}`, hit = memo.get(cell)
+  if (hit && Date.now() - hit.at < ttlMs) return hit.v
+  const k = encodeURIComponent(key()), get = async (url, init) => { spend('conditions'); try { const r = await fetchFn(url, { ...init, signal: AbortSignal.timeout(10000) }); return r.ok ? await r.json() : null } catch { return null } }
+  const [w, a] = await Promise.all([
+    get(`https://weather.googleapis.com/v1/currentConditions:lookup?key=${k}&location.latitude=${la}&location.longitude=${lo}`),
+    get(`https://airquality.googleapis.com/v1/currentConditions:lookup?key=${k}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ location: { latitude: la, longitude: lo }, extraComputations: ['LOCAL_AQI', 'DOMINANT_POLLUTANT_CONCENTRATION'] }) }),
+  ])
+  if (!w && !a) throw Object.assign(new Error('google conditions unavailable'), { status: 502 })
+  const v = { ...shapeConditions(w, a), cell }; memo.set(cell, { at: Date.now(), v }); return v
+}

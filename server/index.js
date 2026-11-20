@@ -238,6 +238,12 @@ const routes = {
     const G = await import('./google.js'), t = await G.tile(q)
     res.writeHead(200, { 'content-type': t.type, 'cache-control': 'private, max-age=3600', 'x-content-type-options': 'nosniff' }); res.end(t.body); return null
   },
+  'GET /api/env/conditions': async (q) => {
+    const G = await import('./google.js'); if (!G.configured()) return { available: false, reason: 'no key' }
+    let lat = q.get('lat'), lon = q.get('lon')
+    if (lat == null || lon == null) { const r = idb.prepare('SELECT lat1, lon1 FROM fit_session WHERE lat1 IS NOT NULL ORDER BY date DESC, start_ms DESC LIMIT 1').get(); if (!r) return { available: false, reason: 'no GPS run yet' }; lat = r.lat1; lon = r.lon1 }
+    try { return await G.conditions(lat, lon) } catch (e) { if (e.status === 400) throw e; return { available: false, reason: e.message } }
+  },
   'GET /api/google/probe': async () => { const G = await import('./google.js'); if (!G.configured()) return { configured: false }; return G.probe() },
   'GET /api/v2/sub4': async () => { try { const r = await fetch('http://127.0.0.1:8788/api/v2/sub4'); if (r.ok) return await r.json() } catch {} return { ok: false, offline: true } },
   'GET /api/v2/decisions': async (q) => { try { const qs = q.toString(); const r = await fetch('http://127.0.0.1:8788/api/v2/decisions' + (qs ? '?' + qs : '')); if (r.ok) return await r.json() } catch {} return { items: [], offline: true } },
