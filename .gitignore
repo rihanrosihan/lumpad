@@ -10,3 +10,4 @@ tools/golden/out/
 lumpadd/lumpadd
 lumpadd/fitbench
 lumpadd/*.exe
+.env.v2
