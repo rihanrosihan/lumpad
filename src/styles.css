@@ -1242,3 +1242,5 @@ select.actv56-wtag-select[data-wtag="Race"] { background-color: color-mix(in srg
 
 .actv60-map-note { position: absolute; left: 10px; bottom: 8px; z-index: 450; font-size: 10px; padding: 2px 8px; border-radius: 999px; background: rgba(15,23,42,.66); color: #fff; }
 [data-theme="dark"] .actv60-map-canvas .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(.82) contrast(.92) saturate(.7); }
+
+.actv-toast { position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%); z-index: 900; padding: 9px 16px; border-radius: 999px; background: rgba(15,23,42,.92); color: #fff; font-size: 12.5px; font-weight: 600; box-shadow: var(--shadow); }

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"os"
 	"sort"
 	"strings"
 
@@ -15,14 +16,14 @@ import (
 // Never syncs raw GPS coordinates (lat1/lon1) or unredacted PII strings.
 
 type SyncStats struct {
-	Days      int `json:"days"`
-	Sessions  int `json:"sessions"`
-	Shoes     int `json:"shoes"`
-	Races     int `json:"races"`
-	PainLinks int `json:"pain_links"`
-	Rules     int `json:"rules"`
-	Memories  int `json:"memories"`
-	Decisions int `json:"decisions"`
+	Days          int `json:"days"`
+	Sessions      int `json:"sessions"`
+	Shoes         int `json:"shoes"`
+	Races         int `json:"races"`
+	PainLinks     int `json:"pain_links"`
+	Rules         int `json:"rules"`
+	Memories      int `json:"memories"`
+	Decisions     int `json:"decisions"`
 	PlanDays      int `json:"plan_days"`
 	SimilarEdges  int `json:"similar_edges"`
 	ConflictEdges int `json:"conflict_edges"`
@@ -126,6 +127,10 @@ func SyncAll(ctx context.Context, pool *pgxpool.Pool, aura *Client, redact func(
 	}
 	st.Shoes = len(shoeRows)
 
+	// Health data (sleep, HRV, resting HR, pain, how you feel) is personal medical data and goes to the third-party cloud graph only when the
+	// owner opts in with NEO4J_SYNC_HEALTH=1. Off (default): those properties and the pain links are removed from the graph below.
+	withHealth := os.Getenv("NEO4J_SYNC_HEALTH") == "1"
+
 	// 3. Days (analytics.daily_feat + temporal NEXT_DAY chain)
 	var dayRows []map[string]any
 	if rows, err := pool.Query(ctx, `
@@ -138,22 +143,26 @@ func SyncAll(ctx context.Context, pool *pgxpool.Pool, aura *Client, redact func(
 			var sLow int64
 			var sleepMin, sleepHR, hrv, rhr, wbgt, painMax, feel *float64
 			if rows.Scan(&dt, &rkm, &tl, &sLow, &sleepMin, &sleepHR, &hrv, &rhr, &wbgt, &painMax, &feel) == nil {
-				dayRows = append(dayRows, map[string]any{
-					"date": dt, "run_km": rkm, "tl": tl, "strength_lower": sLow,
-					"sleep_min": sleepMin, "sleep_hr": sleepHR, "hrv": hrv, "rhr": rhr,
-					"wbgt": wbgt, "pain_max": painMax, "feel": feel,
-				})
+				row := map[string]any{"date": dt, "run_km": rkm, "tl": tl, "strength_lower": sLow, "wbgt": wbgt}
+				if withHealth {
+					row["sleep_min"], row["sleep_hr"], row["hrv"], row["rhr"], row["pain_max"], row["feel"] = sleepMin, sleepHR, hrv, rhr, painMax, feel
+				}
+				dayRows = append(dayRows, row)
 			}
 		}
 		rows.Close()
 	}
-	if err := runBatches(ctx, aura, dayRows, 150, `
-		UNWIND $rows AS r
-		MERGE (d:Day {date: r.date})
-		SET d.run_km = r.run_km, d.tl = r.tl, d.strength_lower = r.strength_lower,
-		    d.sleep_min = r.sleep_min, d.sleep_hr = r.sleep_hr, d.hrv = r.hrv,
-		    d.rhr = r.rhr, d.wbgt = r.wbgt, d.pain_max = r.pain_max, d.feel = r.feel`); err != nil {
+	daySet := `d.run_km = r.run_km, d.tl = r.tl, d.strength_lower = r.strength_lower, d.wbgt = r.wbgt`
+	if withHealth {
+		daySet += `, d.sleep_min = r.sleep_min, d.sleep_hr = r.sleep_hr, d.hrv = r.hrv, d.rhr = r.rhr, d.pain_max = r.pain_max, d.feel = r.feel`
+	}
+	if err := runBatches(ctx, aura, dayRows, 150, "UNWIND $rows AS r MERGE (d:Day {date: r.date}) SET "+daySet); err != nil {
 		return st, fmt.Errorf("days: %w", err)
+	}
+	if !withHealth { // remove what an earlier sync may have put there
+		if _, err := aura.Query(ctx, `MATCH (d:Day) REMOVE d.sleep_min, d.sleep_hr, d.hrv, d.rhr, d.pain_max, d.feel`, nil); err != nil {
+			return st, fmt.Errorf("purge health props: %w", err)
+		}
 	}
 	st.Days = len(dayRows)
 	// Link consecutive Day nodes
@@ -224,9 +233,16 @@ func SyncAll(ctx context.Context, pool *pgxpool.Pool, aura *Client, redact func(
 	}
 	st.Sessions = len(sessRows)
 
-	// 5. PainSites from health.checkin
+	// 5. PainSites from health.checkin (opt-in only; otherwise any earlier pain links are deleted)
 	var painRows []map[string]any
-	if rows, err := pool.Query(ctx, `SELECT to_char(date,'YYYY-MM-DD'), COALESCE(pain,'{}') FROM health.checkin WHERE pain IS NOT NULL`); err == nil {
+	if !withHealth {
+		if _, err := aura.Query(ctx, `MATCH ()-[r:LOGGED_PAIN]->() DELETE r`, nil); err != nil {
+			return st, fmt.Errorf("purge pain links: %w", err)
+		}
+		if _, err := aura.Query(ctx, `MATCH (p:PainSite) WHERE NOT (p)--() DELETE p`, nil); err != nil {
+			return st, fmt.Errorf("purge pain sites: %w", err)
+		}
+	} else if rows, err := pool.Query(ctx, `SELECT to_char(date,'YYYY-MM-DD'), COALESCE(pain,'{}') FROM health.checkin WHERE pain IS NOT NULL`); err == nil {
 		for rows.Next() {
 			var dt, pjson string
 			if rows.Scan(&dt, &pjson) == nil {
@@ -364,7 +380,6 @@ func SyncAll(ctx context.Context, pool *pgxpool.Pool, aura *Client, redact func(
 		return st, fmt.Errorf("plan_days: %w", err)
 	}
 	st.PlanDays = len(pdRows)
-
 
 	// 10. SIMILAR_TO edges (top-3 14-D z-scored kNN earlier runs > 3 km)
 	knnKeys := []string{"log_dist", "log_dur", "run_pace", "run_hr", "ef", "run_share", "drift", "gct_fade", "stride_fade", "vr_fade", "temp", "gain_km", "tl_min", "hrv_dev"}

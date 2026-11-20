@@ -201,7 +201,7 @@ func serve(ctx context.Context, pool *pgxpool.Pool) {
 		w.Header().Set("content-type", "application/json")
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]any{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]any{"error": publicErr(err)})
 			return
 		}
 		_ = json.NewEncoder(w).Encode(map[string]any{"decisions": list})
@@ -211,7 +211,7 @@ func serve(ctx context.Context, pool *pgxpool.Pool) {
 		w.Header().Set("content-type", "application/json")
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]any{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]any{"error": publicErr(err)})
 			return
 		}
 		_ = json.NewEncoder(w).Encode(map[string]any{"adherence": list})
@@ -225,7 +225,7 @@ func serve(ctx context.Context, pool *pgxpool.Pool) {
 		w.Header().Set("content-type", "application/json")
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			_ = json.NewEncoder(w).Encode(map[string]any{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]any{"error": publicErr(err)})
 			return
 		}
 		_ = json.NewEncoder(w).Encode(map[string]any{"item_ids": res.ItemIDs, "tokens_est": res.TokensEst, "rules": len(res.Ctx.Rules), "volatile": res.Ctx.Volatile})
@@ -240,7 +240,7 @@ func serve(ctx context.Context, pool *pgxpool.Pool) {
 		ov, err := graph.Overview(r.Context(), aura)
 		if err != nil {
 			w.WriteHeader(http.StatusBadGateway)
-			_ = json.NewEncoder(w).Encode(map[string]any{"configured": true, "error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]any{"configured": true, "error": publicErr(err)})
 			return
 		}
 		_ = json.NewEncoder(w).Encode(map[string]any{"configured": true, "overview": ov})
@@ -250,12 +250,12 @@ func serve(ctx context.Context, pool *pgxpool.Pool) {
 		rep, err := buildSub4Report(r.Context(), pool)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]any{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]any{"error": publicErr(err)})
 			return
 		}
 		_ = json.NewEncoder(w).Encode(rep)
 	})
-	srv := &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: 5 * time.Second}
+	srv := &http.Server{Addr: addr, Handler: guard(mux), ReadHeaderTimeout: 5 * time.Second}
 	go func() {
 		<-ctx.Done()
 		sc, c := context.WithTimeout(context.Background(), 5*time.Second)
@@ -309,4 +309,25 @@ func buildSub4Report(ctx context.Context, pool *pgxpool.Pool) (map[string]any, e
 		}
 	}
 	return out, nil
+}
+
+// guard: browsers attach Basic-auth credentials to cross-site requests, so state-changing calls must carry the same custom header the Node app
+// requires (a cross-site form or image cannot add it), and request bodies are capped so a stray client cannot make the server read without limit.
+func guard(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet && r.Method != http.MethodHead && r.Header.Get("X-Lumpad") != "1" {
+			w.Header().Set("content-type", "application/json")
+			w.WriteHeader(http.StatusForbidden)
+			_, _ = w.Write([]byte(`{"error":"missing X-Lumpad header"}`))
+			return
+		}
+		r.Body = http.MaxBytesReader(w, r.Body, 64<<10)
+		next.ServeHTTP(w, r)
+	})
+}
+
+// publicErr logs the real error on the server and returns a generic message: database and upstream error text can contain hosts, queries and paths.
+func publicErr(err error) string {
+	fmt.Fprintln(os.Stderr, "lumpadd:", err)
+	return "internal error (see server log)"
 }

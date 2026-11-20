@@ -163,9 +163,16 @@ func (r *runner) pulls() {
 	r.setState("pull_trace_id", maxID)
 }
 
-// 3. FIT sessions Node (re)processed since the last pass: recompute in Go from the same FIT file and diff metrics + per-km rows
+// 3. FIT sessions Node (re)processed since the last pass: recompute in Go from the same FIT file and diff metrics + per-km rows.
+// Once per WIB day the pass covers EVERY session, not only the changed ones: a change to the Node or Go engine then cannot slip through unseen
+// just because the other side did not happen to reprocess a file that day.
 func (r *runner) fit() {
-	since := r.state("fit_processed_at")
+	pointer := r.state("fit_processed_at")
+	since, today := pointer, time.Now().In(time.FixedZone("WIB", 7*3600)).Format("2006-01-02")
+	full := r.state("fit_full_day") != today
+	if full {
+		since = ""
+	}
 	rows, err := r.pg.Query(r.ctx, `SELECT s.label_id, s.processed_at, s.metrics, s.km, f.path FROM train.session_metric s JOIN raw.fit_file f ON f.label_id = s.label_id
 		WHERE s.processed_at > $1 ORDER BY s.processed_at`, since)
 	if err != nil {
@@ -184,7 +191,7 @@ func (r *runner) fit() {
 		jobs = append(jobs, j)
 	}
 	rows.Close()
-	maxAt := since
+	maxAt := pointer
 	for _, j := range jobs {
 		maxAt = max(maxAt, j.at)
 		S, err := engine.ReadFIT(filepath.Join(r.dir, j.path))
@@ -202,6 +209,9 @@ func (r *runner) fit() {
 		r.add("fit", j.label, "ok", d)
 	}
 	r.setState("fit_processed_at", maxAt)
+	if full {
+		r.setState("fit_full_day", today)
+	}
 }
 
 // 4. twin + correlation edges of each Node intel job that finished since the last pass. When synced data or the morning check-in changed

@@ -7,6 +7,7 @@ import { efOf, decoupling, cumulativeKm } from './lib/analysis.js'
 import { mean } from './lib/stats.js'
 import { useStore } from './store.js'
 import { tileSpec } from './lib/tiles.js'
+import { OFFICIAL_RACES as OFFICIAL_RACES_DATA } from './data/officialRaces.js'
 import { Card, Chip, Icon, Evidence, Info, SegmentedTabs, StatusPill } from './ui.jsx'
 import { useApi, fmtDur, fmtPaceS } from './api.js'
 import { cfgOf, hrRange, paceRange, zoneSeconds, ZONES } from './lib/zones.js'
@@ -128,83 +129,13 @@ function group5k(laps) {
 
 const WORKOUT_TAGS = ['Easy', 'Tempo', 'Interval', 'Long Run', 'Race']
 
-const OFFICIAL_RACES = {
-  '2026-11-15': {
-    event: 'Bank Jateng Borobudur Marathon 2026',
-    bib: '#B13718',
-    status: 'QRY (Black Flag)',
-    net: '5:09:15 @ 34K Mat',
-    gun: '5:30:35 Watch (36.92 km)',
-    rank: 'Heat Black Flag · Medal + Jersey',
-    provider: 'ScoreNow Official Timing',
-    url: 'https://scorenow.id/',
-    splits: [
-      ['10K', '1:18:59', '7:54/km'],
-      ['15K', '1:59:44', '8:09/km'],
-      ['21.1K', '2:55:25', '9:08/km'],
-      ['28.4K', '4:08:24', '10:00/km'],
-      ['31.2K', '4:42:20', '12:07/km'],
-      ['34K Mat', '5:09:15', '9:37/km'],
-    ],
-  },
-  '2026-10-25': {
-    event: 'HYDROPLUS Jakarta Running Festival FM 2026',
-    bib: '#B13144',
-    status: 'DNF (Pain Gate)',
-    net: '0:33:59 @ 5K Mat',
-    gun: '1:03:34 Watch (9.16 km)',
-    rank: 'Disciplined Stop at 2/10 Pain Gate',
-    provider: 'ScoreNow Official Timing',
-    url: 'https://scorenow.id/',
-    splits: [
-      ['5K Mat', '0:33:59', '6:48/km'],
-      ['9.16K Watch', '1:03:34', '6:56/km'],
-    ],
-  },
-  '2026-10-24': {
-    event: 'myBCA Jakarta Running Festival HM 2026',
-    bib: '#B24456',
-    status: 'Official Finisher',
-    net: '3:07:12',
-    gun: '3:13:40',
-    rank: '11,198 Overall · 6,605 National · 8,499 Male',
-    provider: 'ScoreNow Official Timing',
-    url: 'https://scorenow.id/',
-    splits: [
-      ['5K', '0:42:45', '8:33/km'],
-      ['10K', '1:23:04', '8:04/km'],
-      ['15K', '2:08:35', '9:06/km'],
-      ['20K', '2:57:22', '9:45/km'],
-      ['21.1K Finish', '3:07:12', '8:56/km'],
-    ],
-  },
-  '2026-06-14': {
-    event: 'BTN Jakarta International Marathon (Jakim) 2026',
-    bib: '#44708',
-    status: 'Official Finisher · 1st FM',
-    net: '6:53:03',
-    gun: '7:03:43',
-    rank: '6,717/8,347 Overall · 5,896/7,221 Gender · 4,127/5,021 Cat',
-    provider: 'Codeine Official Timing',
-    url: 'https://jakim.id/',
-    splits: [
-      ['5K', '0:38:15', '7:39/km'],
-      ['10K', '1:17:52', '7:55/km'],
-      ['15K', '1:59:44', '8:22/km'],
-      ['21.1K', '2:57:41', '9:30/km'],
-      ['30K', '4:30:10', '10:23/km'],
-      ['35K', '5:33:58', '12:46/km'],
-      ['40K', '6:28:10', '10:50/km'],
-      ['42.2K Finish', '6:53:03', '11:20/km'],
-    ],
-  },
-}
+const OFFICIAL_BASE = OFFICIAL_RACES_DATA
 
 const FEEL_OPTIONS = ['Felt strong', 'Heat / Humidity', 'Workout felt too long', 'Sore legs', 'GI / Nausea', 'Technical / GPS']
 
 function defaultTagFor(a, plan) {
   if (!a) return 'Easy'
-  if (OFFICIAL_RACES[a.date] || plan?.kind === 'race' || /marathon|race|hm\b|10k|5k/i.test(a.name || '')) return 'Race'
+  if (OFFICIAL_BASE[a.date] || plan?.kind === 'race' || /marathon|race|hm\b|10k|5k/i.test(a.name || '')) return 'Race'
   const k = typeOf(a)
   if (k === 'tt') return 'Race'
   if (k === 'long') return 'Long Run'
@@ -445,6 +376,9 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
   const [ctx, setCtx] = useStore('lumpad.act.' + (id || 'none').replace(/[^A-Za-z0-9._-]/g, '_'), {
     rpe: '', gels: '', cho_g: '', note: '', tag: '', feels: [], official_bib: '', official_url: '', official_net: '',
   })
+  const [offStore] = useStore('lumpad.official', {}), OFFICIAL_RACES = useMemo(() => ({ ...OFFICIAL_BASE, ...(offStore && typeof offStore === 'object' ? offStore : {}) }), [offStore])
+  const [toast, setToast] = useState('')
+  useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(''), 2400); return () => clearTimeout(t) }, [toast])
   const [tab, setTab] = useState('overview')
   const [lapMode, setLapMode] = useState('all')
   const [hrZoneMode, setHrZoneMode] = useState(7)
@@ -529,7 +463,7 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
               {a.temp_c != null && <span className="actv56-pill amber">{a.temp_c}°C · RH {a.humidity ?? '—'}%</span>}
               <div className="actv56-tag-wrap">
                 <span className="actv56-tag-lbl">Tag</span>
-                <select className="actv56-wtag-select" data-wtag={activeTag} aria-label="Workout type tag" value={activeTag} onChange={(e) => setC({ tag: e.target.value })}>
+                <select className="actv56-wtag-select" data-wtag={activeTag} aria-label="Workout type tag" value={activeTag} onChange={(e) => { setC({ tag: e.target.value }); setToast(`Tagged workout as "${e.target.value}"`) }}>
                   {WORKOUT_TAGS.map((t) => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
@@ -890,6 +824,7 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
         </Card>
       </div>}
 
+      {toast && <div className="actv-toast" role="status">{toast}</div>}
       {/* Share Card Modal */}
       {shareOpen && <div className="actv56-modal-bg" onClick={(e) => { if (e.target === e.currentTarget) setShareOpen(false) }}>
         <div className="card actv56-modal" role="dialog" aria-modal="true" aria-label="Share activity card">
