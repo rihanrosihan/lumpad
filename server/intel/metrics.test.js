@@ -58,3 +58,12 @@ test('GOLDEN 10 Nov 2026 HR@8:00 ≈ 160.5 (KB 04.8) and Borobudur km-5 run-walk
   const f10 = '/opt/lumpad/server/data/fit/2026/481644044223545447.fit'
   if (fs.existsSync(f10)) { const m10 = M.sessionMetrics(toSeries(await parseFitFile(f10))); assert.ok(Math.abs(m10.hr_at_800 - 160.5) < 2, String(m10.hr_at_800)) }
 })
+test('altitude comes from enhanced_altitude when the file has no plain altitude (Garmin), like the Go decoder', () => {
+  const t0 = Date.UTC(2026, 0, 1), rec = []
+  for (let i = 0; i < 60; i++) rec.push({ timestamp: new Date(t0 + i * 1000), speed: 3, distance: i * 3, heart_rate: 140, enhanced_altitude: 30 + i * 0.5 })
+  assert.equal(toSeries({ records: rec }).alt[10], 35)
+  rec.forEach((r) => { r.altitude = 99 })
+  assert.equal(toSeries({ records: rec }).alt[10], 35) // both present: enhanced wins, as in Go
+  rec.forEach((r) => { delete r.enhanced_altitude })
+  assert.equal(toSeries({ records: rec }).alt[10], 99)
+})
