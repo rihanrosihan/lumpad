@@ -88,7 +88,8 @@ function RunCompare({ a, id, history }) {
   const [pick, setPick] = useState('prev')
   const kind = typeOf(a), runs = history.filter((h) => h.sport_class === 'run' && !h.ids?.includes(id) && (h.distance_m || 0) >= 1000 && h.date <= a.date).sort((x, y) => y.date.localeCompare(x.date))
   const same = runs.filter((h) => kind && typeOf(h) === kind)
-  const bench = pick === 'prev' ? same[0] : pick === 'longest' ? [...runs].sort((x, y) => (y.distance_m || 0) - (x.distance_m || 0))[0] : pick === 'bestEF' ? [...same].filter((h) => efOf(h)).sort((x, y) => efOf(y) - efOf(x))[0] : runs.find((h) => h.ids?.[0] === pick || h.id === pick)
+  const pool = same.length ? same : runs
+  const bench = pick === 'prev' ? pool[0] : pick === 'longest' ? [...runs].sort((x, y) => (y.distance_m || 0) - (x.distance_m || 0))[0] : pick === 'bestEF' ? [...pool].filter((h) => efOf(h)).sort((x, y) => efOf(y) - efOf(x))[0] : runs.find((h) => h.ids?.[0] === pick || h.id === pick)
   const rows = [['Distance (km)', (a.distance_m || 0) / 1000, (bench?.distance_m || 0) / 1000, 2, 'neutral'], ['Avg pace (s/km)', a.avg_pace_s_km, bench?.avg_pace_s_km, 0, 'lower'], ['Avg HR (bpm)', a.avg_hr, bench?.avg_hr, 0, 'lower'], ['EF', efOf(a), bench ? efOf(bench) : null, 3, 'higher'], ['Training load', a.training_load, bench?.training_load, 0, 'neutral']]
   const fmt = (label, v, d) => (v == null ? '—' : label.startsWith('Avg pace') ? fmtPaceS(v) : (+v).toFixed(d))
   return <Card title="Pinned Side-by-Side Benchmark Comparison" right={<select aria-label="Benchmark run" value={pick} onChange={(e) => setPick(e.target.value)}><option value="prev">Previous {kind || 'run'}</option><option value="longest">Longest run</option><option value="bestEF">Best EF{kind ? ` (${kind})` : ''}</option>{runs.slice(0, 20).map((h) => <option key={h.ids?.[0] || h.id} value={h.ids?.[0] || h.id}>{h.date.slice(5)} · {((h.distance_m || 0) / 1000).toFixed(1)} km</option>)}</select>}>
@@ -229,6 +230,90 @@ function ribbonZoneColor(hr, lthr) {
   return '#9333EA'
 }
 
+
+function computePowerZones(laps, ftp = 199) {
+  const defs = [
+    ['Z1 Active Rec', `1–${Math.round(ftp * 0.52)}w`, 0, ftp * 0.52, '#06B6D4'],
+    ['Z2 Endurance', `${Math.round(ftp * 0.52) + 1}–${Math.round(ftp * 0.71)}w`, ftp * 0.52, ftp * 0.71, '#22C55E'],
+    ['Z3 Tempo', `${Math.round(ftp * 0.71) + 1}–${Math.round(ftp * 0.86)}w`, ftp * 0.71, ftp * 0.86, '#EAB308'],
+    ['Z4 Threshold', `${Math.round(ftp * 0.86) + 1}–${ftp}w`, ftp * 0.86, ftp, '#F97316'],
+    ['Z5 VO2 Max', `${ftp + 1}–${Math.round(ftp * 1.15)}w`, ftp, ftp * 1.15, '#EF4444'],
+    ['Z6 Anaerobic', `${Math.round(ftp * 1.15) + 1}w+`, ftp * 1.15, 9999, '#C026D3'],
+  ]
+  const secs = defs.map(() => 0)
+  let ss = 0
+  for (const l of laps) {
+    const pw = l.power, dur = l.duration_s || 0
+    if (!pw || !dur) continue
+    const idx = defs.findIndex((d) => pw > d[2] && pw <= d[3])
+    if (idx >= 0) secs[idx] += dur
+    if (pw >= ftp * 0.80 && pw <= ftp * 0.93) ss += dur
+  }
+  const rows = defs.map((d, i) => ({ k: `${d[0]} · ${d[1]}`, c: d[4], s: secs[i] }))
+  rows.push({ k: `SS Sweet Spot · ${Math.round(ftp * 0.80)}–${Math.round(ftp * 0.93)}w`, c: '#EA580C', s: ss })
+  return rows
+}
+
+function SvgAreaChart({ values, color, fill, label, yFmt, invert = false, minY, maxY, secondary }) {
+  if (!values || values.length < 2) return <p className="muted" style={{ fontSize: 12 }}>Needs ≥ 2 laps for telemetry curve.</p>
+  const W = 440, H = 150, PL = 38, PR = 10, PT = 10, PB = 22
+  const lo = minY ?? Math.min(...values), hi = maxY ?? Math.max(...values), span = (hi - lo) || 1
+  const xOf = (i) => PL + (i / (values.length - 1)) * (W - PL - PR)
+  const yOf = (v) => {
+    const n = (v - lo) / span
+    return invert ? PT + n * (H - PT - PB) : H - PB - n * (H - PT - PB)
+  }
+  const pts = values.map((v, i) => `${xOf(i).toFixed(1)},${yOf(v).toFixed(1)}`).join(' ')
+  const area = `${PL},${H - PB} ${pts} ${(W - PR).toFixed(1)},${H - PB}`
+  let secArea = null
+  if (secondary && secondary.length === values.length) {
+    const slo = Math.min(...secondary), shi = Math.max(...secondary), sspan = (shi - slo) || 1
+    const spts = secondary.map((v, i) => `${xOf(i).toFixed(1)},${(H - PB - ((v - slo) / sspan) * (H - PT - PB) * 0.82).toFixed(1)}`).join(' ')
+    secArea = `${PL},${H - PB} ${spts} ${(W - PR).toFixed(1)},${H - PB}`
+  }
+  const ticks = [lo, lo + span / 2, hi]
+  return <svg viewBox={`0 0 ${W} ${H}`} className="actv56-svg" role="img" aria-label={label}>
+    {ticks.map((t, idx) => {
+      const y = yOf(t)
+      return <g key={idx}>
+        <line x1={PL} x2={W - PR} y1={y} y2={y} stroke="var(--line)" strokeDasharray="3 3" />
+        <text x={PL - 5} y={y + 3} textAnchor="end" fontSize="9.5" fill="var(--muted)" fontFamily="var(--f-mono)">{yFmt ? yFmt(t) : Math.round(t)}</text>
+      </g>
+    })}
+    {secArea && <polygon points={secArea} fill="rgba(148,163,184,0.22)" />}
+    <polygon points={area} fill={fill} />
+    <polyline points={pts} fill="none" stroke={color} strokeWidth="2.2" strokeLinejoin="round" />
+    <text x={PL} y={H - 5} fontSize="9.5" fill="var(--muted)" fontFamily="var(--f-mono)">Km 1</text>
+    <text x={(PL + W - PR) / 2} y={H - 5} textAnchor="middle" fontSize="9.5" fill="var(--muted)" fontFamily="var(--f-mono)">Km {Math.ceil(values.length / 2)}</text>
+    <text x={W - PR} y={H - 5} textAnchor="end" fontSize="9.5" fill="var(--muted)" fontFamily="var(--f-mono)">Km {values.length}</text>
+  </svg>
+}
+
+function SvgScatterChart({ pts1, pts2, label, xUnit, yUnit }) {
+  const all = [...(pts1 || []), ...(pts2 || [])]
+  if (all.length < 2) return <p className="muted" style={{ fontSize: 12 }}>Needs Power &amp; HR per-lap telemetry.</p>
+  const W = 440, H = 150, PL = 38, PR = 12, PT = 10, PB = 22
+  const xs = all.map((p) => p.x), ys = all.map((p) => p.y)
+  const xlo = Math.min(...xs), xhi = Math.max(...xs), xsp = (xhi - xlo) || 1
+  const ylo = Math.min(...ys), yhi = Math.max(...ys), ysp = (yhi - ylo) || 1
+  const xOf = (x) => PL + ((x - xlo) / xsp) * (W - PL - PR)
+  const yOf = (y) => H - PB - ((y - ylo) / ysp) * (H - PT - PB)
+  const yticks = [ylo, ylo + ysp / 2, yhi]
+  return <svg viewBox={`0 0 ${W} ${H}`} className="actv56-svg" role="img" aria-label={label}>
+    {yticks.map((t, idx) => {
+      const y = yOf(t)
+      return <g key={idx}>
+        <line x1={PL} x2={W - PR} y1={y} y2={y} stroke="var(--line)" strokeDasharray="3 3" />
+        <text x={PL - 5} y={y + 3} textAnchor="end" fontSize="9.5" fill="var(--muted)" fontFamily="var(--f-mono)">{yUnit === 'ratio' ? t.toFixed(2) : Math.round(t)}</text>
+      </g>
+    })}
+    {(pts1 || []).map((p, i) => <circle key={'a' + i} cx={xOf(p.x)} cy={yOf(p.y)} r="4" fill="rgba(147,51,234,0.78)" />)}
+    {(pts2 || []).map((p, i) => <circle key={'b' + i} cx={xOf(p.x)} cy={yOf(p.y)} r="4" fill="rgba(234,58,58,0.78)" />)}
+    <text x={PL} y={H - 5} fontSize="9.5" fill="var(--muted)" fontFamily="var(--f-mono)">{Math.round(xlo)}{xUnit}</text>
+    <text x={W - PR} y={H - 5} textAnchor="end" fontSize="9.5" fill="var(--muted)" fontFamily="var(--f-mono)">{Math.round(xhi)}{xUnit}</text>
+  </svg>
+}
+
 function fmtZoneDur(sec) {
   const s = Math.max(0, Math.round(sec || 0))
   const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), r = s % 60
@@ -290,7 +375,7 @@ function Detail({ id, gear, vdot, history, go, settings }) {
   const p = paces(vdot.v), plan = a ? BY_DATE[a.date] : null, laps = a?.laps || []
   const ef = a ? efOf(a) : null, kind = a ? typeOf(a) : null
   const efHist = a && kind ? history.filter((h) => typeOf(h) === kind && h.date <= a.date && efOf(h)).sort((x, y) => x.date.localeCompare(y.date)).slice(-10).map(efOf) : []
-  const dc = decoupling(laps), steady = kind === 'easy' || kind === 'long'
+  const dc = decoupling(laps), steady = laps.length >= 4
   const zcfg = cfgOf(settings || {}), zs = laps.length ? zoneSeconds(laps, zcfg) : null, pz = zs && zs.pace.some((x) => x > 0), hz = zs && zs.hr.some((x) => x > 0)
 
   const activeTag = ctx.tag || defaultTagFor(a, plan)
@@ -439,6 +524,13 @@ function Detail({ id, gear, vdot, history, go, settings }) {
             {a.sport_class === 'run' && (a.distance_m || 0) >= 5000
               ? <ActivityCoach id={a.ids?.[0] || id} label={String(a.ids?.[0] || id).replace(/^coros:/, '')} />
               : <p className="muted" style={{ margin: '8px 0 0' }}>AI deep narrative runs automatically on runs ≥ 5 km. Use Ask Coach to query this session.</p>}
+            <div className="actv56-rate-bar">
+              <span>{ctx.rating ? 'Feedback logged to Coach' : 'Rate this insight'}</span>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button type="button" className={`actv56-rate-btn ${ctx.rating === 'up' ? 'active' : ''}`} aria-label="Thumbs up" onClick={() => setC({ rating: ctx.rating === 'up' ? '' : 'up' })}>👍</button>
+                <button type="button" className={`actv56-rate-btn ${ctx.rating === 'down' ? 'active' : ''}`} aria-label="Thumbs down" onClick={() => setC({ rating: ctx.rating === 'down' ? '' : 'down' })}>👎</button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -449,7 +541,7 @@ function Detail({ id, gear, vdot, history, go, settings }) {
               <span className="actv56-pill cobalt">TE {a.aerobic_te ?? '—'} / {a.anaerobic_te ?? '—'}</span>
             </div>
             <div className="actv56-dyn-grid">
-              <div className="actv56-dyn-tile"><small>GCT</small><b>{dyn('gct_ms') != null ? `${dyn('gct_ms')} ms` : '—'}</b></div>
+              <div className="actv56-dyn-tile"><small>GCT</small><b>{dyn('gct_ms') != null ? `${Math.round(dyn('gct_ms'))} ms` : '—'}</b></div>
               <div className="actv56-dyn-tile"><small>Vert Osc</small><b>{dyn('vo_cm') != null ? `${dyn('vo_cm')} cm` : '—'}</b></div>
               <div className="actv56-dyn-tile"><small>Vert Ratio</small><b>{dyn('vratio_pct') != null ? `${dyn('vratio_pct')}%` : '—'}</b></div>
               <div className="actv56-dyn-tile"><small>Avg Power</small><b>{dyn('power') != null ? `${Math.round(dyn('power'))} W` : '—'}</b></div>
@@ -501,10 +593,14 @@ function Detail({ id, gear, vdot, history, go, settings }) {
           {hz && pz && (() => { const top = (arr) => arr.indexOf(Math.max(...arr)), dh = top(zs.hr), dp = top(zs.pace); return dh - dp >= 2 ? <p className="banner" style={{ marginTop: 12 }}>HR sat {dh - dp} zones higher than pace (HR Z{dh} vs pace {dp ? 'Z' + dp : '<Z1'}): judge by HR, not pace.</p> : null })()}
         </div>}
         <div className="actv56-two-col">
+          {laps.some((l) => l.power > 0) && <Card title={`Power Zones (Avg ${Math.round(dyn('power') || 0)}W · incl. Sweet Spot)`}>
+            <ZoneListV57 rows={computePowerZones(laps, settings?.ftp || 199)} />
+          </Card>}
           {pz && <Card title={`Pace Zones (T-Pace ${fmtPaceS(zcfg.tpace)}/km)`}>
             <ZoneListV57 rows={ZROWS(zcfg, 'pace').map((r, i) => ({ ...r, s: zs.pace[i] }))} />
           </Card>}
-          <Card title="Aerobic Efficiency & Plan vs Actual">
+        </div>
+        <Card title="Aerobic Efficiency & Plan vs Actual">
             <div className="mgrid two">
               <div><small>Efficiency Factor <Info k="EF" /></small><b>{ef ?? '—'}</b><Sparkline data={efHist} label={`EF last 10 ${kind} runs`} w={110} /></div>
               <div><small>Decoupling Pa:Hr <Info k="Decoupling" /></small><b>{dc && steady ? dc.pct + '%' : '—'}</b>{dc && steady ? <Chip tone={dc.band}>{dc.band === 'green' ? 'durable' : dc.band === 'yellow' ? 'moderate drift' : 'high drift'}</Chip> : <em className="muted">{steady ? 'needs ≥4 laps' : 'steady runs only'}</em>}</div>
@@ -514,7 +610,6 @@ function Detail({ id, gear, vdot, history, go, settings }) {
               {verdict && <div style={{ marginTop: 6 }}><Chip tone={verdict[0]}>{verdict[1]}</Chip></div>}
             </div>}
           </Card>
-        </div>
       </>}
 
       {/* TAB 3: SPLITS (Runna Bars — 1-Col Mobile, 2-Col Desktop) */}
@@ -531,8 +626,8 @@ function Detail({ id, gear, vdot, history, go, settings }) {
               <div className="actv56-splits-hdr"><span>KM</span><span>AVG PACE</span><span style={{ textAlign: 'right' }}>HR</span><span style={{ textAlign: 'right' }}>+/-</span></div>
               <div className="actv56-splits-hdr actv56-dup" aria-hidden="true"><span>KM</span><span>AVG PACE</span><span style={{ textAlign: 'right' }}>HR</span><span style={{ textAlign: 'right' }}>+/-</span></div>
             </div>
-            <div className="actv56-splits-grid">
-              {shownLaps.map((l) => {
+            {(() => {
+              const renderRow = (l) => {
                 const sec = l.avg_pace_s_km || maxPace
                 const ratio = maxPace === minPace ? 0.85 : 0.45 + 0.55 * ((maxPace - sec) / (maxPace - minPace))
                 const pct = Math.round(Math.max(35, Math.min(100, ratio * 100)))
@@ -544,15 +639,53 @@ function Detail({ id, gear, vdot, history, go, settings }) {
                   <span className="actv56-shr">{l.avg_hr ?? '—'}</span>
                   <span className={`actv56-sdelta ${d.cls}`}>{d.text}</span>
                 </div>
-              })}
-            </div>
+              }
+              const mid = Math.ceil(shownLaps.length / 2)
+              return <div className="actv56-splits-cols">
+                <div className="actv56-splits-col">{shownLaps.slice(0, mid).map(renderRow)}</div>
+                <div className="actv56-splits-col">{shownLaps.slice(mid).map(renderRow)}</div>
+              </div>
+            })()}
           </>}
       </Card>}
 
-      {/* TAB 4: DRIFT & GAP (Per-Second FIT + Multi-Channel Telemetry) */}
+      {/* TAB 4: DRIFT & GAP (4 Preview Charts + Per-Second FIT) */}
       {activeTab === 'drift' && <>
+        {laps.length > 1 && (() => {
+          const paceVals = laps.map((l) => l.avg_pace_s_km || a.avg_pace_s_km || 480)
+          const hrVals = laps.map((l) => l.avg_hr || a.avg_hr || 150)
+          const elevVals = laps.map((l, i) => l.elev_gain_m ?? l.elevation_m ?? (i * 4))
+          const half = Math.ceil(laps.length / 2)
+          let cumMin = 0
+          const phr1 = [], phr2 = [], dr1 = [], dr2 = []
+          laps.forEach((l, i) => {
+            cumMin += (l.duration_s || 0) / 60
+            if (l.power > 0 && l.avg_hr > 0) {
+              const pObj = { x: cumMin, y: l.power / l.avg_hr }
+              const dObj = { x: l.power, y: l.avg_hr }
+              if (i < half) { phr1.push(pObj); dr1.push(dObj) } else { phr2.push(pObj); dr2.push(dObj) }
+            }
+          })
+          return <div className="actv56-two-col">
+            <Card title="Grade Adjusted Pace (GAP) & Elevation">
+              <div className="actv56-chart-kpis"><span>Avg GAP <b>{a.adjusted_pace_s_km ? fmtPaceS(a.adjusted_pace_s_km) + '/km' : fmtPaceS(a.avg_pace_s_km) + '/km'}</b></span><span>Fastest <b>{fmtPaceS(Math.min(...paceVals))}/km</b></span></div>
+              <SvgAreaChart values={paceVals} secondary={elevVals} color="#3B82F6" fill="rgba(59,130,246,0.18)" label="Pace and elevation" invert yFmt={(v) => fmtPaceS(v)} />
+            </Card>
+            <Card title="Heart Rate Stream">
+              <div className="actv56-chart-kpis"><span>Avg HR <b>{a.avg_hr ?? '—'} bpm</b></span><span>Max HR <b>{a.max_hr ?? '—'} bpm</b></span><span>LTHR <b>{zcfg.lthr} bpm</b></span></div>
+              <SvgAreaChart values={hrVals} color="#EA3A3A" fill="rgba(234,58,58,0.16)" label="Heart rate stream" minY={Math.max(100, Math.min(...hrVals) - 10)} maxY={Math.max(...hrVals) + 6} />
+            </Card>
+            <Card title="Power / HR Decoupling">
+              <div className="actv56-chart-kpis"><span>EF <b>{ef ?? '—'}</b></span><span>Decoupling <b>{dc ? dc.pct + '%' : '—'}</b></span><span><b style={{ color: '#9333EA' }}>●</b> 1st Half</span><span><b style={{ color: '#EA3A3A' }}>●</b> 2nd Half</span></div>
+              <SvgScatterChart pts1={phr1} pts2={phr2} label="Power to HR ratio over time" xUnit="m" yUnit="ratio" />
+            </Card>
+            <Card title="Power–HR Drift (1st vs 2nd Half)">
+              <div className="actv56-chart-kpis"><span>Avg Power <b>{dyn('power') ? Math.round(dyn('power')) + 'W' : '—'}</b></span><span><b style={{ color: '#9333EA' }}>●</b> 1st Half</span><span><b style={{ color: '#EA3A3A' }}>●</b> 2nd Half</span></div>
+              <SvgScatterChart pts1={dr1} pts2={dr2} label="Power vs HR drift" xUnit="w" yUnit="bpm" />
+            </Card>
+          </div>
+        })()}
         {a.sport_class === 'run' && <FitPanel id={a.ids?.[0] || id} go={go} />}
-        {laps.length > 1 && <Card title="Per-Lap Multi-Channel Telemetry"><MultiTrack laps={laps} tracks={[{ key: 'avg_pace_s_km', label: 'Pace', color: 'var(--c-long)', invert: true, fmt: fmtPaceS }, { key: 'avg_hr', label: 'HR', color: 'var(--red)' }, { key: 'cadence', label: 'Cadence', color: 'var(--c-quality)' }, { key: 'power', label: 'Power', color: 'var(--c-tt)' }, { key: 'stride_m', label: 'Stride', color: 'var(--c-social)' }]} /></Card>}
       </>}
 
       {/* TAB 5: MATCHED RUNS, LONG-RUN CONTEXT & GEAR */}
