@@ -146,7 +146,7 @@ function Sub4AdaptiveCard({ twin }) {
           ))}</tbody>
         </table></div>
       ) : (
-        <p className="muted" style={{ margin: 0 }}>Sub-4 P10–P90 engine ready on <code>lumpadd serve</code> (:8788). Current VDOT gap: <b>+{(vNeed - Number(vNow)).toFixed(1)}</b> (durability >20K is primary limiter).</p>
+        <p className="muted" style={{ margin: 0 }}>Sub-4 P10–P90 engine ready on <code>lumpadd serve</code> (:8788). Current VDOT gap: <b>+{(vNeed - Number(vNow)).toFixed(1)}</b> (durability &gt;20K is primary limiter).</p>
       )}
       <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid var(--line)', display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
         <Chip>Phase 5 Decision Ledger: {decisions.length} records</Chip>
