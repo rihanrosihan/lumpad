@@ -31,7 +31,7 @@ export default function Activity({ vdot, focus, go, settings }) {
   const curve = cum.map((c, i) => ({ date: `${ym}-${String(c.day).padStart(2, '0')}`, cur: ym === T.slice(0, 7) && c.day > +T.slice(8) ? null : c.km, prev: cumPrev[i]?.km ?? cumPrev.at(-1)?.km }))
   const tot = { n: list.length, km: list.filter((a) => a.sport_class === 'run').reduce((s, a) => s + (a.distance_m || 0), 0) / 1000, time: list.reduce((s, a) => s + (a.duration_s || 0), 0), tl: list.reduce((s, a) => s + (a.training_load || 0), 0) }
 
-  const flat = [...(A.data || [])].sort((x, y) => (y.date + (y.start_ts || '')).localeCompare(x.date + (x.start_ts || ''))), at = sel ? flat.findIndex((a) => a.ids.includes(sel)) : -1
+  const flat = [...(Hist.data?.length ? Hist.data : (A.data || []))].sort((x, y) => (y.date + (y.start_ts || '')).localeCompare(x.date + (x.start_ts || ''))), at = sel ? flat.findIndex((a) => (a.ids || [a.id]).includes(sel)) : -1
   const older = at >= 0 ? flat[at + 1] : null, newer = at > 0 ? flat[at - 1] : null
 
   if (sel) return <section className="screen">
@@ -102,7 +102,6 @@ function RunCompare({ a, id, history }) {
 
 const ZCOL = ['var(--c-rest)', 'var(--c-easy)', 'var(--green)', 'var(--c-long)', 'var(--yellow)', 'var(--c-quality)', 'var(--red)']
 const ZROWS = (cfg, kind) => [kind === 'hr' ? `<Z1 (<${Math.round(cfg.lthr * 0.65)} bpm)` : 'Slower than Z1', ...[1, 2, 3, 4, 5, 6].map((z) => { const r = kind === 'hr' ? hrRange(z, cfg) : paceRange(z, cfg); return kind === 'hr' ? `Z${z} ${ZONES[z].name} · ${z === 6 ? r[0] + '+' : r[0] + '–' + r[1]} bpm` : `Z${z} ${ZONES[z].name} · ${fmtPaceS(r[0])}–${fmtPaceS(r[1])}` })].map((k, i) => ({ k, c: ZCOL[i] }))
-function ZoneBars({ title, rows }) { const tot = rows.reduce((a, r) => a + r.s, 0) || 1; return <div className="zbars"><h3>{title}</h3>{rows.map((r) => <div key={r.k} className="zrow"><span>{r.k}</span><div className="tb"><i style={{ width: (r.s / tot) * 100 + '%', background: r.c }} /></div><b>{Math.round((r.s / tot) * 100)}%</b></div>)}</div> }
 
 function group5k(laps) {
   const out = []
@@ -281,6 +280,12 @@ function Detail({ id, gear, vdot, history, go, settings }) {
   const [copied, setCopied] = useState(false)
 
   useEffect(() => { setLapMode('all') }, [id])
+  useEffect(() => {
+    if (!shareOpen) return
+    const onKey = (e) => { if (e.key === 'Escape') setShareOpen(false) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [shareOpen])
 
   const p = paces(vdot.v), plan = a ? BY_DATE[a.date] : null, laps = a?.laps || []
   const ef = a ? efOf(a) : null, kind = a ? typeOf(a) : null
@@ -387,7 +392,7 @@ function Detail({ id, gear, vdot, history, go, settings }) {
             {dc && steady && <span>Pa:Hr <b>{dc.pct}%</b></span>}
             {a.adjusted_pace_s_km && <span>GAP <b>{fmtPaceS(a.adjusted_pace_s_km)}/km</b></span>}
           </div>
-          {officialBase && <div className="actv56-ach-pill" onClick={() => { setC({ tag: 'Race' }); setTab('official') }} role="button" tabIndex={0}>
+          {officialBase && <div className="actv56-ach-pill" onClick={() => { setC({ tag: 'Race' }); setTab('official') }} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setC({ tag: 'Race' }); setTab('official') } }} role="button" tabIndex={0}>
             <span>♥ {officialBase.status} · {officialBase.net}</span>
             <b>{ctx.official_bib || officialBase.bib} →</b>
           </div>}
@@ -585,7 +590,7 @@ function Detail({ id, gear, vdot, history, go, settings }) {
             <span className="actv56-pill red">{ctx.official_bib || officialBase?.bib || 'Bib N/A'}</span>
           </div>
 
-          <div className="actv56-dyn-grid" style={{ marginBottom: 12 }}>
+          <div className="actv56-off-grid" style={{ marginBottom: 12 }}>
             <div className="actv56-dyn-tile"><small>Net / Chip</small><b>{ctx.official_net || officialBase?.net || fmtDur(a.duration_s)}</b></div>
             <div className="actv56-dyn-tile"><small>Gun / Watch</small><b>{officialBase?.gun || fmtDur(a.duration_s)}</b></div>
             <div className="actv56-dyn-tile"><small>Status</small><b>{officialBase?.status || 'Race'}</b></div>
@@ -607,21 +612,21 @@ function Detail({ id, gear, vdot, history, go, settings }) {
 
         <Card title="Official Timing Mat Splits">
           {officialBase?.splits?.length ? (
-            <table className="lapt">
+            <div className="scroll" tabIndex={0}><table className="lapt">
               <thead><tr><th>Checkpoint</th><th>Cumulative Time</th><th>Split Pace</th></tr></thead>
               <tbody>
                 {officialBase.splits.map(([cp, t, sp]) => (
-                  <tr key={cp}><td><b>{cp}</b></td><td style={{ fontFamily: 'var(--font-mono)' }}>{t}</td><td style={{ fontFamily: 'var(--font-mono)' }}>{sp}</td></tr>
+                  <tr key={cp}><td><b>{cp}</b></td><td style={{ fontFamily: 'var(--f-mono)' }}>{t}</td><td style={{ fontFamily: 'var(--f-mono)' }}>{sp}</td></tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           ) : <p className="muted">No preloaded official mat splits for this date. Watch splits are available in the Splits tab.</p>}
         </Card>
       </div>}
 
       {/* Share Card Modal */}
       {shareOpen && <div className="actv56-modal-bg" onClick={(e) => { if (e.target === e.currentTarget) setShareOpen(false) }}>
-        <div className="card actv56-modal">
+        <div className="card actv56-modal" role="dialog" aria-modal="true" aria-label="Share activity card">
           <div className="actv56-card-head">
             <h3 className="actv56-card-title">Share Activity Card</h3>
             <button type="button" className="actv56-fchip" onClick={() => setShareOpen(false)}>Close</button>
