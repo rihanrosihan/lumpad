@@ -770,7 +770,7 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
           })
           return <div className="actv56-two-col">
             <Card title="Grade Adjusted Pace (GAP) & Elevation">
-              <div className="actv56-chart-kpis"><span>Avg GAP <b>{a.adjusted_pace_s_km ? fmtPaceS(a.adjusted_pace_s_km) + '/km' : fmtPaceS(a.avg_pace_s_km) + '/km'}</b></span><span>Fastest <b>{fmtPaceS(Math.min(...paceVals))}/km</b></span></div>
+              <div className="actv56-chart-kpis"><span>Avg GAP <Info k="GAP" /> <b>{a.adjusted_pace_s_km ? fmtPaceS(a.adjusted_pace_s_km) + '/km' : fmtPaceS(a.avg_pace_s_km) + '/km'}</b></span><span>Fastest <b>{fmtPaceS(Math.min(...paceVals))}/km</b></span></div>
               <SvgAreaChart values={paceVals} secondary={elevVals} color="#3B82F6" fill="rgba(59,130,246,0.18)" label="Pace and elevation" invert yFmt={(v) => fmtPaceS(v)} />
             </Card>
             <Card title="Heart Rate Stream">
