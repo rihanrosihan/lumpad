@@ -257,7 +257,7 @@ function computePowerZones(laps, ftp = 199) {
   return rows
 }
 
-function SvgAreaChart({ values, color, fill, label, yFmt, invert = false, minY, maxY, secondary }) {
+function SvgAreaChart({ values, color, fill, label, yFmt, invert = false, minY, maxY, secondary, xLabels }) {
   if (!values || values.length < 2) return <p className="muted" style={{ fontSize: 12 }}>Needs ≥ 2 laps for telemetry curve.</p>
   const W = 440, H = 150, PL = 38, PR = 10, PT = 10, PB = 22
   const lo = minY ?? Math.min(...values), hi = maxY ?? Math.max(...values), span = (hi - lo) || 1
@@ -286,9 +286,9 @@ function SvgAreaChart({ values, color, fill, label, yFmt, invert = false, minY, 
     {secArea && <polygon points={secArea} fill="rgba(148,163,184,0.22)" />}
     <polygon points={area} fill={fill} />
     <polyline points={pts} fill="none" stroke={color} strokeWidth="2.2" strokeLinejoin="round" />
-    <text x={PL} y={H - 5} fontSize="9.5" fill="var(--muted)" fontFamily="var(--f-mono)">Km 1</text>
-    <text x={(PL + W - PR) / 2} y={H - 5} textAnchor="middle" fontSize="9.5" fill="var(--muted)" fontFamily="var(--f-mono)">Km {Math.ceil(values.length / 2)}</text>
-    <text x={W - PR} y={H - 5} textAnchor="end" fontSize="9.5" fill="var(--muted)" fontFamily="var(--f-mono)">Km {values.length}</text>
+    <text x={PL} y={H - 5} fontSize="9.5" fill="var(--muted)" fontFamily="var(--f-mono)">{xLabels ? xLabels[0] : 'Km 1'}</text>
+    <text x={(PL + W - PR) / 2} y={H - 5} textAnchor="middle" fontSize="9.5" fill="var(--muted)" fontFamily="var(--f-mono)">{xLabels ? xLabels[1] : `Km ${Math.ceil(values.length / 2)}`}</text>
+    <text x={W - PR} y={H - 5} textAnchor="end" fontSize="9.5" fill="var(--muted)" fontFamily="var(--f-mono)">{xLabels ? xLabels[2] : `Km ${values.length}`}</text>
   </svg>
 }
 
@@ -357,17 +357,6 @@ function collapseTo5Zones(rows) {
 }
 
 
-const KNOWN_ROUTES = {
-  '2026-11-15': [
-    [-7.6079, 110.2038], [-7.6115, 110.2010], [-7.6142, 110.1945], [-7.6120, 110.1865],
-    [-7.6045, 110.1905], [-7.5988, 110.1872], [-7.5930, 110.1935], [-7.5955, 110.2035],
-    [-7.5880, 110.2050], [-7.5815, 110.2135], [-7.5735, 110.2105], [-7.5685, 110.2195],
-    [-7.5745, 110.2260], [-7.5845, 110.2185], [-7.5915, 110.2215], [-7.6015, 110.2210],
-    [-7.6092, 110.2265], [-7.6115, 110.2215], [-7.6048, 110.2155], [-7.6062, 110.2080],
-    [-7.6079, 110.2038],
-  ],
-}
-
 function decodePolyline(str) {
   if (!str || typeof str !== 'string') return []
   let idx = 0, lat = 0, lng = 0
@@ -394,18 +383,17 @@ function extractRouteCoords(a) {
   if (Array.isArray(a.track) && a.track.length >= 2) {
     return a.track.map((p) => Array.isArray(p) ? p : [p.lat, p.lon ?? p.lng]).filter((p) => Number.isFinite(p[0]) && Number.isFinite(p[1]))
   }
-  if (KNOWN_ROUTES[a.date]) return KNOWN_ROUTES[a.date]
   return []
 }
 
-function ActivityHeroMap({ a, laps, onShare }) {
+function ActivityHeroMap({ a, laps, route, onShare }) {
   const elRef = useRef(null)
   const mapRef = useRef(null)
   const [style, setStyle] = useState('clean')
   const [mapKey] = useStore('lumpad.mapkey', '')
   const GM = useApi('/api/map/status'), google = !!(GM.data?.configured && GM.data.used_today < GM.data.cap) // server-side Google tiles: the key never reaches the browser
   const keyed = google || tileSpec(mapKey, false).keyed
-  const coords = useMemo(() => extractRouteCoords(a), [a])
+  const coords = useMemo(() => (route && route.length >= 2 ? route : extractRouteCoords(a)), [a, route])
 
   useEffect(() => {
     if (!elRef.current || coords.length < 2) return
@@ -453,6 +441,7 @@ function ActivityHeroMap({ a, laps, onShare }) {
 
 function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
   const D = useApi(id ? `/api/activities/detail?id=${encodeURIComponent(id)}` : '', !!id), a = D.data
+  const ST = useApi(id ? `/api/intel/stream?id=${encodeURIComponent(id)}` : '', !!id && a?.sport_class === 'run'), stream = ST.data?.found ? ST.data : null // real per-second data from the FIT file
   const [ctx, setCtx] = useStore('lumpad.act.' + (id || 'none').replace(/[^A-Za-z0-9._-]/g, '_'), {
     rpe: '', gels: '', cho_g: '', note: '', tag: '', feels: [], official_bib: '', official_url: '', official_net: '',
   })
@@ -525,7 +514,7 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
     {a && <>
       {/* Preview-Matched Hero: Left Leaflet Route Map + Right Unified Header & Intensity Ribbon */}
       <div className="actv56-hero-grid">
-        <ActivityHeroMap a={a} laps={laps} onShare={() => setShareOpen(true)} />
+        <ActivityHeroMap a={a} laps={laps} route={stream?.route} onShare={() => setShareOpen(true)} />
 
         <div className="card actv60-hero-col">
           <div>
@@ -753,10 +742,14 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
 
       {/* TAB 4: DRIFT & GAP (4 Preview Charts + Per-Second FIT) */}
       {activeTab === 'drift' && <>
-        {laps.length > 1 && (() => {
-          const paceVals = laps.map((l) => l.avg_pace_s_km || a.avg_pace_s_km || 480)
-          const hrVals = laps.map((l) => l.avg_hr || a.avg_hr || 150)
-          const elevVals = laps.map((l, i) => l.elev_gain_m ?? l.elevation_m ?? (i * 4))
+        {(laps.length > 1 || stream) && (() => {
+          const fillNull = (arr) => { let last = arr.find((x) => x != null); return arr.map((x) => { if (x != null) last = x; return last ?? 0 }) }
+          const SP = stream && stream.t.length >= 8 // per-second FIT data: a continuous curve; otherwise per-lap values, never invented ones
+          const paceVals = SP ? fillNull(stream.gap.some((x) => x != null) ? stream.gap : stream.pace) : laps.map((l) => l.avg_pace_s_km).filter(Boolean)
+          const hrVals = SP ? fillNull(stream.hr) : laps.map((l) => l.avg_hr).filter(Boolean)
+          const elevVals = SP && stream.has_alt ? fillNull(stream.alt) : null
+          const kmAt = (f) => `${(stream.km[Math.min(stream.km.length - 1, Math.round((stream.km.length - 1) * f))] ?? 0).toFixed(f ? 1 : 0)} km`
+          const xLab = SP ? [kmAt(0), kmAt(0.5), kmAt(1)] : undefined
           const half = Math.ceil(laps.length / 2)
           let cumMin = 0
           const phr1 = [], phr2 = [], dr1 = [], dr2 = []
@@ -770,12 +763,12 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
           })
           return <div className="actv56-two-col">
             <Card title="Grade Adjusted Pace (GAP) & Elevation">
-              <div className="actv56-chart-kpis"><span>Avg GAP <Info k="GAP" /> <b>{a.adjusted_pace_s_km ? fmtPaceS(a.adjusted_pace_s_km) + '/km' : fmtPaceS(a.avg_pace_s_km) + '/km'}</b></span><span>Fastest <b>{fmtPaceS(Math.min(...paceVals))}/km</b></span></div>
-              <SvgAreaChart values={paceVals} secondary={elevVals} color="#3B82F6" fill="rgba(59,130,246,0.18)" label="Pace and elevation" invert yFmt={(v) => fmtPaceS(v)} />
+              <div className="actv56-chart-kpis"><span>Avg GAP <Info k="GAP" /> <b>{a.adjusted_pace_s_km ? fmtPaceS(a.adjusted_pace_s_km) + '/km' : fmtPaceS(a.avg_pace_s_km) + '/km'}</b></span><span>Fastest <b>{paceVals.length ? fmtPaceS(Math.min(...paceVals)) + '/km' : '—'}</b></span></div>
+              <SvgAreaChart xLabels={xLab} values={paceVals} secondary={elevVals && elevVals.length === paceVals.length ? elevVals : undefined} color="#3B82F6" fill="rgba(59,130,246,0.18)" label="Pace and elevation" invert yFmt={(v) => fmtPaceS(v)} />
             </Card>
             <Card title="Heart Rate Stream">
               <div className="actv56-chart-kpis"><span>Avg HR <b>{a.avg_hr ?? '—'} bpm</b></span><span>Max HR <b>{a.max_hr ?? '—'} bpm</b></span><span>LTHR <b>{zcfg.lthr} bpm</b></span></div>
-              <SvgAreaChart values={hrVals} color="#EA3A3A" fill="rgba(234,58,58,0.16)" label="Heart rate stream" minY={Math.max(100, Math.min(...hrVals) - 10)} maxY={Math.max(...hrVals) + 6} />
+              <SvgAreaChart xLabels={xLab} values={hrVals} color="#EA3A3A" fill="rgba(234,58,58,0.16)" label="Heart rate stream" minY={hrVals.length ? Math.max(100, Math.min(...hrVals) - 10) : undefined} maxY={hrVals.length ? Math.max(...hrVals) + 6 : undefined} />
             </Card>
             <Card title="Power / HR Decoupling">
               <div className="actv56-chart-kpis"><span>EF <b>{ef ?? '—'}</b></span><span>Decoupling <b>{dc ? dc.pct + '%' : '—'}</b></span><span><b style={{ color: '#9333EA' }}>●</b> 1st Half</span><span><b style={{ color: '#EA3A3A' }}>●</b> 2nd Half</span></div>
@@ -798,7 +791,7 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
         const gearObj = gearList.find((g) => String(g.id) === String(activeGearId))
         const shoeKm = gearObj ? Math.round((gearObj.distance_m || (gearObj.km ? gearObj.km * 1000 : 0)) / 1000) : null
         const shoeMax = gearObj?.max_km || 650
-        const shoePct = shoeKm != null ? Math.min(100, Math.round((shoeKm / shoeMax) * 100)) : 45
+        const shoePct = shoeKm != null ? Math.min(100, Math.round((shoeKm / shoeMax) * 100)) : 0
         return <div className="actv56-overview-grid">
           <div>
             <Card title="Matched & Recent Runs (EF Trend)">
