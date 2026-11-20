@@ -233,6 +233,12 @@ const routes = {
   'GET /api/library': async () => lib.list(),
   'POST /api/library': async (_q, req) => lib.add(JSON.parse((await readBody(req, 1e5)).toString())),
   'DELETE /api/library': async (q) => lib.remove(q.get('id')),
+  'GET /api/map/status': async () => { const G = await import('./google.js'); return G.status() },
+  'GET /api/map/tile': async (q, req, res) => {
+    const G = await import('./google.js'), t = await G.tile(q)
+    res.writeHead(200, { 'content-type': t.type, 'cache-control': 'private, max-age=3600', 'x-content-type-options': 'nosniff' }); res.end(t.body); return null
+  },
+  'GET /api/google/probe': async () => { const G = await import('./google.js'); if (!G.configured()) return { configured: false }; return G.probe() },
   'GET /api/v2/sub4': async () => { try { const r = await fetch('http://127.0.0.1:8788/api/v2/sub4'); if (r.ok) return await r.json() } catch {} return { ok: false, offline: true } },
   'GET /api/v2/decisions': async (q) => { try { const qs = q.toString(); const r = await fetch('http://127.0.0.1:8788/api/v2/decisions' + (qs ? '?' + qs : '')); if (r.ok) return await r.json() } catch {} return { items: [], offline: true } },
 }

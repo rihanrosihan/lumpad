@@ -403,7 +403,8 @@ function ActivityHeroMap({ a, laps, onShare }) {
   const mapRef = useRef(null)
   const [style, setStyle] = useState('clean')
   const [mapKey] = useStore('lumpad.mapkey', '')
-  const keyed = tileSpec(mapKey, false).keyed
+  const GM = useApi('/api/map/status'), google = !!(GM.data?.configured && GM.data.used_today < GM.data.cap) // server-side Google tiles: the key never reaches the browser
+  const keyed = google || tileSpec(mapKey, false).keyed
   const coords = useMemo(() => extractRouteCoords(a), [a])
 
   useEffect(() => {
@@ -411,8 +412,8 @@ function ActivityHeroMap({ a, laps, onShare }) {
     if (mapRef.current) { mapRef.current.remove(); mapRef.current = null }
     const map = L.map(elRef.current, { zoomControl: false, attributionControl: false, scrollWheelZoom: false })
     mapRef.current = map
-    const sp = tileSpec(mapKey, false, style)
-    L.tileLayer(sp.url, { maxZoom: 18, subdomains: sp.subdomains || 'abc', attribution: '' }).addTo(map)
+    if (google) L.tileLayer('/api/map/tile?z={z}&x={x}&y={y}', { maxZoom: 19 }).addTo(map)
+    else { const sp = tileSpec(mapKey, false, style); L.tileLayer(sp.url, { maxZoom: 18, subdomains: sp.subdomains || 'abc' }).addTo(map) }
     const line = L.polyline(coords, { color: '#F26B5B', weight: 4.2, opacity: 0.95, lineJoin: 'round', lineCap: 'round' }).addTo(map)
     L.circleMarker(coords[0], { radius: 6.5, fillColor: '#10B981', color: '#fff', weight: 2.5, fillOpacity: 1 }).addTo(map).bindTooltip('Start')
     const end = coords[coords.length - 1]
@@ -422,14 +423,14 @@ function ActivityHeroMap({ a, laps, onShare }) {
     map.fitBounds(line.getBounds(), { padding: [30, 30] })
     setTimeout(() => map.invalidateSize(), 120)
     return () => { if (mapRef.current) { mapRef.current.remove(); mapRef.current = null } }
-  }, [coords, style, mapKey])
+  }, [coords, style, mapKey, google])
 
   if (coords.length >= 2) {
     return <div className="actv60-map-card">
-      {!keyed && <div className="actv60-map-note">OpenStreetMap tiles. Add your CARTO key in Profile for the Clean and Street styles.</div>}
+      {google ? <div className="actv60-map-note">© Google</div> : !keyed && <div className="actv60-map-note">OpenStreetMap tiles. Add your CARTO key in Profile for the Clean and Street styles.</div>}
       <div ref={elRef} className="actv60-map-canvas" />
       <div className="actv60-map-controls">
-        {keyed && <button type="button" className="actv60-map-pill" onClick={() => setStyle((s) => s === 'clean' ? 'street' : 'clean')}>
+        {keyed && !google && <button type="button" className="actv60-map-pill" onClick={() => setStyle((s) => s === 'clean' ? 'street' : 'clean')}>
           {style === 'clean' ? 'Clean Map' : 'Street Map'}
         </button>}
         <button type="button" className="actv60-map-pill" onClick={onShare}>Share ↗</button>
