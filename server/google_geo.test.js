@@ -60,3 +60,8 @@ test('air forecast period starts in the future (Google rejects a start in the pa
   await N.airForecast(-7.7, 110.3, { fetchFn: async (u, o) => { body = JSON.parse(o.body); return { ok: true, json: async () => ({ hourlyForecasts: [] }) } } })
   assert.ok(new Date(body.period.startTime).getTime() > Date.now()); assert.equal(new Date(body.period.endTime) - new Date(body.period.startTime), 24 * 3600e3)
 })
+test('bestWindow never offers an hour before sunrise', () => {
+  const h = (hour, t, day) => ({ displayDateTime: { hours: hour }, temperature: { degrees: t }, relativeHumidity: 90, isDaytime: day })
+  const w = N.bestWindow([h(4, 20, false), h(5, 21, false), h(6, 24, true), h(7, 26, true)])
+  assert.deepEqual(w.best.map((x) => x.hour), [6, 7])
+})

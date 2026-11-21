@@ -39,13 +39,13 @@ export async function timeZoneAt(lat, lon, ts = Math.floor(Date.now() / 1000), o
   const j = await call('timezone', `https://maps.googleapis.com/maps/api/timezone/json?${q({ location: `${la},${lo}`, timestamp: Math.floor(ts), key: apiKey() })}`, {}, o)
   return { id: j.timeZoneId || null, name: j.timeZoneName || null, utc_offset_s: Number.isFinite(j.rawOffset) ? j.rawOffset + (j.dstOffset || 0) : null }
 }
-// next hours of weather -> the best hour to run: lowest shade WBGT between 04:00 and 21:00 local, daylight only
+// next hours of weather -> the best hour to run: lowest shade WBGT between 04:00 and 21:00 local, daylight hours only
 export function bestWindow(hours) {
   const rows = (hours || []).map((h) => {
     const t = h.temperature?.degrees, rh = h.relativeHumidity, dt = h.displayDateTime
     return { hour: Number.isFinite(dt?.hours) ? dt.hours : null, start: h.interval?.startTime || null, temp_c: Number.isFinite(t) ? t : null, rh: Number.isFinite(rh) ? rh : null, rain_pct: h.precipitation?.probability?.percent ?? null, uv: h.uvIndex ?? null, daytime: h.isDaytime ?? null,
       wbgt: Number.isFinite(t) && Number.isFinite(rh) ? +wbgtShade(t, rh).toFixed(1) : null }
-  }).filter((r) => r.wbgt != null && r.hour != null && r.hour >= 4 && r.hour <= 21)
+  }).filter((r) => r.wbgt != null && r.hour != null && r.hour >= 4 && r.hour <= 21 && r.daytime !== false) // dark hours are not offered as a run window
   const ranked = [...rows].sort((a, b) => a.wbgt - b.wbgt || (a.rain_pct ?? 0) - (b.rain_pct ?? 0))
   return { best: ranked.slice(0, 3).sort((a, b) => a.hour - b.hour), hours: rows }
 }
