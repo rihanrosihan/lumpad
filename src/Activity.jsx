@@ -649,8 +649,8 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
           </div>
           <div className="v61-env-tile">
             <div className="v61-env-top"><span>Air Quality</span><span className={`v61-sign ${airS[1]}`}><i />{airS[0]}</span></div>
-            <div className="v61-env-val">{airIdx?.category || '—'}</div>
-            <div className="v61-env-sub"><span>{airIdx ? `${airIdx.name || 'AQI'} ${airIdx.aqi ?? ''}`.trim() : 'Not pulled for this run'}</span><span>{air ? 'At the run hour' : ''}</span></div>
+            <div className="v61-env-val">{airIdx?.category ? String(airIdx.category).replace(/\s*air quality\s*/i, '').trim() || airIdx.category : '—'}</div>
+            <div className="v61-env-sub"><span>{airIdx ? `${String(airIdx.name || 'AQI').replace(/\s*\(.*\)\s*/, '')} ${airIdx.aqi ?? ''}`.trim() : 'Not pulled for this run'}</span><span>{air ? 'At the run hour' : ''}</span></div>
           </div>
           <div className="v61-env-tile">
             <div className="v61-env-top"><span>Effort Load</span><span className={`v61-sign ${(a.training_load || 0) > 220 ? 'high' : 'normal'}`}><i />{(a.training_load || 0) > 220 ? 'High' : 'Normal'}</span></div>
@@ -658,7 +658,7 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
             <div className="v61-env-sub"><span>Aerobic TE {a.aerobic_te ?? '—'}</span><span>Anaerobic TE {a.anaerobic_te ?? '—'}</span></div>
           </div>
           <div className="v61-env-tile">
-            <div className="v61-env-top"><span>Drift &amp; Grade</span><span className={`v61-sign ${dc && dc.pct > 8 ? 'high' : 'good'}`}><i />{dc && dc.pct > 8 ? 'High' : 'Good'}</span></div>
+            <div className="v61-env-top"><span>Drift</span><span className={`v61-sign ${dc && dc.pct > 8 ? 'high' : 'good'}`}><i />{dc && dc.pct > 8 ? 'High' : 'Good'}</span></div>
             <div className="v61-env-val">{dc ? `${dc.pct}%` : '—'}</div>
             <div className="v61-env-sub"><span>Aerobic decoupling</span><span>Elev {elevGain != null ? `+${Math.round(elevGain)}m` : '—'}</span></div>
           </div>
