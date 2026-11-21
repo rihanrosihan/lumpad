@@ -36,6 +36,15 @@ __DOMAIN__ {
 		reverse_proxy 127.0.0.1:8787
 	}
 
+	# PWA install files must load WITHOUT the login: browsers fetch the manifest, service worker and icons
+	# without credentials, and a 401 there makes "Add to Home screen" create a plain browser shortcut
+	# (address bar + toolbar) instead of a standalone app. They contain no personal data.
+	@pwa path /manifest.webmanifest /sw.js /icons/*
+	handle @pwa {
+		root * /opt/lumpad/dist
+		file_server
+	}
+
 	# Everything else: web login
 	handle {
 		basicauth {

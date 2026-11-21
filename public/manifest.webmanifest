@@ -1,5 +1,5 @@
 {
-  "name": "Lumpad · Sub-4 Coach",
+  "name": "Lumpad \u00b7 Sub-4 Coach",
   "short_name": "Lumpad",
   "description": "Personal marathon coaching: readiness, activities, calendar and AI coach.",
   "id": "/",
@@ -10,13 +10,59 @@
   "background_color": "#F4F6FA",
   "theme_color": "#4658D6",
   "icons": [
-    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ],
   "shortcuts": [
-    { "name": "Readiness", "url": "/ready", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Activities", "url": "/activity", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
-    { "name": "AI Coach", "url": "/coach", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] }
+    {
+      "name": "Readiness",
+      "url": "/ready",
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Activities",
+      "url": "/activity",
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "AI Coach",
+      "url": "/coach",
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "display_override": [
+    "fullscreen",
+    "standalone"
   ]
 }
