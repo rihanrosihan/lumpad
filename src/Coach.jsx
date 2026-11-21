@@ -451,15 +451,24 @@ function MemoryQueue({ pending, onAct }) {
   const shown = tierFilter === 'all' ? pending : pending.filter((m) => m.tier === tierFilter)
   return <>
     <Card title={`Athlete Memory & Hypothesis Confirmation Queue (${pending.length})`} right={<SegmentedTabs tabs={[{ id: 'all', label: 'All', badge: pending.length }, { id: 'semantic', label: 'Semantic', badge: semCount }, { id: 'episodic', label: 'Episodic', badge: epiCount }]} value={tierFilter} onChange={setTierFilter} label="Hypothesis tier" />}>
-      <p className="muted" style={{ marginTop: 0 }}>Coach findings are stored as hypotheses. Only those you approve (or that repeat 3×) become active. Locked rules cannot be overwritten by the coach.</p>
+      <div className="mq-help">
+        <p><b>What is this?</b> After analysing your runs, the coach writes down things it <i>thinks</i> are true about you (for example "your HR drifts in hot evening runs"). They are only hypotheses until you decide.</p>
+        <ul>
+          <li><b>✓ Yes, remember</b> — you agree. It becomes active memory and the coach will use it as a known fact in every future analysis.</li>
+          <li><b>✕ No, discard</b> — you disagree, or the data was misleading (a bad GPS day, illness, a one-off). The coach will not use it.</li>
+          <li><b>Not sure?</b> Leave it. Nothing is used until you answer; a finding that keeps showing up in new runs (×3) is activated automatically.</li>
+        </ul>
+        <p className="muted"><b>×N</b> = how many times it was seen · <b>episodic</b> = about one specific run · <b>semantic</b> = a lasting pattern about you. Tip: approve only what matches how your body felt. Locked rules cannot be overwritten by the coach.</p>
+      </div>
       {shown.length > 0 ? <div className="hyp-grid">
         {shown.map((m) => <div key={m.id} className="hyp-card">
-          <div className="chips" style={{ margin: 0 }}><Chip tone={m.tier === 'semantic' ? 'green' : undefined}>{m.tier}</Chip><Chip>{m.evidence_tag}</Chip><Chip>×{m.n}</Chip></div>
+          <div className="chips" style={{ margin: 0 }}><Chip tone={m.tier === 'semantic' ? 'green' : undefined}>{m.tier === 'semantic' ? 'lasting pattern' : 'one run'}</Chip><Chip>seen ×{m.n}</Chip></div>
           <b style={{ fontSize: '.86rem' }}>{cleanId(m.title)}</b>
           <small className="muted" style={{ flex: 1 }}>{cleanId(m.body)}</small>
-          <div className="seg" role="group" aria-label="Actions" style={{ marginTop: 6 }}>
-            <button onClick={() => onAct(m.id, 'approve')}>Approve</button>
-            <button onClick={() => onAct(m.id, 'retract')}>Reject</button>
+          <p className="mq-q">Does this match your experience?</p>
+          <div className="seg mq-act" role="group" aria-label="Decide on this finding">
+            <button className="mq-yes" onClick={() => onAct(m.id, 'approve')}>✓ Yes, remember</button>
+            <button className="mq-no" onClick={() => onAct(m.id, 'retract')}>✕ No, discard</button>
           </div>
         </div>)}
       </div> : <p className="muted">No hypotheses awaiting confirmation in this view.</p>}
@@ -519,7 +528,7 @@ export default function Coach({ go, focus }) {
             {s?.busy ? 'Running pipeline…' : 'Run Analysis Now'}
           </button>
           {pending.length > 0 && <button type="button" className="btn primary sm" disabled={approvingAll} onClick={approveAll} style={{ background: '#059669' }}>
-            {approvingAll ? 'Approving…' : `✓ Approve All ${pending.length} Rules`}
+            {approvingAll ? 'Saving…' : `✓ Remember all ${pending.length}`}
           </button>}
         </div>
       </div>
