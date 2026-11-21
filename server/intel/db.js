@@ -62,4 +62,7 @@ CREATE TABLE balance_snap (id INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT NOT NUL
 `, `
 -- job ledger for scheduled coach runs: one row per (intent + target + day); caps attempts and spaces retries (Phase 0 hotfix)
 CREATE TABLE coach_job (key TEXT PRIMARY KEY, intent TEXT NOT NULL, attempts INTEGER NOT NULL DEFAULT 0, next_try TEXT, last_error TEXT, status TEXT NOT NULL DEFAULT 'pending', updated_at TEXT NOT NULL);
+`, `
+ALTER TABLE coach_run ADD COLUMN req_hash TEXT;
+CREATE INDEX coach_run_hash ON coach_run(intent, req_hash);
 `])

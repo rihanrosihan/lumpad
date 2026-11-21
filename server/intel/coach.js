@@ -1,4 +1,5 @@
 // Orchestrates one coach run: context → provider → schema validation (+1 repair) → write-back → coach_run row.
+import crypto from 'node:crypto'
 import { mdb, idb } from './db.js'
 import { retrieveRunnerContext, renderPrompt, TASKS, OUTPUT_SCHEMA } from './context.js'
 import { validate, normalize as norm0, softClamp } from './schema.js'
@@ -17,15 +18,32 @@ export function pickProvider(intent) {
   const want = (process.env.COACH_CLAUDE_INTENTS || '').split(',').map((x) => x.trim()).filter(Boolean)
   return want.includes(intent) && claude.configured().ok && claude.guard().ok ? 'anthropic' : 'deepseek'
 }
+// Fingerprint of everything the model would be shown (system + user text: the session's metrics, your check-in, recovery data, the twin, today's date).
+// Same fingerprint = nothing it could base a different answer on has changed, so the saved analysis is reused and no model call is made. A new metric,
+// a new check-in, new recovery data or a new day changes the text and therefore the fingerprint, which unlocks a new analysis.
+export const promptHash = (prompt) => crypto.createHash('sha256').update(String(prompt.system || '') + '\u0000' + String(prompt.user || '')).digest('hex').slice(0, 32)
+export const savedRun = (intent, hash) => mdb.prepare('SELECT id, created_at, model, cost_cny FROM coach_run WHERE ok=1 AND intent=? AND req_hash=? ORDER BY id DESC LIMIT 1').get(intent, hash) || null
+// is the newest saved analysis of this question still current? (no model call, no cost)
+export function coachStatus({ intent = 'daily_brief', question = '', date, activityId = null } = {}) {
+  const ctx = retrieveRunnerContext({ intent, question, date, activityId }), hash = promptHash(renderPrompt(ctx, TASKS[intent] || TASKS.question))
+  const same = savedRun(intent, hash)
+  const last = question ? mdb.prepare('SELECT id, created_at FROM coach_run WHERE ok=1 AND intent=? AND question=? ORDER BY id DESC LIMIT 1').get(intent, question) : mdb.prepare('SELECT id, created_at FROM coach_run WHERE ok=1 AND intent=? ORDER BY id DESC LIMIT 1').get(intent)
+  return { up_to_date: !!same, run_id: same?.id ?? null, last_run_id: last?.id ?? null, last_at: last?.created_at ?? null, hash }
+}
+// runs saved before fingerprints existed: compute theirs from the stored prompt, so an old analysis also counts as "already done"
+export function backfillHashes() {
+  try { for (const r of mdb.prepare("SELECT id, request FROM coach_run WHERE req_hash IS NULL AND request IS NOT NULL AND provider != 'safety'").all()) { let q; try { q = JSON.parse(r.request) } catch { continue } if (q?.system != null) mdb.prepare('UPDATE coach_run SET req_hash=? WHERE id=?').run(promptHash(q), r.id) } } catch {}
+}
+backfillHashes()
 export function newRun({ intent, provider, ctx, prompt, question }) {
-  return Number(mdb.prepare('INSERT INTO coach_run (created_at, intent, provider, effort, question, context_ids, context_tokens, request, ok) VALUES (?,?,?,?,?,?,?,?,0)').run(now(), intent, provider, EFFORT[intent], question || null, JSON.stringify(ctx.item_ids), ctx.tokens_est, JSON.stringify(prompt)).lastInsertRowid)
+  return Number(mdb.prepare('INSERT INTO coach_run (created_at, intent, provider, effort, question, context_ids, context_tokens, request, ok, req_hash) VALUES (?,?,?,?,?,?,?,?,0,?)').run(now(), intent, provider, EFFORT[intent], question || null, JSON.stringify(ctx.item_ids), ctx.tokens_est, JSON.stringify(prompt), promptHash(prompt)).lastInsertRowid)
 }
 export const corpusOf = (ctx) => JSON.stringify({ twin: ctx.volatile.twin, edges: ctx.volatile.correlation_edges, items: [...ctx.volatile.episodes, ...ctx.volatile.facts] })
 
 // finalize a run given a parsed answer (used by DeepSeek and by the Claude Code CLI write-back)
 export function finishRun(runId, parsed, { provider, usage = null, model = null, cost = null, raw = null } = {}) {
   const row = mdb.prepare('SELECT context_ids, request FROM coach_run WHERE id=?').get(runId), ids = JSON.parse(row.context_ids), req = JSON.parse(row.request)
-  const errs = validate(parsed, OUTPUT_SCHEMA); if (errs.length) { mdb.prepare('UPDATE coach_run SET ok=0, error=?, response=?, model=? WHERE id=?').run('schema: ' + errs.slice(0, 5).join('; '), raw, model, runId); return { ok: false, errors: errs } }
+  const errs = validate(softClamp(parsed), OUTPUT_SCHEMA); if (errs.length) { mdb.prepare('UPDATE coach_run SET ok=0, error=?, response=?, model=? WHERE id=?').run('schema: ' + errs.slice(0, 5).join('; '), raw, model, runId); return { ok: false, errors: errs } }
   const wb = applyWriteback(parsed, { runId, itemIds: ids, corpus: req.user + '\n' + req.system, provider })
   mdb.prepare('UPDATE coach_run SET ok=1, response=?, parsed=?, usage=?, cost_cny=?, model=?, error=NULL WHERE id=?').run(raw, JSON.stringify({ ...parsed, _writeback: wb }), usage ? JSON.stringify(usage) : null, cost, model, runId)
   return { ok: true, parsed, writeback: wb }
@@ -37,7 +55,7 @@ function safetyPre(question) {
   for (const l of log) { const w = Math.max(0, ...Object.values(JSON.parse(l.pain || '{}'))); flags.push(...checkinFlags({ pain: w })) }
   return [...new Map(flags.map((f) => [f.id, f])).values()]
 }
-export async function runCoach({ intent = 'daily_brief', question = '', date, activityId = null, fetchFn } = {}) {
+export async function runCoach({ intent = 'daily_brief', question = '', date, activityId = null, fetchFn, force = false } = {}) {
   const red = safetyPre(question)
   if (red.length) {
     const parsed = referralFor(red), id = Number(mdb.prepare('INSERT INTO coach_run (created_at, intent, provider, effort, question, context_ids, context_tokens, request, response, parsed, model, cost_cny, ok) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,1)')
@@ -45,7 +63,9 @@ export async function runCoach({ intent = 'daily_brief', question = '', date, ac
     audit('safety:referral', null, { ids: red.map((f) => f.id) }, id)
     return { runId: id, ok: true, parsed, model: 'safety-rules', cost_cny: 0, safety: true }
   }
-  const ctx = retrieveRunnerContext({ intent, question, date, activityId }), prompt = renderPrompt(ctx, TASKS[intent] || TASKS.question), provider = pickProvider(intent), llm = provider === 'anthropic' ? claude.complete : deepseek, runId = newRun({ intent, provider, ctx, prompt, question })
+  const ctx = retrieveRunnerContext({ intent, question, date, activityId }), prompt = renderPrompt(ctx, TASKS[intent] || TASKS.question), reqHash = promptHash(prompt)
+  if (!force) { const hit = savedRun(intent, reqHash); if (hit) { const row = getRun(hit.id); return { runId: hit.id, ok: true, cached: true, saved_at: hit.created_at, parsed: row.parsed, model: hit.model, cost_cny: 0 } } }
+  const provider = pickProvider(intent), llm = provider === 'anthropic' ? claude.complete : deepseek, runId = newRun({ intent, provider, ctx, prompt, question })
   try {
     let r = await llm({ ...prompt, effort: EFFORT[intent], intent, fetchFn }), errs = r.json ? validate(normalize(r.json), OUTPUT_SCHEMA) : ['not valid JSON']
     if (errs.length) { // one repair attempt, with the validator's own message
@@ -55,7 +75,7 @@ export async function runCoach({ intent = 'daily_brief', question = '', date, ac
     if (errs.length) { mdb.prepare('UPDATE coach_run SET ok=0, error=?, response=?, usage=?, cost_cny=?, model=? WHERE id=?').run('schema after repair: ' + errs.slice(0, 5).join('; ') + ' — memory writes dropped', r.text, JSON.stringify(r.usage), r.cost_cny, r.model, runId); return { runId, ok: false, text: r.text, errors: errs } }
     // gate check: while a validated gate is active no hard session may be recommended; diagnosis / clearance wording is flagged
     const gc = gateCheck(r.json, gateFromTwin(ctx.volatile.twin)), dx = diagnosisWording(gc.parsed)
-    if (dx.length) gc.parsed = { ...gc.parsed, flags: [...(gc.parsed.flags || []), { type: 'rule', text: 'The coach does not diagnose or clear you to train; treat "' + dx[0] + '" as a question for a clinician.' }] }
+    if (dx.length) gc.parsed = { ...gc.parsed, flags: [{ type: 'rule', text: 'The coach does not diagnose or clear you to train; treat "' + dx[0] + '" as a question for a clinician.' }, ...(gc.parsed.flags || [])].slice(0, 8) }
     if (gc.removed.length || dx.length) audit('safety:answer-adjusted', null, { removed: gc.removed.map((x) => x.action), diagnosis: dx }, runId)
     const fin = finishRun(runId, gc.parsed, { provider, usage: r.usage, model: r.model, cost: r.cost_cny, raw: r.text })
     return { runId, ok: fin.ok, model: r.model, cost_cny: r.cost_cny, ...fin }

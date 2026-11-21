@@ -15,7 +15,7 @@ import { listEdges } from './intel/corr.js'
 import { listMemory, setStatus, getMemory } from './intel/memory.js'
 import { runIntel, recentIntelJobs, afterSync } from './intel/run.js'
 import { startIntelScheduler } from './intel/schedule.js'
-import { runCoach, recentRuns, getRun, newRun, finishRun } from './intel/coach.js'
+import { runCoach, recentRuns, getRun, newRun, finishRun, coachStatus } from './intel/coach.js'
 import { retrieveRunnerContext, renderPrompt, TASKS, OUTPUT_SCHEMA } from './intel/context.js'
 import { guardStatus, resolveModel } from './intel/llm.js'
 import { status as archiveStatus } from './coros/archive.js'
@@ -136,7 +136,8 @@ const routes = {
   'GET /api/memory': async (q) => listMemory({ tier: q.get('tier') || undefined, status: q.get('status') || undefined, kind: q.get('kind') || undefined, limit: Math.min(+q.get('limit') || 100, 300) }),
   'GET /api/memory/item': async (q) => getMemory(+q.get('id')) || { error: 'not found' },
   'POST /api/memory/action': async (_q, req) => { const b = JSON.parse((await readBody(req, 1e4)).toString()), to = { approve: 'active', retract: 'retracted', archive: 'archived' }[b.action]; if (!to) throw Object.assign(new Error('bad action'), { status: 400 }); return setStatus(+b.id, to, 'athlete') },
-  'POST /api/coach/run': async (_q, req) => { const b = JSON.parse((await readBody(req, 2e4)).toString() || '{}'); if (!TASKS[b.intent || 'daily_brief']) throw Object.assign(new Error('bad intent'), { status: 400 }); return runCoach({ intent: b.intent || 'daily_brief', question: String(b.question || '').slice(0, 1000), activityId: b.activity_id || null }) },
+  'POST /api/coach/run': async (_q, req) => { const b = JSON.parse((await readBody(req, 2e4)).toString() || '{}'); if (!TASKS[b.intent || 'daily_brief']) throw Object.assign(new Error('bad intent'), { status: 400 }); return runCoach({ intent: b.intent || 'daily_brief', question: String(b.question || '').slice(0, 1000), activityId: b.activity_id || null, force: b.force === true }) },
+  'GET /api/coach/status': async (q) => { const i = q.get('intent') || 'daily_brief'; if (!TASKS[i]) throw Object.assign(new Error('bad intent'), { status: 400 }); return coachStatus({ intent: i, question: String(q.get('question') || '').slice(0, 1000), activityId: q.get('activity_id') || null }) },
   'GET /api/coach/runs': async () => recentRuns(20),
   'GET /api/coach/run': async (q) => getRun(+q.get('id')) || { error: 'not found' },
   // pull mode for a Claude routine / Claude Code: context out, answer back (same validation + write-back hook as DeepSeek)

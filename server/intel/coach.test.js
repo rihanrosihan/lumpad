@@ -100,3 +100,33 @@ test('softClamp: over-long display text is cut at a sentence, so a long answer i
   const mw = S.softClamp({ memory_writes: [{ tier: 'semantic', title: 't', body: 'x'.repeat(2000), cites: [1] }] })
   assert.equal(mw.memory_writes[0].body.length, 2000) // memory writes are never trimmed
 })
+test('promptHash: same text same hash, any change in what the model is shown changes it (new metric, new day)', async () => {
+  const C = await import('./coach.js')
+  const a = { system: 'rules', user: 'session 10 km, HRV 78, as_of 2026-11-21' }
+  assert.equal(C.promptHash(a), C.promptHash({ ...a })); assert.notEqual(C.promptHash(a), C.promptHash({ ...a, user: a.user.replace('78', '65') })); assert.notEqual(C.promptHash(a), C.promptHash({ ...a, user: a.user.replace('11-21', '11-22') }))
+})
+test('a safety note plus eight flags no longer overflows the schema (the run failed with "$.flags: more than 8 items")', async () => {
+  const S = await import('./schema.js'), C = await import('./context.js')
+  const base = { summary: 's', analysis_md: 'a', recommendations: [], flags: Array.from({ length: 8 }, (_, i) => ({ type: 'other', text: 'f' + i })), memory_writes: [], cited_ids: [] }
+  const withNote = { ...base, flags: [{ type: 'rule', text: 'note' }, ...base.flags].slice(0, 8) }
+  assert.deepEqual(S.validate(S.softClamp({ ...base, flags: [{ type: 'rule', text: 'note' }, ...base.flags] }), C.OUTPUT_SCHEMA).filter((e) => /more than/.test(e)), []); assert.equal(withNote.flags[0].text, 'note')
+})
+test('runCoach: an unchanged question is answered from the saved run (no model call); a new day or force makes a new one', async () => {
+  const Co = await import('./coach.js'), { idb } = await import('./db.js')
+  idb.prepare('INSERT INTO twin_state (as_of, created_at, trigger, schema, inputs_hash, state) VALUES (?,?,?,?,?,?)').run('2026-11-21', new Date().toISOString(), 'test', 'twin/1', 'h', JSON.stringify({ as_of: '2026-11-21', physiological_profile: {}, load: {}, baselines: {}, projection: { scenarios: [] } }))
+  let chats = 0
+  const answer = { summary: 'ok', analysis_md: 'fine', recommendations: [], flags: [], memory_writes: [], cited_ids: [] }
+  const fetchFn = async (url, opt) => {
+    if (url.endsWith('/models')) return ok(models)
+    if (url.endsWith('/user/balance')) return ok({ is_available: true, balance_infos: [{ currency: 'CNY', total_balance: '10.00' }] })
+    chats++; return ok({ choices: [{ message: { content: JSON.stringify(answer) }, finish_reason: 'stop' }], usage: {} })
+  }
+  const a = await Co.runCoach({ intent: 'question', question: 'how is my week', date: '2026-11-21', fetchFn })
+  assert.equal(a.ok, true); assert.ok(!a.cached); const n1 = chats; assert.ok(n1 >= 1)
+  const st = Co.coachStatus({ intent: 'question', question: 'how is my week', date: '2026-11-21' }); assert.equal(st.up_to_date, true); assert.equal(st.run_id, a.runId)
+  const b = await Co.runCoach({ intent: 'question', question: 'how is my week', date: '2026-11-21', fetchFn })
+  assert.equal(b.cached, true); assert.equal(b.runId, a.runId); assert.equal(b.cost_cny, 0); assert.equal(chats, n1, 'no second model call')
+  const next = Co.coachStatus({ intent: 'question', question: 'how is my week', date: '2026-11-22' }); assert.equal(next.up_to_date, false, 'a new day unlocks a new analysis')
+  const c = await Co.runCoach({ intent: 'question', question: 'how is my week', date: '2026-11-22', fetchFn }); assert.ok(!c.cached); assert.ok(chats > n1)
+  const n2 = chats; const d = await Co.runCoach({ intent: 'question', question: 'how is my week', date: '2026-11-22', fetchFn, force: true }); assert.ok(!d.cached); assert.ok(chats > n2)
+})
