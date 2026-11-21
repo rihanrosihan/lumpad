@@ -292,7 +292,7 @@ export default function Activity({ vdot, focus, go, settings }) {
   const [tagF, setTagF] = useState('all')
   const [q, setQ] = useState('')
   const [sortBy, setSortBy] = useState('newest')
-  const [srcF, setSrcF] = useState('all'), [fOpen, setFOpen] = useState(false)
+  const [srcF, setSrcF] = useState('all'), [actF, setActF] = useState('all'), [fOpen, setFOpen] = useState(false)
   useEffect(() => { if (!fOpen) return; const k = (e) => { if (e.key === 'Escape') setFOpen(false) }; addEventListener('keydown', k); return () => removeEventListener('keydown', k) }, [fOpen])
   const [hoverDay, setHoverDay] = useState('Tap/hover day')
   const sel = focus?.id || null
@@ -342,6 +342,7 @@ export default function Activity({ vdot, focus, go, settings }) {
     const t = inferTag(a)
     if (tagF !== 'all' && t !== tagF) return false
     if (srcF !== 'all' && !(a.sources || [a.source]).includes(srcF)) return false
+    if (actF !== 'all' && String(a.sport) !== actF) return false
     if (q.trim() && !(String(a.name || '') + ' ' + t + ' ' + (gear[a.gear_id] || '')).toLowerCase().includes(q.trim().toLowerCase())) return false
     return true
   })
@@ -356,9 +357,9 @@ export default function Activity({ vdot, focus, go, settings }) {
   })
   const SORTS = [['newest', 'Newest'], ['oldest', 'Oldest'], ['longest', 'Longest'], ['shortest', 'Shortest'], ['fastest', 'Fastest pace'], ['load', 'Highest TL']]
   const SPORT_OPTS = [['all', 'All'], ['run', 'Run'], ['walk', 'Walk'], ['strength', 'Gym']], SRC_OPTS = [['all', 'All'], ['coros', 'COROS'], ['strava', 'Strava']]
-  const nActive = (sport !== 'all') + (tagF !== 'all') + (srcF !== 'all') + (sortBy !== 'newest')
-  const summary = [SORTS.find((x) => x[0] === sortBy)[1], sport !== 'all' && SPORT_OPTS.find((x) => x[0] === sport)[1], tagF !== 'all' && tagF, srcF !== 'all' && SRC_OPTS.find((x) => x[0] === srcF)[1]].filter(Boolean).join(' · ')
-  const resetFilters = () => { setSport('all'); setTagF('all'); setSrcF('all'); setSortBy('newest') }
+  const ACT_OPTS = [...new Set(all.map((a) => String(a.sport || '')).filter(Boolean))].sort() // the sport names the devices record (Run, TrailRun, Walk, Strength…)
+  const nActive = (sport !== 'all') + (tagF !== 'all') + (srcF !== 'all') + (actF !== 'all') + (sortBy !== 'newest')
+  const resetFilters = () => { setSport('all'); setTagF('all'); setSrcF('all'); setActF('all'); setSortBy('newest') }
 
   return <section className="screen v61-scope v61-anim">
     <div className="v61-feed-head">
@@ -442,13 +443,14 @@ export default function Activity({ vdot, focus, go, settings }) {
       <div className="v61-filter-top">
         <input className="v61-search" type="search" placeholder="Search run, race, tag, shoe…" value={q} onChange={(e) => setQ(e.target.value)} />
         <button type="button" className={`v61-filterbtn ${nActive ? 'on' : ''}`} aria-expanded={fOpen} aria-controls="feed-filter-panel" onClick={() => setFOpen((o) => !o)}>
-          <span className="v61-filterbtn-t">{summary}</span>{nActive > 0 && <em>{nActive}</em>}<span aria-hidden="true">▾</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4" /></svg><span className="v61-filterbtn-t">Filter</span>{nActive > 0 && <em>{nActive}</em>}
         </button>
       </div>
       {fOpen && <div className="v61-filterpanel" id="feed-filter-panel" role="group" aria-label="Sort and filter activities">
         <div className="v61-fgroup"><b>Sort by</b><div className="v61-fopts">{SORTS.map(([k, l]) => <button key={k} type="button" className={`v61-fpill ${sortBy === k ? 'active' : ''}`} aria-pressed={sortBy === k} onClick={() => setSortBy(k)}>{l}</button>)}</div></div>
-        <div className="v61-fgroup"><b>Sport</b><div className="v61-fopts">{SPORT_OPTS.map(([k, l]) => <button key={k} type="button" className={`v61-fpill ${sport === k ? 'active' : ''}`} aria-pressed={sport === k} onClick={() => setSport(k)}>{l} ({k === 'all' ? all.length : all.filter((x) => x.sport_class === k).length})</button>)}</div></div>
-        <div className="v61-fgroup"><b>Workout tag</b><div className="v61-fopts">{['all', ...WORKOUT_TAGS].map((t) => <button key={t} type="button" className={`v61-fpill ${tagF === t ? 'active' : ''}`} aria-pressed={tagF === t} onClick={() => setTagF(t)}>{t === 'all' ? 'All tags' : t}</button>)}</div></div>
+        <div className="v61-fgroup"><b>Sport type</b><div className="v61-fopts">{SPORT_OPTS.map(([k, l]) => <button key={k} type="button" className={`v61-fpill ${sport === k ? 'active' : ''}`} aria-pressed={sport === k} onClick={() => setSport(k)}>{l} ({k === 'all' ? all.length : all.filter((x) => x.sport_class === k).length})</button>)}</div></div>
+        {ACT_OPTS.length > 1 && <div className="v61-fgroup"><b>Activity</b><div className="v61-fopts">{['all', ...ACT_OPTS].map((k) => <button key={k} type="button" className={`v61-fpill ${actF === k ? 'active' : ''}`} aria-pressed={actF === k} onClick={() => setActF(k)}>{k === 'all' ? 'All' : `${k} (${all.filter((x) => String(x.sport) === k).length})`}</button>)}</div></div>}
+        <div className="v61-fgroup"><b>Tag</b><div className="v61-fopts">{['all', ...WORKOUT_TAGS].map((t) => <button key={t} type="button" className={`v61-fpill ${tagF === t ? 'active' : ''}`} aria-pressed={tagF === t} onClick={() => setTagF(t)}>{t === 'all' ? 'All tags' : t}</button>)}</div></div>
         <div className="v61-fgroup"><b>Source</b><div className="v61-fopts">{SRC_OPTS.map(([k, l]) => <button key={k} type="button" className={`v61-fpill ${srcF === k ? 'active' : ''}`} aria-pressed={srcF === k} onClick={() => setSrcF(k)}>{l}</button>)}</div></div>
         <div className="v61-fact"><button type="button" className="v61-fpill" onClick={resetFilters}>Reset</button><button type="button" className="v61-fpill active" onClick={() => setFOpen(false)}>Show {sorted.length} {sorted.length === 1 ? 'activity' : 'activities'}</button></div>
       </div>}
