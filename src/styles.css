@@ -1421,3 +1421,13 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .appbar { top: 0; padding-top: env(safe-area-inset-top); }
 .hub-tabs { top: calc(52px + env(safe-area-inset-top)); }
 @media (min-width: 900px) { .hub-tabs { top: calc(64px + env(safe-area-inset-top)); } }
+
+/* Activities feed: one Filter button (sort + sport + tag + source) instead of a select and two rows of pills */
+.v61-filterbtn { flex: 0 0 auto; max-width: 62%; height: 36px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--v-border, var(--line)); background: var(--v-surface, var(--surface)); color: var(--v-text, var(--text)); font-size: 12px; font-weight: 700; cursor: pointer; width: auto; }
+.v61-filterbtn.on { border-color: var(--v-cobalt, #4658D6); color: var(--v-cobalt, #4658D6); }
+.v61-filterbtn-t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.v61-filterbtn em { font-style: normal; font-size: 10px; background: var(--v-cobalt, #4658D6); color: #fff; border-radius: 999px; padding: 1px 6px; }
+.v61-filterpanel { margin-top: 8px; padding: 12px; border: 1px solid var(--v-border, var(--line)); border-radius: 16px; background: var(--v-surface, var(--surface)); box-shadow: 0 14px 30px -12px rgba(15,23,42,.25); display: grid; gap: 10px; }
+.v61-fgroup b { display: block; font-size: 10.5px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--v-muted, var(--muted)); margin-bottom: 6px; }
+.v61-fopts { display: flex; flex-wrap: wrap; gap: 6px; }
+.v61-fact { display: flex; gap: 8px; justify-content: flex-end; padding-top: 4px; border-top: 1px solid var(--v-border, var(--line)); }
