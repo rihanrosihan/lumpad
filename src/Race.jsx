@@ -6,6 +6,7 @@ import { BarChart } from './charts.jsx'
 import CourseMap from './CourseMap.jsx'
 import JrfCourseMap from './JrfCourseMap.jsx'
 import JakimBenchmark from './JakimBenchmark.jsx'
+import { RaceDayTravel, CourseStreetView } from './RaceGoogle.jsx'
 
 const JRF_COPS = [
   { name: 'COP 1', km: 18.0, elapsed: '2h 10m', closes: '06:10', sub4: '05:42 (+28′)' },
@@ -299,7 +300,7 @@ export default function Race({ settings, go }) {
           ))}
         </div>
 
-        {planSub === 'course' && <JrfCourseMap />}
+        {planSub === 'course' && <><JrfCourseMap /><CourseStreetView /></>}
 
         {planSub === 'sim' && <>
           <div className="ch" style={{ flexWrap: 'wrap', gap: 8 }}>
@@ -351,6 +352,7 @@ export default function Race({ settings, go }) {
         </div>}
 
         {planSub === 'logistics' && <div className="rgrid">
+          <div style={{ gridColumn: '1 / -1' }}><RaceDayTravel /></div>
           <div>
             <h3>RPC &amp; Race Morning</h3>
             <ul className="rules">

@@ -65,3 +65,23 @@ test('bestWindow never offers an hour before sunrise', () => {
   const w = N.bestWindow([h(4, 20, false), h(5, 21, false), h(6, 24, true), h(7, 26, true)])
   assert.deepEqual(w.best.map((x) => x.hour), [6, 7])
 })
+
+test('decodePolyline inverts encodePolyline; loop waypoints sit about rKm from the start', () => {
+  const pts = [[38.5, -120.2], [40.7, -120.95], [43.252, -126.453]]; assert.deepEqual(N.decodePolyline(N.encodePolyline(pts)), pts)
+  for (const [a, b] of N.loopWaypoints(-6.2, 106.8, 3)) { const d = Math.hypot((a + 6.2) * 110.574, (b - 106.8) * 111.32 * Math.cos(6.2 * Math.PI / 180)); assert.ok(Math.abs(d - 3) < 0.05) }
+})
+test('planLoop corrects the radius once, returns elevation and water points, and rejects silly distances', async () => {
+  process.env.GOOGLE_ROUTE_DATA = '1'
+  try {
+    let n = 0; const calls = []
+    const fetchFn = async (u, init) => {
+      calls.push(String(u))
+      if (String(u).includes('computeRoutes')) { n++; return { ok: true, json: async () => ({ routes: [{ distanceMeters: n === 1 ? 6000 : 10100, polyline: { encodedPolyline: N.encodePolyline([[-6.2, 106.8], [-6.21, 106.81], [-6.2, 106.8]]) } }] }) } }
+      if (String(u).includes('elevation')) return { ok: true, json: async () => ({ results: [{ elevation: 10 }, { elevation: 14 }, { elevation: 12 }] }) }
+      return { ok: true, json: async () => ({ places: [{ id: 'p1', displayName: { text: 'Warung' }, location: { latitude: -6.2, longitude: 106.8 }, types: [] }] }) }
+    }
+    const r = await N.planLoop(-6.2, 106.8, 10, { fetchFn })
+    assert.equal(n, 2); assert.equal(r.km, 10.1); assert.equal(r.elevation.gain_m, 4); assert.equal(r.water[0].name, 'Warung'); assert.ok(r.points.length >= 2)
+    await assert.rejects(N.planLoop(-6.2, 106.8, 80, { fetchFn }), (e) => e.status === 400)
+  } finally { delete process.env.GOOGLE_ROUTE_DATA }
+})

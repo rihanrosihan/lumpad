@@ -194,6 +194,7 @@ const routes = {
   'GET /api/geo/elevation': async (q) => (await import('./google_geo.js')).elevationProfile(await routeOf(q.get('id'))),
   'GET /api/geo/snap': async (q) => (await import('./google_geo.js')).snapToRoads(await routeOf(q.get('id'))),
   'GET /api/geo/places': async (q) => (await import('./google_geo.js')).placesAlong(await routeOf(q.get('id')), q.get('kind') || 'water'),
+  'GET /api/geo/loop': async (q) => { const [la, lo] = await hereCell(q); return (await import('./google_geo.js')).planLoop(la, lo, Number(q.get('km')), { bearing: Number(q.get('bearing')) || 0, water: q.get('water') !== '0' }) },
   'GET /api/geo/route': async (q) => (await import('./google_geo.js')).travelTime([+q.get('olat'), +q.get('olon')], [+q.get('dlat'), +q.get('dlon')], q.get('depart') || undefined),
   'GET /api/map/static': async (q, req, res) => { const t = await (await import('./google_geo.js')).staticRouteMap(await routeOf(q.get('id'))); res.writeHead(200, { 'content-type': t.type, 'cache-control': 'private, max-age=86400', 'x-content-type-options': 'nosniff' }); res.end(t.body); return null },
   'GET /api/geo/streetview': async (q, req, res) => { const t = await (await import('./google_geo.js')).streetView(+q.get('lat'), +q.get('lon'), Number(q.get('heading')) || 0); res.writeHead(200, { 'content-type': t.type, 'cache-control': 'private, max-age=86400', 'x-content-type-options': 'nosniff' }); res.end(t.body); return null },

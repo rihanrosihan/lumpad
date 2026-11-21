@@ -121,3 +121,33 @@ export async function streetView(lat, lon, heading = 0, o = {}) {
   needRoute(); if (!okLatLon(lat, lon)) throw fail('bad coordinates', 400)
   return call('street_view', `https://maps.googleapis.com/maps/api/streetview?${q({ size: '600x300', location: `${(+lat).toFixed(5)},${(+lon).toFixed(5)}`, heading: Math.round(heading) % 360, fov: 90, key: apiKey() })}`, {}, { ...o, binary: true })
 }
+
+// ---- loop planner (route data, opt-in): an out-and-back-free circuit of about `km` from a start, by walking routes through three waypoints ------------------------
+export function decodePolyline(str) {
+  const pts = []; let i = 0, la = 0, lo = 0
+  while (i < str.length) {
+    for (const axis of [0, 1]) { let sh = 0, r = 0, b; do { b = str.charCodeAt(i++) - 63; r |= (b & 0x1f) << sh; sh += 5 } while (b >= 0x20 && i <= str.length); const d = r & 1 ? ~(r >> 1) : r >> 1; if (axis === 0) la += d; else lo += d }
+    pts.push([la / 1e5, lo / 1e5])
+  }
+  return pts
+}
+// three waypoints on a circle of radius rKm around the start, rotated by `bearingDeg`
+export function loopWaypoints(lat, lon, rKm, bearingDeg = 0) {
+  return [0, 120, 240].map((a) => { const t = ((a + bearingDeg) * Math.PI) / 180; return [lat + (rKm * Math.cos(t)) / 110.574, lon + (rKm * Math.sin(t)) / (111.32 * Math.cos((lat * Math.PI) / 180))] })
+}
+async function walkVia(start, via, o) {
+  const ll = ([la, lo]) => ({ location: { latLng: { latitude: la, longitude: lo } } }), body = { origin: ll(start), destination: ll(start), intermediates: via.map(ll), travelMode: 'WALK' }
+  const j = await call('routes', 'https://routes.googleapis.com/directions/v2:computeRoutes', { method: 'POST', headers: { 'content-type': 'application/json', 'X-Goog-Api-Key': apiKey(), 'X-Goog-FieldMask': 'routes.distanceMeters,routes.polyline.encodedPolyline' }, body: JSON.stringify(body) }, o)
+  const r = j.routes?.[0]; if (!r?.polyline?.encodedPolyline) return null
+  return { km: (r.distanceMeters || 0) / 1000, points: decodePolyline(r.polyline.encodedPolyline) }
+}
+export async function planLoop(lat, lon, km, { bearing = 0, water = true, ...o } = {}) {
+  needRoute(); if (!okLatLon(lat, lon)) throw fail('bad coordinates', 400)
+  const want = Number(km); if (!(want >= 3 && want <= 45)) throw fail('km must be 3–45', 400)
+  let rKm = want / 6.75, got = await walkVia([lat, lon], loopWaypoints(lat, lon, rKm, bearing), o)       // 3√3·R × ~1.3 road winding ≈ 6.75·R
+  if (!got) throw fail('no walkable loop found here', 404)
+  if (Math.abs(got.km - want) / want > 0.1) { rKm *= want / got.km; got = (await walkVia([lat, lon], loopWaypoints(lat, lon, rKm, bearing), o)) || got } // one correction pass
+  const pts = thin(got.points, 300), elevation = await elevationProfile(pts, o).catch(() => null)
+  const places = water ? await placesAlong(pts, 'water', o).catch(() => null) : null
+  return { km: +got.km.toFixed(1), requested_km: want, start: [lat, lon], points: pts, elevation, water: places?.places || [], attribution: 'Routes, elevation and places data © Google' }
+}
