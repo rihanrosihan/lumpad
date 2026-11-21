@@ -6,6 +6,7 @@ import { useApi } from './api.js'
 import Checkpoints from './Checkpoints.jsx'
 import Race from './Race.jsx'
 import { HubHeader, PlanView } from './SeasonHub.jsx'
+import { useSub } from './useSub.js'
 import { Gantt, Combo } from './charts2.jsx'
 import { effectiveDay } from './lib/scaler.js'
 import { compliance } from './lib/analysis.js'
@@ -134,7 +135,8 @@ function WeekView({ T, settings, onOpen }) {
 }
 
 export default function Calendar({ view = 'month', vdot, results, setResults, focus, settings, go }) {
-  const [mode, setMode] = useStore('lumpad.calmode', 'month')
+  const [mode0, setMode0] = useStore('lumpad.calmode', 'month'), [subm, setSubm] = useSub(['month', 'week', 'checklist'], null)
+  const mode = subm || mode0, setMode = (m) => { setMode0(m); setSubm(m) }
   const T = today()
   const segs = useMemo(() => { const out = []; for (const d of PLAN) { const c = d.phase.replace(/[^A-Z]/g, ''); if (out.at(-1)?.cls === c) out.at(-1).n++; else out.push({ cls: c, label: PHASE_NAME[d.phase] || d.phase, n: 1 }) } return out.map((s) => ({ ...s, frac: s.n / PLAN.length })) }, [])
   const todayFrac = T >= PLAN[0].date && T <= PLAN.at(-1).date ? PLAN.findIndex((d) => d.date === T) / PLAN.length : null

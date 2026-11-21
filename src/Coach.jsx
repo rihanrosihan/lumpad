@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useSub } from './useSub.js'
 import { Card, Chip, Sheet, SegmentedTabs, StatusPill, ProvenanceBadge } from './ui.jsx'
 import LagExplorer from './LagExplorer.jsx'
 import ShoeDegradation from './ShoeDegradation.jsx'
@@ -462,7 +463,7 @@ const SECTIONS = [{ id: 'ask', label: 'Ask & Twin' }, { id: 'kg', label: 'Knowle
 const jumpTo = (id) => () => { const el = document.getElementById(id); el?.scrollIntoView({ behavior: 'smooth', block: 'start' }); el?.focus({ preventScroll: true }) }
 
 export default function Coach({ go, focus }) {
-  const [tick, setTick] = useState(0), [sec, setSec] = useState(focus?.section && SECTIONS.some((x) => x.id === focus.section) ? focus.section : 'ask')
+  const [tick, setTick] = useState(0), [sec, setSec] = useSub(SECTIONS.map((x) => x.id), focus?.section && SECTIONS.some((x) => x.id === focus.section) ? focus.section : 'ask')
   const [approvingAll, setApprovingAll] = useState(false)
   const st = useApi('/api/intel/status')
   const twin = useApi('/api/twin')

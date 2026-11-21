@@ -7,6 +7,7 @@ import { PILLAR } from './lib/readiness.js'
 import { formZone, progressionBand } from './lib/load.js'
 import { mean, r1 } from './lib/stats.js'
 import Conditions from './Conditions.jsx'
+import { useSub } from './useSub.js'
 import { Card, Chip, Icon, Info, Evidence, SegmentedTabs, StatusPill } from './ui.jsx'
 import ScaleCard from './ScaleCard.jsx'
 import { useHealthDay, hrvLow } from './sync.js'
@@ -39,7 +40,7 @@ export default function Readiness({ vdot, settings, focus }) {
   const [f, setF] = useStore('lumpad.daily.' + date, EMPTY_DAY)
   const [ov, setOv] = useStore('lumpad.muscle.' + date, {})
   const [postLr, setPostLr] = useStore('lumpad.postlr', { gi: '0', gels: 4, hyd: 'yes' })
-  const [panel, setPanel] = useState('all')
+  const [panel, setPanel] = useSub(['all', 'conditions', 'load', 'sleep', 'auto'], 'all')
   useEffect(() => {
     if (focus?.mode === 'analysis' || focus?.mode === 'analisis') {
       setTimeout(() => document.getElementById('sec-load')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 250)

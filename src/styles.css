@@ -1375,3 +1375,10 @@ select.actv56-wtag-select[data-wtag="Race"] { background-color: color-mix(in srg
 .fit-cps > div { display: grid; grid-template-columns: 44px 1fr auto auto; gap: 8px; align-items: center; padding: 8px 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface2); font-size: 12.5px; }
 .fit-cps span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fit-cps small { color: var(--muted); }
+
+/* desktop side menu: sections listed under each main page */
+.rgroup { display: grid; gap: 2px; margin-bottom: 6px; }
+.rsubs { display: grid; gap: 1px; margin: 0 0 4px 22px; padding-left: 10px; border-left: 2px solid var(--line); }
+.rsub { text-align: left; background: none; border: 0; border-radius: 8px; padding: 6px 10px; font-size: .8rem; font-weight: 600; color: var(--muted); cursor: pointer; min-height: 32px; }
+.rsub:hover { background: var(--surface2); color: var(--text); }
+.rsub.on { color: var(--cobalt, #4658D6); background: color-mix(in srgb, var(--cobalt, #4658D6) 10%, transparent); }

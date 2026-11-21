@@ -18,6 +18,7 @@ import { EMPTY_DAY } from './lib/gate.js'
 import { useSyncStatus2, wib } from './sync.js'
 import { useModel } from './model.js'
 import { useApi } from './api.js'
+import { readSub, setSubInUrl } from './useSub.js'
 
 // Pages (each its own full page, no popups). `short` = label in the phone bottom bar.
 const PAGES = {
@@ -28,6 +29,13 @@ const PAGES = {
 const GROUPS = [['Menu', ['home', 'ready', 'activity', 'calendar', 'coach']]]
 // breadcrumb under the brand (mockup wording)
 const CRUMB = { home: 'Home Briefing', ready: 'Readiness & Load', activity: 'Activities Catalog', calendar: 'Macrocycle Calendar', plan: 'Plan Sync', day: 'Day Plan', checkpoint: 'Checkpoint Roadmap', race: 'Races Hub', coach: 'AI Coach & Rules', biometrics: 'Biometrics & Labs', profile: 'Profile & Fleet' }
+// Desktop side menu: each main page lists its sections. [label, route, sub-section id]; the phone keeps the five-item bottom bar and uses the page's own tabs.
+const SUBS = {
+  ready: [['Overview', 'ready', 'all'], ['Conditions Now', 'ready', 'conditions'], ['Load · PMC · ACWR', 'ready', 'load'], ['Sleep', 'ready', 'sleep'], ['HRV · Autonomic', 'ready', 'auto']],
+  activity: [['Recent Activities', 'activity', 'recent'], ['Fitness', 'activity', 'fitness']],
+  calendar: [['Calendar', 'calendar', 'month'], ['Week Detail', 'calendar', 'week'], ['Plan', 'calendar', 'checklist'], ['Checkpoints', 'checkpoint', null], ['Race', 'race', null]],
+  coach: [['Ask & Twin', 'coach', 'ask'], ['Knowledge Graph', 'coach', 'kg'], ['Monte Carlo & RAG', 'coach', 'mc'], ['Lag Explorer', 'coach', 'lag'], ['Memory Queue', 'coach', 'mem'], ['Matrices & Episodes', 'coach', 'mat'], ['Durability & Shoes', 'coach', 'dur']],
+}
 const BOTTOM = ['home', 'ready', 'activity', 'calendar', 'coach']
 const ROUTES = Object.keys(PAGES).filter((k) => k !== 'analysis')
 const RACES = PLAN.filter((d) => d.kind === 'race' && /FM|Full/.test(d.label || ''))
@@ -60,7 +68,7 @@ class PageBoundary extends Component {
 
 export default function App() {
   const init = useMemo(parse, [])
-  const [tab, setTab] = useState(init.tab), [focus, setFocus] = useState(init.focus), [menu, setMenu] = useState(false)
+  const [tab, setTab] = useState(init.tab), [focus, setFocus] = useState(init.focus), [menu, setMenu] = useState(false), [sub, setSub] = useState(() => readSub())
   const [results, setResults] = useStore('lumpad.results', {})
   const [theme, setTheme] = useStore('lumpad.theme', 'auto'), [bio] = useStore('lumpad.bio', EMPTY_BIO)
   const lbp = latest(bio.bp || []), lgl = latest(bio.glu || [])
@@ -79,7 +87,7 @@ export default function App() {
     if (location.hash.startsWith('#/') || location.pathname === '/' || location.pathname === '/route') {
       history.replaceState(null, '', cleanPath + (location.search || ''))
     }
-    const f = () => { const r = parse(); setTab(r.tab); setFocus(r.focus) }
+    const f = () => { const r = parse(); setTab(r.tab); setFocus((o) => (o?.id && o.id === r.focus?.id ? o : r.focus)); setSub(readSub()) }
     addEventListener('popstate', f)
     return () => removeEventListener('popstate', f)
   }, [])
@@ -90,7 +98,7 @@ export default function App() {
     if (t === 'calendar' && arg && typeof arg === 'object') t = arg.view === 'cp' ? 'checkpoint' : arg.view === 'race' ? 'race' : 'calendar'
     else if (t === 'calendar' && typeof arg === 'string') t = 'day'
     const a = t === 'day' ? (typeof arg === 'string' ? arg : T) : t === 'activity' && arg?.id ? arg.id : null
-    setFocus(t === 'day' ? a : arg); setTab(t); setMenu(false)
+    setFocus(t === 'day' ? a : arg); setTab(t); setMenu(false); setSub(null)
     const nextUrl = '/' + t + (a ? '/' + encodeURIComponent(a) : '')
     if (location.pathname !== nextUrl || location.hash) history.pushState(null, '', nextUrl)
     window.scrollTo(0, 0)
@@ -115,6 +123,11 @@ export default function App() {
   const subOf = { day: 'calendar', plan: 'calendar', checkpoint: 'calendar', race: 'calendar', analysis: 'activity' }
   const navBtn = (k, cls) => <button key={k} className={`${cls} ${(k === 'analysis' ? cur === 'activity-detail' : (tab === k || (cls === 'nb' && subOf[tab] === k)) && !(k === 'activity' && cur === 'activity-detail')) ? 'on' : ''} ${subOf[k] ? 'sub' : ''}`} aria-current={(k === 'analysis' ? cur === 'activity-detail' : tab === k) ? 'page' : undefined}
     onClick={() => (k === 'analysis' ? (lastRunId ? go('activity', { id: lastRunId }) : go('activity')) : go(k, k === 'day' ? T : null))}><Icon n={PAGES[k].icon} size={cls === 'rb' ? 18 : 22} /><span>{cls === 'nb' ? PAGES[k].short || PAGES[k].label : PAGES[k].label}</span></button>
+  const goSub = (route, sid) => { setMenu(false); const url = '/' + route + (sid ? '?s=' + sid : ''); if (location.pathname + location.search !== url) history.pushState(null, '', url); window.dispatchEvent(new PopStateEvent('popstate')); window.scrollTo(0, 0) }
+  const railNav = () => <div className="ngroup"><p className="ngl">Menu</p>{GROUPS[0][1].map((k) => <div key={k} className="rgroup">{navBtn(k, 'rb')}
+    {SUBS[k] && <div className="rsubs" role="group" aria-label={PAGES[k].label + ' sections'}>{SUBS[k].map(([label, route, sid]) => {
+      const first = SUBS[k].find((x) => x[1] === route)?.[2], on = tab === route && (sid ? (sub || first) === sid : true)
+      return <button key={label} type="button" className={`rsub ${on ? 'on' : ''}`} aria-current={on ? 'page' : undefined} onClick={() => goSub(route, sid)}>{label}</button> })}</div>}</div>)}</div>
   const grouped = (cls) => GROUPS.map(([g, ks]) => <div key={g} className="ngroup"><p className="ngl">{g}</p>{ks.map((k) => navBtn(k, cls))}</div>)
   const gate = rd.score == null ? ['none', 'NO DATA', 'Not enough data for today\'s score yet.'] : rd.caps.length ? ['caution', 'CAUTION', rd.caps[0].why] : ['ok', rd.tier.label.toUpperCase(), rd.tier.advice]
   const Ribbon = ({ children }) => <div className="ribbon">{children}</div>
@@ -142,7 +155,7 @@ export default function App() {
     </header>
     <div className="shell">
       <aside className="rail">
-        <nav aria-label="Side menu">{grouped('rb')}</nav>
+        <nav aria-label="Side menu">{railNav()}</nav>
         <div className={'gatecard g-' + gate[0]}><p className="ngl">Daily gate status</p><b><i />{gate[1]}</b><span>{gate[2]}</span></div>
       </aside>
       <div className="app">
