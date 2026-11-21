@@ -57,7 +57,7 @@ export default function Home({ vdot, settings, results, go, M: Mprop }) {
   const RACES = PLAN.filter((d) => d.kind === 'race' && /FM|Full/.test(d.label || '')), near = RACES.find((d) => d.date >= T), aRace = settings.raceDate
   return <section className="screen home">
     <div className="hero4">
-      <div className="h4-tags"><span className="tag">DAILY BRIEFING · {fmtLong(T).split(', ').slice(1).join(', ').toUpperCase()}</span>{T < PLAN_START ? <span className="tag am">PRE-PLAN · STARTS {fmtShort(PLAN_START).toUpperCase()} ({diffDays(PLAN_START, T)} DAYS)</span> : day && <span className="tag am">{((wk?.id || '') + ' · ' + (PHASE_NAME[day.phase] || day.phase)).toUpperCase()}</span>}</div>
+      <div className="h4-tags"><span className="tag">DAILY BRIEFING · {fmtLong(T).split(', ').slice(1).join(', ').toUpperCase()}</span>{day && <span className="tag am">{((wk?.id || '') + ' · ' + (PHASE_NAME[day.phase] || day.phase)).toUpperCase()}</span>}</div>
       <button className={`fresh ${sync === null ? 'warn' : sync?.lastRun ? (sync.lastRun.ok ? 'ok' : 'warn') : 'none'}`} onClick={() => go('profile')}>
       <i />{sync === undefined ? 'Checking sync…' : sync === null ? 'Sync status unreachable — data may be stale' : sync?.lastRun ? <>Sync {ago(sync.lastRun.received_at)} · {wib(sync.lastRun.received_at)} WIB</> : 'No sync yet — no COROS/Strava data has arrived'}
     </button>
