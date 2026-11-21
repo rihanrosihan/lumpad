@@ -1,0 +1,12 @@
+[Unit]
+Description=Lumpad off-server backup (restic to Tencent COS)
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/bash /opt/lumpad/deploy/backup/offsite-backup.sh
+Nice=10
+IOSchedulingClass=idle
+TimeoutStartSec=3h
+MemoryMax=512M
