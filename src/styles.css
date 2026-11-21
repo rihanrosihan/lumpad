@@ -1431,3 +1431,8 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .v61-fgroup b { display: block; font-size: 10.5px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--v-muted, var(--muted)); margin-bottom: 6px; }
 .v61-fopts { display: flex; flex-wrap: wrap; gap: 6px; }
 .v61-fact { display: flex; gap: 8px; justify-content: flex-end; padding-top: 4px; border-top: 1px solid var(--v-border, var(--line)); }
+
+/* Activities feed: real Google map of the route in the card's corner (no GPS or Google off: a plain sport icon, never an invented line) */
+.v61-act-card .v61-mini-route { width: 92px; height: 64px; padding: 0; overflow: hidden; border-radius: 12px; font-size: 22px; }
+.v61-mini-map { width: 100%; height: 100%; object-fit: cover; display: block; }
+.v61-mini-ico { opacity: .85; }

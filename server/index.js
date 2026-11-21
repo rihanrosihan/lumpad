@@ -196,13 +196,20 @@ const routes = {
   'GET /api/geo/places': async (q) => (await import('./google_geo.js')).placesAlong(await routeOf(q.get('id')), q.get('kind') || 'water'),
   'GET /api/geo/loop': async (q) => { const [la, lo] = await hereCell(q); return (await import('./google_geo.js')).planLoop(la, lo, Number(q.get('km')), { bearing: Number(q.get('bearing')) || 0, water: q.get('water') !== '0' }) },
   'GET /api/geo/route': async (q) => (await import('./google_geo.js')).travelTime([+q.get('olat'), +q.get('olon')], [+q.get('dlat'), +q.get('dlon')], q.get('depart') || undefined),
-  'GET /api/map/static': async (q, req, res) => { const t = await (await import('./google_geo.js')).staticRouteMap(await routeOf(q.get('id'))); res.writeHead(200, { 'content-type': t.type, 'cache-control': 'private, max-age=86400', 'x-content-type-options': 'nosniff' }); res.end(t.body); return null },
+  'GET /api/map/static': async (q, req, res) => {
+    // one Google call per activity and size, kept in memory afterwards (the card list asks for many thumbnails; the browser also caches them for a day)
+    const id = String(q.get('id') || ''), size = q.get('s') === 'thumb' ? 'thumb' : 'full', k = id + '|' + size
+    const N = await import('./google_geo.js'); let t = staticCache.get(k)
+    if (!t) { t = await N.staticRouteMap(await routeOf(id), { size }); staticCache.set(k, t); if (staticCache.size > 200) staticCache.delete(staticCache.keys().next().value) }
+    res.writeHead(200, { 'content-type': t.type, 'cache-control': 'private, max-age=86400', 'x-content-type-options': 'nosniff' }); res.end(t.body); return null
+  },
   'GET /api/geo/streetview': async (q, req, res) => { const t = await (await import('./google_geo.js')).streetView(+q.get('lat'), +q.get('lon'), Number(q.get('heading')) || 0); res.writeHead(200, { 'content-type': t.type, 'cache-control': 'private, max-age=86400', 'x-content-type-options': 'nosniff' }); res.end(t.body); return null },
   'GET /api/google/probe': async () => { const G = await import('./google.js'); if (!G.configured()) return { configured: false }; return G.probe() },
   'GET /api/v2/sub4': async () => { try { const r = await fetch('http://127.0.0.1:8788/api/v2/sub4'); if (r.ok) return await r.json() } catch {} return { ok: false, offline: true } },
   'GET /api/v2/decisions': async (q) => { try { const qs = q.toString(); const r = await fetch('http://127.0.0.1:8788/api/v2/decisions' + (qs ? '?' + qs : '')); if (r.ok) return await r.json() } catch {} return { items: [], offline: true } },
 }
 
+const staticCache = new Map()
 // lat/lon from the query, else the place of the last GPS run (rounded later to 0.1° by the callers)
 async function hereCell(q) {
   if (q.get('lat') != null && q.get('lon') != null) return [Number(q.get('lat')), Number(q.get('lon'))]

@@ -113,9 +113,12 @@ export async function travelTime(from, to, departIso, o = {}) {
   const r = j.routes?.[0], secs = (d) => { const m = /^(\d+(?:\.\d+)?)s$/.exec(d || ''); return m ? Math.round(+m[1]) : null }
   return r ? { minutes_traffic: secs(r.duration) != null ? Math.round(secs(r.duration) / 60) : null, minutes_free_flow: secs(r.staticDuration) != null ? Math.round(secs(r.staticDuration) / 60) : null, km: r.distanceMeters != null ? +(r.distanceMeters / 1000).toFixed(1) : null } : { minutes_traffic: null }
 }
+// thumb: small card thumbnail (160x110 @2x, quiet style, thin line); full: share-card size
 export async function staticRouteMap(route, o = {}) {
   needRoute(); const pts = thin(route, 120); if (pts.length < 2) throw fail('no route', 404)
-  return call('static_map', `https://maps.googleapis.com/maps/api/staticmap?${q({ size: '640x360', scale: 2, maptype: 'roadmap', path: `color:0xF26B5Bff|weight:4|enc:${encodePolyline(pts)}`, key: apiKey() })}`, {}, { ...o, binary: true })
+  const thumb = o.size === 'thumb', quiet = ['style=feature:poi|visibility:off', 'style=feature:transit|visibility:off']
+  const params = [q({ size: thumb ? '160x110' : '640x360', scale: 2, maptype: 'roadmap', path: `color:0xF26B5Bff|weight:${thumb ? 3 : 4}|enc:${encodePolyline(pts)}`, key: apiKey() }), ...(thumb ? quiet.map((x) => x.replace(/\|/g, '%7C')) : [])]
+  return call('static_map', `https://maps.googleapis.com/maps/api/staticmap?${params.join('&')}`, {}, { ...o, binary: true })
 }
 export async function streetView(lat, lon, heading = 0, o = {}) {
   needRoute(); if (!okLatLon(lat, lon)) throw fail('bad coordinates', 400)

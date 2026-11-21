@@ -85,3 +85,13 @@ test('planLoop corrects the radius once, returns elevation and water points, and
     await assert.rejects(N.planLoop(-6.2, 106.8, 80, { fetchFn }), (e) => e.status === 400)
   } finally { delete process.env.GOOGLE_ROUTE_DATA }
 })
+test('static route thumbnail: small, quiet style, same encoded route', async () => {
+  process.env.GOOGLE_ROUTE_DATA = '1'
+  try {
+    let url
+    await N.staticRouteMap(route, { size: 'thumb', fetchFn: async (u) => { url = decodeURIComponent(String(u)); return { ok: true, headers: { get: () => 'image/png' }, arrayBuffer: async () => new ArrayBuffer(1) } } })
+    assert.ok(url.includes('size=160x110') && url.includes('feature:poi|visibility:off') && url.includes('weight:3') && url.includes('enc:'))
+    await N.staticRouteMap(route, { fetchFn: async (u) => { url = decodeURIComponent(String(u)); return { ok: true, headers: { get: () => 'image/png' }, arrayBuffer: async () => new ArrayBuffer(1) } } })
+    assert.ok(url.includes('size=640x360') && !url.includes('visibility:off'))
+  } finally { delete process.env.GOOGLE_ROUTE_DATA }
+})

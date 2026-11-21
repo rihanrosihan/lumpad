@@ -293,6 +293,7 @@ export default function Activity({ vdot, focus, go, settings }) {
   const [q, setQ] = useState('')
   const [sortBy, setSortBy] = useState('newest')
   const [srcF, setSrcF] = useState('all'), [actF, setActF] = useState('all'), [fOpen, setFOpen] = useState(false)
+  const geo = useApi('/api/geo/capabilities').data, mapsOn = !!(geo?.configured && geo?.route_data), [noMap, setNoMap] = useState({}) // real route thumbnails only when the server may send routes to Google
   useEffect(() => { if (!fOpen) return; const k = (e) => { if (e.key === 'Escape') setFOpen(false) }; addEventListener('keydown', k); return () => removeEventListener('keydown', k) }, [fOpen])
   const [hoverDay, setHoverDay] = useState('Tap/hover day')
   const sel = focus?.id || null
@@ -483,7 +484,9 @@ export default function Activity({ vdot, focus, go, settings }) {
               <div className="v61-card-sub">{fmtLong(a.date)}{off ? ` · Bib ${off.bib}` : ''}</div>
             </div>
             <div className="v61-mini-route" aria-hidden="true">
-              {a.sport_class === 'strength' ? '🏋️' : <svg viewBox="0 0 64 42" width="52" height="34"><path d="M8 32 Q22 10 36 22 T56 12" fill="none" stroke="var(--v-coral)" strokeWidth="2.6" strokeLinecap="round" /></svg>}
+              {mapsOn && a.sport_class !== 'strength' && (a.distance_m || 0) > 0 && !noMap[aid]
+                ? <img className="v61-mini-map" loading="lazy" decoding="async" alt="" src={`/api/map/static?id=${encodeURIComponent(aid)}&s=thumb`} onError={() => setNoMap((m) => ({ ...m, [aid]: 1 }))} />
+                : <span className="v61-mini-ico">{a.sport_class === 'strength' ? '🏋️' : a.sport_class === 'walk' ? '🚶' : '🏃'}</span>}
             </div>
           </div>
           <div className="v61-act-kpis">
