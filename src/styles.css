@@ -1472,6 +1472,15 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .v61-scope .v61-zbtn { width: 28px; height: 28px; min-height: 0; padding: 0; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; }
 .v61-scope .v61-map-attr { font-size: 9.5px; left: 8px; bottom: 8px; }
 
+.acoach-card { border: 1px solid var(--border, #e5e7eb); border-left: 3px solid var(--green-t, #16a34a); border-radius: 12px; padding: 12px 14px; display: grid; gap: 10px; }
+.acoach-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.acoach-card .lead { margin: 0; font-size: 14.5px; line-height: 1.5; }
+.acoach-toggle { justify-self: start; }
+.acoach-detail { display: grid; gap: 10px; border-top: 1px solid var(--border, #e5e7eb); padding-top: 10px; }
+.acoach-detail h4 { margin: 0; font-size: 13px; }
+.acoach-detail ol.recs { margin: 0; padding-left: 18px; display: grid; gap: 8px; }
+.acoach-detail ol.recs li { display: grid; gap: 2px; }
+.acoach-card, .acoach-card * { overflow-wrap: anywhere; min-width: 0; max-width: 100%; }
 .acoach-foot { margin: 8px 2px 4px; display: grid; gap: 8px; }
 .acoach-foot p { margin: 0; font-size: 12.5px; }
 

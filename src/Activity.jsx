@@ -293,7 +293,7 @@ export default function Activity({ vdot, focus, go, settings }) {
   const sel = focus?.id || null
 
   const [from, to] = monthRange(ym), prevYm = shiftMonth(ym, -1), [pf] = monthRange(prevYm)
-  const A = useApi(`/api/activities/merged?from=${pf}&to=${to}`)
+  const A = useApi(`/api/activities/merged?from=${pf}&to=${to}`), CR = useApi('/api/coach/runs'), analysed = useMemo(() => new Set((CR.data || []).filter((r) => r.intent === 'session_review' && r.ok).map((r) => r.question)), [CR.data]) // runs the AI coach has already reviewed
   const G = useApi('/api/gear')
   const Hist = useApi(`/api/activities/merged?from=${addDays(T, -180)}&to=${T}`)
   const gear = useMemo(() => Object.fromEntries((G.data || []).map((g) => [g.id, g.name])), [G.data])
@@ -468,6 +468,7 @@ export default function Activity({ vdot, focus, go, settings }) {
               {a.location && <span className="v61-pill">{a.location}</span>}
             {a.training_load != null && <span className="v61-pill cobalt">TL {a.training_load}</span>}
               <span className={`v61-pill ${tagPillCls(tag)}`}>{tag}</span>
+              {a.sport_class === 'run' && (a.distance_m || 0) >= 5000 && (analysed.has(`session ${String(aid).replace(/^coros:/, '')}`) ? <span className="v61-pill ai-done">✦ Analysed</span> : <span className="v61-pill ai-todo">Not analysed</span>)}
               {a.temp_c != null && <span className="v61-pill">{Math.round(a.temp_c)}°C</span>}
             </div>
             <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--v-muted)', whiteSpace: 'nowrap' }}>{a.date}</span>
