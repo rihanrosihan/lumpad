@@ -1383,3 +1383,13 @@ select.actv56-wtag-select[data-wtag="Race"] { background-color: color-mix(in srg
 .rsub { text-align: left; background: none; border: 0; border-radius: 8px; padding: 6px 10px; font-size: .8rem; font-weight: 600; color: var(--muted); cursor: pointer; min-height: 32px; }
 .rsub:hover { background: var(--surface2); color: var(--text); }
 .rsub.on { color: var(--cobalt, #4658D6); background: color-mix(in srgb, var(--cobalt, #4658D6) 10%, transparent); }
+
+/* phone: grid tracks may shrink below their content, so one wide row (chips, tabs) scrolls inside its card instead of stretching the whole page */
+.bio-split-75, .rgrid { grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 980px) { .bio-split-75 { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); } }
+@media (min-width: 1000px) { .rgrid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.bio-split-75 > *, .rgrid > *, .screen > * { min-width: 0; }
+.prof-chips { min-width: 0; max-width: 100%; }
+.prof-chips .segtabs, .prof-cmd-bar .segtabs { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.prof-chips .segtabs::-webkit-scrollbar, .prof-cmd-bar .segtabs::-webkit-scrollbar { display: none; }
+.coachq, .chips { max-width: 100%; }
