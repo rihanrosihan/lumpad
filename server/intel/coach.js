@@ -4,12 +4,19 @@ import { retrieveRunnerContext, renderPrompt, TASKS, OUTPUT_SCHEMA } from './con
 import { validate, normalize as norm0, softClamp } from './schema.js'
 const normalize = (j) => softClamp(norm0(j))
 import { complete as deepseek } from './llm.js'
+import * as claude from './anthropic.js'
 import { applyWriteback } from './writeback.js'
 import { audit } from './memory.js'
 import { redFlags, checkinFlags, referralFor, gateFromTwin, gateCheck, diagnosisWording } from './safety.js'
 
 const EFFORT = { daily_brief: 'low', question: 'high', session_review: 'high', weekly_review: 'high', race_plan: 'high' }
 const now = () => new Date().toISOString()
+// Per-intent routing. Off by default: set COACH_CLAUDE_INTENTS=race_plan,session_review (after the eval) to send those to Anthropic.
+// An intent routed to Claude whose provider is not fully configured (key, model, prices) or is over its cap falls back to DeepSeek.
+export function pickProvider(intent) {
+  const want = (process.env.COACH_CLAUDE_INTENTS || '').split(',').map((x) => x.trim()).filter(Boolean)
+  return want.includes(intent) && claude.configured().ok && claude.guard().ok ? 'anthropic' : 'deepseek'
+}
 export function newRun({ intent, provider, ctx, prompt, question }) {
   return Number(mdb.prepare('INSERT INTO coach_run (created_at, intent, provider, effort, question, context_ids, context_tokens, request, ok) VALUES (?,?,?,?,?,?,?,?,0)').run(now(), intent, provider, EFFORT[intent], question || null, JSON.stringify(ctx.item_ids), ctx.tokens_est, JSON.stringify(prompt)).lastInsertRowid)
 }
@@ -38,19 +45,19 @@ export async function runCoach({ intent = 'daily_brief', question = '', date, ac
     audit('safety:referral', null, { ids: red.map((f) => f.id) }, id)
     return { runId: id, ok: true, parsed, model: 'safety-rules', cost_cny: 0, safety: true }
   }
-  const ctx = retrieveRunnerContext({ intent, question, date, activityId }), prompt = renderPrompt(ctx, TASKS[intent] || TASKS.question), runId = newRun({ intent, provider: 'deepseek', ctx, prompt, question })
+  const ctx = retrieveRunnerContext({ intent, question, date, activityId }), prompt = renderPrompt(ctx, TASKS[intent] || TASKS.question), provider = pickProvider(intent), llm = provider === 'anthropic' ? claude.complete : deepseek, runId = newRun({ intent, provider, ctx, prompt, question })
   try {
-    let r = await deepseek({ ...prompt, effort: EFFORT[intent], intent, fetchFn }), errs = r.json ? validate(normalize(r.json), OUTPUT_SCHEMA) : ['not valid JSON']
+    let r = await llm({ ...prompt, effort: EFFORT[intent], intent, fetchFn }), errs = r.json ? validate(normalize(r.json), OUTPUT_SCHEMA) : ['not valid JSON']
     if (errs.length) { // one repair attempt, with the validator's own message
       const msgs = [{ role: 'system', content: prompt.system }, { role: 'user', content: prompt.user }, { role: 'assistant', content: r.text.slice(0, 4000) }, { role: 'user', content: 'Your reply did not match the required JSON shape: ' + errs.slice(0, 6).join('; ') + '. Reply again with ONE corrected JSON object only.' }]
-      const r2 = await deepseek({ messages: msgs, effort: 'low', intent, fetchFn }); r = { ...r2, cost_cny: (r.cost_cny || 0) + (r2.cost_cny || 0) }; errs = r.json ? validate(normalize(r.json), OUTPUT_SCHEMA) : ['not valid JSON']
+      const r2 = await llm({ messages: msgs, effort: 'low', intent, fetchFn }); r = { ...r2, cost_cny: (r.cost_cny || 0) + (r2.cost_cny || 0) }; errs = r.json ? validate(normalize(r.json), OUTPUT_SCHEMA) : ['not valid JSON']
     }
     if (errs.length) { mdb.prepare('UPDATE coach_run SET ok=0, error=?, response=?, usage=?, cost_cny=?, model=? WHERE id=?').run('schema after repair: ' + errs.slice(0, 5).join('; ') + ' — memory writes dropped', r.text, JSON.stringify(r.usage), r.cost_cny, r.model, runId); return { runId, ok: false, text: r.text, errors: errs } }
     // gate check: while a validated gate is active no hard session may be recommended; diagnosis / clearance wording is flagged
     const gc = gateCheck(r.json, gateFromTwin(ctx.volatile.twin)), dx = diagnosisWording(gc.parsed)
     if (dx.length) gc.parsed = { ...gc.parsed, flags: [...(gc.parsed.flags || []), { type: 'rule', text: 'The coach does not diagnose or clear you to train; treat "' + dx[0] + '" as a question for a clinician.' }] }
     if (gc.removed.length || dx.length) audit('safety:answer-adjusted', null, { removed: gc.removed.map((x) => x.action), diagnosis: dx }, runId)
-    const fin = finishRun(runId, gc.parsed, { provider: 'deepseek', usage: r.usage, model: r.model, cost: r.cost_cny, raw: r.text })
+    const fin = finishRun(runId, gc.parsed, { provider, usage: r.usage, model: r.model, cost: r.cost_cny, raw: r.text })
     return { runId, ok: fin.ok, model: r.model, cost_cny: r.cost_cny, ...fin }
   } catch (e) { mdb.prepare('UPDATE coach_run SET ok=0, error=? WHERE id=?').run(String(e.message).slice(0, 300), runId); throw e }
 }
