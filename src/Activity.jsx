@@ -551,18 +551,21 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
   // Google extras (only when the server has a key): place name of the start, air quality at the run's hour
   const caps = useApi('/api/geo/capabilities').data
   const ST = useApi(id ? `/api/intel/stream?id=${encodeURIComponent(id)}` : '', !!id && a?.sport_class === 'run'), streamRoute = ST.data?.found && ST.data.route?.length >= 2 ? ST.data.route : null // the real GPS track from the FIT file
+  const ENV = useApi(id ? `/api/env/activity?id=${encodeURIComponent(id)}` : '', !!id && a?.sport_class === 'run').data, envRun = ENV?.run && !ENV.run.indoor ? ENV.run : null // weather during this run (Open-Meteo, stored with the FIT session)
+  const SESS = useApi(id ? `/api/intel/session?id=${encodeURIComponent(id)}` : '', !!id && a?.sport_class === 'run').data // device ascent from the FIT session
   const c0 = a ? (streamRoute || extractRouteCoords(a))[0] : null, startMs = a ? tsMs(a.start_ts) : null
   const geoOn = !!caps?.configured && !!c0
   const place = useApi(geoOn ? `/api/geo/place?lat=${c0[0]}&lon=${c0[1]}` : '', geoOn).data
-  const airH = useApi(geoOn && startMs ? `/api/env/airhistory?lat=${c0[0]}&lon=${c0[1]}&hours=${hoursBack(startMs)}` : '', geoOn && !!startMs).data
+  const airH = useApi(geoOn && startMs ? `/api/env/airhistory?lat=${c0[0]}&lon=${c0[1]}&hours=${hoursBack(startMs)}&ts=${startMs}` : '', geoOn && !!startMs).data
   const air = airH && startMs ? airAtHour(airH.hours, startMs) : null, airIdx = air?.local || air?.universal || null, airS = airSign(airIdx?.category)
 
   if (D.state === 'loading') return <div className="skel" style={{ height: 180 }} />
   if (D.state === 'error' || !a) return <p className="muted">Could not load this activity.</p>
 
-  const tempC = a.temp_c ?? 27, rh = a.humidity ?? 78
-  const heatSign = tempC >= 29 ? ['High', 'high'] : tempC >= 25 ? ['Normal', 'normal'] : ['Good', 'good']
-  const elevGain = a.elev_gain_m ?? a.ascent_m ?? a.total_elevation_gain
+  const tempC = a.temp_c ?? envRun?.temp_c ?? null, rh = a.humidity ?? envRun?.rh ?? null // no invented defaults: unknown stays unknown
+  const heatSign = tempC == null ? ['—', 'normal'] : tempC >= 29 ? ['High', 'high'] : tempC >= 25 ? ['Normal', 'normal'] : ['Good', 'good']
+  const streamGain = (() => { const al = ST.data?.has_alt ? ST.data.alt.filter((x) => x != null) : []; let g = 0; for (let i = 1; i < al.length; i++) if (al[i] > al[i - 1]) g += al[i] - al[i - 1]; return al.length > 20 ? g : null })()
+  const elevGain = a.elev_gain_m ?? a.ascent_m ?? a.total_elevation_gain ?? SESS?.gain_m ?? streamGain
   const tabs = [['overview', 'Overview'], ['zones', 'Zones'], ['splits', 'Splits'], ['drift', 'Drift & GAP'], ['matched', 'Matched'], ...(isRace ? [['official', 'Official Result']] : [])]
 
   const recentRuns = history.filter((h) => h.sport_class === 'run' && (h.distance_m || 0) >= 3000 && h.date <= a.date).sort((x, y) => y.date.localeCompare(x.date)).slice(0, 6)
@@ -599,7 +602,7 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
               {WORKOUT_TAGS.map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
             {a.distance_m && <span className="v61-pill">{km(a.distance_m)} km</span>}
-            {a.temp_c != null && <span className="v61-pill amber">{Math.round(a.temp_c)}°C · RH {rh}%</span>}
+            {a.temp_c != null && <span className="v61-pill amber">{Math.round(a.temp_c)}°C · RH {rh ?? '—'}%</span>}
           </div>
 
           <p className="v61-card-sub" style={{ marginTop: 8 }}>
@@ -636,13 +639,13 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
             <h2 className="v61-card-title">Conditions &amp; Course Intel</h2>
             <p className="v61-card-sub">Weather, air quality, and course conditions</p>
           </div>
-          <span className="v61-pill cobalt">{tempC >= 29 ? 'Heat Stress' : 'Standard Conditions'}</span>
+          <span className="v61-pill cobalt">{tempC == null ? 'No weather data' : tempC >= 29 ? 'Heat Stress' : 'Standard Conditions'}</span>
         </div>
         <div className="v61-env-grid">
           <div className="v61-env-tile">
             <div className="v61-env-top"><span>Weather</span><span className={`v61-sign ${heatSign[1]}`}><i />{heatSign[0]}</span></div>
-            <div className="v61-env-val">{Math.round(tempC)}°C</div>
-            <div className="v61-env-sub"><span>RH {rh}%</span><span>Feels {Math.round(tempC + (rh > 75 ? 3 : 1))}°C</span></div>
+            <div className="v61-env-val">{tempC != null ? `${Math.round(tempC)}°C` : '—'}</div>
+            <div className="v61-env-sub"><span>RH {rh != null ? `${Math.round(rh)}%` : '—'}</span><span>{envRun?.wbgt != null ? `WBGT ≥ ${envRun.wbgt}°C` : envRun?.dew_c != null ? `Dew ${Math.round(envRun.dew_c)}°C` : ''}</span></div>
           </div>
           <div className="v61-env-tile">
             <div className="v61-env-top"><span>Air Quality</span><span className={`v61-sign ${airS[1]}`}><i />{airS[0]}</span></div>
@@ -657,7 +660,7 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
           <div className="v61-env-tile">
             <div className="v61-env-top"><span>Drift &amp; Grade</span><span className={`v61-sign ${dc && dc.pct > 8 ? 'high' : 'good'}`}><i />{dc && dc.pct > 8 ? 'High' : 'Good'}</span></div>
             <div className="v61-env-val">{dc ? `${dc.pct}%` : '—'}</div>
-            <div className="v61-env-sub"><span>Aerobic decoupling</span><span>Elev {elevGain != null ? `+${Math.round(elevGain)}m` : 'Flat'}</span></div>
+            <div className="v61-env-sub"><span>Aerobic decoupling</span><span>Elev {elevGain != null ? `+${Math.round(elevGain)}m` : '—'}</span></div>
           </div>
         </div>
       </div>
@@ -846,8 +849,8 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
     {activeTab === 'drift' && <div className="v61-anim" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       {laps.length > 1 && (() => {
         const labels = laps.map((l) => `KM ${l.idx}`)
-        const paceVals = laps.map((l) => l.avg_pace_s_km || a.avg_pace_s_km || 480)
-        const hrVals = laps.map((l) => l.avg_hr || a.avg_hr || 150)
+        const paceVals = laps.map((l) => l.avg_pace_s_km || null)
+        const hrVals = laps.map((l) => l.avg_hr || null)
         const half = Math.ceil(laps.length / 2)
         let cumMin = 0
         const phr1 = [], phr2 = [], dr1 = [], dr2 = []
@@ -862,7 +865,7 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
         return <div className="v61-drift-grid">
           <div className="v61-card">
             <div className="v61-card-head"><div><h2 className="v61-card-title">Grade Adjusted Pace (GAP) <Info k="GAP" /></h2><p className="v61-card-sub">Tap or hover any KM for exact split</p></div></div>
-            <div className="v61-chart-kpis">{gapKpi || <><span>Avg GAP <b>{a.adjusted_pace_s_km ? fmtPaceS(a.adjusted_pace_s_km) + '/km' : fmtPaceS(a.avg_pace_s_km) + '/km'}</b></span><span>Fastest <b>{fmtPaceS(Math.min(...paceVals))}/km</b></span></>}</div>
+            <div className="v61-chart-kpis">{gapKpi || <><span>Avg GAP <b>{a.adjusted_pace_s_km ? fmtPaceS(a.adjusted_pace_s_km) + '/km' : fmtPaceS(a.avg_pace_s_km) + '/km'}</b></span><span>Fastest <b>{fmtPaceS(Math.min(...paceVals.filter(Boolean)))}/km</b></span></>}</div>
             <div className="v61-chart-box">
               <ChartCanvas deps={[id, laps.length]} build={(el) => new Chart(el, {
                 type: 'line',

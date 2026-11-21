@@ -65,11 +65,13 @@ export async function airForecast(lat, lon, o = {}) {
     return { cell: `${la.toFixed(1)},${lo.toFixed(1)}`, hours: (j.hourlyForecasts || []).map((h) => ({ at: h.dateTime || null, ...idx(h.indexes) })) }
   })
 }
-export async function airHistory(lat, lon, hours = 24, o = {}) {
+// hours back from now (first page only: Google pages its history), or, with `at` (epoch ms), the hours around that moment (an older run's start)
+export async function airHistory(lat, lon, hours = 24, o = {}, at = null) {
   needKey(); const la = cell(lat), lo = cell(lon); if (!okLatLon(la, lo)) throw fail('bad coordinates', 400)
-  const n = Math.max(1, Math.min(720, Math.floor(hours)))
-  return cached(`aqh:${la},${lo},${n}`, 60 * 60e3, async () => {
-    const j = await call('air_history', 'https://airquality.googleapis.com/v1/history:lookup?' + q({ key: apiKey() }), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ location: { latitude: la, longitude: lo }, hours: n, extraComputations: ['LOCAL_AQI'] }) }, o)
+  const n = Math.max(1, Math.min(720, Math.floor(hours))), hr = Number.isFinite(at) && at > 0 ? Math.floor(at / 3600e3) * 3600e3 : null
+  return cached(`aqh:${la},${lo},${hr ?? n}`, 60 * 60e3, async () => {
+    const when = hr != null ? { period: { startTime: new Date(hr - 3600e3).toISOString(), endTime: new Date(hr + 3 * 3600e3).toISOString() } } : { hours: n }
+    const j = await call('air_history', 'https://airquality.googleapis.com/v1/history:lookup?' + q({ key: apiKey() }), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ location: { latitude: la, longitude: lo }, ...when, pageSize: 24, extraComputations: ['LOCAL_AQI'] }) }, o)
     return { cell: `${la.toFixed(1)},${lo.toFixed(1)}`, hours: (j.hoursInfo || []).map((h) => ({ at: h.dateTime || null, ...idx(h.indexes) })) }
   })
 }

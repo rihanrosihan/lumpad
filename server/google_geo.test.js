@@ -95,3 +95,8 @@ test('static route thumbnail: small, quiet style, same encoded route', async () 
     assert.ok(url.includes('size=640x360') && !url.includes('visibility:off'))
   } finally { delete process.env.GOOGLE_ROUTE_DATA }
 })
+test('air history for an older run asks for the hours around it, not the last N hours', async () => {
+  let body; const at = Date.parse('2026-11-15T22:30:00Z')
+  const h = await N.airHistory(-7.61, 110.21, 150, { fetchFn: async (u, o) => { body = JSON.parse(o.body); return { ok: true, json: async () => ({ hoursInfo: [{ dateTime: '2026-11-15T22:00:00Z', indexes: [{ code: 'uaqi', aqi: 70, category: 'Good' }] }] }) } } }, at)
+  assert.equal(body.hours, undefined); assert.equal(body.period.startTime, '2026-11-15T21:00:00.000Z'); assert.equal(body.period.endTime, '2026-11-16T01:00:00.000Z'); assert.equal(h.hours[0].universal.aqi, 70)
+})

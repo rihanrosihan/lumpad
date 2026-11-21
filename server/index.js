@@ -190,7 +190,7 @@ const routes = {
   'GET /api/geo/timezone': async (q) => (await import('./google_geo.js')).timeZoneAt(q.get('lat'), q.get('lon'), q.get('ts') ? Number(q.get('ts')) : undefined),
   'GET /api/env/window': async (q) => { const [la, lo] = await hereCell(q); return (await import('./google_geo.js')).runWindow(la, lo) },
   'GET /api/env/airforecast': async (q) => { const [la, lo] = await hereCell(q); return (await import('./google_geo.js')).airForecast(la, lo) },
-  'GET /api/env/airhistory': async (q) => { const [la, lo] = await hereCell(q); return (await import('./google_geo.js')).airHistory(la, lo, Number(q.get('hours')) || 24) },
+  'GET /api/env/airhistory': async (q) => { const [la, lo] = await hereCell(q); return (await import('./google_geo.js')).airHistory(la, lo, Number(q.get('hours')) || 24, {}, q.get('ts') ? Number(q.get('ts')) : null) },
   'GET /api/geo/elevation': async (q) => (await import('./google_geo.js')).elevationProfile(await routeOf(q.get('id'))),
   'GET /api/geo/snap': async (q) => (await import('./google_geo.js')).snapToRoads(await routeOf(q.get('id'))),
   'GET /api/geo/places': async (q) => (await import('./google_geo.js')).placesAlong(await routeOf(q.get('id')), q.get('kind') || 'water'),
