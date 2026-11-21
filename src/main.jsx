@@ -27,3 +27,10 @@ function capCharts() {
 let capQ = 0
 new MutationObserver(() => { cancelAnimationFrame(capQ); capQ = requestAnimationFrame(capCharts) }).observe(document.documentElement, { childList: true, subtree: true })
 createRoot(document.getElementById('root')).render(<App />)
+
+// PWA: register the service worker in production builds only (a worker in the dev server would cache hot-reload files)
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {})
+  })
+}

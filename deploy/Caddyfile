@@ -12,6 +12,12 @@ __DOMAIN__ {
 		-Server
 	}
 
+	# PWA: the service worker script is always re-checked, and the manifest has its own media type
+	@sw path /sw.js
+	header @sw Cache-Control "no-cache"
+	@manifest path /manifest.webmanifest
+	header @manifest Content-Type "application/manifest+json"
+
 	# Machine-to-machine sync: bypasses the web login but is protected by a bearer token
 	# checked in the app (constant-time compare, throttled). POST only, exact path.
 	@ingest {
