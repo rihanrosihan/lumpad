@@ -10,9 +10,13 @@ import { mean } from './lib/stats.js'
 import { useStore } from './store.js'
 import { Icon, Info } from './ui.jsx'
 import { useApi, fmtDur, fmtPaceS } from './api.js'
+import { tsMs, hoursBack, airAtHour, airSign, googleTileUrl, MAP_STYLES, GOOGLE_STYLES } from './lib/geo.js'
 import { cfgOf, hrRange, paceRange, zoneSeconds, ZONES } from './lib/zones.js'
 import { FitPanel } from './FitPanel.jsx'
 import ActivityCoach from './ActivityCoach.jsx'
+import { OFFICIAL_RACES as OFFICIAL_BASE } from './data/officialRaces.js'
+import { mergeOfficial, splitsToText, parseSplits, safeUrl } from './lib/official.js'
+import { RouteIntel } from './GoogleRoute.jsx'
 import LongRunContext from './LongRunContext.jsx'
 
 const WORKOUT_TAGS = ['Easy', 'Tempo', 'Interval', 'Long Run', 'Race']
@@ -36,32 +40,6 @@ const FEEL_ADVICE = {
   'Poor AQI': 'High PM2.5 load — keep outdoor effort in Z2 or move indoors.',
 }
 
-const OFFICIAL_RACES = {
-  '2026-11-15': {
-    event: 'Bank Jateng Borobudur Marathon 2026', bib: '#B13718', status: 'QRY (Black Flag)',
-    net: '5:09:15 @ 34K Mat', gun: '5:30:35 (36.92 km)', rank: 'Heat Black Flag · Medal + Jersey',
-    provider: 'ScoreNow Official Timing', url: 'https://scorenow.id/',
-    splits: [['10K','1:18:59','7:54/km'],['15K','1:59:44','8:09/km'],['21.1K','2:55:25','9:08/km'],['28.4K','4:08:24','10:00/km'],['31.2K','4:42:20','12:07/km'],['34K Mat','5:09:15','9:37/km']],
-  },
-  '2026-10-25': {
-    event: 'HYDROPLUS Jakarta Running Festival FM 2026', bib: '#B13144', status: 'DNF (Pain Gate)',
-    net: '0:33:59 @ 5K Mat', gun: '1:03:34 (9.16 km)', rank: 'Disciplined Stop at 2/10 Pain Gate',
-    provider: 'ScoreNow Official Timing', url: 'https://scorenow.id/',
-    splits: [['5K Mat','0:33:59','6:48/km'],['9.16K Watch','1:03:34','6:56/km']],
-  },
-  '2026-10-24': {
-    event: 'myBCA Jakarta Running Festival HM 2026', bib: '#B24456', status: 'Official Finisher',
-    net: '3:07:12', gun: '3:13:40', rank: '11,198 Overall · 6,605 National · 8,499 Male',
-    provider: 'ScoreNow Official Timing', url: 'https://scorenow.id/',
-    splits: [['5K','0:42:45','8:33/km'],['10K','1:23:04','8:04/km'],['15K','2:08:35','9:06/km'],['20K','2:57:22','9:45/km'],['21.1K Finish','3:07:12','8:56/km']],
-  },
-  '2026-06-14': {
-    event: 'BTN Jakarta International Marathon (Jakim) 2026', bib: '#44708', status: 'Official Finisher · 1st FM',
-    net: '6:53:03', gun: '7:03:43', rank: '6,717/8,347 Overall · 5,896/7,221 Gender',
-    provider: 'Codeine Official Timing', url: 'https://jakim.id/',
-    splits: [['5K','0:38:15','7:39/km'],['10K','1:17:52','7:55/km'],['15K','1:59:44','8:22/km'],['21.1K','2:57:41','9:30/km'],['30K','4:30:10','10:23/km'],['35K','5:33:58','12:46/km'],['40K','6:28:10','10:50/km'],['42.2K Finish','6:53:03','11:20/km']],
-  },
-}
 
 const KNOWN_ROUTES = {
   '2026-11-15': [
@@ -80,7 +58,7 @@ const shiftMonth = (ym, n) => { const [y, m] = ym.split('-').map(Number), d = ne
 function inferTag(a) {
   if (!a) return 'Easy'
   if (a.sport_class === 'strength') return 'Gym'
-  if (OFFICIAL_RACES[a.date] || /marathon|race|hm\b|10k|5k/i.test(a.name || '')) return 'Race'
+  if (OFFICIAL_BASE[a.date] || /marathon|race|hm\b|10k|5k/i.test(a.name || '')) return 'Race'
   const d = BY_DATE[a.date]
   if (d?.kind === 'race' || d?.kind === 'tt') return 'Race'
   if (d?.kind === 'long' || (a.distance_m || 0) >= 20000) return 'Long Run'
@@ -239,7 +217,7 @@ function ZoneList({ rows }) {
   </div>
 }
 
-function HeroLeafletMap({ a, laps }) {
+function HeroLeafletMap({ a, laps, google = false }) {
   const elRef = useRef(null)
   const mapRef = useRef(null)
   const lineRef = useRef(null)
@@ -252,12 +230,16 @@ function HeroLeafletMap({ a, laps }) {
     if (mapRef.current) { mapRef.current.remove(); mapRef.current = null }
     const map = L.map(elRef.current, { zoomControl: false, attributionControl: false, scrollWheelZoom: false })
     mapRef.current = map
-    const url = style === 'clean'
-      ? 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}'
-      : 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}'
-    L.tileLayer(url, { maxZoom: 18 }).addTo(map)
-    if (style === 'clean') {
-      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18, opacity: 0.7 }).addTo(map)
+    if (GOOGLE_STYLES.includes(style)) {
+      L.tileLayer(googleTileUrl(style), { maxZoom: 20 }).addTo(map)   // proxied by the server (key stays there)
+    } else {
+      const url = style === 'clean'
+        ? 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}'
+        : 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}'
+      L.tileLayer(url, { maxZoom: 18 }).addTo(map)
+      if (style === 'clean') {
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18, opacity: 0.7 }).addTo(map)
+      }
     }
     const line = L.polyline(coords, { color: snapped ? '#4658D6' : '#F26B5B', weight: snapped ? 5 : 4.2, opacity: 0.95, lineJoin: 'round', lineCap: 'round' }).addTo(map)
     lineRef.current = line
@@ -276,8 +258,11 @@ function HeroLeafletMap({ a, laps }) {
       <div ref={elRef} className="v61-map-canvas" />
       <div className="v61-map-top">
         <button type="button" className={`v61-map-pill ${snapped ? 'active' : ''}`} onClick={() => setSnapped((s) => !s)}>{snapped ? 'Route: Snapped' : 'Route: GPS'}</button>
-        <button type="button" className="v61-map-pill" onClick={() => setStyle((s) => s === 'clean' ? 'street' : 'clean')}>{style === 'clean' ? 'Clean Map' : 'Street Map'}</button>
+        <select className="v61-map-pill" aria-label="Map style" value={style} onChange={(e) => setStyle(e.target.value)}>
+          {MAP_STYLES.filter(([k]) => google || !GOOGLE_STYLES.includes(k)).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+        </select>
       </div>
+      {GOOGLE_STYLES.includes(style) && <span className="v61-map-attr">Map data © Google</span>}
       <div className="v61-zoom-stack" role="group" aria-label="Map zoom controls">
         <button type="button" className="v61-zbtn" aria-label="Zoom in" onClick={() => mapRef.current?.zoomIn()}>+</button>
         <button type="button" className="v61-zbtn" aria-label="Zoom out" onClick={() => mapRef.current?.zoomOut()}>−</button>
@@ -301,6 +286,7 @@ function HeroLeafletMap({ a, laps }) {
 
 export default function Activity({ vdot, focus, go, settings }) {
   const T = today()
+  const [offStored] = useStore('lumpad.official', {}), OFFICIAL_RACES = useMemo(() => mergeOfficial(OFFICIAL_BASE, offStored), [offStored])
   const [ym, setYm] = useState(T.slice(0, 7))
   const [sport, setSport] = useState('all')
   const [tagF, setTagF] = useState('all')
@@ -480,7 +466,8 @@ export default function Activity({ vdot, focus, go, settings }) {
         return <article key={aid} className="v61-act-card" onClick={() => go('activity', { id: aid })}>
           <div className="v61-act-top">
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {a.training_load != null && <span className="v61-pill cobalt">TL {a.training_load}</span>}
+              {place?.label && <span className="v61-pill">{place.label}</span>}
+            {a.training_load != null && <span className="v61-pill cobalt">TL {a.training_load}</span>}
               <span className={`v61-pill ${tagPillCls(tag)}`}>{tag}</span>
               {a.temp_c != null && <span className="v61-pill">{Math.round(a.temp_c)}°C</span>}
             </div>
@@ -512,6 +499,8 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
   const [ctx, setCtx] = useStore('lumpad.act.' + (id || 'none').replace(/[^A-Za-z0-9._-]/g, '_'), {
     rpe: '', gels: '', cho_g: '', note: '', tag: '', feels: [], rating: '', title: '', official_bib: '', official_url: '',
   })
+  const [offStored, setOffStored] = useStore('lumpad.official', {}), OFFICIAL_RACES = useMemo(() => mergeOfficial(OFFICIAL_BASE, offStored), [offStored])
+  const [offEdit, setOffEdit] = useState(null)
   const [tab, setTab] = useState('overview')
   const [zoneMode, setZoneMode] = useState(7)
   const [lapMode, setLapMode] = useState('all')
@@ -558,6 +547,13 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
   const validP = shownLaps.map((l) => l.avg_pace_s_km).filter(Boolean)
   const minPace = validP.length ? Math.min(...validP) : 1, maxPace = validP.length ? Math.max(...validP) : 1
 
+  // Google extras (only when the server has a key): place name of the start, air quality at the run's hour
+  const caps = useApi('/api/geo/capabilities').data, c0 = a ? extractRouteCoords(a)[0] : null, startMs = a ? tsMs(a.start_ts) : null
+  const geoOn = !!caps?.configured && !!c0
+  const place = useApi(geoOn ? `/api/geo/place?lat=${c0[0]}&lon=${c0[1]}` : '', geoOn).data
+  const airH = useApi(geoOn && startMs ? `/api/env/airhistory?lat=${c0[0]}&lon=${c0[1]}&hours=${hoursBack(startMs)}` : '', geoOn && !!startMs).data
+  const air = airH && startMs ? airAtHour(airH.hours, startMs) : null, airIdx = air?.local || air?.universal || null, airS = airSign(airIdx?.category)
+
   if (D.state === 'loading') return <div className="skel" style={{ height: 180 }} />
   if (D.state === 'error' || !a) return <p className="muted">Could not load this activity.</p>
 
@@ -577,7 +573,7 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
   return <>
     {/* Hero: Left Leaflet Map + Right Clean Header & 3x2 KPI Grid */}
     <div className="v61-hero-grid">
-      <HeroLeafletMap a={a} laps={laps} />
+      <HeroLeafletMap a={a} laps={laps} google={!!caps?.configured} />
 
       <div className="v61-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
         <div>
@@ -646,9 +642,9 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
             <div className="v61-env-sub"><span>RH {rh}%</span><span>Feels {Math.round(tempC + (rh > 75 ? 3 : 1))}°C</span></div>
           </div>
           <div className="v61-env-tile">
-            <div className="v61-env-top"><span>Air Quality</span><span className="v61-sign normal"><i />Normal</span></div>
-            <div className="v61-env-val">Moderate</div>
-            <div className="v61-env-sub"><span>Outdoor safe</span><span>Monitor Z2 cap</span></div>
+            <div className="v61-env-top"><span>Air Quality</span><span className={`v61-sign ${airS[1]}`}><i />{airS[0]}</span></div>
+            <div className="v61-env-val">{airIdx?.category || '—'}</div>
+            <div className="v61-env-sub"><span>{airIdx ? `${airIdx.name || 'AQI'} ${airIdx.aqi ?? ''}`.trim() : 'Not pulled for this run'}</span><span>{air ? 'At the run hour' : ''}</span></div>
           </div>
           <div className="v61-env-tile">
             <div className="v61-env-top"><span>Effort Load</span><span className={`v61-sign ${(a.training_load || 0) > 220 ? 'high' : 'normal'}`}><i />{(a.training_load || 0) > 220 ? 'High' : 'Normal'}</span></div>
@@ -990,6 +986,7 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
             </div>
           </div>
         </div>
+        {c0 && <RouteIntel id={a.ids?.[0] || id} />}
         {a.sport_class === 'run' && (a.distance_m || 0) >= 16000 && <LongRunContext label={String(a.ids?.[0] || id).replace(/^coros:/, '')} go={go} />}
       </div>
     </div>}
@@ -1025,7 +1022,20 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
             <thead><tr><th>Checkpoint</th><th>Cumulative</th><th>Split Pace</th></tr></thead>
             <tbody>{officialBase.splits.map(([cp, t, sp]) => <tr key={cp}><td><b>{cp}</b></td><td style={{ fontFamily: 'var(--v-mono)' }}>{t}</td><td style={{ fontFamily: 'var(--v-mono)' }}>{sp}</td></tr>)}</tbody>
           </table></div>
-        ) : <p className="v61-card-sub">No preloaded official mat splits for this date.</p>}
+        ) : <p className="v61-card-sub">No official mat splits saved for this date.</p>}
+        {offEdit == null
+          ? <button type="button" className="v61-edit-btn" style={{ marginTop: 12 }} onClick={() => setOffEdit({ ...Object.fromEntries(['event', 'bib', 'status', 'net', 'gun', 'rank', 'provider', 'url'].map((k) => [k, officialBase?.[k] || ''])), splits: splitsToText(officialBase?.splits) })}>✎ Edit official result</button>
+          : <div className="form" style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--v-border)' }}>
+            {[['event', 'Event'], ['bib', 'Bib'], ['status', 'Status'], ['net', 'Net / chip'], ['gun', 'Gun / watch'], ['rank', 'Standing'], ['provider', 'Timing provider'], ['url', 'Result URL (https)']].map(([k, l]) =>
+              <label key={k} className="fld"><span>{l}</span><input type="text" value={offEdit[k]} onChange={(e) => setOffEdit({ ...offEdit, [k]: e.target.value })} /></label>)}
+            <label className="fld"><span>Mat splits, one per line: checkpoint | time | pace</span><textarea rows={5} value={offEdit.splits} onChange={(e) => setOffEdit({ ...offEdit, splits: e.target.value })} placeholder="10K | 1:18:59 | 7:54/km" /></label>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button type="button" className="v61-edit-btn save" onClick={() => { const { splits, url, ...f } = offEdit; setOffStored({ ...offStored, [a.date]: { ...f, url: safeUrl(url), splits: parseSplits(splits) } }); setOffEdit(null) }}>Save</button>
+              <button type="button" className="v61-edit-btn" onClick={() => setOffEdit(null)}>Cancel</button>
+              {offStored?.[a.date] && <button type="button" className="v61-edit-btn" onClick={() => { const { [a.date]: _drop, ...rest } = offStored; setOffStored(rest); setOffEdit(null) }}>Restore built-in</button>}
+            </div>
+            <p className="v61-card-sub">Saved in your synced settings, so it shows on every device. Only the date of this activity is edited.</p>
+          </div>}
       </div>
     </div>}
   </>

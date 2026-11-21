@@ -7,6 +7,7 @@ import { PILLAR } from './lib/readiness.js'
 import { formZone, progressionBand } from './lib/load.js'
 import { mean, r1 } from './lib/stats.js'
 import Conditions from './Conditions.jsx'
+import { RoutePlanner } from './GoogleRoute.jsx'
 import { useSub } from './useSub.js'
 import { Card, Chip, Icon, Info, Evidence, SegmentedTabs, StatusPill } from './ui.jsx'
 import ScaleCard from './ScaleCard.jsx'
@@ -40,7 +41,7 @@ export default function Readiness({ vdot, settings, focus }) {
   const [f, setF] = useStore('lumpad.daily.' + date, EMPTY_DAY)
   const [ov, setOv] = useStore('lumpad.muscle.' + date, {})
   const [postLr, setPostLr] = useStore('lumpad.postlr', { gi: '0', gels: 4, hyd: 'yes' })
-  const [panel, setPanel] = useSub(['all', 'conditions', 'load', 'sleep', 'auto'], 'all')
+  const [panel, setPanel] = useSub(['all', 'conditions', 'load', 'acwr', 'sleep', 'hrv', 'auto'], 'all')
   useEffect(() => {
     if (focus?.mode === 'analysis' || focus?.mode === 'analisis') {
       setTimeout(() => document.getElementById('sec-load')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 250)
@@ -97,9 +98,11 @@ export default function Readiness({ vdot, settings, focus }) {
   const PANEL_TABS = [
     { id: 'all', label: 'Overview' },
     { id: 'conditions', label: 'Conditions Now' },
-    { id: 'load', label: 'Load · PMC · ACWR' },
+    { id: 'load', label: 'Load · PMC' },
+    { id: 'acwr', label: 'ACWR' },
     { id: 'sleep', label: 'Sleep' },
-    { id: 'auto', label: 'HRV · Autonomic' },
+    { id: 'hrv', label: 'HRV' },
+    { id: 'auto', label: 'Autonomic' },
   ]
 
   return <section className="screen">
@@ -130,7 +133,7 @@ export default function Readiness({ vdot, settings, focus }) {
 
     {stuck && <div className={`gatemini g-${tier ? { prime: 'green', optimal: 'green', compromised: 'yellow', depleted: 'red' }[tier.id] : has ? g.level : 'none'}`}><span className="gdot" aria-hidden="true" /><span>{label}</span><small>{sess ? `${sess.label || KIND[sess.kind].label}${sess.km ? ' · ' + sess.km + ' km' : ''}` : ''}</small></div>}
 
-    {panel === 'conditions' && <Conditions />}
+    {panel === 'conditions' && <><Conditions /><RoutePlanner /></>}
 
     {panel === 'all' && date === T && <div id="sec-scaler" tabIndex={-1}><ScaleCard rd={rd} M={M} T={T} /></div>}
 
@@ -273,35 +276,35 @@ export default function Readiness({ vdot, settings, focus }) {
     </div>}
 
     {/* 5. 2-Column Telemetry Bento Grid (3 clean pairs of 2 cards) */}
-    {panel === 'load' && <div id="sec-load" tabIndex={-1} className="rgrid">
-      <Card title="Performance Management Chart (PMC)" right={<div className="seg" role="group" aria-label="Range">{[[42, '6W'], [90, '3M']].map(([d, l]) => <button key={d} aria-pressed={range === d} className={range === d ? 'on' : ''} onClick={() => setRange(d)}>{l}</button>)}</div>}>
+    {(panel === 'load' || panel === 'acwr') && <div id="sec-load" tabIndex={-1} className="rgrid">
+      {panel === 'load' && <Card title="Performance Management Chart (PMC)" right={<div className="seg" role="group" aria-label="Range">{[[42, '6W'], [90, '3M']].map(([d, l]) => <button key={d} aria-pressed={range === d} className={range === d ? 'on' : ''} onClick={() => setRange(d)}>{l}</button>)}</div>}>
         <p className="muted" style={{ marginTop: 0, fontSize: '.78rem' }}>
           Fitness (CTL <Info k="CTL" /> <b>{cur?.ctl ?? '—'}</b>) · Fatigue (ATL <Info k="ATL" /> <b>{cur?.atl ?? '—'}</b>) · Form (TSB <Info k="TSB" /> <b>{sign(cur?.tsb)}</b>) · Monotony <Info k="Monotony" /> {M.mono?.monotony ?? '—'} · Strain {M.mono?.strain ?? '—'}
         </p>
         <PMCChart data={pmcData} proj={M.proj} label={`Fitness ${cur?.ctl}, fatigue ${cur?.atl}, form ${cur?.tsb}`} />
         <div className="legend"><span><i className="ll" style={{ borderColor: 'var(--c-long)' }} />CTL</span><span><i className="ll" style={{ borderColor: 'var(--c-tt)' }} />ATL</span><span><i className="ll" style={{ borderColor: 'var(--text)' }} />Form %</span><span><i className="ll" style={{ borderTopStyle: 'dashed', borderColor: 'var(--muted)' }} />Plan</span></div>
-      </Card>
+      </Card>}
 
-      <Card title="ACWR & Weekly Load Progression" right={<div className="seg" role="group" aria-label="ACWR method">{[['ewma', 'EWMA'], ['roll', '7:28']].map(([k, l]) => <button key={k} aria-pressed={acwrMode === k} className={acwrMode === k ? 'on' : ''} onClick={() => setAcwrMode(k)}>{l}</button>)}</div>}>
+      {panel === 'acwr' && <Card title="ACWR & Weekly Load Progression" right={<div className="seg" role="group" aria-label="ACWR method">{[['ewma', 'EWMA'], ['roll', '7:28']].map(([k, l]) => <button key={k} aria-pressed={acwrMode === k} className={acwrMode === k ? 'on' : ''} onClick={() => setAcwrMode(k)}>{l}</button>)}</div>}>
         <p className="muted" style={{ marginTop: 0, fontSize: '.78rem' }}>
           ACWR <Info k="ACWR" /> <b>{acwrShown ?? '—'}</b> (0.8–1.3 sweet spot) · Last 7d: <b>{M.prog.cur} km</b> vs {M.prog.prev} km (<Chip tone={pb === 'safe' ? 'green' : pb === 'caution' ? 'yellow' : pb === 'alert' ? 'red' : undefined}>{M.prog.pct == null ? '—' : sign(M.prog.pct) + '%'}</Chip>)
         </p>
         <BandLine data={M.pmc.slice(-30)} keys={[{ key: 'acwr', color: 'var(--cobalt)' }]} refBand={[0.8, 1.3]} label="ACWR 30 days with 0.8–1.3 band" height={125} />
         <Bullet value={M.prog.pct} unit="%" bands={[{ from: -50, to: 10, cls: 'b-safe' }, { from: 10, to: 30, cls: 'b-caution' }, { from: 30, to: 80, cls: 'b-alert' }]} label={`Weekly distance progression ${M.prog.pct}%`} />
         <GroupedBars groups={weeksIE.map((w) => ({ label: w.label, int: Math.round((w.tl / mTl) * 100), ext: Math.round((w.km / mKm) * 100) }))} series={[{ key: 'int', color: 'var(--c-tt)' }, { key: 'ext', color: 'var(--c-long)' }]} label="Internal vs external load" fmt={(v) => v} />
-      </Card>
+      </Card>}
     </div>}
 
-    {panel === 'auto' && <div id="sec-auto" tabIndex={-1} className="rgrid">
-      <Card title="Overnight HRV & Normal Band" right={<StatusPill tone={hv.flagTrend ? 'amber' : 'green'}>{hv.enough ? (hv.flagTrend ? 'Suppressed' : 'Optimal') : 'Building'}</StatusPill>}>
+    {(panel === 'hrv' || panel === 'auto') && <div id="sec-auto" tabIndex={-1} className="rgrid">
+      {panel === 'hrv' && <Card title="Overnight HRV & Normal Band" right={<StatusPill tone={hv.flagTrend ? 'amber' : 'green'}>{hv.enough ? (hv.flagTrend ? 'Suppressed' : 'Optimal') : 'Building'}</StatusPill>}>
         <p className="muted" style={{ marginTop: 0, fontSize: '.78rem' }}>
           Last night: <b>{hv.today ?? '—'} ms</b> · 7d avg: <b>{hv.roll7 ?? '—'} ms</b> · 60d corridor: {hv.enough ? `${hv.lo}–${hv.hi} ms` : 'needs 14d'} · CV <Info k="CV" /> {hv.cv7 != null ? `${hv.cv7}%` : '—'}
         </p>
         <BandLine data={M.hrvSeries} keys={[{ key: 'roll7', color: 'var(--green)' }]} band={['lo', 'hi']} dots={{ key: 'hrv', cls: (d) => (d.lo != null && d.hrv < d.lo ? 'low' : '') }} label={`Daily HRV and 7-day mean; latest ${hv.today} ms`} height={150} />
         <div className="legend"><span><i className="kdot" style={{ background: 'var(--green)' }} />7-day mean &amp; corridor</span><span><i className="kdot" style={{ background: 'var(--yellow)' }} />Below corridor</span></div>
-      </Card>
+      </Card>}
 
-      <Card title={`Resting HR (${rh.value ?? '—'} bpm) & Autonomic State`} right={<StatusPill tone={rh.spike ? 'red' : 'cobalt'}>{rh.spike ? 'RHR Spike' : 'Parasympathetic'}</StatusPill>}>
+      {panel === 'auto' && <Card title={`Resting HR (${rh.value ?? '—'} bpm) & Autonomic State`} right={<StatusPill tone={rh.spike ? 'red' : 'cobalt'}>{rh.spike ? 'RHR Spike' : 'Parasympathetic'}</StatusPill>}>
         <p className="muted" style={{ marginTop: 0, fontSize: '.78rem' }}>
           {rh.enough ? `${sign(rh.dev)} bpm vs 30d avg (${rh.base} bpm)` : 'Building 30d baseline'} · Sleep HR: <b>{sl.hr_avg ?? '—'} bpm</b> (&gt;67 = gate)
         </p>
@@ -309,7 +312,7 @@ export default function Readiness({ vdot, settings, focus }) {
         <div style={{ marginTop: 10 }}>
           <TwinBars a={{ label: 'Systemic (HRV, RHR, sleep)', v: sys }} b={{ label: 'Structural (muscle, pain, tibia)', v: str }} />
         </div>
-      </Card>
+      </Card>}
     </div>}
 
     {panel === 'sleep' && <div id="sec-sleep" tabIndex={-1} className="rgrid">

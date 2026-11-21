@@ -149,6 +149,10 @@ function Sub4AdaptiveCard({ twin }) {
       ) : (
         <p className="muted" style={{ margin: 0 }}>Sub-4 P10–P90 engine ready on <code>lumpadd serve</code> (:8788). Current VDOT gap: <b>+{(vNeed - Number(vNow)).toFixed(1)}</b> (durability &gt;20K is primary limiter).</p>
       )}
+      {s4.data?.inputs && <details style={{ marginTop: 8 }}><summary className="muted">What these ranges are built on</summary>
+        <ul className="rules">{['vdot', 'run_share_after_20k', 'long_runs_over_20k', 'fm_count', 'forecast_wbgt', 'realization_ratio'].filter((k) => s4.data.inputs[k]).map((k) => { const p = s4.data.inputs[k]; return <li key={k}><code>{k}</code> = <b>{typeof p.value === 'number' ? +p.value.toFixed(2) : p.value}</b> <Chip tone={p.basis === 'data' ? 'green' : 'yellow'}>{p.basis}</Chip> <span className="muted">{p.note}</span></li> })}</ul>
+        {s4.data.inputs.target_state && <p className="muted">Target state: {s4.data.inputs.target_state}</p>}
+      </details>}
       <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid var(--line)', display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
         <Chip>Phase 5 Decision Ledger: {decisions.length} records</Chip>
         {decisions.slice(0, 3).map((d) => (
