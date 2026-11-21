@@ -19,3 +19,19 @@ Enable these APIs in the Google project and add them to the key's API restrictio
 - Route data, OFF by default: set `GOOGLE_ROUTE_DATA=1` in `/opt/lumpad/.env` to allow elevation (`/api/geo/elevation?id=`), road snapping (`/api/geo/snap?id=`), places along a route (`/api/geo/places?id=&kind=water|toilets|medical`), the static route map (`/api/map/static?id=`), Street View (`/api/geo/streetview?lat=&lon=&heading=`) and travel time (`/api/geo/route`). These send real route points or exact places to Google.
 - Every upstream call counts against `GOOGLE_DAILY_CAP` (default 4000 per WIB day); `/api/map/status` shows the count per API. Results from Google are display-only: they never feed the engine's numbers.
 - After deploying, `curl -s http://127.0.0.1:8787/api/google/probe` shows the real response shape of each API; response parsers tolerate missing fields, so a different shape returns empty data instead of an error.
+
+## Screens that use the Google gateway
+- Activity detail: map style switch (Clean / Street / Google Roadmap, Satellite, Terrain via `/api/map/tile`), place name of the start (coarse, 0.1° cell), air quality at the run's hour (`/api/env/airhistory`). Without the key the Google styles are hidden and the air tile says "Not pulled".
+- Activity detail → **Route intel** (needs `GOOGLE_ROUTE_DATA=1`): elevation profile, water / toilets / medical along the route, static route map to save as a share image. Nothing is sent until the button is pressed.
+- Readiness → Conditions Now → **Long-run route planner** (`/api/geo/loop?km=&bearing=`): a walking circuit of about N km from the last GPS run, with elevation and water points, GPX download. Distance is an estimate.
+- Race → Logistics → **Race-morning travel** (`/api/geo/route` with traffic, `/api/geo/timezone`): when to leave; Race → Course → **Course photos** (Street View at the start, COPs and km 40).
+
+## Second AI provider (Anthropic) in the Node coach
+Off until configured. In `/opt/lumpad/.env` (never in chat): `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` (an id you pick), `ANTHROPIC_PRICE_IN_USD_PER_MTOK`, `ANTHROPIC_PRICE_OUT_USD_PER_MTOK`, `USD_CNY` (all from you; with any of them missing the provider refuses to run). `ANTHROPIC_MONTHLY_CAP_CNY` (default 15) caps its own spend, computed from those prices.
+Routing is opt-in per intent: `COACH_CLAUDE_INTENTS=race_plan,session_review` (set it only after the eval). An intent routed to Claude falls back to DeepSeek when the provider is unconfigured or over its cap. The daily brief stays on DeepSeek. The Go gateway needs the same rule at cutover.
+
+## 4 GB RAM / 60 GB disk profile
+`sudo bash deploy/v2/tune-4gb.sh` installs `postgresql-4gb.conf`, higher `MemoryMax` limits for every service, and a journald size limit (500 MB, 1 month). It refuses on a machine with under 3.5 GB RAM and does not restart Postgres unless given `--restart-postgres` (do that right after a morning shadow pass; shared_buffers needs the restart). `--check` shows what is installed.
+
+## Official race results
+Built-in results live in `src/data/officialRaces.js`. Edits made on the Activity → Official Result tab are saved in the synced store key `lumpad.official` and override the built-in record field by field ("Restore built-in" removes the edit).

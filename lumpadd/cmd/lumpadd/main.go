@@ -272,25 +272,16 @@ func buildSub4Report(ctx context.Context, pool *pgxpool.Pool) (map[string]any, e
 	var stateStr string
 	var ver int64
 	_ = pool.QueryRow(ctx, `SELECT version, state FROM athlete.state_snapshot ORDER BY version DESC LIMIT 1`).Scan(&ver, &stateStr)
-	vdot := 31.7
-	runShare20 := 0.28
-	if stateStr != "" {
-		var tw map[string]any
-		if json.Unmarshal([]byte(stateStr), &tw) == nil {
-			if prof, ok := tw["profile"].(map[string]any); ok {
-				if v, ok := prof["vdot"].(float64); ok && v > 20 {
-					vdot = v
-				}
-			}
-		}
-	}
+	in := sub4FromTwin(stateStr)
+	sub4Counts(ctx, pool, &in)
+	vdot, runShare20 := in.VDOT.Value, in.RunShareAfter20K.Value
 	jakim := decision.RaceReadinessRange(decision.RaceInput{
 		RaceName: "Jakim FM 2027 (B-Race)", VDOT: vdot, RunShareAfter20K: runShare20,
-		ForecastWBGT: 27.5, RealizationRatio: 0.59, LongRunsOver20K: 3, FMCount: 1,
+		ForecastWBGT: 27.5, RealizationRatio: 0.59, LongRunsOver20K: in.LongRunsOver20K, FMCount: in.FMCount,
 	})
 	jrfCurrent := decision.RaceReadinessRange(decision.RaceInput{
 		RaceName: "myBCA JRF 2027 (Current Fitness)", VDOT: vdot, RunShareAfter20K: runShare20,
-		ForecastWBGT: 26.5, RealizationRatio: 0.75, LongRunsOver20K: 3, FMCount: 1,
+		ForecastWBGT: 26.5, RealizationRatio: 0.75, LongRunsOver20K: in.LongRunsOver20K, FMCount: in.FMCount,
 	})
 	jrfTarget := decision.RaceReadinessRange(decision.RaceInput{
 		RaceName: "myBCA JRF 2027 (Sub-4 Target State)", VDOT: 39.9, RunShareAfter20K: 0.92,
@@ -302,6 +293,15 @@ func buildSub4Report(ctx context.Context, pool *pgxpool.Pool) (map[string]any, e
 		"vdot_needed":  39.9,
 		"vdot_gap":     39.9 - vdot,
 		"ranges":       []decision.RaceRange{jakim, jrfCurrent, jrfTarget},
+		// where each input came from; the heat and realization numbers are assumptions, not forecasts or measurements of the current state
+		"inputs": map[string]any{
+			"vdot": in.VDOT, "run_share_after_20k": in.RunShareAfter20K,
+			"long_runs_over_20k": sub4Param{float64(in.LongRunsOver20K), "data", "FIT sessions of 20 km or more in the last 180 days"},
+			"fm_count":           sub4Param{float64(in.FMCount), "data", "FIT sessions of 40 km or more"},
+			"forecast_wbgt":      sub4Param{26.5, "assumed", "race-day heat cannot be forecast months ahead; 27.5 °C is used for Jakim (June), 26.5 °C for the JRF"},
+			"realization_ratio":  sub4Param{0.75, "assumed", "0.59 was observed at Jakim 2026; 0.75 is the assumed current state and 0.95 the target state"},
+			"target_state":       "VDOT 39.9, run share 0.92, 10 long runs and 3 marathons: a target, not a prediction",
+		},
 	}
 	if aura, err := graph.NewFromEnv(); err == nil && aura != nil {
 		if ov, err := graph.Overview(ctx, aura); err == nil {
