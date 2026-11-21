@@ -1463,3 +1463,11 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .v61-scope .v61-note-box { min-height: 44px; display: flex; align-items: center; padding: 10px 12px; font-size: 14px; }
 .v61-scope .v61-env-top > span:first-child, .v61-scope .v61-dyn-tile small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .v61-scope .v61-env-top .v61-sign { flex: none; }
+
+/* map overlay controls: both pills the same small size on one line (iOS inflated the select and wrapped the button) */
+.v61-scope .v61-map-top { top: 10px; right: 10px; left: 10px; justify-content: flex-end; flex-wrap: nowrap; gap: 6px; }
+.v61-scope .v61-map-top .v61-map-pill { box-sizing: border-box; height: 28px !important; min-height: 28px !important; width: auto !important; margin: 0 !important; padding: 0 10px !important; font-size: 11px !important; font-weight: 700; line-height: 1 !important; white-space: nowrap; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; text-align: center; text-align-last: center; }
+.v61-scope .v61-map-top select.v61-map-pill { padding-right: 22px !important; max-width: 150px; text-overflow: ellipsis; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='white' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; }
+.v61-scope .v61-zoom-stack { right: 10px; bottom: 12px; gap: 5px; }
+.v61-scope .v61-zbtn { width: 28px; height: 28px; min-height: 0; padding: 0; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; }
+.v61-scope .v61-map-attr { font-size: 9.5px; left: 8px; bottom: 8px; }
