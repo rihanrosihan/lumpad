@@ -3,7 +3,7 @@ package main
 import "testing"
 
 func TestSub4FromTwinUsesDataWhenThereIsEnough(t *testing.T) {
-	st := `{"profile":{"vdot":33.4},"durability":{"run_share_by_km":[
+	st := `{"races":{"baseline_vdot":33.4},"durability":{"run_share_by_km":[
 		{"km":19,"run_share":0.9,"n":5},{"km":21,"run_share":0.5,"n":4},{"km":25,"run_share":0.3,"n":4},{"km":30,"run_share":0.2,"n":2}]}}`
 	in := sub4FromTwin(st)
 	if in.VDOT.Value != 33.4 || in.VDOT.Basis != "data" {
@@ -16,10 +16,17 @@ func TestSub4FromTwinUsesDataWhenThereIsEnough(t *testing.T) {
 }
 
 func TestSub4FromTwinFallsBackAndSaysSo(t *testing.T) {
-	for _, st := range []string{"", "not json", `{"profile":{"vdot":5},"durability":{"run_share_by_km":[{"km":25,"run_share":0.9,"n":2}]}}`} {
+	for _, st := range []string{"", "not json", `{"races":{"baseline_vdot":5},"durability":{"run_share_by_km":[{"km":25,"run_share":0.9,"n":2}]}}`} {
 		in := sub4FromTwin(st)
 		if in.VDOT.Value != fallbackVDOT || in.VDOT.Basis == "data" || in.RunShareAfter20K.Value != fallbackRunShare || in.RunShareAfter20K.Basis == "data" {
 			t.Fatalf("%q -> %+v", st, in)
 		}
+	}
+}
+
+func TestSub4VDOTFallsBackToProjection(t *testing.T) {
+	in := sub4FromTwin(`{"projection":{"vdot0":34.2}}`)
+	if in.VDOT.Value != 34.2 || in.VDOT.Basis != "data" {
+		t.Fatalf("%+v", in.VDOT)
 	}
 }

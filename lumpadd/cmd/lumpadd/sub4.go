@@ -37,9 +37,13 @@ func sub4FromTwin(stateStr string) sub4Inputs {
 	if stateStr == "" || json.Unmarshal([]byte(stateStr), &tw) != nil {
 		return in
 	}
-	if prof, ok := tw["profile"].(map[string]any); ok {
-		if v, ok := prof["vdot"].(float64); ok && v > 20 {
-			in.VDOT = sub4Param{v, "data", "twin profile"}
+	// the twin keeps the baseline VDOT under races.baseline_vdot (projection.vdot0 is the same number as a fallback)
+	for _, path := range [][2]string{{"races", "baseline_vdot"}, {"projection", "vdot0"}} {
+		if m, ok := tw[path[0]].(map[string]any); ok {
+			if v, ok := m[path[1]].(float64); ok && v > 20 {
+				in.VDOT = sub4Param{v, "data", "twin " + path[0] + "." + path[1]}
+				break
+			}
 		}
 	}
 	if d, ok := tw["durability"].(map[string]any); ok {
