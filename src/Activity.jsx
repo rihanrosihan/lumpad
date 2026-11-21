@@ -41,15 +41,6 @@ const FEEL_ADVICE = {
 }
 
 
-const KNOWN_ROUTES = {
-  '2026-11-15': [
-    [-7.6079,110.2038],[-7.6115,110.2010],[-7.6142,110.1945],[-7.6120,110.1865],
-    [-7.6045,110.1905],[-7.5988,110.1872],[-7.5930,110.1935],[-7.5955,110.2035],
-    [-7.5880,110.2050],[-7.5815,110.2135],[-7.5735,110.2105],[-7.5685,110.2195],
-    [-7.5745,110.2260],[-7.5845,110.2185],[-7.5915,110.2215],[-7.6015,110.2210],
-    [-7.6092,110.2265],[-7.6115,110.2215],[-7.6048,110.2155],[-7.6062,110.2080],[-7.6079,110.2038],
-  ],
-}
 
 const km = (m) => (m == null ? '—' : (m / 1000).toFixed(m < 10000 ? 2 : 1))
 const monthRange = (ym) => { const [y, m] = ym.split('-').map(Number); return [`${ym}-01`, `${ym}-${String(new Date(y, m, 0).getDate()).padStart(2, '0')}`] }
@@ -98,7 +89,7 @@ function extractRouteCoords(a) {
   if (Array.isArray(a.track) && a.track.length >= 2) {
     return a.track.map((p) => Array.isArray(p) ? p : [p.lat, p.lon ?? p.lng]).filter((p) => Number.isFinite(p[0]) && Number.isFinite(p[1]))
   }
-  return KNOWN_ROUTES[a.date] || []
+  return [] // a route is drawn only from real data (the FIT file via /api/intel/stream, or a polyline/track on the record)
 }
 
 function olsLine(pts) {
@@ -217,13 +208,16 @@ function ZoneList({ rows }) {
   </div>
 }
 
-function HeroLeafletMap({ a, laps, google = false }) {
+function HeroLeafletMap({ a, laps, google = false, route = null, routeData = false, id = '' }) {
   const elRef = useRef(null)
   const mapRef = useRef(null)
   const lineRef = useRef(null)
-  const [style, setStyle] = useState('clean')
+  const [style, setStyle] = useState(google ? 'roadmap' : 'clean'), picked = useRef(false)
+  useEffect(() => { if (google && !picked.current) setStyle('roadmap') }, [google]) // Google map by default once the server says it has the key, unless you chose a style yourself
   const [snapped, setSnapped] = useState(false)
-  const coords = useMemo(() => extractRouteCoords(a), [a])
+  const raw = useMemo(() => (route && route.length >= 2 ? route : extractRouteCoords(a)), [a, route])
+  const snap = useApi(snapped && routeData && id ? `/api/geo/snap?id=${encodeURIComponent(id)}` : '', snapped && routeData && !!id).data
+  const coords = snapped && snap?.points?.length > 1 ? snap.points : raw // snapped = Google's road-matched line (display only); the raw GPS track stays the source of every number
 
   useEffect(() => {
     if (!elRef.current || coords.length < 2) return
@@ -257,8 +251,8 @@ function HeroLeafletMap({ a, laps, google = false }) {
     return <div className="v61-map-wrap">
       <div ref={elRef} className="v61-map-canvas" />
       <div className="v61-map-top">
-        <button type="button" className={`v61-map-pill ${snapped ? 'active' : ''}`} onClick={() => setSnapped((s) => !s)}>{snapped ? 'Route: Snapped' : 'Route: GPS'}</button>
-        <select className="v61-map-pill" aria-label="Map style" value={style} onChange={(e) => setStyle(e.target.value)}>
+        {routeData && <button type="button" className={`v61-map-pill ${snapped ? 'active' : ''}`} onClick={() => setSnapped((s) => !s)}>{snapped ? (snap?.points?.length > 1 ? 'Route: Snapped' : 'Snapping…') : 'Route: GPS'}</button>}
+        <select className="v61-map-pill" aria-label="Map style" value={style} onChange={(e) => { picked.current = true; setStyle(e.target.value) }}>
           {MAP_STYLES.filter(([k]) => google || !GOOGLE_STYLES.includes(k)).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
         </select>
       </div>
@@ -555,7 +549,9 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
   const minPace = validP.length ? Math.min(...validP) : 1, maxPace = validP.length ? Math.max(...validP) : 1
 
   // Google extras (only when the server has a key): place name of the start, air quality at the run's hour
-  const caps = useApi('/api/geo/capabilities').data, c0 = a ? extractRouteCoords(a)[0] : null, startMs = a ? tsMs(a.start_ts) : null
+  const caps = useApi('/api/geo/capabilities').data
+  const ST = useApi(id ? `/api/intel/stream?id=${encodeURIComponent(id)}` : '', !!id && a?.sport_class === 'run'), streamRoute = ST.data?.found && ST.data.route?.length >= 2 ? ST.data.route : null // the real GPS track from the FIT file
+  const c0 = a ? (streamRoute || extractRouteCoords(a))[0] : null, startMs = a ? tsMs(a.start_ts) : null
   const geoOn = !!caps?.configured && !!c0
   const place = useApi(geoOn ? `/api/geo/place?lat=${c0[0]}&lon=${c0[1]}` : '', geoOn).data
   const airH = useApi(geoOn && startMs ? `/api/env/airhistory?lat=${c0[0]}&lon=${c0[1]}&hours=${hoursBack(startMs)}` : '', geoOn && !!startMs).data
@@ -580,7 +576,7 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
   return <>
     {/* Hero: Left Leaflet Map + Right Clean Header & 3x2 KPI Grid */}
     <div className="v61-hero-grid">
-      <HeroLeafletMap a={a} laps={laps} google={!!caps?.configured} />
+      <HeroLeafletMap a={a} laps={laps} google={!!caps?.configured} route={streamRoute} routeData={!!caps?.route_data} id={id} />
 
       <div className="v61-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
         <div>
