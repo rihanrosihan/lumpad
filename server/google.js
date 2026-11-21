@@ -4,6 +4,7 @@
 // COST: every upstream call counts against a daily cap (GOOGLE_DAILY_CAP, default 4000) so a bug or a loop cannot run up a bill.
 const API = 'https://tile.googleapis.com'
 const day = () => new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10) // WIB day
+export const apiKey = () => key()
 const key = () => (process.env.GOOGLE_MAPS_API_KEY || '').trim()
 export const configured = () => /^[A-Za-z0-9_-]{20,80}$/.test(key())
 const cap = () => Math.max(0, Number(process.env.GOOGLE_DAILY_CAP) || 4000)
@@ -15,17 +16,19 @@ export function spend(kind) {
 }
 export const status = () => { if (used.day !== day()) { used.day = day(); used.n = 0; used.by = {} } return { configured: configured(), used_today: used.n, cap: cap(), by: { ...used.by } } }
 
-let sess = null // { token, exp (ms) }
-export async function tileSession({ fetchFn = fetch } = {}) {
+const TYPES = { roadmap: { mapType: 'roadmap' }, satellite: { mapType: 'satellite' }, terrain: { mapType: 'terrain', layerTypes: ['layerRoadmap'] } }
+const sessions = {} // map type -> { token, exp (ms) }
+export async function tileSession({ fetchFn = fetch, type = 'roadmap' } = {}) {
+  const sess = sessions[type]
   if (sess && sess.exp - Date.now() > 300e3) return sess.token
   spend('session')
-  const r = await fetchFn(`${API}/v1/createSession?key=${encodeURIComponent(key())}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ mapType: 'roadmap', language: 'en-US', region: 'ID' }), signal: AbortSignal.timeout(10000) })
+  const r = await fetchFn(`${API}/v1/createSession?key=${encodeURIComponent(key())}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...(TYPES[type] || TYPES.roadmap), language: 'en-US', region: 'ID' }), signal: AbortSignal.timeout(10000) })
   if (!r.ok) throw Object.assign(new Error('google createSession ' + r.status), { status: 502 })
   const j = await r.json(); if (!j.session) throw Object.assign(new Error('google createSession: no session'), { status: 502 })
-  sess = { token: j.session, exp: (Number(j.expiry) || Date.now() / 1000 + 3600) * 1000 }
-  return sess.token
+  sessions[type] = { token: j.session, exp: (Number(j.expiry) || Date.now() / 1000 + 3600) * 1000 }
+  return j.session
 }
-export const resetSession = () => { sess = null }
+export const resetSession = () => { for (const k of Object.keys(sessions)) delete sessions[k] }
 
 const intIn = (v, lo, hi) => { const n = Number(v); return Number.isInteger(n) && n >= lo && n <= hi ? n : null }
 // returns { status, type, body (Buffer) }; z/x/y are validated so the query cannot be bent into another upstream path
@@ -33,8 +36,9 @@ export async function tile(q, { fetchFn = fetch } = {}) {
   if (!configured()) throw Object.assign(new Error('GOOGLE_MAPS_API_KEY not set'), { status: 503 })
   const z = intIn(q.get('z'), 0, 21); if (z == null) throw Object.assign(new Error('bad z'), { status: 400 })
   const x = intIn(q.get('x'), 0, 2 ** z - 1), y = intIn(q.get('y'), 0, 2 ** z - 1); if (x == null || y == null) throw Object.assign(new Error('bad x/y'), { status: 400 })
+  const type = Object.hasOwn(TYPES, q.get('t')) ? q.get('t') : 'roadmap'
   for (let attempt = 0; attempt < 2; attempt++) {
-    const token = await tileSession({ fetchFn }); spend('tile')
+    const token = await tileSession({ fetchFn, type }); spend('tile')
     const r = await fetchFn(`${API}/v1/2dtiles/${z}/${x}/${y}?session=${encodeURIComponent(token)}&key=${encodeURIComponent(key())}`, { signal: AbortSignal.timeout(10000) })
     if (r.status === 400 || r.status === 403) { if (attempt === 0) { resetSession(); continue } }
     if (!r.ok) throw Object.assign(new Error('google tile ' + r.status), { status: 502 })
@@ -56,6 +60,13 @@ export async function probe({ lat = -7.6, lon = 110.2, fetchFn = fetch } = {}) {
   await call('weather_hours', `https://weather.googleapis.com/v1/forecast/hours:lookup?key=${k}&location.latitude=${la}&location.longitude=${lo}&hours=6`)
   await call('air_current', `https://airquality.googleapis.com/v1/currentConditions:lookup?key=${k}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ location: { latitude: la, longitude: lo }, extraComputations: ['LOCAL_AQI', 'DOMINANT_POLLUTANT_CONCENTRATION'] }) })
   await call('elevation', `https://maps.googleapis.com/maps/api/elevation/json?locations=${la},${lo}&key=${k}`)
+  await call('geocode', `https://maps.googleapis.com/maps/api/geocode/json?latlng=${la},${lo}&key=${k}`)
+  await call('timezone', `https://maps.googleapis.com/maps/api/timezone/json?location=${la},${lo}&timestamp=${Math.floor(Date.now() / 1000)}&key=${k}`)
+  await call('air_forecast', `https://airquality.googleapis.com/v1/forecast:lookup?key=${k}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ location: { latitude: la, longitude: lo }, period: { startTime: new Date(Math.floor(Date.now() / 3600e3) * 3600e3).toISOString(), endTime: new Date(Math.floor(Date.now() / 3600e3) * 3600e3 + 6 * 3600e3).toISOString() } }) })
+  await call('air_history', `https://airquality.googleapis.com/v1/history:lookup?key=${k}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ location: { latitude: la, longitude: lo }, hours: 3 }) })
+  await call('roads', `https://roads.googleapis.com/v1/snapToRoads?path=${la},${lo}|${la + 0.001},${lo + 0.001}&interpolate=true&key=${k}`)
+  await call('places', 'https://places.googleapis.com/v1/places:searchNearby', { method: 'POST', headers: { 'content-type': 'application/json', 'X-Goog-Api-Key': key(), 'X-Goog-FieldMask': 'places.id,places.displayName' }, body: JSON.stringify({ maxResultCount: 1, locationRestriction: { circle: { center: { latitude: la, longitude: lo }, radius: 300 } } }) })
+  await call('routes', 'https://routes.googleapis.com/directions/v2:computeRoutes', { method: 'POST', headers: { 'content-type': 'application/json', 'X-Goog-Api-Key': key(), 'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters' }, body: JSON.stringify({ origin: { location: { latLng: { latitude: la, longitude: lo } } }, destination: { location: { latLng: { latitude: la + 0.02, longitude: lo + 0.02 } } }, travelMode: 'DRIVE' }) })
   return out
 }
 

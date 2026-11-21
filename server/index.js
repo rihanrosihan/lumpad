@@ -184,9 +184,38 @@ const routes = {
     if (lat == null || lon == null) { const r = idb.prepare('SELECT lat1, lon1 FROM fit_session WHERE lat1 IS NOT NULL ORDER BY date DESC, start_ms DESC LIMIT 1').get(); if (!r) return { available: false, reason: 'no GPS run yet' }; lat = r.lat1; lon = r.lon1 }
     try { return await G.conditions(lat, lon) } catch (e) { if (e.status === 400) throw e; return { available: false, reason: e.message } }
   },
+  // ---- Google Maps Platform, beyond tiles and current conditions (server/google_geo.js). Coarse ones send a 0.1° cell; route ones need GOOGLE_ROUTE_DATA=1.
+  'GET /api/geo/capabilities': async () => { const G = await import('./google.js'), N = await import('./google_geo.js'); return { configured: G.configured(), route_data: N.routeAllowed() } },
+  'GET /api/geo/place': async (q) => (await import('./google_geo.js')).placeName(q.get('lat'), q.get('lon')),
+  'GET /api/geo/timezone': async (q) => (await import('./google_geo.js')).timeZoneAt(q.get('lat'), q.get('lon'), q.get('ts') ? Number(q.get('ts')) : undefined),
+  'GET /api/env/window': async (q) => { const [la, lo] = await hereCell(q); return (await import('./google_geo.js')).runWindow(la, lo) },
+  'GET /api/env/airforecast': async (q) => { const [la, lo] = await hereCell(q); return (await import('./google_geo.js')).airForecast(la, lo) },
+  'GET /api/env/airhistory': async (q) => { const [la, lo] = await hereCell(q); return (await import('./google_geo.js')).airHistory(la, lo, Number(q.get('hours')) || 24) },
+  'GET /api/geo/elevation': async (q) => (await import('./google_geo.js')).elevationProfile(await routeOf(q.get('id'))),
+  'GET /api/geo/snap': async (q) => (await import('./google_geo.js')).snapToRoads(await routeOf(q.get('id'))),
+  'GET /api/geo/places': async (q) => (await import('./google_geo.js')).placesAlong(await routeOf(q.get('id')), q.get('kind') || 'water'),
+  'GET /api/geo/route': async (q) => (await import('./google_geo.js')).travelTime([+q.get('olat'), +q.get('olon')], [+q.get('dlat'), +q.get('dlon')], q.get('depart') || undefined),
+  'GET /api/map/static': async (q, req, res) => { const t = await (await import('./google_geo.js')).staticRouteMap(await routeOf(q.get('id'))); res.writeHead(200, { 'content-type': t.type, 'cache-control': 'private, max-age=86400', 'x-content-type-options': 'nosniff' }); res.end(t.body); return null },
+  'GET /api/geo/streetview': async (q, req, res) => { const t = await (await import('./google_geo.js')).streetView(+q.get('lat'), +q.get('lon'), Number(q.get('heading')) || 0); res.writeHead(200, { 'content-type': t.type, 'cache-control': 'private, max-age=86400', 'x-content-type-options': 'nosniff' }); res.end(t.body); return null },
   'GET /api/google/probe': async () => { const G = await import('./google.js'); if (!G.configured()) return { configured: false }; return G.probe() },
   'GET /api/v2/sub4': async () => { try { const r = await fetch('http://127.0.0.1:8788/api/v2/sub4'); if (r.ok) return await r.json() } catch {} return { ok: false, offline: true } },
   'GET /api/v2/decisions': async (q) => { try { const qs = q.toString(); const r = await fetch('http://127.0.0.1:8788/api/v2/decisions' + (qs ? '?' + qs : '')); if (r.ok) return await r.json() } catch {} return { items: [], offline: true } },
+}
+
+// lat/lon from the query, else the place of the last GPS run (rounded later to 0.1° by the callers)
+async function hereCell(q) {
+  if (q.get('lat') != null && q.get('lon') != null) return [Number(q.get('lat')), Number(q.get('lon'))]
+  const r = idb.prepare('SELECT lat1, lon1 FROM fit_session WHERE lat1 IS NOT NULL ORDER BY date DESC, start_ms DESC LIMIT 1').get()
+  if (!r) throw Object.assign(new Error('no GPS run yet'), { status: 404 })
+  return [r.lat1, r.lon1]
+}
+// the real route (lat/lon points) of one activity from its FIT file
+async function routeOf(id) {
+  const key = String(id || '').replace(/^coros:/, ''); if (!key) throw Object.assign(new Error('id required'), { status: 400 })
+  const s = idb.prepare('SELECT label_id FROM fit_session WHERE label_id=? OR activity_id=?').get(key, id), label = s?.label_id || key
+  const row = (await import('./coros/archive.js')).adb.prepare('SELECT path FROM fit_files WHERE label_id=?').get(label); if (!row) throw Object.assign(new Error('no FIT file for this activity'), { status: 404 })
+  const S = await import('./intel/stream.js'), file = S.fitPath(row.path); if (!fs.existsSync(file)) throw Object.assign(new Error('FIT file missing'), { status: 404 })
+  const route = (await S.streamFor(file)).route; if (!route || route.length < 2) throw Object.assign(new Error('this activity has no GPS route'), { status: 404 }); return route
 }
 
 http.createServer(async (req, res) => {
