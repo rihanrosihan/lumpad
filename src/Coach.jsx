@@ -18,7 +18,18 @@ const parseRow = (line) => line.trim().replace(/^\|/, '').replace(/\|$/, '').spl
 const isTableSep = (line) => /^\s*\|?(?:\s*:?-+:?\s*\|)+\s*:?-+:?\s*\|?\s*$/.test(line)
 
 export function Md({ text }) {
-  const blocks = cleanId(text).split(/\n{2,}/)
+  const kind = (l) => (/^#{1,3} /.test(l) ? 'h' : /^\s*[-*] /.test(l) ? 'u' : /^\s*\d+\.\s+/.test(l) ? 'o' : /^\s*\|/.test(l) ? 't' : 'p')
+  const blocks = []
+  for (const chunk of cleanId(text).split(/\n{2,}/)) { // also split where the line type changes (heading / list / table / text)
+    let cur = [], k = null
+    for (const l of chunk.split('\n')) {
+      if (!l.trim()) continue
+      const lk = kind(l)
+      if (cur.length && (lk !== k || lk === 'h')) { blocks.push(cur.join('\n')); cur = [] }
+      cur.push(l); k = lk
+    }
+    if (cur.length) blocks.push(cur.join('\n'))
+  }
   return <div className="md">{blocks.map((b, i) => {
     const lines = b.split('\n').filter((l) => l.trim().length > 0)
     if (!lines.length) return null
