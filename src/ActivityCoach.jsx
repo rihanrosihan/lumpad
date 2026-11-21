@@ -14,7 +14,7 @@ export default function ActivityCoach({ id, label }) {
   const run = () => { setBusy(true); setErr(''); post('/api/coach/run', { intent: 'session_review', question: q, activity_id: id }).then((r) => { setFresh(r); setTick((t) => t + 1) }).catch((e) => setErr(e.message)).finally(() => setBusy(false)) }
   if (p) {
     const upToDate = fresh ? true : S ? S.up_to_date : null, when = fresh?.saved_at || hit?.created_at
-    const clean = (x) => String(x || '').replace(/\bbelum ditarik\b/gi, 'not yet extracted'), sum = clean(p.summary), short = sum.length > 300 ? sum.slice(0, 297).replace(/\s+\S*$/, '') + '…' : sum
+    const clean = (x) => String(x || '').replace(/\bbelum ditarik\b/gi, 'not yet extracted'), sum = clean(p.summary), short = sum.length > 280 ? sum.slice(0, 277).replace(/\s+\S*$/, '') + '…' : sum
     const recs = (p.recommendations || []).slice(0, 3), flags = (p.flags || []).slice(0, 2)
     return <>
       <div className="acoach-card">

@@ -15,7 +15,7 @@
   },
   "analysis_md": {
    "type": "string",
-   "maxLength": 6000
+   "maxLength": 3000
   },
   "recommendations": {
    "type": "array",
