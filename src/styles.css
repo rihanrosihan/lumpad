@@ -934,10 +934,11 @@ html, body { overflow-x: clip; }
 .scroll, .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
 .chip, .pill, .spill, .prov-b, .prov-badge { width: fit-content; max-width: 100%; white-space: nowrap; flex-shrink: 0; }
 
-/* 7-column fit-all floating mobile bottom dock */
+/* floating mobile bottom dock: five equal columns (Home, Readiness, Activity, Calendar, Coach) */
 nav.tabbar {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin-inline: auto;
   gap: 2px;
   left: 8px;
   right: 8px;
@@ -950,7 +951,7 @@ nav.tabbar {
   min-width: 0;
   padding: 0 2px;
   height: 52px;
-  font-size: .66rem;
+  font-size: .72rem;
   white-space: nowrap;
 }
 .tabbar .nb span {
