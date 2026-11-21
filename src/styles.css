@@ -1416,3 +1416,8 @@ button,.tabbar,.tabbar *,summary{-webkit-user-select:none;user-select:none}
 body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top);background:#4658D6;z-index:60;pointer-events:none}
 @media(prefers-color-scheme:dark){:root:not([data-theme=light]) body::before{background:var(--bg)}}
 :root[data-theme=dark] body::before{background:var(--bg)}
+
+/* iPhone home-screen app: the page runs under the status bar, so the top bar starts below it (its buttons were under the clock and could not be tapped) */
+.appbar { top: 0; padding-top: env(safe-area-inset-top); }
+.hub-tabs { top: calc(52px + env(safe-area-inset-top)); }
+@media (min-width: 900px) { .hub-tabs { top: calc(64px + env(safe-area-inset-top)); } }

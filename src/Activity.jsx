@@ -466,7 +466,7 @@ export default function Activity({ vdot, focus, go, settings }) {
         return <article key={aid} className="v61-act-card" onClick={() => go('activity', { id: aid })}>
           <div className="v61-act-top">
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {place?.label && <span className="v61-pill">{place.label}</span>}
+              {a.location && <span className="v61-pill">{a.location}</span>}
             {a.training_load != null && <span className="v61-pill cobalt">TL {a.training_load}</span>}
               <span className={`v61-pill ${tagPillCls(tag)}`}>{tag}</span>
               {a.temp_c != null && <span className="v61-pill">{Math.round(a.temp_c)}°C</span>}
