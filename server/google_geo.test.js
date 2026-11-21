@@ -55,3 +55,8 @@ test('air quality forecast and history tolerate missing fields', async () => {
   assert.equal(a.hours[0].local.name, 'ISPU'); assert.equal(a.hours[1].universal, null)
   const h = await N.airHistory(-7.6, 110.2, 5000, { fetchFn: json({}) }); assert.deepEqual(h.hours, [])
 })
+test('air forecast period starts in the future (Google rejects a start in the past)', async () => {
+  let body
+  await N.airForecast(-7.7, 110.3, { fetchFn: async (u, o) => { body = JSON.parse(o.body); return { ok: true, json: async () => ({ hourlyForecasts: [] }) } } })
+  assert.ok(new Date(body.period.startTime).getTime() > Date.now()); assert.equal(new Date(body.period.endTime) - new Date(body.period.startTime), 24 * 3600e3)
+})

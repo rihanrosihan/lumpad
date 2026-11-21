@@ -60,7 +60,7 @@ const idx = (list) => { const u = (list || []).find((i) => i.code === 'uaqi'), l
 export async function airForecast(lat, lon, o = {}) {
   needKey(); const la = cell(lat), lo = cell(lon); if (!okLatLon(la, lo)) throw fail('bad coordinates', 400)
   return cached(`aqf:${la},${lo}`, 60 * 60e3, async () => {
-    const now = new Date(), end = new Date(now.getTime() + 24 * 3600e3), hr = (d) => new Date(Math.floor(d.getTime() / 3600e3) * 3600e3).toISOString()
+    const next = new Date(Math.ceil((Date.now() + 60e3) / 3600e3) * 3600e3), now = next, end = new Date(next.getTime() + 24 * 3600e3), hr = (d) => d.toISOString() // a forecast period must start in the future (Google answers 400 otherwise)
     const j = await call('air_forecast', 'https://airquality.googleapis.com/v1/forecast:lookup?' + q({ key: apiKey() }), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ location: { latitude: la, longitude: lo }, period: { startTime: hr(now), endTime: hr(end) }, extraComputations: ['LOCAL_AQI'] }) }, o)
     return { cell: `${la.toFixed(1)},${lo.toFixed(1)}`, hours: (j.hourlyForecasts || []).map((h) => ({ at: h.dateTime || null, ...idx(h.indexes) })) }
   })
