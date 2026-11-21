@@ -2,7 +2,7 @@
 # Update: pull, build, restart. Run as root (or sudo) from anywhere.
 set -euo pipefail
 cd /opt/lumpad
-[ "${SKIP_PULL:-}" = 1 ] || git pull --ff-only   # as root: only root holds the deploy key (SKIP_PULL=1: autodeploy rollback)
+[ "${SKIP_PULL:-}" = 1 ] || git pull --ff-only origin main   # explicit remote+branch: a bare pull fails ("Cannot fast-forward to multiple branches") once the remote has other branches. As root: only root holds the deploy key (SKIP_PULL=1: autodeploy rollback)
 mkdir -p /opt/lumpad/server/data
 chown -R lumpad:lumpad /opt/lumpad
 sudo -u lumpad npm ci --no-audit --no-fund
