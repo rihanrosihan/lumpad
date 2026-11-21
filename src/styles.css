@@ -1355,3 +1355,23 @@ select.actv56-wtag-select[data-wtag="Race"] { background-color: color-mix(in srg
 .actv-sign.good { background: color-mix(in srgb, var(--green) 14%, transparent); color: var(--green); }
 .actv-sign.normal { background: color-mix(in srgb, var(--yellow) 16%, transparent); color: var(--yellow); }
 .actv-sign.high { background: color-mix(in srgb, var(--red) 13%, transparent); color: var(--red); }
+
+/* sub-sections: tab rows that may be wider than the phone scroll sideways instead of wrapping */
+.subtabs-scroll { overflow-x: auto; scrollbar-width: none; max-width: 100%; }
+.subtabs-scroll::-webkit-scrollbar { display: none; }
+.subtabs-scroll .segtabs { display: inline-flex; min-width: max-content; }
+.subtabs-scroll .segtab { white-space: nowrap; flex: 0 0 auto; }
+.ahub-tabs .segtabs { display: grid; grid-template-columns: repeat(2, 1fr); width: 100%; }
+.gearbtn { margin-left: 0; min-width: 44px; padding: 0; }
+.fit-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+@media (min-width: 900px) { .fit-grid { grid-template-columns: 1fr 1fr; } .fit-grid > :first-child { grid-column: 1 / -1; } }
+.fit-kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+@media (min-width: 600px) { .fit-kpis { grid-template-columns: repeat(3, 1fr); } }
+.fit-kpis > div { background: var(--surface2); border-radius: 12px; padding: 10px; min-width: 0; }
+.fit-kpis small { display: block; font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--muted); }
+.fit-kpis b { display: block; margin-top: 2px; font-family: var(--f-mono, monospace); font-size: 15px; }
+.fit-kpis em { font-style: normal; font-size: 11px; color: var(--muted); }
+.fit-cps { display: flex; flex-direction: column; gap: 6px; }
+.fit-cps > div { display: grid; grid-template-columns: 44px 1fr auto auto; gap: 8px; align-items: center; padding: 8px 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface2); font-size: 12.5px; }
+.fit-cps span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fit-cps small { color: var(--muted); }

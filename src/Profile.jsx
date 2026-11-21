@@ -154,7 +154,7 @@ export default function Profile({ vdot, results, settings, setSettings, go }) {
     <div className="card prof-cmd">
       <div className="prof-cmd-top">
         <div>
-          <h1>Profile &amp; System Hub</h1>
+          <h1>Settings &amp; Profile</h1>
           <p className="sub">Athlete baselines, VDOT zones, shoe vault, COROS/Strava connections, AI settings, and VPS status</p>
         </div>
         <div className="prof-chips">
@@ -162,10 +162,11 @@ export default function Profile({ vdot, results, settings, setSettings, go }) {
           <StatusPill tone="green">VDOT {vdot.v.toFixed(1)} → {TARGET.vdotNeeded}</StatusPill>
           <StatusPill tone="amber">A-Race D-{toRace > 0 ? toRace : 0}</StatusPill>
           {go && <button type="button" className="btn sm" onClick={() => go('biometrics')}>Biometrics &amp; Labs →</button>}
+          {go && <button type="button" className="btn sm" onClick={() => go('plan')}>Plan Sync →</button>}
         </div>
       </div>
       <div className="prof-cmd-bar">
-        <SegmentedTabs tabs={TABS} value={tab} onChange={setTab} label="Profile sections" />
+        <div className="subtabs-scroll"><SegmentedTabs tabs={TABS} value={tab} onChange={setTab} label="Profile sections" /></div>
       </div>
     </div>
 

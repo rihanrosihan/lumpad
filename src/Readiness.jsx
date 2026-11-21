@@ -6,6 +6,7 @@ import { BY_DATE, today, addDays, fmtLong, KIND } from './lib/calendar.js'
 import { PILLAR } from './lib/readiness.js'
 import { formZone, progressionBand } from './lib/load.js'
 import { mean, r1 } from './lib/stats.js'
+import Conditions from './Conditions.jsx'
 import { Card, Chip, Icon, Info, Evidence, SegmentedTabs, StatusPill } from './ui.jsx'
 import ScaleCard from './ScaleCard.jsx'
 import { useHealthDay, hrvLow } from './sync.js'
@@ -93,10 +94,11 @@ export default function Readiness({ vdot, settings, focus }) {
   const lastLr = M.acts.find((a) => a.sport_class === 'run' && (a.distance_m || 0) >= 16000)
 
   const PANEL_TABS = [
-    { id: 'all', label: 'All Panels' },
-    { id: 'load', label: 'Load, PMC & ACWR' },
-    { id: 'auto', label: 'Autonomic (HRV & RHR)' },
-    { id: 'sleep', label: 'Sleep & Muscle Map' },
+    { id: 'all', label: 'Overview' },
+    { id: 'conditions', label: 'Conditions Now' },
+    { id: 'load', label: 'Load · PMC · ACWR' },
+    { id: 'sleep', label: 'Sleep' },
+    { id: 'auto', label: 'HRV · Autonomic' },
   ]
 
   return <section className="screen">
@@ -121,20 +123,14 @@ export default function Readiness({ vdot, settings, focus }) {
       </div>
 
       <div className="prof-cmd-bar">
-        <SegmentedTabs tabs={PANEL_TABS} value={panel} onChange={setPanel} label="Readiness panels" />
+        <div className="subtabs-scroll"><SegmentedTabs tabs={PANEL_TABS} value={panel} onChange={setPanel} label="Readiness sections" /></div>
       </div>
     </div>
 
     {stuck && <div className={`gatemini g-${tier ? { prime: 'green', optimal: 'green', compromised: 'yellow', depleted: 'red' }[tier.id] : has ? g.level : 'none'}`}><span className="gdot" aria-hidden="true" /><span>{label}</span><small>{sess ? `${sess.label || KIND[sess.kind].label}${sess.km ? ' · ' + sess.km + ' km' : ''}` : ''}</small></div>}
 
-    {/* 2. Compact Pill Jump Bar */}
-    {panel === 'all' && <nav className="chipjump" aria-label="Jump to section">
-      {[['sec-check', '1-Tap Check-in'], ['sec-scaler', '72h Calendar Auto-Scaler'], ['sec-load', 'PMC & ACWR'], ['sec-auto', 'HRV & RHR'], ['sec-sleep', 'Sleep & Muscle Map']].map(([id, t]) => (
-        <button key={id} onClick={() => { const el = document.getElementById(id); el?.scrollIntoView({ behavior: 'smooth', block: 'start' }); el?.focus({ preventScroll: true }) }}>{t}</button>
-      ))}
-    </nav>}
+    {panel === 'conditions' && <Conditions />}
 
-    {/* 3. Dynamic Gate-to-Calendar 72h Auto-Scaler */}
     {panel === 'all' && date === T && <div id="sec-scaler" tabIndex={-1}><ScaleCard rd={rd} M={M} T={T} /></div>}
 
     {/* 4. Top Row (7 / 5): Morning Subjective & Mechanical Check-in + Readiness Score Breakdown */}
@@ -276,7 +272,7 @@ export default function Readiness({ vdot, settings, focus }) {
     </div>}
 
     {/* 5. 2-Column Telemetry Bento Grid (3 clean pairs of 2 cards) */}
-    {(panel === 'all' || panel === 'load') && <div id="sec-load" tabIndex={-1} className="rgrid">
+    {panel === 'load' && <div id="sec-load" tabIndex={-1} className="rgrid">
       <Card title="Performance Management Chart (PMC)" right={<div className="seg" role="group" aria-label="Range">{[[42, '6W'], [90, '3M']].map(([d, l]) => <button key={d} aria-pressed={range === d} className={range === d ? 'on' : ''} onClick={() => setRange(d)}>{l}</button>)}</div>}>
         <p className="muted" style={{ marginTop: 0, fontSize: '.78rem' }}>
           Fitness (CTL <Info k="CTL" /> <b>{cur?.ctl ?? '—'}</b>) · Fatigue (ATL <Info k="ATL" /> <b>{cur?.atl ?? '—'}</b>) · Form (TSB <Info k="TSB" /> <b>{sign(cur?.tsb)}</b>) · Monotony <Info k="Monotony" /> {M.mono?.monotony ?? '—'} · Strain {M.mono?.strain ?? '—'}
@@ -295,7 +291,7 @@ export default function Readiness({ vdot, settings, focus }) {
       </Card>
     </div>}
 
-    {(panel === 'all' || panel === 'auto') && <div id="sec-auto" tabIndex={-1} className="rgrid">
+    {panel === 'auto' && <div id="sec-auto" tabIndex={-1} className="rgrid">
       <Card title="Overnight HRV & Normal Band" right={<StatusPill tone={hv.flagTrend ? 'amber' : 'green'}>{hv.enough ? (hv.flagTrend ? 'Suppressed' : 'Optimal') : 'Building'}</StatusPill>}>
         <p className="muted" style={{ marginTop: 0, fontSize: '.78rem' }}>
           Last night: <b>{hv.today ?? '—'} ms</b> · 7d avg: <b>{hv.roll7 ?? '—'} ms</b> · 60d corridor: {hv.enough ? `${hv.lo}–${hv.hi} ms` : 'needs 14d'} · CV <Info k="CV" /> {hv.cv7 != null ? `${hv.cv7}%` : '—'}
@@ -315,7 +311,7 @@ export default function Readiness({ vdot, settings, focus }) {
       </Card>
     </div>}
 
-    {(panel === 'all' || panel === 'sleep') && <div id="sec-sleep" tabIndex={-1} className="rgrid">
+    {panel === 'sleep' && <div id="sec-sleep" tabIndex={-1} className="rgrid">
       <Card title={`Sleep Architecture & 14-Day Debt (${sl.debt_min != null ? hm(Math.abs(sl.debt_min)) : '—'})`} right={<StatusPill tone="cobalt">{sl.enough ? `${sign(Math.round(sl.vs_need_min))}m vs need` : 'No sleep data'}</StatusPill>}>
         <p className="muted" style={{ marginTop: 0, fontSize: '.78rem' }}>
           Asleep <b>{sl.enough ? hm(sl.asleep_min) : '—'}</b> · Efficiency <b>{sl.enough ? sl.eff + '%' : '—'}</b> · Deep+REM <b>{sl.enough ? (sl.deep + sl.rem) + '%' : '—'}</b> · COROS score {sl.score ?? '—'}

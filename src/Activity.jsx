@@ -8,7 +8,7 @@ import { BY_DATE, today, addDays, fmtLong, MONTHS } from './lib/calendar.js'
 import { efOf, decoupling, cumulativeKm } from './lib/analysis.js'
 import { mean } from './lib/stats.js'
 import { useStore } from './store.js'
-import { Icon } from './ui.jsx'
+import { Icon, Info } from './ui.jsx'
 import { useApi, fmtDur, fmtPaceS } from './api.js'
 import { cfgOf, hrRange, paceRange, zoneSeconds, ZONES } from './lib/zones.js'
 import { FitPanel } from './FitPanel.jsx'
@@ -709,7 +709,7 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
               <div className="v61-dyn-tile"><small>Vert Ratio</small><b>{dyn('vratio_pct') != null ? `${dyn('vratio_pct')}%` : '—'}</b></div>
               <div className="v61-dyn-tile"><small>Avg Power</small><b>{dyn('power') != null ? `${Math.round(dyn('power'))} W` : '—'}</b></div>
               <div className="v61-dyn-tile"><small>Stride</small><b>{dyn('stride_m') != null ? `${dyn('stride_m')} m` : '—'}</b></div>
-              <div className="v61-dyn-tile"><small>EF / Pa:Hr</small><b>{ef ?? '—'}{dc ? ` / ${dc.pct}%` : ''}</b></div>
+              <div className="v61-dyn-tile"><small>EF <Info k="EF" /> / Pa:Hr</small><b>{ef ?? '—'}{dc ? ` / ${dc.pct}%` : ''}</b></div>
             </div>
           </div>
 
@@ -862,7 +862,7 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
         })
         return <div className="v61-drift-grid">
           <div className="v61-card">
-            <div className="v61-card-head"><div><h2 className="v61-card-title">Grade Adjusted Pace (GAP)</h2><p className="v61-card-sub">Tap or hover any KM for exact split</p></div></div>
+            <div className="v61-card-head"><div><h2 className="v61-card-title">Grade Adjusted Pace (GAP) <Info k="GAP" /></h2><p className="v61-card-sub">Tap or hover any KM for exact split</p></div></div>
             <div className="v61-chart-kpis">{gapKpi || <><span>Avg GAP <b>{a.adjusted_pace_s_km ? fmtPaceS(a.adjusted_pace_s_km) + '/km' : fmtPaceS(a.avg_pace_s_km) + '/km'}</b></span><span>Fastest <b>{fmtPaceS(Math.min(...paceVals))}/km</b></span></>}</div>
             <div className="v61-chart-box">
               <ChartCanvas deps={[id, laps.length]} build={(el) => new Chart(el, {

@@ -458,11 +458,11 @@ function MemoryQueue({ pending, onAct }) {
   </>
 }
 
-const SECTIONS = [['cs-ask', 'Ask & Twin'], ['cs-mc', 'Monte Carlo & RAG'], ['cs-kg', 'Knowledge Graph'], ['cs-lag', 'Lag Explorer'], ['cs-mem', 'Memory Queue'], ['cs-mat', 'Matrices & Episodes'], ['cs-dur', 'Durability & Shoes']]
+const SECTIONS = [{ id: 'ask', label: 'Ask & Twin' }, { id: 'kg', label: 'Knowledge Graph' }, { id: 'mc', label: 'Monte Carlo & RAG' }, { id: 'lag', label: 'Lag Explorer' }, { id: 'mem', label: 'Memory Queue' }, { id: 'mat', label: 'Matrices & Episodes' }, { id: 'dur', label: 'Durability & Shoes' }]
 const jumpTo = (id) => () => { const el = document.getElementById(id); el?.scrollIntoView({ behavior: 'smooth', block: 'start' }); el?.focus({ preventScroll: true }) }
 
 export default function Coach({ go, focus }) {
-  const [tick, setTick] = useState(0)
+  const [tick, setTick] = useState(0), [sec, setSec] = useState(focus?.section && SECTIONS.some((x) => x.id === focus.section) ? focus.section : 'ask')
   const [approvingAll, setApprovingAll] = useState(false)
   const st = useApi('/api/intel/status')
   const twin = useApi('/api/twin')
@@ -507,44 +507,35 @@ export default function Coach({ go, focus }) {
           </button>}
         </div>
       </div>
-      <nav className="chipjump prof-cmd-bar" style={{ margin: 0 }} aria-label="Jump to section">
-        {SECTIONS.map(([id, l]) => <button key={id} onClick={jumpTo(id)}>{l}</button>)}
-      </nav>
+      <div className="prof-cmd-bar subtabs-scroll"><SegmentedTabs tabs={SECTIONS} value={sec} onChange={setSec} label="Coach sections" /></div>
     </div>
 
-    {/* Row 1: Ask the Coach (left 7) + 4 Digital Twin Pillars (right 5) */}
-    <div id="cs-ask" tabIndex={-1} className="bio-split-75">
+    {sec === 'ask' && <div id="cs-ask" tabIndex={-1} className="bio-split-75">
       <Ask st={s} initIntent={focus?.intent} />
       <TwinPillars twin={twin.data} />
-    </div>
+    </div>}
 
-    {/* Row 2: Versioned Twin Monte Carlo / JSON (left) + Multi-Lag SQL & Hybrid RAG Status (right) */}
-    <div id="cs-mc" tabIndex={-1} className="rgrid">
+    {sec === 'kg' && <div id="cs-kg" tabIndex={-1}><KnowledgeGraphPanel twin={twin.data} matrices={mat.data} status={s} /></div>}
+
+    {sec === 'mc' && <div id="cs-mc" tabIndex={-1} className="rgrid">
       <div><Sub4AdaptiveCard twin={twin.data} /><TwinMonteCarlo twin={twin.data} /><TwinHistory /></div>
       <RagStatusAndHistory st={s} />
-    </div>
+    </div>}
 
-    {/* Row 3: Interactive Athlete Coaching Knowledge Graph */}
-    <div id="cs-kg" tabIndex={-1}><KnowledgeGraphPanel twin={twin.data} matrices={mat.data} status={s} /></div>
+    {sec === 'lag' && <div id="cs-lag" tabIndex={-1}><LagExplorer /></div>}
 
-    {/* Row 4: 1-to-28-Day Lagged Cross-Correlation Explorer */}
-    <div id="cs-lag" tabIndex={-1}><LagExplorer /></div>
+    {sec === 'mem' && <div id="cs-mem" tabIndex={-1}><MemoryQueue pending={pending} onAct={act} /></div>}
 
-    {/* Row 5: Athlete Memory & Hypothesis Confirmation Queue */}
-    <div id="cs-mem" tabIndex={-1}><MemoryQueue pending={pending} onAct={act} /></div>
-
-    {/* Row 6: Tabbed Physiological Matrices (left) + Semantic Episode Cards (right) */}
-    <div id="cs-mat" tabIndex={-1} className="rgrid">
+    {sec === 'mat' && <div id="cs-mat" tabIndex={-1} className="rgrid">
       <CorrelationMatrices data={mat.data} />
       <EpisodeCards />
-    </div>
+    </div>}
 
-    {/* Row 7: Durability Decay + Twin Snapshot + Shoe OLS */}
-    <div id="cs-dur" tabIndex={-1}>
+    {sec === 'dur' && <div id="cs-dur" tabIndex={-1}>
       <Durability twin={twin.data} />
       <TwinSnapshot twin={twin.data} go={go} />
       <ShoeDegradation />
-    </div>
+    </div>}
   </div>
 }
 

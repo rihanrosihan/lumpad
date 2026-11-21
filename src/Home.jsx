@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import SessionBrief from './SessionBrief.jsx'
-import Conditions from './Conditions.jsx'
 import { useStore } from './store.js'
 import { paces, raceTime, fmtTime, fmtPace } from './lib/vdot.js'
 import { evaluate, EMPTY_DAY, hasInput } from './lib/gate.js'
@@ -65,12 +64,7 @@ export default function Home({ vdot, settings, results, go, M: Mprop }) {
       <h1>{headline}</h1>
       {heavy && <p className="h4-warn" role="note"><Chip tone="yellow">High load</Chip> TSB {sign(M.cur.tsb)}{acwr != null ? ` · ACWR ${acwr}` : ''} — keep hard sessions out until it comes down{recent ? ` (${recent.name || 'long run'}, ${(recent.distance_m / 1000).toFixed(1)} km on ${fmtShort(recent.date)})` : ''}.</p>}
       <p className="h4-sum">{rd.score != null ? <><b>{tier.label}</b> — {tier.advice} </> : null}<span>{summary}</span></p>
-      <div className="h4-tiles">
-        {near && <button className="cd g" onClick={() => go('race')} aria-label={`Nearest race ${near.label}, ${diffDays(near.date, T)} days`}><small>NEAREST RACE ({(RACE_BY_DATE[near.date]?.cls || 'C')}-RACE)</small><b>D-{diffDays(near.date, T)}</b><span>{near.label.split(' · ')[0]} · {fmtShort(near.date)}</span></button>}
-        {aRace && toRace > 0 && <button className="cd r" onClick={() => go('race')} aria-label={`Primary A-Race JRF Sub-4, ${toRace} days`}><small>PRIMARY GOAL (A-RACE)</small><b>D-{toRace}</b><span>JRF Sub-4 · {fmtShort(aRace)}</span></button>}
-        {nextCp && <button className="cd n" onClick={() => go('calendar', { view: 'cp', id: nextCp.id })}><small>NEXT CHECKPOINT ({diffDays(nextCp.date, T)}D)</small><span><b>CP{nextCp.id} · {nextCp.name}</b> <Icon n="chev" size={16} /></span></button>}
-        <button className="cd h" onClick={() => go('biometrics')} aria-label="Open Biometrics & Labs"><small>BIOMETRICS &amp; LABS</small><span><b>Body Comp · BP · Glu</b> <Icon n="chev" size={16} /></span></button>
-      </div>
+
     </div>
 
     <FuelCard last={last} today={T} />
@@ -91,7 +85,6 @@ export default function Home({ vdot, settings, results, go, M: Mprop }) {
             <div className="pillc"><small>Form (TSB)</small><b>{sign(M.cur?.tsb)}</b><em>{fz ? fz.label : 'none yet'}</em><em>CTL {M.cur?.ctl ?? '—'} · ATL {M.cur?.atl ?? '—'}</em></div>
           </div>
         </button>
-        <Conditions />
         {day && <Card className={`sess g-sess k-${day.kind}`}>
       <div className="sess-top"><Chip kind={day.kind}>{KIND[day.kind].label}</Chip>{day.scaled && <Chip tone="yellow">auto-scaled · was {day.plannedLabel}{day.plannedKm ? ` ${day.plannedKm} km` : ''}</Chip>}<span className="muted">{wk?.id} · {PHASE_NAME[day.phase] || day.phase}</span></div>
       <h2 className="sess-title">{day.label || KIND[day.kind].label}</h2>

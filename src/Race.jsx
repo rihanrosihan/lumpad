@@ -149,9 +149,9 @@ export default function Race({ settings, go }) {
   })
 
   const TABS = [
-    { id: 'upcoming', label: 'Upcoming', badge: upcoming.length, tone: 'green' },
-    { id: 'plan', label: 'Plan', badge: planned.length, tone: 'red' },
-    { id: 'history', label: 'History', badge: 20 },
+    { id: 'upcoming', label: 'Upcoming Race', badge: upcoming.length, tone: 'green' },
+    { id: 'plan', label: 'Planned Race', badge: planned.length, tone: 'red' },
+    { id: 'history', label: 'Past Race', badge: 20 },
   ]
 
   return <>

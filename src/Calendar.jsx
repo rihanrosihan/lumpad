@@ -5,7 +5,7 @@ import { Chip, Icon, SegmentedTabs, StatusPill } from './ui.jsx'
 import { useApi } from './api.js'
 import Checkpoints from './Checkpoints.jsx'
 import Race from './Race.jsx'
-import { HubHeader } from './SeasonHub.jsx'
+import { HubHeader, PlanView } from './SeasonHub.jsx'
 import { Gantt, Combo } from './charts2.jsx'
 import { effectiveDay } from './lib/scaler.js'
 import { compliance } from './lib/analysis.js'
@@ -158,11 +158,11 @@ export default function Calendar({ view = 'month', vdot, results, setResults, fo
       </div>
 
       <div className="prof-cmd-bar">
-        <SegmentedTabs tabs={[{ id: 'month', label: 'Month Grid' }, { id: 'week', label: 'Week Detail' }]} value={mode} onChange={setMode} label="Calendar view" />
+        <SegmentedTabs tabs={[{ id: 'month', label: 'Month Grid' }, { id: 'week', label: 'Week Detail' }, { id: 'checklist', label: 'Week Checklist' }]} value={mode} onChange={setMode} label="Calendar view" />
       </div>
     </div>
 
-    {mode === 'week'
+    {mode === 'checklist' ? <PlanView vdot={vdot} settings={settings} go={go} /> : mode === 'week'
       ? <WeekView T={T} settings={settings} onOpen={(d) => go('calendar', d)} />
       : <MonthView vdot={vdot} focus={typeof focus === 'string' ? focus : null} raceDate={settings.raceDate} onOpen={(d) => go('calendar', d)} />}
   </section>

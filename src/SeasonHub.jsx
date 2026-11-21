@@ -8,8 +8,9 @@ import { WorkoutLine, metaFor } from './Workout.jsx'
 import { cfgOf, fmtDur } from './lib/zones.js'
 
 // Season Hub: one header and one tab row (Calendar | Plan | Checkpoints | Races) over the existing pages. The tab is the route, so links and the back button keep working.
-const TABS = [{ id: 'calendar', label: 'Calendar' }, { id: 'season', label: 'Plan' }, { id: 'checkpoint', label: 'Checkpoints' }, { id: 'race', label: 'Races' }]
+const TABS = [{ id: 'calendar', label: 'Calendar Plan' }, { id: 'checkpoint', label: 'Checkpoints' }, { id: 'race', label: 'Race' }]
 
+// Week Checklist is a mode of Calendar Plan (Calendar.jsx), not a tab of its own
 export function HubHeader({ active, go }) {
   const T = today(), w = weekOf(T), phase = w ? (PHASE_NAME[w.phase] || w.phase) : 'Off plan'
   return <div className="hub-head">
