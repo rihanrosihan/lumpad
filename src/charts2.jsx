@@ -21,7 +21,7 @@ export function Ring({ value, max, label, size = 92 }) {
   const r = 36, f = max ? Math.min(1, value / max) : 0, C = 2 * Math.PI * r
   return <svg viewBox="0 0 92 92" width={size} height={size} role="img" aria-label={label}>
     <circle cx="46" cy="46" r={r} className="g-track" /><circle cx="46" cy="46" r={r} className="g-val ring" strokeDasharray={`${C * f} ${C}`} transform="rotate(-90 46 46)" />
-    <text x="46" y="50" textAnchor="middle" className="g-num sm">{Math.round(f * 100)}%</text>
+    <text x="46" y="51" textAnchor="middle" className="g-num sm" style={{ fontSize: Math.round(f * 100) >= 100 ? 17 : 21 }}>{Math.round(f * 100)}%</text>
   </svg>
 }
 // 100 % stacked bar with an optional benchmark marker (70/30 intensity, sleep stages)

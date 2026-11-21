@@ -107,13 +107,13 @@ export default function Home({ vdot, settings, results, go, M: Mprop }) {
           <WorkoutLine day={first} />
           {mainTarget(first, cfg) && <p className="wtarget"><b>{mainTarget(first, cfg)}</b></p>}
           <p className="muted">Week 1: {Math.round(w1.km * 10) / 10} km · {w1.runs} runs · {w1.tl} TL. Until then: easy runs only (≤ 6 km, HR zone 1–2, under {hrRange(2, cfg)[1]} bpm) or rest — arrive fresh.</p>
-          <div className="planb-row"><button className="planb-btn" onClick={() => go('calendar', PLAN_START)}>Open the first session</button><button className="planb-btn" onClick={() => go('calendar', { view: 'cp' })}>Checkpoint roadmap</button></div>
+          <div className="planb-row"><button className="planb-btn" onClick={() => go('calendar', PLAN_START)}>First session</button><button className="planb-btn" onClick={() => go('calendar', { view: 'cp' })}>Checkpoints</button></div>
         </div>}
         {!day && !pre && <div className="planb">
           <span className="planb-chip">Outside the plan</span>
           <h2>No session scheduled</h2>
           <p>Check the calendar for the next session.</p>
-          <button className="planb-btn" onClick={() => go('calendar', { view: 'cp' })}>Checkpoint roadmap</button>
+          <button className="planb-btn" onClick={() => go('calendar', { view: 'cp' })}>Checkpoints</button>
         </div>}
       </div>
       <div className="hr">
