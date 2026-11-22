@@ -52,6 +52,14 @@ export function guard(intent, { month = monthOf() } = {}) {
 }
 export const guardStatus = () => ({ month: monthOf(), cap_cny: capCny(), spend_cny: monthSpend(), level: guard('daily_brief').level === 'paused' ? 'paused' : guard('weekly_review').level })
 
+// Cost from the call's own token usage when the owner has set the prices (CNY per million tokens: DEEPSEEK_PRICE_MISS/HIT/OUT_CNY_PER_MTOK). Never guessed:
+// without prices it stays null and the balance-drop figure is used. The balance snapshots remain as the daily reconciliation.
+export function costFromUsage(u, env = process.env) {
+  const miss = Number(env.DEEPSEEK_PRICE_MISS_CNY_PER_MTOK), hit = Number(env.DEEPSEEK_PRICE_HIT_CNY_PER_MTOK), out = Number(env.DEEPSEEK_PRICE_OUT_CNY_PER_MTOK)
+  if (!u || !(miss > 0) || !(out > 0)) return null
+  const pt = u.prompt_tokens || 0, h = u.prompt_cache_hit_tokens ?? u.prompt_tokens_details?.cached_tokens ?? 0, m = u.prompt_cache_miss_tokens ?? Math.max(0, pt - h)
+  return +((m * miss + h * (hit > 0 ? hit : miss) + (u.completion_tokens || 0) * out) / 1e6).toFixed(4)
+}
 const stripFence = (t) => String(t).trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '')
 // DeepSeek counts the model's hidden reasoning inside max_tokens, so a 'high' effort run can spend the whole budget thinking and return
 // finish_reason 'length' with no answer. Budget by effort, and if it still runs out retry once at low effort (costs add up).
@@ -80,5 +88,5 @@ async function completeOnce({ system, user, messages, effort = 'high', maxTokens
   const text = j.choices?.[0]?.message?.content ?? '', finish = j.choices?.[0]?.finish_reason
   if (finish === 'length') throw Object.assign(new Error('response truncated (max_tokens) — the model used its whole budget before finishing'), { status: 502, text, truncated: true, cost_cny: pre != null && post != null ? +Math.max(0, pre - post).toFixed(4) : null })
   let json = null; try { json = JSON.parse(stripFence(text)) } catch {}
-  return { text, json, usage: j.usage || null, model: model.id, model_name: model.name, cost_cny: pre != null && post != null ? +Math.max(0, pre - post).toFixed(4) : null, effort }
+  return { text, json, usage: j.usage || null, model: model.id, model_name: model.name, cost_cny: costFromUsage(j.usage) ?? (pre != null && post != null ? +Math.max(0, pre - post).toFixed(4) : null), effort }
 }

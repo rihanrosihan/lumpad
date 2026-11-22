@@ -585,6 +585,25 @@ func (r *PGRetriever) Retrieve(ctx context.Context, in RunInput) (Retrieved, err
 			if gh, gerr := graph.ExpandContext(ctx, r.Graph, intent, dq.Topics, focus); gerr == nil {
 				_ = epiByLabels(gh.SessionLabels, "graph multi-hop")
 				graphMemIDs = gh.MemoryIDs
+				// graph-only memories: hydrate them from PostgreSQL (active only) so the graph can ADD items, not just re-rank the text matches
+				var missing []int64
+				for _, id := range graphMemIDs {
+					if _, ok := poolMap[id]; !ok {
+						missing = append(missing, id)
+					}
+				}
+				if len(missing) > 0 {
+					if rows, qerr := r.Pool.Query(ctx, `SELECT id, tier, COALESCE(kind,''), COALESCE(title,''), COALESCE(body,''), COALESCE(evidence_tag,''), valid_from FROM memory.item WHERE id = ANY($1) AND status='active'`, missing); qerr == nil {
+						for rows.Next() {
+							var it RetrievedItem
+							if rows.Scan(&it.ID, &it.Tier, &it.Kind, &it.Title, &it.Body, &it.Tag, &it.Date) == nil {
+								it.Why = "graph multi-hop"
+								poolMap[it.ID] = it
+							}
+						}
+						rows.Close()
+					}
+				}
 			}
 		}
 		fused := RRF([][]int64{semIDs, epiIDs, graphMemIDs}, 60)

@@ -31,6 +31,13 @@ main() {  # wrapped in a function so bash has read the whole script before git r
   git diff --quiet && git diff --cached --quiet || { log "ada perubahan lokal di $APP: auto-deploy berhenti (cek git status)"; exit 0; }
   log "kandidat ${cur:0:7} -> ${new:0:7}: $(git log -1 --format=%s "$new")"
 
+  # 0. optional signature gate (audit M11): when SIGNERS (an ssh allowed-signers file) exists, the candidate commit must be signed by one of those keys.
+  # Absent file = no gate, so enabling it is a deliberate step: ssh-keygen a signing key, add its public key to $SIGNERS, set git config gpg.format ssh + commit.gpgsign true.
+  local SIGNERS=${DEPLOY_SIGNERS:-/etc/lumpad-deploy-signers}
+  if [ -s "$SIGNERS" ] && ! git -c gpg.ssh.allowedSignersFile="$SIGNERS" verify-commit "$new" >/dev/null 2>&1; then
+    log "commit ${new:0:7} tidak bertanda tangan sah ($SIGNERS): TIDAK di-deploy"; echo "$new" >"$STATE/failed"; exit 1
+  fi
+
   # 1. verify in isolation
   local stage="$STATE/stage"; git worktree remove --force "$stage" 2>/dev/null; rm -rf "$stage"
   git worktree prune; git worktree add -q --detach "$stage" "$new" || { log "worktree gagal"; exit 1; }

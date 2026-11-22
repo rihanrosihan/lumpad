@@ -2,6 +2,7 @@ package graph
 
 import (
 	"context"
+	"os"
 	"time"
 )
 
@@ -93,7 +94,8 @@ func ExpandContext(ctx context.Context, aura *Client, intent string, topics []st
 	}
 
 	// 3. Pain / Gym 72h root-cause chain
-	if hasAny(topics, "strength_lower", "gct_fade", "stride_fade") {
+	// the pain chain only exists in the graph when the owner opted in to syncing health data (NEO4J_SYNC_HEALTH=1); otherwise this hop can never return rows
+	if os.Getenv("NEO4J_SYNC_HEALTH") == "1" && hasAny(topics, "strength_lower", "gct_fade", "stride_fade") {
 		res, err := aura.Query(c, `
 			MATCH (d1:Day)-[:NEXT_DAY*1..3]->(d2:Day)-[:LOGGED_PAIN]->(p:PainSite)
 			WHERE d1.strength_lower > 0

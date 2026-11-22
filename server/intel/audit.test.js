@@ -71,3 +71,17 @@ test('M13: stale candidates are archived, old prompts dropped, locked and recent
   assert.equal(mdb.prepare('SELECT status FROM memory WHERE id=?').get(id).status, 'archived')
   assert.equal(mdb.prepare("SELECT COUNT(*) n FROM memory WHERE locked=1 AND status='active'").get().n >= 10, true)
 })
+
+const L = await import('./llm.js'), CS = await import('./consistency.js'), { idb } = await import('./db.js')
+test('M5: cost from usage uses cached/miss/output prices; null when prices are not configured', () => {
+  const u = { prompt_tokens: 13137, prompt_cache_hit_tokens: 2176, completion_tokens: 987 }
+  assert.equal(L.costFromUsage(u, {}), null)
+  const env = { DEEPSEEK_PRICE_MISS_CNY_PER_MTOK: '1', DEEPSEEK_PRICE_HIT_CNY_PER_MTOK: '0.1', DEEPSEEK_PRICE_OUT_CNY_PER_MTOK: '2' }
+  assert.equal(L.costFromUsage(u, env), +((10961 * 1 + 2176 * 0.1 + 987 * 2) / 1e6).toFixed(4))
+})
+test('M9: the consistency job reports an orphan card and a session without a card', () => {
+  idb.prepare("INSERT INTO fit_session (label_id, date, parser_version, metrics, km, processed_at) VALUES ('S1','2026-11-01',1,'{}','[]','x')").run()
+  M.addMemory({ tier: 'episodic', kind: 'session', title: 'orphan', body: 'b', status: 'active', source: 'fit', source_ref: 'GONE', created_by: 'system' })
+  const r = CS.consistencyJob({}), inv = r.sample.map((x) => x.inv)
+  assert.ok(inv.includes('card_per_session') && inv.includes('orphan_card'))
+})

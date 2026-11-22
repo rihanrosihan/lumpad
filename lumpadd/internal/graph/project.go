@@ -289,7 +289,7 @@ func SyncAll(ctx context.Context, pool *pgxpool.Pool, aura *Client, redact func(
 		SELECT id, COALESCE(tier,''), COALESCE(kind,''), COALESCE(title,''), COALESCE(body,''),
 		       COALESCE(evidence_tag,''), COALESCE(status,''), COALESCE(locked,0), supersedes,
 		       valid_from, valid_to, COALESCE(source,''), COALESCE(source_ref,'')
-		FROM memory.item WHERE status IN ('active','candidate','proposal')`); err == nil {
+		FROM memory.item WHERE status = 'active' OR (tier = 'procedural' AND status = 'proposal')`); err == nil {
 		for rows.Next() {
 			var id, locked int64
 			var tier, kind, title, body, tag, status, src, ref string
@@ -335,6 +335,24 @@ func SyncAll(ctx context.Context, pool *pgxpool.Pool, aura *Client, redact func(
 		return st, fmt.Errorf("memories: %w", err)
 	}
 	st.Memories = len(memRows)
+	// prune: a memory or rule that is no longer active in PostgreSQL must not stay in the graph (graph hops could return retracted knowledge)
+	memIDs, ruleIDs := make([]int64, 0, len(memRows)), make([]int64, 0, len(ruleRows))
+	for _, r := range memRows {
+		if id, ok := r["id"].(int64); ok {
+			memIDs = append(memIDs, id)
+		}
+	}
+	for _, r := range ruleRows {
+		if id, ok := r["id"].(int64); ok {
+			ruleIDs = append(ruleIDs, id)
+		}
+	}
+	if _, err := aura.Query(ctx, `MATCH (m:Memory) WHERE NOT m.id IN $ids DETACH DELETE m`, map[string]any{"ids": memIDs}); err != nil {
+		return st, fmt.Errorf("prune memories: %w", err)
+	}
+	if _, err := aura.Query(ctx, `MATCH (r:Rule) WHERE NOT r.id IN $ids DETACH DELETE r`, map[string]any{"ids": ruleIDs}); err != nil {
+		return st, fmt.Errorf("prune rules: %w", err)
+	}
 
 	// 8. Decisions (coach.decision) — graceful no-op when empty
 	var decRows []map[string]any
@@ -454,6 +472,9 @@ func SyncAll(ctx context.Context, pool *pgxpool.Pool, aura *Client, redact func(
 			}
 			return d / math.Sqrt(na*nb)
 		}
+		if _, err := aura.Query(ctx, `MATCH ()-[r:SIMILAR_TO]->() DELETE r`, nil); err != nil {
+			return st, fmt.Errorf("similar_to reset: %w", err)
+		}
 		var simRows []map[string]any
 		for i := range sFeats {
 			type pair struct {
@@ -540,6 +561,9 @@ func SyncAll(ctx context.Context, pool *pgxpool.Pool, aura *Client, redact func(
 				tok map[string]bool
 			}{id, pol, toks})
 		}
+	}
+	if _, err := aura.Query(ctx, `MATCH ()-[r:CONTRADICTS]-() DELETE r`, nil); err != nil {
+		return st, fmt.Errorf("contradicts reset: %w", err)
 	}
 	var confRows []map[string]any
 	for i := 0; i < len(semMems); i++ {
