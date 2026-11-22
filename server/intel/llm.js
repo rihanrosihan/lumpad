@@ -90,3 +90,19 @@ async function completeOnce({ system, user, messages, effort = 'high', maxTokens
   let json = null; try { json = JSON.parse(stripFence(text)) } catch {}
   return { text, json, usage: j.usage || null, model: model.id, model_name: model.name, cost_cny: costFromUsage(j.usage) ?? (pre != null && post != null ? +Math.max(0, pre - post).toFixed(4) : null), effort }
 }
+
+// One chat turn with tools (OpenAI-compatible function calling). Returns the assistant message AS RECEIVED (tool_calls and any reasoning_content must be sent back
+// unchanged on the next turn), the usage of this turn and the finish reason. The spend guard is checked per turn; cost is settled by the caller over the whole loop.
+export async function completeWithTools({ messages, tools, effort = 'low', maxTokens = 6000, intent = 'question', fetchFn = fetch, skipGuard = false } = {}) {
+  const g = guard(intent); if (!skipGuard && !g.ok) throw Object.assign(new Error(g.reason), { status: 429, guard: g })
+  const model = await resolveModel({ fetchFn })
+  const body = { model: model.id, messages, max_tokens: maxTokens, stream: false, ...(tools?.length ? { tools, tool_choice: 'auto' } : {}), ...(model.efforts?.includes(effort) ? { reasoning_effort: effort } : {}) }
+  let j, lastErr
+  for (let a = 0; a < 3; a++) {
+    try { j = await api('/chat/completions', { method: 'POST', body, fetchFn }); break }
+    catch (e) { lastErr = e; if (e.status === 400 && body.reasoning_effort) { delete body.reasoning_effort; continue } if (![429, 500, 502, 503, 504].includes(e.status)) throw e; await new Promise((r) => setTimeout(r, 1500 * (a + 1))) }
+  }
+  if (!j) throw lastErr
+  const ch = j.choices?.[0]; if (!ch?.message) throw Object.assign(new Error('no message in the model reply'), { status: 502 })
+  return { message: ch.message, finish: ch.finish_reason, usage: j.usage || null, model: model.id, model_name: model.name }
+}
