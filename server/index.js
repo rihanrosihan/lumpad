@@ -163,6 +163,8 @@ const routes = {
   'GET /api/coach/status': async (q) => { const i = q.get('intent') || 'daily_brief'; if (!TASKS[i]) throw Object.assign(new Error('bad intent'), { status: 400 }); return coachStatus({ intent: i, question: String(q.get('question') || '').slice(0, 1000), activityId: q.get('activity_id') || null }) },
   'GET /api/coach/runs': async () => recentRuns(20),
   // every session that has a successful coach review (the activity feed badge used to look only at the last 20 runs of any kind)
+  // newest successful review for one question (e.g. "session <id>"), however old: the run list above only holds the last 20 runs
+  'GET /api/coach/latest': async (q) => mdb.prepare("SELECT id, created_at FROM coach_run WHERE intent='session_review' AND ok=1 AND question=? ORDER BY id DESC LIMIT 1").get(String(q.get('question') || '').slice(0, 200)) || null,
   'GET /api/coach/analysed': async () => mdb.prepare("SELECT DISTINCT question FROM coach_run WHERE intent='session_review' AND ok=1 AND question LIKE 'session %'").all().map((r) => r.question),
   'GET /api/coach/run': async (q) => getRun(+q.get('id')) || { error: 'not found' },
   // pull mode for a Claude routine / Claude Code: context out, answer back (same validation + write-back hook as DeepSeek)

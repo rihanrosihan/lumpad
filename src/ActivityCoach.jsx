@@ -6,8 +6,8 @@ import { Md, post } from './Coach.jsx'
 // Per-session coach review on the Run Analysis page. Reuses an existing session_review for this run if one exists; otherwise offers to run one
 // (costs a few yuan-cents of the monthly cap, shown in the Coach tab). Only for runs the intelligence layer has analysed (FIT).
 export default function ActivityCoach({ id, label }) {
-  const st = useApi('/api/intel/status'), R = useApi('/api/coach/runs'), [busy, setBusy] = useState(false), [fresh, setFresh] = useState(null), [err, setErr] = useState(''), [tick, setTick] = useState(0), [open, setOpen] = useState(false)
-  const q = `session ${label}`, hit = (R.data || []).find((r) => r.intent === 'session_review' && r.ok && r.question === q)
+  const st = useApi('/api/intel/status'), [busy, setBusy] = useState(false), [fresh, setFresh] = useState(null), [err, setErr] = useState(''), [tick, setTick] = useState(0), [open, setOpen] = useState(false)
+  const q = `session ${label}`, hit = useApi(`/api/coach/latest?question=${encodeURIComponent(q)}&_=${tick}`).data
   const S = useApi(`/api/coach/status?intent=session_review&question=${encodeURIComponent(q)}&activity_id=${encodeURIComponent(id)}&_=${tick}`).data // is the saved analysis still current?
   const D = useApi(hit ? `/api/coach/run?id=${hit.id}` : '', !!hit), p = fresh?.parsed || D.data?.parsed
   const g = st.data?.guard, noKey = st.data && !st.data.key, paused = g?.level === 'paused'
