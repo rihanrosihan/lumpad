@@ -197,10 +197,10 @@ select.v61-tag-select[data-wtag="Race"] { background-color: var(--v-red-soft) !i
 .v61-mtoggle { display: inline-flex; background: var(--v-surface-3); border-radius: 999px; padding: 2px; gap: 2px; }
 .v61-mtoggle button { border: none; background: transparent; color: var(--v-muted); font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; cursor: pointer; }
 .v61-mtoggle button.active { background: var(--v-surface); color: var(--v-text); }
-.v61-zlist { display: flex; flex-direction: column; gap: 9px; }
-.v61-zrow { display: grid; grid-template-columns: minmax(108px, 134px) 1fr 70px; align-items: center; gap: 8px; font-size: 12px; }
-.v61-ztrack { height: 10px; background: var(--v-surface-3); border-radius: 999px; overflow: hidden; }
-.v61-zfill { height: 100%; border-radius: 999px; transition: width 0.35s ease; }
+.v61-zlist { display: flex; flex-direction: column; gap: 12px; }
+.v61-zrow { display: grid; grid-template-columns: minmax(112px, 140px) 1fr 70px; align-items: center; gap: 10px; font-size: 12px; min-height: 32px; }
+.v61-ztrack { height: 18px; background: var(--v-surface-3); border-radius: 7px; overflow: hidden; }
+.v61-zfill { height: 100%; border-radius: 7px; transition: width 0.35s ease; }
 
 .v61-splits-hdr-wrap { display: grid; grid-template-columns: 1fr; }
 .v61-splits-hdr { display: grid; grid-template-columns: 58px 1fr 42px 52px; gap: 8px; font-size: 10px; font-weight: 700; color: var(--v-muted); padding-bottom: 6px; border-bottom: 1px solid var(--v-border); margin-bottom: 6px; }
