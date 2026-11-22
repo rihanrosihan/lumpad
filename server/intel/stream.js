@@ -35,6 +35,9 @@ export function buildStream(d) {
   // positions are semicircles in raw FIT; fit-file-parser already returns degrees, but keep a guard for files that give semicircle integers
   const deg = (v) => (Math.abs(v) > 180 ? v * SEMI : v)
   out.route = pts.filter((_, i) => i % rs === 0 || i === pts.length - 1).map(([la, lo]) => [r(deg(la), 5), r(deg(lo), 5)])
+  // seconds at each whole bpm over every second with an HR reading (what COROS counts for time in zone); zone-independent, so any zone edges can be applied
+  const hist = {}; for (let i = 0; i < n; i++) { const h = S.hr[i]; if (h > 0) { const k = Math.round(h); hist[k] = (hist[k] || 0) + 1 } }
+  out.hr_hist = hist
   out.has_alt = out.alt.some((x) => x != null); out.has_power = out.power.some((x) => x != null && x > 0)
   return out
 }

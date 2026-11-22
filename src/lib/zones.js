@@ -17,8 +17,18 @@ export const ZONES = [
 const EST = { 1: 1.36, 2: 1.28, 3: 1.12, 4: 1.025, 5: 0.985, 6: 0.93 }
 const TL_MIN = { 0: 0, 1: 1.2, 2: 1.68, 3: 2.74, 4: 3.86, 5: 5.0, 6: 6.0 }
 
-export const cfgOf = (settings = {}) => ({ lthr: +settings.lthr || ZONE_DEFAULTS.lthr, tpace: +settings.tpace || ZONE_DEFAULTS.tpace })
-export const hrRange = (z, cfg = ZONE_DEFAULTS) => { const Z = ZONES[z]; return Z ? [z === 1 ? Math.round(cfg.lthr * 0.65) : Math.round(cfg.lthr * Z.hr[0]), Math.round(cfg.lthr * Z.hr[1])] : null }
+// Upper bound (bpm, inclusive) of HR zones Z1..Z5; Z6 is everything above. Copied from the COROS app (Zones page): <136, 136–153, 154–162, 163–173, 174–180, >180.
+// Lumpad's own percentage-of-LTHR model only applies when no explicit ends are set (engine metrics use that model and are unchanged).
+export const HR_ENDS_DEFAULT = [135, 153, 162, 173, 180]
+export const validEnds = (a) => Array.isArray(a) && a.length === 5 && a.every((x, i) => Number.isFinite(+x) && +x > 0 && (i === 0 || +x > +a[i - 1]))
+export const cfgOf = (settings = {}) => ({ lthr: +settings.lthr || ZONE_DEFAULTS.lthr, tpace: +settings.tpace || ZONE_DEFAULTS.tpace, hrEnds: validEnds(settings.hrEnds) ? settings.hrEnds.map(Number) : HR_ENDS_DEFAULT })
+// seconds per HR zone Z1..Z6 (6 values) from a { bpm: seconds } histogram
+export function zonesFromHist(hist, ends = HR_ENDS_DEFAULT) {
+  const z = Array(6).fill(0)
+  for (const [bpm, sec] of Object.entries(hist || {})) { let k = 0; while (k < 5 && +bpm > ends[k]) k++; z[k] += sec }
+  return z
+}
+export const hrRange = (z, cfg = ZONE_DEFAULTS) => { const Z = ZONES[z]; if (cfg.hrEnds && Z) return [z === 1 ? 0 : cfg.hrEnds[z - 2] + 1, z === 6 ? 999 : cfg.hrEnds[z - 1]]; return Z ? [z === 1 ? Math.round(cfg.lthr * 0.65) : Math.round(cfg.lthr * Z.hr[0]), Math.round(cfg.lthr * Z.hr[1])] : null }
 export const paceRange = (z, cfg = ZONE_DEFAULTS) => { const Z = ZONES[z]; return Z ? [Math.round(cfg.tpace * Z.pace[0]), Math.round(cfg.tpace * Z.pace[1])] : null } // [fast, slow] s/km
 export const fmtPace = (s) => (s == null ? '—' : `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`)
 export const fmtDur = (s) => { if (s == null) return '—'; s = Math.round(s); const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60; return h ? `${h}:${String(m).padStart(2, '0')}:${String(x).padStart(2, '0')}` : `${m}:${String(x).padStart(2, '0')}` }
@@ -52,7 +62,7 @@ export function summary(steps) {
 // ---- which zone a lap / second falls in (same 6 zones the plan and the watch use) ----
 // index 0 = below Z1 (HR < 65 % LTHR, or pace slower than Z1: walking / standing), 1..6 = Z1..Z6
 // boundaries are the same rounded bpm / pace numbers the plan displays, so a value shown as "Z2 143–150" is classified Z2
-export const hrZoneOf = (hr, cfg = ZONE_DEFAULTS) => { if (!hr) return null; if (hr < hrRange(1, cfg)[0]) return 0; for (let z = 1; z <= 5; z++) if (hr <= hrRange(z, cfg)[1]) return z; return 6 }
+export const hrZoneOf = (hr, cfg = ZONE_DEFAULTS) => { if (!hr) return null; if (cfg.hrEnds) { let k = 1; while (k < 6 && hr > cfg.hrEnds[k - 1]) k++; return k }; if (hr < hrRange(1, cfg)[0]) return 0; for (let z = 1; z <= 5; z++) if (hr <= hrRange(z, cfg)[1]) return z; return 6 }
 export const paceZoneOf = (pace, cfg = ZONE_DEFAULTS) => { if (!pace) return null; if (pace > paceRange(1, cfg)[1]) return 0; for (let z = 1; z <= 5; z++) if (pace >= paceRange(z, cfg)[0]) return z; return 6 }
 // seconds per zone (index 0..6) from per-km laps, time-weighted
 export function zoneSeconds(laps, cfg = ZONE_DEFAULTS) {

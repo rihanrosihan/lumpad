@@ -11,7 +11,7 @@ import { useStore } from './store.js'
 import { Icon, Info } from './ui.jsx'
 import { useApi, fmtDur, fmtPaceS } from './api.js'
 import { tsMs, hoursBack, airAtHour, airSign, googleTileUrl, MAP_STYLES, GOOGLE_STYLES } from './lib/geo.js'
-import { cfgOf, hrRange, paceRange, zoneSeconds, ZONES } from './lib/zones.js'
+import { cfgOf, hrRange, paceRange, zoneSeconds, zonesFromHist, ZONES } from './lib/zones.js'
 import { FitPanel } from './FitPanel.jsx'
 import ActivityCoach from './ActivityCoach.jsx'
 import { OFFICIAL_RACES as OFFICIAL_BASE } from './data/officialRaces.js'
@@ -120,10 +120,11 @@ function fmtZoneDur(sec) {
 }
 
 const ZCOL = ['#06B6D4', '#22C55E', '#EAB308', '#F97316', '#EF4444', '#C026D3', '#9333EA']
-const ZROWS = (cfg, kind) => [kind === 'hr' ? `<Z1 · <${Math.round(cfg.lthr * 0.65)} bpm` : 'Slower · <Z1', ...[1, 2, 3, 4, 5, 6].map((z) => {
-  const r = kind === 'hr' ? hrRange(z, cfg) : paceRange(z, cfg)
-  return kind === 'hr' ? `Z${z} ${ZONES[z].name} · ${z === 6 ? r[0] + '+' : r[0] + '–' + r[1]} bpm` : `Z${z} ${ZONES[z].name} · ${fmtPaceS(r[0])}–${fmtPaceS(r[1])}`
-})].map((k, i) => ({ k, c: ZCOL[i] || '#9333EA' }))
+const ZROWS = (cfg, kind) => (kind === 'hr' && cfg.hrEnds ? [1, 2, 3, 4, 5, 6].map((z) => { const r = hrRange(z, cfg); return { k: `Z${z} ${ZONES[z].name} · ${z === 1 ? '<' + (r[1] + 1) : z === 6 ? '>' + (r[0] - 1) : r[0] + '–' + r[1]} bpm`, c: ZCOL[z] } })
+  : [kind === 'hr' ? `<Z1 · <${Math.round(cfg.lthr * 0.65)} bpm` : 'Slower · <Z1', ...[1, 2, 3, 4, 5, 6].map((z) => {
+    const r = kind === 'hr' ? hrRange(z, cfg) : paceRange(z, cfg)
+    return kind === 'hr' ? `Z${z} ${ZONES[z].name} · ${z === 6 ? r[0] + '+' : r[0] + '–' + r[1]} bpm` : `Z${z} ${ZONES[z].name} · ${fmtPaceS(r[0])}–${fmtPaceS(r[1])}`
+  })].map((k, i) => ({ k, c: ZCOL[i] || '#9333EA' })))
 
 function computePowerZones(laps, ftp = 199) {
   const defs = [
@@ -149,6 +150,13 @@ function computePowerZones(laps, ftp = 199) {
 }
 
 function collapse5(rows) {
+  if (rows.length === 6) return [   // six COROS zones: Z4+Z5 merge, as in the 7-zone view below
+    { k: 'Z1 Warm Up · Recovery', c: '#94A3B8', s: rows[0]?.s || 0 },
+    { k: 'Z2 Easy · Aerobic', c: '#3B82F6', s: rows[1]?.s || 0 },
+    { k: 'Z3 Aerobic · Steady', c: '#10B981', s: rows[2]?.s || 0 },
+    { k: 'Z4 Threshold · Sub-Max', c: '#F97316', s: (rows[3]?.s || 0) + (rows[4]?.s || 0) },
+    { k: 'Z5 Max · Anaerobic', c: '#EF4444', s: rows[5]?.s || 0 },
+  ]
   if (rows.length < 7) return rows
   return [
     { k: 'Z1 Warm Up · Recovery', c: '#94A3B8', s: (rows[0]?.s || 0) + (rows[1]?.s || 0) },
@@ -525,8 +533,8 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
   const laps = a?.laps || []
   const ef = a ? efOf(a) : null
   const dc = decoupling(laps)
-  const zcfg = cfgOf(settings || {}), zs = laps.length ? zoneSeconds(laps, zcfg) : null
-  const pz = zs && zs.pace.some((x) => x > 0), hz = zs && zs.hr.some((x) => x > 0)
+  const zcfg = cfgOf(settings || {}), zs = laps.length ? zoneSeconds(laps, { ...zcfg, hrEnds: null }) : null   // per-lap fallback keeps the percentage-of-LTHR model so labels and data agree
+  const pz = zs && zs.pace.some((x) => x > 0)
   const officialBase = a ? OFFICIAL_RACES[a.date] : null
   const activeTag = ctx.tag || inferTag(a)
   const isRace = activeTag === 'Race'
@@ -551,6 +559,8 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
   // Google extras (only when the server has a key): place name of the start, air quality at the run's hour
   const caps = useApi('/api/geo/capabilities').data
   const ST = useApi(id ? `/api/intel/stream?id=${encodeURIComponent(id)}` : '', !!id && a?.sport_class === 'run'), streamRoute = ST.data?.found && ST.data.route?.length >= 2 ? ST.data.route : null // the real GPS track from the FIT file
+  // HR zones: every second of the FIT (like COROS); the per-lap average is only the fallback when there is no FIT. Index 0..5 = Z1..Z6 with explicit ends, else 0..6 (0 = below Z1).
+  const hrv = ST.data?.hr_hist ? zonesFromHist(ST.data.hr_hist, zcfg.hrEnds) : zs?.hr || null, hzOk = !!hrv && hrv.some((x) => x > 0), hrFromFit = !!ST.data?.hr_hist
   const ENV = useApi(id ? `/api/env/activity?id=${encodeURIComponent(id)}` : '', !!id && a?.sport_class === 'run').data, envRun = ENV?.run && !ENV.run.indoor ? ENV.run : null // weather during this run (Open-Meteo, stored with the FIT session)
   const SESS = useApi(id ? `/api/intel/session?id=${encodeURIComponent(id)}` : '', !!id && a?.sport_class === 'run').data // device ascent from the FIT session
   const c0 = a ? (streamRoute || extractRouteCoords(a))[0] : null, startMs = a ? tsMs(a.start_ts) : null
@@ -778,7 +788,7 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
 
     {/* TAB 2: ZONES */}
     {activeTab === 'zones' && <div className="v61-anim" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      {hz && <div className="v61-card">
+      {hzOk && <div className="v61-card">
         <div className="v61-card-head">
           <div>
             <h2 className="v61-card-title">Heart Rate Zones</h2>
@@ -789,8 +799,8 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
             <button type="button" className={zoneMode === 5 ? 'active' : ''} onClick={() => setZoneMode(5)}>5-Zone</button>
           </div>
         </div>
-        <ZoneList rows={zoneMode === 5 ? collapse5(ZROWS(zcfg, 'hr').map((r, i) => ({ ...r, s: zs.hr[i] }))) : ZROWS(zcfg, 'hr').map((r, i) => ({ ...r, s: zs.hr[i] }))} />
-        {pz && (() => { const top = (arr) => arr.indexOf(Math.max(...arr)), dh = top(zs.hr), dp = top(zs.pace); return dh - dp >= 2 ? <p className="banner" style={{ marginTop: 12 }}>HR sat {dh - dp} zones higher than pace: judge effort by HR, not pace.</p> : null })()}
+        <ZoneList rows={zoneMode === 5 ? collapse5(ZROWS(hrFromFit ? zcfg : { ...zcfg, hrEnds: null }, 'hr').map((r, i) => ({ ...r, s: hrv[i] }))) : ZROWS(hrFromFit ? zcfg : { ...zcfg, hrEnds: null }, 'hr').map((r, i) => ({ ...r, s: hrv[i] }))} />
+        {pz && (() => { const top = (arr) => arr.indexOf(Math.max(...arr)), dh = top(hrv) + (hrFromFit ? 1 : 0), dp = top(zs.pace); return dh - dp >= 2 ? <p className="banner" style={{ marginTop: 12 }}>HR sat {dh - dp} zones higher than pace: judge effort by HR, not pace.</p> : null })()}
       </div>}
       <div className="v61-two-col">
         {laps.some((l) => l.power > 0) && <div className="v61-card">

@@ -6,7 +6,7 @@ import { fmtLong, fmtShort, today, diffDays, addDays } from './lib/calendar.js'
 import { tandaMarathon, trainingIndices, prs, shoeStats, SHOE_LIFE } from './lib/analysis.js'
 import { mean, r1 } from './lib/stats.js'
 import { KEY_RE } from './lib/tiles.js'
-import { ZONES, ZONE_DEFAULTS, cfgOf, hrRange, paceRange, fmtPace as fmtZPace } from './lib/zones.js'
+import { ZONES, ZONE_DEFAULTS, HR_ENDS_DEFAULT, validEnds, cfgOf, hrRange, paceRange, fmtPace as fmtZPace } from './lib/zones.js'
 import Data from './Data.jsx'
 import CorosCard from './CorosCard.jsx'
 import StravaCard from './StravaCard.jsx'
@@ -251,6 +251,13 @@ export default function Profile({ vdot, results, settings, setSettings, go }) {
           <div className="form two" style={{ marginBottom: 10 }}>
             <label className="fld"><span>LTHR (bpm)</span><input inputMode="numeric" type="number" min="120" max="210" placeholder={String(ZONE_DEFAULTS.lthr)} value={settings.lthr || ''} onChange={(e) => set({ lthr: e.target.value ? +e.target.value : '' })} /></label>
             <label className="fld"><span>Threshold pace (mm:ss)</span><input inputMode="numeric" placeholder={fmtZPace(ZONE_DEFAULTS.tpace)} defaultValue={settings.tpace ? fmtZPace(settings.tpace) : ''} onBlur={(e) => { const m = e.target.value.trim().match(/^(\d{1,2}):(\d{2})$/); set({ tpace: m ? +m[1] * 60 + +m[2] : '' }) }} /></label>
+          </div>
+          <div className="fld" style={{ marginBottom: 10 }}>
+            <span>HR zone ends (bpm) — copy from the COROS app (Zones)</span>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 6 }}>
+              {[1, 2, 3, 4, 5].map((z) => { const ends = cfgOf(settings).hrEnds; return <label key={z} style={{ display: 'grid', gap: 2, fontSize: 12 }}>Z{z} ≤<input inputMode="numeric" type="number" min="60" max="230" aria-label={`Zone ${z} upper bpm`} value={ends[z - 1]} onChange={(e) => { const n = ends.slice(); n[z - 1] = e.target.value === '' ? '' : +e.target.value; set({ hrEnds: validEnds(n) ? n : ends.map((x, i) => (i === z - 1 ? n[z - 1] : x)) }) }} /></label> })}
+            </div>
+            <small className="muted">Z6 is everything above Z5. Used for time in zone on the Activity page and for HR targets in sessions. Default: {HR_ENDS_DEFAULT.join(' / ')}.</small>
           </div>
           <div className="scroll" tabIndex={0}><table className="zm"><thead><tr><th>Zone</th><th>HR (bpm)</th><th>Pace (/km)</th></tr></thead><tbody>
             {ZONES.slice(1).map((Z) => { const c = cfgOf(settings), h = hrRange(Z.z, c), prg = paceRange(Z.z, c); return <tr key={Z.z}><td><span className={'wz z' + Z.z} style={{ display: 'inline-grid', width: 30, marginRight: 6 }}>Z{Z.z}</span>{Z.name}</td><td>{h[0]}–{h[1]}</td><td>{fmtZPace(prg[0])}–{fmtZPace(prg[1])}</td></tr> })}
