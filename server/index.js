@@ -17,6 +17,7 @@ import { runIntel, recentIntelJobs, afterSync } from './intel/run.js'
 import { startIntelScheduler } from './intel/schedule.js'
 import { plannedForecast } from './intel/forecast.js'
 import { adviceSummary, listAdvice, setStatus as setAdviceStatus } from './intel/advice.js'
+import { getConfig, publicConfig, saveConfig, resetConfig, testConnection } from './intel/llmconfig.js'
 import { runCoach, recentRuns, getRun, newRun, finishRun, coachStatus } from './intel/coach.js'
 import { retrieveRunnerContext, renderPrompt, TASKS, OUTPUT_SCHEMA } from './intel/context.js'
 import { guardStatus, resolveModel } from './intel/llm.js'
@@ -145,7 +146,7 @@ const routes = {
   'GET /api/twin': async (q) => latestTwin(+q.get('version') || null),
   'GET /api/twin/history': async () => idb.prepare('SELECT version, as_of, created_at, trigger, json_extract(state, \'$.readiness.score\') AS readiness, json_extract(state, \'$.load.ctl\') AS ctl, json_extract(state, \'$.aerobic.hr_at_800.value\') AS hr800 FROM twin_state ORDER BY version DESC LIMIT 90').all(),
   'GET /api/twin/diff': async (q) => ({ diff: twinDiff(+q.get('a'), +q.get('b')) }),
-  'GET /api/intel/status': async () => ({ jobs: recentIntelJobs(5), busy: (await import('./intel/run.js')).isBusy(), guard: guardStatus(), model: load('deepseek_model', null), key: !!process.env.DEEPSEEK_API_KEY,
+  'GET /api/intel/status': async () => ({ jobs: recentIntelJobs(5), busy: (await import('./intel/run.js')).isBusy(), guard: guardStatus(), model: (getConfig().model && getConfig().model !== 'auto-flash') ? { id: getConfig().model, name: getConfig().model, pinned: true } : load('deepseek_model', null), key: !!getConfig().key,
     counts: { fit_sessions: idb.prepare('SELECT COUNT(*) n FROM fit_session').get().n, weather: idb.prepare('SELECT COUNT(*) n FROM run_weather WHERE indoor=0').get().n, daily_log: idb.prepare('SELECT COUNT(*) n FROM daily_log').get().n, kb_docs: idb.prepare('SELECT COUNT(*) n FROM kb_docs').get().n,
       memory: mdb.prepare('SELECT tier, status, COUNT(*) n FROM memory GROUP BY tier, status').all(), edges: idb.prepare('SELECT status, COUNT(*) n FROM corr_edge GROUP BY status').all() }, coach_runs: recentRuns(6) }),
   'POST /api/intel/run': async (_q, req) => { const b = JSON.parse((await readBody(req, 1e4)).toString() || '{}'), kind = b.kind === 'quick' ? 'quick' : 'full'; runIntel(kind, { trigger: 'manual' }).catch((e) => console.error('intel', e.message)); return { started: kind } },
@@ -164,6 +165,14 @@ const routes = {
   'GET /api/memory': async (q) => listMemory({ tier: q.get('tier') || undefined, status: q.get('status') || undefined, kind: q.get('kind') || undefined, limit: Math.min(+q.get('limit') || 100, 300) }),
   'GET /api/memory/item': async (q) => getMemory(+q.get('id')) || { error: 'not found' },
   'POST /api/memory/action': async (_q, req) => { const b = JSON.parse((await readBody(req, 1e4)).toString()), to = { approve: 'active', retract: 'retracted', archive: 'archived' }[b.action]; if (!to) throw Object.assign(new Error('bad action'), { status: 400 }); return setStatus(+b.id, to, principal(req) || 'athlete') },
+  // provider settings (Profile → AI Coach): the key is sealed at rest and never returned; saving a new key/base/model runs a connection test first
+  'GET /api/coach/config': async () => publicConfig(),
+  'POST /api/coach/config/test': async (_q, req) => { const b = JSON.parse((await readBody(req, 1e4)).toString() || '{}'); return testConnection({ base: b.base, api_key: b.api_key, model: b.model }) },
+  'POST /api/coach/config': async (_q, req) => {
+    const b = JSON.parse((await readBody(req, 1e4)).toString() || '{}'), changes = !!(b.base || b.api_key || b.model)
+    if (changes && !b.skip_test) { const t = await testConnection({ base: b.base, api_key: b.api_key, model: b.model }); if (!t.ok) throw Object.assign(new Error(t.error || 'Connection test failed'), { status: 400, test: t }) }
+    return { ...(await saveConfig({ base: b.base, api_key: b.api_key, model: b.model, max_calls_per_day: b.max_calls_per_day })), saved_ok: true } },
+  'POST /api/coach/config/reset': async () => resetConfig(),
   'POST /api/coach/run': async (_q, req) => { const b = JSON.parse((await readBody(req, 2e4)).toString() || '{}'); if (!TASKS[b.intent || 'daily_brief']) throw Object.assign(new Error('bad intent'), { status: 400 }); return runCoach({ intent: b.intent || 'daily_brief', question: String(b.question || '').slice(0, 1000), activityId: b.activity_id || null, force: b.force === true, tools: b.tools === true }) },
   'GET /api/coach/status': async (q) => { const i = q.get('intent') || 'daily_brief'; if (!TASKS[i]) throw Object.assign(new Error('bad intent'), { status: 400 }); return coachStatus({ intent: i, question: String(q.get('question') || '').slice(0, 1000), activityId: q.get('activity_id') || null }) },
   'GET /api/coach/runs': async () => recentRuns(20),

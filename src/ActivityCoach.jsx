@@ -39,7 +39,7 @@ export default function ActivityCoach({ id, label }) {
   }
   return <Card title="Coach analysis for this session" right={<Chip>Not analysed yet</Chip>}>
     <p className="muted">Get a short verdict and 2–3 concrete next steps for this run. It is saved, so you only pay once.</p>
-    {noKey && <p className="muted">DEEPSEEK_API_KEY is not set on the server, so automatic analysis is not active.</p>}
+    {noKey && <p className="muted">No API key is set, so automatic analysis is not active. Add one in Profile → AI Coach.</p>}
     {paused && <p className="muted">Monthly coach cap reached — back on the 1st.</p>}
     {err && <p className="err" role="alert">{err}</p>}
     <button className="btn primary" disabled={busy || noKey || paused} onClick={run}>{busy ? 'Coach is analysing… (±30–90 s)' : 'Analyse this session'}</button>

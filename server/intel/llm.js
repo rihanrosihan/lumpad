@@ -2,9 +2,11 @@
 // Model = the newest "Flash" in GET /models (DEEPSEEK_MODEL=auto-flash) or an explicit id. Spend cap from the ACCOUNT balance (no price table): month spend = sum of balance drops.
 import { mdb } from './db.js'
 import { load, save } from '../db.js'
+import { getConfig, DEFAULT_BASE } from './llmconfig.js'
 
-const BASE = () => process.env.DEEPSEEK_BASE || 'https://api.deepseek.com'
-const key = () => { const k = process.env.DEEPSEEK_API_KEY; if (!k) throw Object.assign(new Error('DEEPSEEK_API_KEY not set'), { status: 503 }); return k }
+// base URL, key and model come from Profile → AI Coach (llm_config.json, key sealed) with the DEEPSEEK_* variables in .env as the default
+const BASE = () => getConfig().base
+const key = () => { const k = getConfig().key; if (!k) throw Object.assign(new Error('API key not set (Profile → AI Coach, or DEEPSEEK_API_KEY in .env)'), { status: 503 }); return k }
 const monthOf = (ms = Date.now()) => new Date(ms + 7 * 3600e3).toISOString().slice(0, 7)
 const capCny = () => Number(process.env.DEEPSEEK_MONTHLY_CAP_CNY) || 15
 async function api(path, { method = 'GET', body, fetchFn = fetch, timeout = 120000 } = {}) {
@@ -19,7 +21,7 @@ export const versionOf = (name) => { const m = /V(\d+(?:\.\d+)*)/i.exec(name || 
 export const cmpVer = (a, b) => { for (let i = 0; i < Math.max(a.length, b.length); i++) { const d = (a[i] || 0) - (b[i] || 0); if (d) return d } return 0 }
 export function pickFlash(models) { return models.filter((m) => /flash/i.test(m.name || m.id)).sort((a, b) => cmpVer(versionOf(b.name || b.id), versionOf(a.name || a.id)))[0] || null }
 export async function resolveModel({ force = false, fetchFn = fetch } = {}) {
-  const pin = process.env.DEEPSEEK_MODEL; if (pin && pin !== 'auto-flash') return { id: pin, name: pin, pinned: true }
+  const cfg = getConfig(), pin = cfg.model; if (pin && pin !== 'auto-flash') return { id: pin, name: pin, pinned: true, ...(cfg.custom_endpoint ? { efforts: ['low', 'high', 'max'] } : {}) } // a 400 on reasoning_effort is retried without it
   const c = load('deepseek_model', null), fresh = c && Date.now() - c.at < 864e5
   if (c && fresh && !force) return c
   try {
@@ -47,10 +49,15 @@ export function guardDecision({ intent, spend, cap, maxCall = 0 }) {
   return { ok: true, level: spend >= 0.8 * cap ? 'limited' : 'ok', spend, cap }
 }
 export function guard(intent, { month = monthOf() } = {}) {
+  const cfg = getConfig()
+  if (cfg.custom_endpoint) { // a non-DeepSeek gateway has no /user/balance: limit by runs per WIB day instead of by spend
+    const since = new Date(Date.parse(new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10) + 'T00:00:00Z') - 7 * 3600e3).toISOString(), calls = mdb.prepare('SELECT COUNT(*) n FROM coach_run WHERE created_at >= ?').get(since).n
+    return calls >= cfg.max_calls_per_day ? { ok: false, level: 'paused', spend: 0, cap: capCny(), calls_today: calls, reason: `daily limit of ${cfg.max_calls_per_day} coach runs reached for this provider (${calls} today)` } : { ok: true, level: 'ok', spend: 0, cap: capCny(), calls_today: calls }
+  }
   const spend = monthSpend(month), cap = capCny(), maxCall = mdb.prepare('SELECT MAX(cost_cny) m FROM coach_run WHERE created_at >= ?').get(month + '-01').m || 0
   return guardDecision({ intent, spend, cap, maxCall })
 }
-export const guardStatus = () => ({ month: monthOf(), cap_cny: capCny(), spend_cny: monthSpend(), level: guard('daily_brief').level === 'paused' ? 'paused' : guard('weekly_review').level })
+export const guardStatus = () => { const c = getConfig(), g = guard('weekly_review'); return { month: monthOf(), cap_cny: capCny(), spend_cny: monthSpend(), level: guard('daily_brief').level === 'paused' ? 'paused' : g.level, ...(c.custom_endpoint ? { mode: 'calls', calls_today: g.calls_today, max_calls_per_day: c.max_calls_per_day } : {}) } }
 
 // Cost from the call's own token usage when the owner has set the prices (CNY per million tokens: DEEPSEEK_PRICE_MISS/HIT/OUT_CNY_PER_MTOK). Never guessed:
 // without prices it stays null and the balance-drop figure is used. The balance snapshots remain as the daily reconciliation.

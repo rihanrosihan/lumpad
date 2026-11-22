@@ -10,7 +10,7 @@ import { ZONES, ZONE_DEFAULTS, HR_ENDS_DEFAULT, validEnds, cfgOf, hrRange, paceR
 import Data from './Data.jsx'
 import CorosCard from './CorosCard.jsx'
 import StravaCard from './StravaCard.jsx'
-import CoachConfig from './CoachConfig.jsx'
+import CoachConfig, { ProviderSettings } from './CoachConfig.jsx'
 import ShoeDegradation from './ShoeDegradation.jsx'
 import { Card, Screen, Chip, Evidence, SegmentedTabs, ProgressBar, StatusPill, ProvenanceBadge } from './ui.jsx'
 import { GLOSSARY } from './lib/glossary.js'
@@ -405,6 +405,7 @@ export default function Profile({ vdot, results, settings, setSettings, go }) {
       <div className="rgrid">
         <div>
           <CoachConfig />
+          <ProviderSettings />
           <Card title="Automation & scheduling">
             <label className="sw"><input type="checkbox" checked={!!autoBrief} onChange={(e) => setAutoBrief(e.target.checked)} /><span>Run Automated Morning Brief after COROS sync (P0-1 backoff ledger: max 2/day)</span></label>
             <p className="muted">DeepSeek retry logic uses <code>maxTokens = 16000</code> and per-intent context budgets.</p>

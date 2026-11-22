@@ -1,6 +1,7 @@
 // Starts the intelligence scheduler: nightly full job, quick job after each COROS job, and (optional) scheduled coach runs.
 // Coach schedule (DeepSeek, capped at DEEPSEEK_MONTHLY_CAP_CNY): daily brief ≥ 08:00 WIB once the daily sync is done · session review for a new run ≥ 16 km · weekly review Sunday ≥ 19:00 WIB.
 import { db } from '../store.js'
+import { getConfig } from './llmconfig.js'
 import { idb, mdb } from './db.js'
 import { intelTick, isBusy } from './run.js'
 import { runCoach } from './coach.js'
@@ -22,7 +23,7 @@ export function postRunTarget(day, i = idb, m = mdb) {
   return null
 }
 export async function coachTick() {
-  if (coaching || isBusy() || process.env.COACH_SCHEDULE === 'off' || !process.env.DEEPSEEK_API_KEY) return null
+  if (coaching || isBusy() || process.env.COACH_SCHEDULE === 'off' || !getConfig().key) return null
   const w = wibNow(), hm = w.getUTCHours() * 60 + w.getUTCMinutes(), day = today()
   // "done today" = created on the current WIB calendar day (the old now-20h UTC window let yesterday's brief count as today's)
   const done = (intent, q) => mdb.prepare("SELECT 1 FROM coach_run WHERE intent=? AND ok=1 AND substr(datetime(created_at, '+7 hours'),1,10) = ? AND (? IS NULL OR question=?)").get(intent, day, q ?? null, q ?? null)
