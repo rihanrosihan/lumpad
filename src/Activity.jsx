@@ -468,7 +468,7 @@ export default function Activity({ vdot, focus, go, settings }) {
               {a.location && <span className="v61-pill">{a.location}</span>}
             {a.training_load != null && <span className="v61-pill cobalt">TL {a.training_load}</span>}
               <span className={`v61-pill ${tagPillCls(tag)}`}>{tag}</span>
-              {a.sport_class === 'run' && (a.distance_m || 0) >= 5000 && (analysed.has(`session ${String(aid).replace(/^coros:/, '')}`) ? <span className="v61-pill ai-done">✦ Analysed</span> : <span className="v61-pill ai-todo">Not analysed</span>)}
+              {a.sport_class === 'run' && (a.distance_m || 0) >= 5000 && (analysed.has(`session ${String(aid).replace(/^coros:/, '')}`) ? <span className="v61-pill ai-done" title="Analysed by the AI coach">AI</span> : <span className="v61-pill ai-todo" title="Not analysed yet">AI</span>)}
               {a.temp_c != null && <span className="v61-pill">{Math.round(a.temp_c)}°C</span>}
             </div>
             <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--v-muted)', whiteSpace: 'nowrap' }}>{a.date}</span>
