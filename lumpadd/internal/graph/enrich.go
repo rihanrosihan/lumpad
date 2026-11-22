@@ -78,7 +78,7 @@ func SyncEnrich(ctx context.Context, pool *pgxpool.Pool, aura *Client, redact fu
 	for _, q := range []string{
 		`MATCH ()-[r:ABOUT]->() DELETE r`, `MATCH ()-[r:PRECEDED]->() DELETE r`, `MATCH ()-[r:IN_BAND]->() DELETE r`,
 		`MATCH ()-[r:RETRIEVED]->() DELETE r`, `MATCH ()-[r:CITED]->() DELETE r`, `MATCH ()-[r:WRITTEN_BY]->() DELETE r`,
-		`MATCH ()-[r:REVIEWED]->() DELETE r`, `MATCH ()-[r:EXECUTED_AS]->() DELETE r`,
+		`MATCH ()-[r:REVIEWED]->() DELETE r`, `MATCH ()-[r:EXECUTED_AS]->() DELETE r`, `MATCH ()-[r:RELATED_TO]-() DELETE r`,
 	} {
 		if _, err := aura.Query(ctx, q, nil); err != nil {
 			return fmt.Errorf("enrich reset: %w", err)
@@ -123,6 +123,29 @@ func SyncEnrich(ctx context.Context, pool *pgxpool.Pool, aura *Client, redact fu
 	if _, err := aura.Query(ctx, `MATCH (s:Session)-[:ATTEMPT_OF]->(:Race) MATCH (t:Topic {id:'race'}) MERGE (s)-[:ABOUT]->(t)`, nil); err != nil {
 		return fmt.Errorf("race topic: %w", err)
 	}
+
+	// 1b. Related memories: local TF-IDF similarity (no embedding model, nothing leaves the server). A pair needs a coach finding or rule on at least one side;
+	// near-identical findings (sim >= 0.55) are flagged as possible duplicates so they can be merged.
+	var docs []MemDoc
+	for _, m := range memRows {
+		id, _ := m["id"].(int64)
+		src, _ := m["source"].(string)
+		ref, _ := m["source_ref"].(string)
+		title, _ := m["title"].(string)
+		body, _ := m["body"].(string)
+		if src == "fit" || id == 0 {
+			continue
+		}
+		docs = append(docs, MemDoc{ID: id, Group: docGroup(src, ref), Curated: src == "coach" || src == "rules", Text: title + " " + body})
+	}
+	var rel []map[string]any
+	for _, p := range SimilarMemories(docs, 3, 0.2) {
+		rel = append(rel, map[string]any{"a": p.A, "b": p.B, "sim": p.Sim, "via": strings.Join(p.Via, " · "), "dup": p.Sim >= 0.55})
+	}
+	if err := runBatches(ctx, aura, rel, 200, `UNWIND $rows AS r MATCH (a:Memory {id: r.a}), (b:Memory {id: r.b}) MERGE (a)-[x:RELATED_TO]->(b) SET x.sim = r.sim, x.via = r.via, x.possible_duplicate = r.dup`); err != nil {
+		return fmt.Errorf("related memories: %w", err)
+	}
+	st.RelatedLinks = len(rel)
 
 	// 2. Workouts (everything that is not a run) and heat bands
 	var wRows []map[string]any
@@ -275,4 +298,14 @@ func SyncEnrich(ctx context.Context, pool *pgxpool.Pool, aura *Client, redact fu
 	}
 	st.PlanDaysWindow = len(pRows)
 	return nil
+}
+
+// docGroup identifies the document a knowledge-base chunk belongs to ("03.9#4" -> "03.9"); other memories have no group.
+func docGroup(source, ref string) string {
+	if source == "kb" {
+		if i := strings.Index(ref, "#"); i > 0 {
+			return ref[:i]
+		}
+	}
+	return ""
 }

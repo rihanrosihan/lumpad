@@ -57,7 +57,7 @@ export async function overview(opts = {}) {
 // Each endpoint is flattened to (label, key, name, date, ef, tl, wbgt): the properties the page can colour by. Health-derived labels exist only when NEO4J_SYNC_HEALTH=1 on the Go side.
 const P = (v) => `labels(${v})[0], coalesce(toString(${v}.label_id), toString(${v}.date), toString(${v}.gear_id), toString(${v}.race_id), toString(${v}.id), toString(${v}.site), toString(${v}.name)), coalesce(${v}.intent + ' · ' + ${v}.day, ${v}.title, ${v}.model, ${v}.name, ${v}.label, toString(${v}.date), toString(${v}.label_id), toString(${v}.id)), coalesce(${v}.date, ${v}.day, ${v}.valid_from), ${v}.ef, coalesce(${v}.tl, ${v}.planned_tl), ${v}.wbgt`
 const ROW = (a, n) => `RETURN ${P(a)}, type(r), startNode(r) = ${a}, ${P(n)}`
-const REL = "['HAS_SESSION','WORE','IN_WEATHER','IN_BAND','ATTEMPT_OF','PRODUCED','SIMILAR_TO','CONTRADICTS','SUPERSEDES','NEXT_DAY','LOGGED_PAIN','ABOUT','HAS_WORKOUT','PRECEDED','RETRIEVED','CITED','WRITTEN_BY','REVIEWED','PLANS','EXECUTED_AS']"
+const REL = "['HAS_SESSION','WORE','IN_WEATHER','IN_BAND','ATTEMPT_OF','PRODUCED','SIMILAR_TO','CONTRADICTS','SUPERSEDES','NEXT_DAY','LOGGED_PAIN','ABOUT','HAS_WORKOUT','PRECEDED','RETRIEVED','CITED','WRITTEN_BY','REVIEWED','PLANS','EXECUTED_AS','RELATED_TO']"
 export const LIVE_MAX = { nodes: 160, edges: 420 }
 export const LIVE_VIEWS = {
   // newest 30 sessions with everything one hop away
@@ -71,7 +71,7 @@ export const LIVE_VIEWS = {
   // planned days against what was done
   plan: `MATCH (a:PlanDay) WITH a ORDER BY a.date DESC LIMIT 28 OPTIONAL MATCH (a)-[r:EXECUTED_AS|PLANS]->(n) ${ROW('a', 'n')} LIMIT ${LIVE_MAX.edges}`,
   // the newest 60 active memories and how they connect
-  memory: `MATCH (a:Memory) WHERE a.status = 'active' AND a.source <> 'kb' WITH a ORDER BY a.valid_from DESC LIMIT 60 OPTIONAL MATCH (a)-[r:PRODUCED|SUPERSEDES|CONTRADICTS|ABOUT|WRITTEN_BY]-(n) ${ROW('a', 'n')} LIMIT ${LIVE_MAX.edges}`,
+  memory: `MATCH (a:Memory) WHERE a.status = 'active' AND a.source <> 'kb' WITH a ORDER BY a.valid_from DESC LIMIT 60 OPTIONAL MATCH (a)-[r:PRODUCED|SUPERSEDES|CONTRADICTS|RELATED_TO|ABOUT|WRITTEN_BY]-(n) ${ROW('a', 'n')} LIMIT ${LIVE_MAX.edges}`,
   // the last 3 weeks that have training, as a chain of days with their sessions and workouts (future plan days have none)
   days: `MATCH (a:Day) WHERE EXISTS { (a)-[:HAS_SESSION|HAS_WORKOUT]->() } WITH a ORDER BY a.date DESC LIMIT 21 OPTIONAL MATCH (a)-[r:NEXT_DAY|HAS_SESSION|HAS_WORKOUT|LOGGED_PAIN]-(n) ${ROW('a', 'n')} LIMIT ${LIVE_MAX.edges}`,
   // races, rules and shoes (races first) with a few of their sessions each, so no single shoe floods the picture

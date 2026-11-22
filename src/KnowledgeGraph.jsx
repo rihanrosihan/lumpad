@@ -209,7 +209,7 @@ const LABEL_COLOR = { Session: '#10B981', Day: '#64748B', Memory: '#0EA5E9', Sho
 const LIVE_VIEWS = [['sessions', 'Recent sessions'], ['topics', 'Topics'], ['chains', 'Gym → run'], ['trace', 'Coach trace'], ['plan', 'Plan vs done'], ['memory', 'Memory links'], ['days', 'Last 3 weeks'], ['context', 'Races, rules, shoes']]
 const VIEW_HELP = { sessions: 'Your newest runs with their shoe, weather, heat band, topics, similar runs and memories.', topics: 'The shared vocabulary: each topic with the newest knowledge-base notes, findings and sessions that are about it.',
   chains: 'Strength sessions in the 72 hours before a run, with the run that followed.', trace: 'What the AI coach used: the memories it retrieved and cited, the notes it wrote and the sessions it reviewed.',
-  plan: 'Planned days against the sessions actually done.', memory: 'Recent findings and how they connect.', days: 'The last three weeks as a chain of days.', context: 'Races, rules and shoes with their sessions.' }
+  plan: 'Planned days against the sessions actually done.', memory: 'Recent findings and how they connect: related notes, what produced them, topics, and any real contradictions.', days: 'The last three weeks as a chain of days.', context: 'Races, rules and shoes with their sessions.' }
 function LiveGraph({ overview }) {
   const [view, setView] = useState('sessions'), [sel, setSel] = useState(null), [focus, setFocus] = useState(false), [q, setQ] = useState(''), [by, setBy] = useState('type'), [range, setRange] = useState(null)
   const on = !!overview?.connected, G = useApi(on ? `/api/graph/live?view=${view}` : '', on), full = G.data

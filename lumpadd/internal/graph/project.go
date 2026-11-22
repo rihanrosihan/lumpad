@@ -28,6 +28,7 @@ type SyncStats struct {
 	SimilarEdges   int `json:"similar_edges"`
 	ConflictEdges  int `json:"conflict_edges"`
 	TopicLinks     int `json:"topic_links"`
+	RelatedLinks   int `json:"related_links"`
 	Workouts       int `json:"workouts"`
 	Chains         int `json:"strength_chains"`
 	CoachRuns      int `json:"coach_runs"`
@@ -513,91 +514,35 @@ func SyncAll(ctx context.Context, pool *pgxpool.Pool, aura *Client, redact func(
 		st.SimilarEdges = len(simRows)
 	}
 
-	// 11. CONTRADICTS edges between semantic memories sharing topic tokens with opposite polarity
-	posW := []string{"improv", "better", "faster", "stable", "controlled", "optimal", "dropped", "lower"}
-	negW := []string{"worsen", "worse", "slower", "fade", "drift", "spike", "higher", "creep", "pain"}
-	polarity := func(txt string) int {
-		lo := strings.ToLower(txt)
-		p, n := 0, 0
-		for _, w := range posW {
-			if strings.Contains(lo, w) {
-				p++
-			}
-		}
-		for _, w := range negW {
-			if strings.Contains(lo, w) {
-				n++
-			}
-		}
-		if p > n {
-			return 1
-		}
-		if n > p {
-			return -1
-		}
-		return 0
-	}
-	var semMems []struct {
-		id  int64
-		pol int
-		tok map[string]bool
-	}
-	for _, m := range memRows {
-		if m["tier"] != "semantic" || m["status"] != "active" {
-			continue
-		}
-		txt, _ := m["title"].(string)
-		body, _ := m["body"].(string)
-		pol := polarity(txt + " " + body)
-		if pol == 0 {
-			continue
-		}
-		toks := map[string]bool{}
-		for _, w := range strings.Fields(strings.ToLower(txt)) {
-			w = strings.Trim(w, ".,:;!?()[]\"'")
-			if len(w) >= 5 {
-				toks[w] = true
-			}
-		}
-		id, _ := m["id"].(int64)
-		if len(toks) > 0 && id > 0 {
-			semMems = append(semMems, struct {
-				id  int64
-				pol int
-				tok map[string]bool
-			}{id, pol, toks})
-		}
-	}
+	// 11. CONTRADICTS: structured claims (same metric, opposite direction, shared context), rebuilt every sync.
+	// Replaces the old keyword-polarity guess, which produced false links (all 18 on the real data were wrong).
 	if _, err := aura.Query(ctx, `MATCH ()-[r:CONTRADICTS]-() DELETE r`, nil); err != nil {
 		return st, fmt.Errorf("contradicts reset: %w", err)
 	}
+	var cms []ConflictMem
+	for _, m := range memRows {
+		if m["tier"] == "procedural" && m["status"] != "active" {
+			continue
+		}
+		id, _ := m["id"].(int64)
+		src, _ := m["source"].(string)
+		ref, _ := m["source_ref"].(string)
+		title, _ := m["title"].(string)
+		body, _ := m["body"].(string)
+		if src == "fit" || id == 0 {
+			continue
+		}
+		cms = append(cms, ConflictMem{ID: id, Group: docGroup(src, ref), Curated: src == "coach" || src == "rules", Text: title + ". " + body})
+	}
 	var confRows []map[string]any
-	for i := 0; i < len(semMems); i++ {
-		for j := i + 1; j < len(semMems); j++ {
-			if semMems[i].pol == semMems[j].pol {
-				continue
-			}
-			shared := 0
-			for w := range semMems[i].tok {
-				if semMems[j].tok[w] {
-					shared++
-				}
-			}
-			if shared >= 2 {
-				confRows = append(confRows, map[string]any{"a": semMems[i].id, "b": semMems[j].id})
-				if len(confRows) >= 40 {
-					break
-				}
-			}
-		}
-		if len(confRows) >= 40 {
-			break
-		}
+	for _, c := range StructuredConflicts(cms, 100) {
+		confRows = append(confRows, map[string]any{"a": c.A, "b": c.B, "metric": c.Metric})
 	}
 	if err := runBatches(ctx, aura, confRows, 100, `
 		UNWIND $rows AS r
 		MATCH (a:Memory {id: r.a}), (b:Memory {id: r.b})
-		MERGE (a)-[:CONTRADICTS]-(b)`); err != nil {
+		MERGE (a)-[c:CONTRADICTS]->(b)
+		SET c.metric = r.metric`); err != nil {
 		return st, fmt.Errorf("contradicts: %w", err)
 	}
 	st.ConflictEdges = len(confRows)
