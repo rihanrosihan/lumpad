@@ -85,3 +85,10 @@ test('M9: the consistency job reports an orphan card and a session without a car
   const r = CS.consistencyJob({}), inv = r.sample.map((x) => x.inv)
   assert.ok(inv.includes('card_per_session') && inv.includes('orphan_card'))
 })
+
+test('optional twin_state_patch: null and empty fields are dropped instead of failing validation', () => {
+  const ok = (p) => S.validate(S.normalize({ summary: 's', analysis_md: 'a', recommendations: [], flags: [], memory_writes: [], cited_ids: [], ...p }), S.OUTPUT_SCHEMA)
+  assert.deepEqual(ok({ twin_state_patch: { current_ef_baseline: null, shoe_alert: '', readiness_modifier: null } }), [])
+  assert.deepEqual(ok({ twin_state_patch: { current_ef_baseline: '1.52', shoe_alert: 'x' } }), []); assert.deepEqual(ok({ twin_state_patch: 'none' }), [])
+  assert.equal(S.normalize({ twin_state_patch: { current_ef_baseline: '1.52' } }).twin_state_patch.current_ef_baseline, 1.52)
+})

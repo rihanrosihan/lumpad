@@ -43,6 +43,11 @@ export const normalize = (j) => {
   if (Array.isArray(j.flags)) for (const f of j.flags) if (f && typeof f === 'object' && !FLAG_TYPES.has(f.type)) f.type = 'other'
   // ids are sometimes returned as strings ("512"); coerce, and drop anything that is not an integer id
   if ('cited_ids' in j) j.cited_ids = toIds(j.cited_ids)
+  // optional suggestion block: models often send null / empty fields for what they have no suggestion for; drop them (and numeric strings become numbers)
+  if (j.twin_state_patch && typeof j.twin_state_patch === 'object' && !Array.isArray(j.twin_state_patch)) {
+    const t = j.twin_state_patch; for (const k of Object.keys(t)) { if (t[k] == null || t[k] === '') delete t[k]; else if (k === 'current_ef_baseline' && typeof t[k] === 'string' && isFinite(Number(t[k]))) t[k] = Number(t[k]) }
+    if (!Object.keys(t).length) delete j.twin_state_patch
+  } else if ('twin_state_patch' in j) delete j.twin_state_patch
   if (Array.isArray(j.recommendations)) for (const r of j.recommendations) if (r && typeof r === 'object') {
     if ('evidence_ids' in r) r.evidence_ids = toIds(r.evidence_ids)
     if ('target' in r) r.target = cleanTarget(r.target)
