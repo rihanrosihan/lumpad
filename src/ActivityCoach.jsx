@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Card, Chip } from './ui.jsx'
 import { useApi, invalidate } from './api.js'
+import { cleanCoachText } from './lib/coachText.js'
 import { Md, post } from './Coach.jsx'
 
 // Per-session coach review on the Run Analysis page. Reuses an existing session_review for this run if one exists; otherwise offers to run one
@@ -15,7 +16,7 @@ export default function ActivityCoach({ id, label }) {
   if (S?.no_fit) return <Card title="Coach analysis for this session"><p className="muted">Waiting for this run's FIT file. Weather, air quality, route map, elevation and the coach review appear after the next COROS sync (the FIT is downloaded after the run is listed). Nothing is analysed from older runs in the meantime.</p></Card>
   if (p) {
     const upToDate = fresh ? true : S ? S.up_to_date : null, when = fresh?.saved_at || hit?.created_at
-    const clean = (x) => String(x || '').replace(/\bbelum ditarik\b/gi, 'not yet extracted'), sum = clean(p.summary), short = sum.length > 280 ? sum.slice(0, 277).replace(/\s+\S*$/, '') + '…' : sum
+    const clean = cleanCoachText, sum = clean(p.summary), short = sum.length > 280 ? sum.slice(0, 277).replace(/\s+\S*$/, '') + '…' : sum
     const recs = (p.recommendations || []).slice(0, 3), flags = (p.flags || []).slice(0, 2)
     return <>
       <div className="acoach-card">

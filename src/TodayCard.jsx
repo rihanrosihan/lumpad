@@ -1,6 +1,7 @@
 // Home: ONE card for today — the call from the athlete's rules, the AI coach's one-line take, then only the metrics that need attention.
 // Replaces the separate header summary, "Today's call" and "AI Coach daily brief" cards, which said the same thing three times.
 import { useState } from 'react'
+import { cleanCoachText } from './lib/coachText.js'
 import { useApi, invalidate } from './api.js'
 import { Md, post } from './Coach.jsx'
 import { watchList, tomorrowCheck, painToday } from './lib/watch.js'
@@ -10,7 +11,7 @@ import { evidenceText } from './AdviceLog.jsx'
 const wibDay = (ms) => new Date(ms + 7 * 3600e3).toISOString().slice(0, 10)
 // preview: 200–300 characters, cut at a sentence or word boundary
 export const preview = (t, max = 280, min = 200) => { if (t.length <= max) return t; const c = t.slice(0, max), at = Math.max(c.lastIndexOf('. '), c.lastIndexOf('! '), c.lastIndexOf('? ')); return at >= min ? c.slice(0, at + 1) : c.replace(/\s+\S*$/, '') + '…' }
-const clean = (s) => String(s || '').replace(/\bbelum ditarik\b/gi, 'not yet extracted')
+const clean = cleanCoachText
 export default function TodayCard({ checkin, settings, go, todayActs = [], date, tomorrow = null, weekPlanKm = null }) {
   const [open, setOpen] = useState(false), [tick, setTick] = useState(0), [busy, setBusy] = useState(false), [err, setErr] = useState(''), T = useApi('/api/twin'), twin = T.data?.state, R = useApi('/api/coach/runs')
   const brief = (R.data || []).find((r) => r.intent === 'daily_brief' && r.ok && wibDay(Date.parse(r.created_at)) === wibDay(Date.now()))

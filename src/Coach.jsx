@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { cleanCoachText } from './lib/coachText.js'
 import { useSub } from './useSub.js'
 import { Card, Chip, Sheet, SegmentedTabs, StatusPill, ProvenanceBadge } from './ui.jsx'
 import LagExplorer from './LagExplorer.jsx'
@@ -9,7 +10,7 @@ import { useApi, fmtDur, fmtPaceS } from './api.js'
 import { fmtShort } from './lib/calendar.js'
 
 // ---- rich markdown (bold, inline code/citations, tables, numbered/bullet lists, paragraphs) — no raw HTML injection
-const cleanId = (s) => String(s || '').replace(/\bbelum ditarik\b/gi, 'not yet extracted')
+const cleanId = cleanCoachText
 const inline = (t) => cleanId(t).split(/(\*\*[^*]+\*\*|`[^`]+`)/g).map((p, i) => {
   if (p.startsWith('**') && p.endsWith('**')) return <b key={i}>{p.slice(2, -2)}</b>
   if (p.startsWith('`') && p.endsWith('`')) return <code key={i} className="md-code">{p.slice(1, -1)}</code>
@@ -61,7 +62,7 @@ export function Result({ p, res }) {
     {p.twin_state_patch && Object.values(p.twin_state_patch).some((x) => x != null && x !== '') && <div className="mod yellow"><b>Suggested twin updates (not applied — check before acting)</b>
       <ul className="rules">{p.twin_state_patch.current_ef_baseline != null && <li>EF baseline → {p.twin_state_patch.current_ef_baseline}</li>}{p.twin_state_patch.shoe_alert && <li>Shoe: {cleanId(p.twin_state_patch.shoe_alert)}</li>}{p.twin_state_patch.readiness_modifier && <li>Readiness: {cleanId(p.twin_state_patch.readiness_modifier)}</li>}</ul></div>}
     {(p.grounding?.unverified?.length > 0 || p.grounding?.bad_ids?.length > 0) && <div className="chips"><span title={`Not found in the data the coach was shown: ${[...(p.grounding.unverified || []), ...(p.grounding.bad_ids || []).map((i) => '#' + i)].join(', ')}`}><Chip tone="yellow">{(p.grounding.unverified?.length || 0) + (p.grounding.bad_ids?.length || 0)} unverified</Chip></span></div>}
-    <details className="more" open><summary>Full analysis</summary><Md text={p.analysis_md} /></details>
+    <details className="more" open><summary>Full analysis</summary><Md text={cleanId(p.analysis_md)} /></details>
     {wb && (wb.stored.length + wb.merged.length + wb.rejected.length > 0) && <p className="src-note">Memory: {wb.stored.length} new (awaiting confirmation) · {wb.merged.length} merged · {wb.rejected.length} rejected (numbers/citations not verified).</p>}
   </Card>
 }
@@ -223,7 +224,7 @@ function RagStatusAndHistory({ st }) {
       <p className="lead">{cleanId(D.data.parsed.summary)}</p>
       {D.data.parsed.flags?.length > 0 && <div className="chips">{D.data.parsed.flags.map((f, i) => <Chip key={i} tone={f.type === 'gate' || f.type === 'injury' ? 'red' : 'yellow'}>{cleanId(f.text)}</Chip>)}</div>}
       {D.data.parsed.recommendations?.length > 0 && <ol className="recs">{D.data.parsed.recommendations.map((r, i) => <li key={i}><div><Chip tone={PRIO[r.priority]?.[0]}>{PRIO[r.priority]?.[1] || r.priority}</Chip>{r.needs_athlete_ok && <Chip>needs your approval</Chip>}</div><b>{cleanId(r.action)}</b><small>{cleanId(r.why)}</small></li>)}</ol>}
-      <Md text={D.data.parsed.analysis_md} />
+      <Md text={cleanId(D.data.parsed.analysis_md)} />
     </> : <p className="muted">{D.data?.error ? `Run did not complete: ${D.data.error}` : 'Loading…'}</p>}</Sheet>
   </Card>
 }

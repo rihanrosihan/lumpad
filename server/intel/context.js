@@ -8,6 +8,7 @@ import { OUTPUT_SCHEMA } from './schema.js'
 import { zMatrix, cosine, FEATURES } from './card.js'
 import { RACE_CALENDAR_TEXT } from './racecal.js'
 import { todayActivity } from './today.js'
+import { timeFrame, frameNote, sessionFacts, loadAfter, sinceThen } from './timeframe.js'
 import { adviceSummary } from './advice.js'
 import PLAN from '../../src/data/plan.json' with { type: 'json' }
 import { redact, STABLE_ATHLETE, DEFINITIONS, INTENT_QUERY, TASKS, renderPromptPure } from './prompt.js'
@@ -23,6 +24,26 @@ export { redact, STABLE_ATHLETE, DEFINITIONS, INTENT_QUERY, TASKS } from './prom
 function compactTwin(state) {
   const t = JSON.parse(JSON.stringify(state)); delete t.fade_curves; if (t.durability) delete t.durability.run_share_by_km; if (t.races) t.races.fm_attempts = (t.races.fm_attempts || []).slice(-3)
   t.shoes = (t.shoes || []).filter((s) => s.n > 0 || !s.retired).slice(0, 6); return t
+}
+// past/recent reviews: the twin is a snapshot of TODAY; for a retrospective review its now-state sections (readiness, load, last days, plan, projection) would be read as the state at the time of the session
+function pastTwin(state) {
+  const t = compactTwin(state); for (const k of ['readiness', 'load', 'recent_days', 'plan', 'projection', 'data_gaps']) delete t[k]
+  t.as_of_note = `snapshot from ${state.as_of}, not the state at the time of the session`; return t
+}
+// what that day looked like: the day's activities, the form the athlete carried out of it (from daily_feat), that day's sleep/HRV if COROS has them, the plan if one existed, and what happened afterwards
+function buildSessionDay(date, tf) {
+  const r1 = (x) => (x == null || !isFinite(x) ? null : Math.round(x * 10) / 10)
+  const acts = app.prepare("SELECT id, date, name, sport, distance_m, duration_s, avg_hr, avg_pace_s_km, training_load, start_ts FROM activities WHERE date >= ? AND source IN ('coros','garmin') ORDER BY date, start_ts").all(date)
+  const that = acts.filter((a) => a.date === date), daily = idb.prepare('SELECT date, tl FROM daily_feat ORDER BY date').all()
+  let h; try { h = app.prepare('SELECT sleep_total_min, resting_hr, hrv FROM health_merged WHERE date=?').get(date) } catch { try { const x = app.prepare('SELECT sleep_total_min, resting_hr, hrv_avg FROM health_daily WHERE date=?').get(date); h = x && { sleep_total_min: x.sleep_total_min, resting_hr: x.resting_hr, hrv: x.hrv_avg } } catch {} }
+  const plan = PLAN.find((d) => d.date === date)
+  return { date, note: `the day of the reviewed session (${tf.mode === 'past' ? 'retrospective' : 'a few days ago'}); everything here is as of that day, not today`,
+    activities_that_day: that.map((a) => ({ sport: a.sport, km: a.distance_m ? r1(a.distance_m / 1000) : null, minutes: a.duration_s ? Math.round(a.duration_s / 60) : null, avg_hr: a.avg_hr ?? null, pace_s_km: a.avg_pace_s_km ? Math.round(a.avg_pace_s_km) : null, training_load: a.training_load ?? null })),
+    tl_that_day: that.reduce((x, a) => x + (a.training_load || 0), 0) || null,
+    load_after_that_day: loadAfter(daily, date), // CTL/ATL (42/7 days) after that day's load; tsb_after = CTL - ATL
+    that_day_health: h ? { sleep_min: h.sleep_total_min ?? null, resting_hr: h.resting_hr ?? null, hrv: h.hrv ?? null } : null,
+    plan_that_day: plan ? { kind: plan.kind, label: plan.label || null, km: plan.km ?? null } : null,
+    since_then: sinceThen(acts, date) }
 }
 const nearestSessions = (labelId, k = 3) => {
   const rows = idb.prepare('SELECT label_id, date, distance_m, ef, features FROM fit_session').all(); const Z = zMatrix(rows.map((r) => JSON.parse(r.features || '{}')))
@@ -47,6 +68,9 @@ export function retrieveRunnerContext({ intent = 'daily_brief', question = '', d
   const rules = mdb.prepare("SELECT * FROM memory WHERE tier='procedural' AND status='active' ORDER BY locked DESC, id").all().map((r) => ({ id: r.id, title: r.title, rule: redact(r.body), locked: !!r.locked, tag: r.evidence_tag }))
   // 2) episodic: focus session + its fingerprint neighbours, otherwise the most recent sessions for the intent
   const focus = activityId ? idb.prepare('SELECT label_id FROM fit_session WHERE activity_id=? OR label_id=?').get(activityId, String(activityId).replace(/^coros:/, ''))?.label_id : null
+  const activityDate = focus ? idb.prepare('SELECT date FROM fit_session WHERE label_id=?').get(focus)?.date : null, realToday = wibDate()
+  const tf = timeFrame({ intent, activityDate, today: realToday }), retro = tf.mode === 'past' || tf.mode === 'recent'
+  if (retro && tf.mode === 'past') date = activityDate // the review is dated by the session, not by the day it is asked
   let epis = []
   if (focus) epis = epiByLabel([focus, ...nearestSessions(focus, 3)])
   else { const n = intent === 'weekly_review' ? 10 : intent === 'race_plan' ? 6 : 5; epis = mdb.prepare("SELECT id, title, body, valid_from FROM memory WHERE tier='episodic' AND status='active' AND valid_from IS NOT NULL ORDER BY valid_from DESC LIMIT ?").all(n) }
@@ -77,13 +101,17 @@ export function retrieveRunnerContext({ intent = 'daily_brief', question = '', d
   const edges = listEdges().filter((e) => e.status === 'supported' || e.status === 'candidate').sort((a, b) => rel(b) - rel(a)).slice(0, 8).map((e) => ({ exposure: e.exposure, outcome: e.outcome, window_days_before: [e.lag_lo, e.lag_hi], partial_rho: e.partial_rho, ci: [e.ci_lo, e.ci_hi], n: e.n, n_eff: e.n_eff, q: e.q, status: e.status, caveat: 'association in one athlete, not causal' }))
   // 5) budget: drop from the bottom (text matches → older episodes → edges), never the rules or the twin
   // 4b) what the athlete has already done today (+ load after it): the brief must not read as if the day had not started
-  let todayAct; try { const rows = app.prepare("SELECT id, name, sport, distance_m, duration_s, avg_hr, avg_pace_s_km, training_load FROM activities WHERE source='coros' AND date=? ORDER BY start_ts").all(date)
-    todayAct = todayActivity(rows.map((a) => ({ ...a, fit: !!idb.prepare('SELECT 1 FROM fit_session WHERE activity_id=?').get(a.id) })), twinRow, date, PLAN.find((d) => d.date === addDays(date, 1)) || null) } catch {}
-  let adviceHist; try { const a = adviceSummary({ today: date }); if (a.resolved) adviceHist = { last_days: a.days, checked: a.resolved, by_kind: a.by_kind, recent: a.recent } } catch {}
-  const twin = compactTwin(twinRow.state), stable = { schema: SCHEMA, athlete: STABLE_ATHLETE, definitions: DEFINITIONS, rules }, list = [...items.values()]
+  let todayAct, sessionDay; try {
+    if (!retro) { const rows = app.prepare("SELECT id, name, sport, distance_m, duration_s, avg_hr, avg_pace_s_km, training_load FROM activities WHERE source='coros' AND date=? ORDER BY start_ts").all(date)
+      todayAct = todayActivity(rows.map((a) => ({ ...a, fit: !!idb.prepare('SELECT 1 FROM fit_session WHERE activity_id=?').get(a.id) })), twinRow, date, PLAN.find((d) => d.date === addDays(date, 1)) || null) }
+    else sessionDay = buildSessionDay(activityDate, tf)
+  } catch {}
+  let adviceHist; if (tf.mode !== 'past') try { const a = adviceSummary({ today: date }); if (a.resolved) adviceHist = { last_days: a.days, checked: a.resolved, by_kind: a.by_kind, recent: a.recent } } catch {}
+  const twin = tf.mode === 'past' ? pastTwin(twinRow.state) : compactTwin(twinRow.state), stable = { schema: SCHEMA, athlete: STABLE_ATHLETE, definitions: DEFINITIONS, rules }, list = [...items.values()]
+  const facts = focus ? (() => { const h = idb.prepare('SELECT km, run_share, avg_hr, distance_m FROM fit_session WHERE label_id=?').get(focus); try { return h ? sessionFacts(JSON.parse(h.km || '[]'), h) : undefined } catch { return undefined } })() : undefined
   let volatile, tokens
   for (;;) {
-    volatile = { as_of: date, intent, question: redact(question), query: { filters: { ...dq.filters, shoes: dq.filters.shoes?.map((x) => x.name) }, topics: dq.topics }, twin_version: twinRow.version, twin, episodes: list.filter((i) => i.tier === 'episodic'), facts: list.filter((i) => i.tier !== 'episodic'), correlation_edges: edges, telemetry, focus_label: focus || null, today_activity: todayAct, advice_history: adviceHist, planned_forecast: forecast || undefined }
+    volatile = { as_of: date, intent, question: redact(question), query: { filters: { ...dq.filters, shoes: dq.filters.shoes?.map((x) => x.name) }, topics: dq.topics }, twin_version: twinRow.version, twin, episodes: list.filter((i) => i.tier === 'episodic'), facts: list.filter((i) => i.tier !== 'episodic'), correlation_edges: edges, telemetry, focus_label: focus || null, today_activity: todayAct, session_day: sessionDay, session_facts: facts, time_frame: tf.mode === 'live' || tf.mode === 'same_day' ? undefined : tf, frame_note: frameNote(tf) || undefined, advice_history: adviceHist, planned_forecast: tf.mode === 'past' ? undefined : forecast || undefined }
     tokens = EST(JSON.stringify(stable)) + EST(JSON.stringify(volatile)); if (tokens <= tokenBudget || list.length === 0) break
     if (telemetry.length > 1) { telemetry.pop(); continue }
     const drop = list.map((i, k) => [i, k]).filter(([i]) => i.why === 'text match').pop() || list.map((i, k) => [i, k]).filter(([i]) => i.why === 'recent').pop() || [list.at(-1), list.length - 1]; list.splice(drop[1], 1)
