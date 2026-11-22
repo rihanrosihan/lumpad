@@ -2,12 +2,14 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { watchList, painToday } from './watch.js'
 const base = { readiness: { score: 81, gate: 'green', caps: [] }, recent_days: [{ sleep_hr: 63, hrv: 67, hrv_status: 'Normal', hrv_baseline: 73, sleep_min_asleep: 392 }],
-  intensity: { easy_runs: 4, easy_runs_above_z2: 4, z2_ceiling: 148, low_share_pct: 12 }, aerobic: { hr_at_800: { value: 160.9, z: 3.6, n: 3, baseline: '143.1 ± 5.0 (Jan–Sep 2026, n=26)' } },
+  intensity: { easy_runs: 4, easy_runs_above_z2: 4, z2_ceiling: 148, low_share_pct: 12 }, aerobic: { hr_at_800: { value: 160.9, z: 3.6, n: 3 } }, baselines: { d30: { n: 1, hr_at_800: null } },
   load: { km_vs_4wk_avg_pct: -62, tsb: -14.2 }, durability: { longest_continuous_run_km: 10, fade_onset_km_median_90d: 6 }, injury: { sites: {} } }
-test('the real 22 Nov twin: GO by the rules, but easy-run HR and HR@8:00 are the top alerts', () => {
+test('the real 22 Nov twin: GO by the rules; easy-run HR is the alert; the race-contaminated HR@8:00 is NOT used (no steady run = unknown)', () => {
   const w = watchList(base, { checkin: { painSites: { knee: 0 } } })
   assert.equal(w.call.level, 'go')
-  assert.deepEqual(w.items.slice(0, 2).map((i) => i.id).sort(), ['easy_hr', 'hr800'])
+  assert.equal(w.items[0].id, 'easy_hr')
+  const h = w.items.find((i) => i.id === 'hr800'); assert.equal(h.value, null); assert.equal(h.status, 'watch')
+  assert.equal(watchList({ ...base, baselines: { d30: { n: 4, hr_at_800: 155.2 } } }).items.find((i) => i.id === 'hr800').status, 'alert')
   assert.equal(w.items.find((i) => i.id === 'durability').status, 'info')
 })
 test('sleep HR above 67 makes it EASY ONLY with the rule as the reason', () => {

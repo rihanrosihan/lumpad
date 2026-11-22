@@ -50,15 +50,18 @@ export function watchList(twin, { checkin = null, sleepNeedMin = 480 } = {}) {
   const it = twin.intensity || {}
   if (it.easy_runs > 0) {
     const share = Math.round((it.easy_runs_above_z2 / it.easy_runs) * 100), st = share >= 50 ? 'alert' : share >= 25 ? 'watch' : 'ok'
-    add({ id: 'easy_hr', label: 'Easy runs too hard', value: `${it.easy_runs_above_z2}/${it.easy_runs}`, unit: '', ref: `cap ${it.z2_ceiling} bpm · low-zone time ${it.low_share_pct ?? '—'} %`, status: st,
-      why: st === 'ok' ? 'Easy runs stayed easy.' : `Easy runs above the ${it.z2_ceiling} bpm ceiling: slow down or walk to stay under it.` })
+    add({ id: 'easy_hr', label: 'Easy runs above cap', value: `${it.easy_runs_above_z2}/${it.easy_runs}`, unit: '', ref: `cap ${it.z2_ceiling} bpm · runs ≤ 15 km, 28 d`, status: st,
+      why: st === 'ok' ? 'Easy runs stayed easy.' : `Runs ≤ 15 km above the ${it.z2_ceiling} bpm ceiling (outside the plan this also counts tests and probes): slow down or walk to stay under it.` })
   }
-  // 6) aerobic marker — HR at 8:00/km vs the athlete's baseline
-  const a = twin.aerobic?.hr_at_800
-  if (a?.value != null && a.z != null) {
-    const st = a.z >= 2 ? 'alert' : a.z >= 1 ? 'watch' : 'ok'
-    add({ id: 'hr800', label: 'HR at 8:00/km', value: a.value, unit: 'bpm', ref: `baseline ${a.baseline?.split(' (')[0] || '—'} · n=${a.n}`, status: st,
-      why: st === 'alert' ? `Well above baseline (${sgn(a.z)} SD): fatigue, heat or illness. Keep running easy until it comes back.${a.n < 5 ? ' Few runs: treat as a warning.' : ''}` : st === 'watch' ? 'Slightly above baseline.' : 'At or below baseline: aerobic fitness on track.' })
+  // 6) aerobic marker — HR at 8:00/km on STEADY easy runs only (3–15 km, ≥ 90 % running: twin.baselines.d30). twin.aerobic.hr_at_800 mixes in races and
+  //    run-walk sessions (e.g. a marathon in the heat), which is effort and heat, not aerobic fitness, so it is not used here.
+  const seed = 143.1, seedSd = 5.0, d30 = twin.baselines?.d30
+  if (d30) {
+    const v = d30.hr_at_800, z = v != null ? Math.round(((v - seed) / seedSd) * 10) / 10 : null
+    const st = v == null ? 'watch' : z >= 2 ? 'alert' : z >= 1 ? 'watch' : 'ok'
+    add({ id: 'hr800', label: 'HR at 8:00/km (steady runs)', value: v, unit: v != null ? 'bpm' : '', ref: `baseline ${seed} ± ${seedSd} · n=${d30.n ?? 0}`, status: st,
+      why: v == null ? 'No steady easy run (3–15 km, mostly running) in 30 days, so aerobic fitness cannot be read. Do one steady easy run under the Z2 cap.'
+        : st === 'alert' ? `Well above baseline (${sgn(z)} SD): fatigue, heat or illness. Keep running easy until it comes back.${d30.n < 3 ? ' Few runs: treat as a warning.' : ''}` : st === 'watch' ? 'Slightly above baseline.' : 'At or below baseline: aerobic fitness on track.' })
   }
   // 7) load guard — locked rule (+10 %), plus form
   const L = twin.load || {}
