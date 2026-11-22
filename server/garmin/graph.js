@@ -68,3 +68,14 @@ export async function rollback({ opts = {} } = {}) {
   await cypher('MATCH (s:Session) WHERE s.garmin_id IS NOT NULL AND s.era IS NULL REMOVE s.garmin_id', {}, opts)
   return snapshot(opts)
 }
+
+// WORE edges for the historical sessions (shoe from Strava, see shoes.js). Existing Shoe nodes only; tagged era='garmin_hist'; MERGE (idempotent).
+export async function wore({ dry = true, opts = {}, idb = openIntel() } = {}) {
+  const rows = idb.prepare("SELECT label_id, shoe_id FROM fit_session_hist WHERE shoe_id IS NOT NULL AND dup_of IS NULL AND date < ?").all(CANON_CUTOFF).map((r) => ({ label_id: r.label_id, gear_id: String(r.shoe_id) }))
+  const shoes = new Set((await cypher('MATCH (sh:Shoe) RETURN sh.gear_id', {}, opts)).map((x) => String(x[0]))), ok = rows.filter((r) => shoes.has(r.gear_id))
+  const rep = { dry, candidates: rows.length, with_existing_shoe_node: ok.length, missing_shoe_nodes: [...new Set(rows.filter((r) => !shoes.has(r.gear_id)).map((r) => r.gear_id))] }
+  if (dry) return rep
+  for (const c of chunk(ok, 100)) await cypher('UNWIND $rows AS r MATCH (s:Session {label_id: r.label_id, era: "garmin_hist"}), (sh:Shoe {gear_id: r.gear_id}) MERGE (s)-[x:WORE]->(sh) ON CREATE SET x.era = "garmin_hist"', { rows: c }, opts)
+  const n = await cypher('MATCH (:Session {era: "garmin_hist"})-[x:WORE]->(:Shoe) RETURN count(x)', {}, opts)
+  return { ...rep, wore_edges_hist: n[0][0] }
+}

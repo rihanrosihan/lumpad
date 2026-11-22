@@ -6,6 +6,7 @@ import { stageAll } from './stage.js'
 import { dryRun } from './link.js'
 import { apply, openLive, projectLaps } from './apply.js'
 import { openIntel } from './fitsession.js'
+import { linkShoes } from './shoes.js'
 import { runFitSessions } from './fitsession.js'
 import { build as buildHistory, writeMemory } from './history.js'
 import * as graph from './graph.js'
@@ -23,9 +24,11 @@ else if (cmd === 'fit-sessions') console.log(JSON.stringify(await runFitSessions
 else if (cmd === 'history') console.log(JSON.stringify(buildHistory({ gdb: db }), null, 1))
 else if (cmd === 'memory') console.log(JSON.stringify(await writeMemory(), null, 1))
 else if (cmd === 'graph') console.log(JSON.stringify(await graph.apply({ dry: !rest.includes('--yes'), db }), null, 1))
+else if (cmd === 'graph-wore') console.log(JSON.stringify(await graph.wore({ dry: !rest.includes('--yes') }), null, 1))
 else if (cmd === 'graph-rollback') console.log(JSON.stringify(await graph.rollback(), null, 1))
 else if (cmd === 'twin-history') console.log(JSON.stringify(buildTwinHist({ gdb: db }), null, 1))
 else if (cmd === 'laps') console.log(JSON.stringify(projectLaps({ live: openLive(), idb: openIntel(), dry: !rest.includes('--yes') }), null, 1))
+else if (cmd === 'shoes') console.log(JSON.stringify(await linkShoes({ dry: !rest.includes('--yes'), since: opt('since', '2024-09-01') }), null, 1))
 else if (cmd === 'report') console.log(JSON.stringify(report(db), null, 1))
 else if (cmd === 'guard') console.log(JSON.stringify(guard()))
 else { console.error('usage: inventory|vault|stage|report|guard'); process.exit(2) }
