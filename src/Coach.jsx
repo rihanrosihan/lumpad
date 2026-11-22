@@ -573,6 +573,8 @@ export function HomeCoach({ go }) {
   return <div className="card coachcard">
     <div className="ch"><h2><i className="cdot" aria-hidden="true" />AI Coach daily brief</h2><span className="chips" style={{ margin: 0 }}>{model && <Chip>{String(model).slice(0, 22)}</Chip>}<Chip tone={brief ? 'green' : undefined}>{brief ? 'Active brief' : 'no brief yet'}</Chip></span></div>
     {B.data?.parsed ? <p className="lead">{cleanId(B.data.parsed.summary)}</p> : <p className="muted">{t ? 'No brief today yet — generated automatically after the morning sync, or request one manually in the Coach tab.' : 'The Digital Twin is not built yet — run the intelligence pipeline first.'}</p>}
+    {B.data?.parsed?.flags?.length > 0 && <div className="chips">{B.data.parsed.flags.slice(0, 3).map((f, i) => <Chip key={i} tone={f.type === 'gate' || f.type === 'injury' ? 'red' : 'yellow'}>{cleanId(f.text)}</Chip>)}</div>}
+    {B.data?.parsed?.recommendations?.length > 0 && <><h4 className="homenext">What to do next</h4><ol className="recs">{B.data.parsed.recommendations.slice(0, 3).map((r, i) => <li key={i}><b>{cleanId(r.action)}</b><small>{cleanId(r.why)}</small></li>)}</ol></>}
     {t && <div className="chips">
       {g != null && <Chip tone={g > 10 ? 'red' : 'green'}>Km vs 4 wk: {g > 0 ? '+' : ''}{g}% (limit +10%)</Chip>}
       {sc && <Chip>Sub-4: {pct(sc[0].p_sub4)} · {pct(sc[1].p_sub4)} · {pct(sc[2].p_sub4)} [MODEL]</Chip>}

@@ -1508,3 +1508,4 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .mq-act button { min-height: 40px; font-weight: 700; border-radius: 10px; }
 .mq-yes { background: rgba(5,150,105,.14); color: #047857; border: 1px solid rgba(5,150,105,.4); }
 .mq-no { background: rgba(220,38,38,.1); color: #b91c1c; border: 1px solid rgba(220,38,38,.35); }
+.homenext{margin:.8em 0 .2em;font-size:.95em}
