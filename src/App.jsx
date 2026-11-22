@@ -1,15 +1,15 @@
-import { Component, useEffect, useMemo, useRef, useState } from 'react'
+import { Component, Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
 import { useStore, useSyncStatus, useSettings } from './store.js'
 import { Icon, Sheet } from './ui.jsx'
 import Home from './Home.jsx'
-import Readiness from './Readiness.jsx'
-import Calendar from './Calendar.jsx'
-import ActivityHub from './ActivityHub.jsx'
-import Profile from './Profile.jsx'
-import Coach from './Coach.jsx'
-import DayPage from './DayPage.jsx'
-import Biometrics from './Biometrics.jsx'
-import PlanSync from './PlanSync.jsx'
+const Readiness = lazy(() => import('./Readiness.jsx'))
+const Calendar = lazy(() => import('./Calendar.jsx'))
+const ActivityHub = lazy(() => import('./ActivityHub.jsx'))
+const Profile = lazy(() => import('./Profile.jsx'))
+const Coach = lazy(() => import('./Coach.jsx'))
+const DayPage = lazy(() => import('./DayPage.jsx'))
+const Biometrics = lazy(() => import('./Biometrics.jsx'))
+const PlanSync = lazy(() => import('./PlanSync.jsx'))
 import { EMPTY_BIO, latest, classifyBP } from './lib/bio.js'
 import { CHECKPOINTS, TARGET } from './lib/plan.js'
 import { paces, fmtPace } from './lib/vdot.js'
@@ -160,7 +160,7 @@ export default function App() {
       </aside>
       <div className="app">
         {sync === 'offline' && <div className="offbar" role="status">Offline — changes are saved only in this browser and will be sent when you are back online</div>}
-        <main id="main" ref={mainRef} tabIndex={-1}><PageBoundary key={tab}>
+        <main id="main" ref={mainRef} tabIndex={-1}><PageBoundary key={tab}><Suspense fallback={<div className="screen"><div className="card skel" aria-busy="true"><p className="muted">Loading…</p></div></div>}>
           {tab === 'home' && <Home vdot={vdot} settings={settings} results={results} go={go} M={M} />}
           {tab === 'ready' && <Readiness vdot={vdot} settings={settings} focus={focus} M={M} />}
           {tab === 'activity' && <ActivityHub vdot={vdot} focus={focus} go={go} settings={settings} results={results} M={M} />}
@@ -172,7 +172,7 @@ export default function App() {
           {tab === 'race' && <Calendar view="race" vdot={vdot} results={results} setResults={setResults} focus={focus} settings={settings} go={go} />}
           {tab === 'biometrics' && <Biometrics settings={settings} setSettings={setSettings} />}
           {tab === 'profile' && <Profile vdot={vdot} results={results} settings={settings} setSettings={setSettings} go={go} />}
-        </PageBoundary></main>
+        </Suspense></PageBoundary></main>
       </div>
     </div>
     <nav className="tabbar" aria-label="Main menu">{BOTTOM.map((k) => navBtn(k, 'nb'))}</nav>

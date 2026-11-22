@@ -51,6 +51,16 @@
       ]
     },
     {
+      "name": "Calendar",
+      "url": "/calendar",
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
       "name": "AI Coach",
       "url": "/coach",
       "icons": [
@@ -62,7 +72,15 @@
     }
   ],
   "display_override": [
-    "fullscreen",
     "standalone"
-  ]
+  ],
+  "lang": "en",
+  "categories": [
+    "health",
+    "sports",
+    "fitness"
+  ],
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  }
 }

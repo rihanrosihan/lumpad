@@ -1,12 +1,17 @@
 import { useEffect, useState } from 'react'
 import { getJson } from './net.js'
 // GET helper: {data, state: 'loading'|'ok'|'error'}. Never invents data: callers show "not pulled yet" for empty results.
+// Stale-while-revalidate: the last answer for a path (kept 10 min in memory) is shown at once and refreshed in the background,
+// so going back to a tab no longer starts from an empty screen.
+const memo = new Map(), TTL = 10 * 60 * 1000
+const fromMemo = (path) => { const m = memo.get(path); return m && Date.now() - m.t < TTL ? m.d : null }
 export function useApi(path, enabled = true) {
-  const [s, setS] = useState({ data: null, state: enabled ? 'loading' : 'idle' })
+  const [s, setS] = useState(() => { const d = enabled && path ? fromMemo(path) : null; return { data: d, state: d ? 'ok' : enabled ? 'loading' : 'idle' } })
   useEffect(() => {
     if (!enabled || !path) return
-    let dead = false; setS((x) => ({ data: x.data, state: 'loading' }))
-    getJson(path).then((d) => !dead && setS({ data: d, state: 'ok' })).catch(() => !dead && setS({ data: null, state: 'error' }))
+    let dead = false; const hit = fromMemo(path)
+    setS((x) => (hit ? { data: hit, state: 'ok' } : { data: x.data, state: 'loading' }))
+    getJson(path).then((d) => { memo.set(path, { d, t: Date.now() }); if (memo.size > 120) memo.delete(memo.keys().next().value); !dead && setS({ data: d, state: 'ok' }) }).catch(() => !dead && setS(hit ? { data: hit, state: 'ok' } : { data: null, state: 'error' }))
     return () => { dead = true }
   }, [path, enabled])
   return s
