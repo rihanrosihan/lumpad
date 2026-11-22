@@ -19,10 +19,17 @@ export function mergeActivities(rows) {
         elevation_m: c.elevation_m ?? m?.elevation_m, location: m?.location || c.location, sources: m ? ['coros', 'strava'] : ['coros'], ids: m ? [c.id, m.id] : [c.id] })
     }
     for (const s of strava) if (!used.has(s.id)) out.push({ ...s, sport_class: cls(s.sport), sources: ['strava'], ids: [s.id] })
+    // Garmin history (import of the pre-2026 archive): Garmin-only sessions are their own activities; matched sessions keep their COROS row (see activity_enrichment)
+    for (const g of day.filter((r) => r.source === 'garmin')) out.push({ ...g, sport_class: cls(g.sport), sources: ['garmin'], ids: [g.id] })
   }
   return out.sort((a, b) => (b.start_ts || 0) - (a.start_ts || 0) || b.date.localeCompare(a.date))
 }
-export const listMerged = (from, to) => mergeActivities(db.prepare('SELECT * FROM activities WHERE date BETWEEN ? AND ?').all(from, to))
+// Garmin side-data per activity (training effect, zones, feel, …); {} when the Garmin import has not run (table absent)
+const enrichmentFor = (ids) => { try { return new Map(db.prepare(`SELECT * FROM activity_enrichment WHERE activity_id IN (${ids.map(() => '?').join(',') || "''"})`).all(...ids).map((e) => [e.activity_id, e])) } catch { return new Map() } }
+export const listMerged = (from, to) => {
+  const m = mergeActivities(db.prepare('SELECT * FROM activities WHERE date BETWEEN ? AND ?').all(from, to)), e = enrichmentFor(m.flatMap((x) => x.ids))
+  return m.map((x) => { const g = x.ids.map((i) => e.get(i)).find(Boolean); return g ? { ...x, garmin: g } : x })
+}
 export function activityDetail(id) {
   const a = db.prepare('SELECT * FROM activities WHERE id = ?').get(id); if (!a) return null
   const [merged] = mergeActivities(db.prepare('SELECT * FROM activities WHERE date = ?').all(a.date)).filter((m) => m.ids.includes(id))

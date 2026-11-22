@@ -24,3 +24,9 @@ test('readiness data: load per day sums COROS training load only (no double coun
     fitness: [{ date: '2027-01-05', vo2max: 47, pred_m_s: 17584 }] })
   const r = readinessData('2027-01-01', '2027-01-31'); assert.equal(r.loads[0].load, 120); assert.equal(r.health[0].load_ratio, 0.67); assert.equal(r.fitness.vo2max, 47)
 })
+
+test('Garmin-only history rows are listed as their own activity (not dropped)', async () => {
+  const { mergeActivities } = await import('./activities.js')
+  const rows = [{ id: 'coros:1', source: 'coros', sport: 'Run', date: '2025-05-01', distance_m: 5000, duration_s: 1500, start_ts: 1 }, { id: 'garmin:9', source: 'garmin', sport: 'Walk', date: '2025-05-01', distance_m: 2000, duration_s: 900, start_ts: 2 }]
+  const m = mergeActivities(rows); assert.equal(m.length, 2); assert.deepEqual(m.find((x) => x.id === 'garmin:9').sources, ['garmin'])
+})

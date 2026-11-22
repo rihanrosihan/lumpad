@@ -12,3 +12,8 @@ lumpadd/fitbench
 lumpadd/*.exe
 .env.v2
 Neo4j-*.txt
+
+# Garmin import (health data, never commit)
+garmin_backup.zip
+server/data/garmin.db*
+server/data/fit/garmin/

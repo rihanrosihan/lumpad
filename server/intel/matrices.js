@@ -30,7 +30,7 @@ export function matrices() {
     COALESCE(w.indoor, 0) AS indoor FROM fit_session s LEFT JOIN run_weather w ON w.label_id = s.label_id WHERE s.distance_m >= 3000 AND s.ef IS NOT NULL ORDER BY s.date`).all()
   if (!runs.length) return null
   const feat = Object.fromEntries(idb.prepare('SELECT date, run_km, strength, strength_lower, thr_min FROM daily_feat').all().map((d) => [d.date, d]))
-  const gymDays = new Set(app.prepare("SELECT DISTINCT date FROM activities WHERE sport IN ('Strength','WeightTraining','Workout')").all().map((x) => x.date))
+  const gymDays = new Set(app.prepare("SELECT DISTINCT date FROM activities WHERE source != 'garmin' AND sport IN ('Strength','WeightTraining','Workout')").all().map((x) => x.date))
   const gct = (x) => JSON.parse(x.metrics || '{}').run_gct ?? null
   const grp = (rows, row) => ({ n: rows.length, ef: r(avg(rows.map((x) => x.ef)), 3), drift: r(avg(rows.map((x) => x.drift_pahr ?? x.run_drift)), 1), gct_fade: r(avg(rows.map((x) => x.gct_fade)), 1),
     gct_avg: r(avg(rows.map(gct)), 0), stride_fade: r(avg(rows.map((x) => x.stride_fade)), 3), ...row })
