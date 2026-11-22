@@ -17,7 +17,7 @@ import { runIntel, recentIntelJobs, afterSync } from './intel/run.js'
 import { startIntelScheduler } from './intel/schedule.js'
 import { plannedForecast } from './intel/forecast.js'
 import { adviceSummary, listAdvice, setStatus as setAdviceStatus } from './intel/advice.js'
-import { getConfig, publicConfig, saveConfig, resetConfig, testConnection } from './intel/llmconfig.js'
+import { getConfig, publicConfig, saveConfig, resetConfig, testConnection, listModels } from './intel/llmconfig.js'
 import { runCoach, recentRuns, getRun, newRun, finishRun, coachStatus } from './intel/coach.js'
 import { retrieveRunnerContext, renderPrompt, TASKS, OUTPUT_SCHEMA } from './intel/context.js'
 import { guardStatus, resolveModel } from './intel/llm.js'
@@ -167,6 +167,7 @@ const routes = {
   'POST /api/memory/action': async (_q, req) => { const b = JSON.parse((await readBody(req, 1e4)).toString()), to = { approve: 'active', retract: 'retracted', archive: 'archived' }[b.action]; if (!to) throw Object.assign(new Error('bad action'), { status: 400 }); return setStatus(+b.id, to, principal(req) || 'athlete') },
   // provider settings (Profile → AI Coach): the key is sealed at rest and never returned; saving a new key/base/model runs a connection test first
   'GET /api/coach/config': async () => publicConfig(),
+  'GET /api/coach/models': async (q) => listModels({ provider: q.get('provider') || undefined, force: q.get('refresh') === '1' }),
   'POST /api/coach/config/test': async (_q, req) => { const b = JSON.parse((await readBody(req, 1e4)).toString() || '{}'); return testConnection({ provider: b.provider, api_key: b.api_key, model: b.model }) },
   // save a provider's key/model and (by default) make it the active one; a changed key/model or a switch is tested first so a typo cannot take the coach down
   'POST /api/coach/config': async (_q, req) => {

@@ -5,6 +5,7 @@ import os from 'node:os'
 import path from 'node:path'
 process.env.DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'lumpad-llmcfg-')); process.env.LUMPAD_TOKEN_KEY = 'ab'.repeat(32); process.env.LUMPAD_DB = ':memory:'
 delete process.env.DEEPSEEK_API_KEY; delete process.env.DEEPSEEK_BASE; delete process.env.DEEPSEEK_MODEL
+const NO_FILE = path.join(process.env.DATA_DIR, 'no-such.env'); process.env.TOKENOMIX_ENV_FILE = NO_FILE // never read the real /opt/lumpad/tokenomixai.env in tests
 const C = await import('./llmconfig.js')
 const KEY = 'sk-test-0123456789abcdefTAIL'
 
@@ -65,4 +66,27 @@ test('llm.js follows the active provider and limits Tokenomix by runs per day (n
   const g = L.guard('question'); assert.equal(g.ok, false); assert.match(g.reason, /daily limit of 2/); assert.equal(L.guardStatus().mode, 'calls')
   await C.saveConfig({ provider: 'deepseek' }); assert.equal(L.guardStatus().mode, undefined, 'DeepSeek keeps the spend-based guard')
   C.resetConfig()
+})
+
+test('Tokenomix reads its key from the env file; a key saved in the UI wins; the file cannot redirect the key to another host', async () => {
+  const f = path.join(process.env.DATA_DIR, 'tokenomixai.env')
+  fs.writeFileSync(f, `# comment\nOPENAI_API_KEY="sk-file-key-ABCDEFGH-FILE"\nOPENAI_BASE_URL=https://api.tokenomixai.com/v1/\nexport OTHER=1\n`, { mode: 0o600 }); process.env.TOKENOMIX_ENV_FILE = f
+  C.resetConfig(); let c = C.getConfig('tokenomix'); assert.equal(c.key, 'sk-file-key-ABCDEFGH-FILE'); assert.equal(c.key_source, 'file'); assert.equal(c.base, 'https://api.tokenomixai.com/v1')
+  let p = C.publicConfig().providers.find((x) => x.id === 'tokenomix'); assert.equal(p.key_set, true); assert.equal(p.key_source, 'file'); assert.equal(p.key_masked, 'sk-…FILE'); assert.ok(!JSON.stringify(C.publicConfig()).includes('ABCDEFGH'))
+  await C.saveConfig({ provider: 'tokenomix', api_key: KEY, activate: false }); assert.equal(C.getConfig('tokenomix').key, KEY); assert.equal(C.getConfig('tokenomix').key_source, 'saved')
+  C.resetConfig('tokenomix'); assert.equal(C.getConfig('tokenomix').key_source, 'file', 'removing the saved key falls back to the file')
+  await C.saveConfig({ provider: 'tokenomix' }); assert.equal(C.getConfig().provider, 'tokenomix', 'activating works with the file key alone')
+  fs.writeFileSync(f, 'OPENAI_API_KEY=sk-file-key-ABCDEFGH-FILE\nOPENAI_BASE_URL=https://evil.example.com/v1\n'); fs.utimesSync(f, new Date(), new Date(Date.now() + 5000))
+  assert.equal(C.getConfig('tokenomix').base, 'https://api.tokenomixai.com/v1', 'foreign host in the file is ignored')
+  fs.rmSync(f); C.resetConfig(); assert.equal(C.getConfig('tokenomix').key, null); process.env.TOKENOMIX_ENV_FILE = NO_FILE
+})
+test('model list under a key: sorted ids, cached, auth failure and missing key handled, key never in the result', async () => {
+  C.clearModelCache(); let n = 0; const mk = (status, body) => async () => { n++; return { status, text: async () => JSON.stringify(body) } }
+  let r = await C.listModels({ provider: 'tokenomix', api_key: KEY, fetchFn: mk(200, { data: [{ id: 'glm-5.3' }, { id: 'auto' }, { id: 'deepseek-v4.1-flash' }, { id: 'auto' }] }) })
+  assert.deepEqual(r.models, ['auto', 'deepseek-v4.1-flash', 'glm-5.3']); assert.equal(r.count, 3); assert.equal(r.provider, 'tokenomix')
+  await C.listModels({ provider: 'tokenomix', api_key: KEY, fetchFn: mk(200, { data: [] }) }); assert.equal(n, 1, 'second call served from cache')
+  C.clearModelCache(); r = await C.listModels({ provider: 'tokenomix', api_key: KEY, fetchFn: mk(403, {}) }); assert.equal(r.ok, false); assert.match(r.error, /rejected/)
+  r = await C.listModels({ provider: 'tokenomix', fetchFn: mk(200, {}) }); assert.equal(r.ok, false); assert.match(r.error, /No API key/)
+  r = await C.listModels({ provider: 'tokenomix', api_key: KEY, force: true, fetchFn: async () => { throw new Error('down ' + KEY) } }); assert.ok(!JSON.stringify(r).includes(KEY))
+  await assert.rejects(() => C.listModels({ provider: 'evil', api_key: KEY }))
 })

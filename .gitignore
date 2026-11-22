@@ -17,3 +17,4 @@ Neo4j-*.txt
 garmin_backup.zip
 server/data/garmin.db*
 server/data/fit/garmin/
+tokenomixai.env

@@ -1,6 +1,7 @@
 // Coach provider settings editable from Profile → AI Coach: base URL, API key and model. Stored in server/data/llm_config.json (mode 600) with the KEY SEALED
 // (AES-256-GCM, LUMPAD_TOKEN_KEY — the same sealing as the COROS/Strava tokens). A saved field overrides the environment default (DEEPSEEK_* in .env); reset removes it.
 // The key is never returned by any function that feeds the API (publicConfig returns a masked form) and never appears in test results or error text.
+import fs from 'node:fs'
 import { load, save } from '../db.js'
 import { seal, unseal } from '../coros/oauth.js'
 
@@ -9,22 +10,44 @@ export const DEFAULT_BASE = 'https://api.deepseek.com', FILE = 'llm_config', DEF
 // deepseek = the original DeepSeek API (its key can also come from .env: DEEPSEEK_API_KEY); tokenomix = the Tokenomix gateway (no balance endpoint → daily run limit instead of spend).
 export const PROVIDERS = {
   deepseek: { label: 'DeepSeek (original)', base: () => process.env.DEEPSEEK_BASE || DEFAULT_BASE, envKey: 'DEEPSEEK_API_KEY', envModel: 'DEEPSEEK_MODEL', balance: true },
-  tokenomix: { label: 'Tokenomix (gateway)', base: () => 'https://api.tokenomixai.com/v1', envKey: null, envModel: null, balance: false },
+  // Tokenomix reads its key from a separate env file (OPENAI_API_KEY / OPENAI_BASE_URL, default /opt/lumpad/tokenomixai.env, override with TOKENOMIX_ENV_FILE); a key saved in the UI wins over the file
+  tokenomix: { label: 'Tokenomix (gateway)', base: () => tokenomixBase(), envKey: null, envModel: null, envFile: 'OPENAI_API_KEY', balance: false },
 }
+const TOKENOMIX_BASE = 'https://api.tokenomixai.com/v1', TOKENOMIX_HOST = 'api.tokenomixai.com'
+export const envFilePath = () => process.env.TOKENOMIX_ENV_FILE || '/opt/lumpad/tokenomixai.env'
+let fileCache = { path: null, mtime: 0, vars: {} }
+// KEY=VALUE lines only (no shell evaluation, no expansion); re-read when the file changes. Values never leave this module except through getConfig().key.
+export function fileVars(file = envFilePath()) {
+  try {
+    const st = fs.statSync(file); if (fileCache.path === file && fileCache.mtime === st.mtimeMs) return fileCache.vars
+    const vars = {}; for (const line of fs.readFileSync(file, 'utf8').split(/\r?\n/)) { const m = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/.exec(line); if (m && !line.trim().startsWith('#')) vars[m[1]] = m[2].replace(/^(["'])(.*)\1$/, '$2') }
+    fileCache = { path: file, mtime: st.mtimeMs, vars }; return vars
+  } catch { return {} }
+}
+// the file may name a base URL, but only the Tokenomix host is accepted (so a file cannot redirect the key to another server)
+function tokenomixBase() { try { const u = new URL(fileVars().OPENAI_BASE_URL || ''); if (u.protocol === 'https:' && u.hostname === TOKENOMIX_HOST && !u.username && !u.password) return (u.origin + u.pathname).replace(/\/+$/, '') } catch {} return TOKENOMIX_BASE }
 export const providerId = (x) => { if (!Object.hasOwn(PROVIDERS, x)) throw Object.assign(new Error('Unknown provider'), { status: 400 }); return x }
 const env = () => process.env
 export const mask = (k) => (!k ? null : k.length > 10 ? `${k.slice(0, 3)}…${k.slice(-4)}` : '…' + k.slice(-2))
 const raw = () => { try { return load(FILE, null) } catch { return null } }
 const entry = (s, id) => s?.providers?.[id] || {}
-const keyOf = (s, id) => { const e = entry(s, id); let k = null; if (e.key_sealed) { try { k = unseal(e.key_sealed)?.k || null } catch { k = null } } return k || (PROVIDERS[id].envKey ? env()[PROVIDERS[id].envKey] || null : null) }
+const keyInfo = (s, id) => {
+  const e = entry(s, id), P = PROVIDERS[id]; let k = null
+  if (e.key_sealed) { try { k = unseal(e.key_sealed)?.k || null } catch { k = null } }
+  if (k) return { key: k, source: 'saved' }
+  if (P.envKey && env()[P.envKey]) return { key: env()[P.envKey], source: 'env' }
+  if (P.envFile && fileVars()[P.envFile]) return { key: fileVars()[P.envFile], source: 'file' }
+  return { key: null, source: null }
+}
+const keyOf = (s, id) => keyInfo(s, id).key
 
 // internal (contains the plaintext key): used by llm.js only. Describes the ACTIVE provider.
 export function getConfig(id) {
   const s = raw() || {}, act = id || (Object.hasOwn(PROVIDERS, s.active) ? s.active : 'deepseek'), P = PROVIDERS[act], e = entry(s, act)
-  return { provider: act, label: P.label, base: P.base(), key: keyOf(s, act), model: e.model || (P.envModel ? env()[P.envModel] || null : null), max_calls_per_day: e.max_calls_per_day || DEFAULT_MAX_CALLS, custom_endpoint: !P.balance,
+  return { provider: act, label: P.label, base: P.base(), key: keyOf(s, act), key_source: keyInfo(s, act).source, model: e.model || (P.envModel ? env()[P.envModel] || null : null), max_calls_per_day: e.max_calls_per_day || DEFAULT_MAX_CALLS, custom_endpoint: !P.balance,
     saved: { key: !!e.key_sealed, model: !!e.model }, updated_at: s.updated_at || null }
 }
-const view = (id, active) => { const c = getConfig(id); return { id, label: c.label, base: c.base, active: id === active, key_set: !!c.key, key_masked: mask(c.key), key_source: c.saved.key ? 'saved' : c.key ? 'env' : null, model: c.model && c.model !== 'auto-flash' ? c.model : null,
+const view = (id, active) => { const c = getConfig(id); return { id, label: c.label, base: c.base, active: id === active, key_set: !!c.key, key_masked: mask(c.key), key_source: c.key_source, model: c.model && c.model !== 'auto-flash' ? c.model : null,
   model_mode: c.model && c.model !== 'auto-flash' ? 'fixed' : 'auto-flash', max_calls_per_day: c.max_calls_per_day, custom_endpoint: c.custom_endpoint, saved: c.saved } }
 export function publicConfig() {
   const act = getConfig().provider, list = Object.keys(PROVIDERS).map((id) => view(id, act)), a = list.find((x) => x.active)
@@ -77,3 +100,20 @@ export async function testConnection({ provider, api_key, model, fetchFn = fetch
     return { ...out, ok: true, warning: parsed ? null : 'The model answered but not in valid JSON: the coach needs JSON output, pick another model' }
   } catch (e) { return { ...out, stage: 'network', error: redact(e.name === 'TimeoutError' ? 'Timed out waiting for the server' : e.message || 'Network error', key) } }
 }
+
+// Models available under the provider's key (GET {base}/models) for the model dropdown. Cached 5 minutes per provider; the key never appears in the result.
+const modelCache = new Map()
+export async function listModels({ provider, api_key, fetchFn = fetch, force = false, timeout = 30000, now = Date.now() } = {}) {
+  const id = providerId(provider || getConfig().provider), cur = getConfig(id), key = (api_key && String(api_key).trim()) || cur.key
+  if (!key) return { ok: false, provider: id, error: `No API key set for ${PROVIDERS[id].label}`, models: [] }
+  const ck = id + '|' + cur.base + '|' + key.length + key.slice(-4), hit = modelCache.get(ck)
+  if (hit && !force && now - hit.at < 300000) return hit.v
+  try {
+    const r = await fetchFn(cur.base + '/models', { headers: { authorization: 'Bearer ' + key }, signal: AbortSignal.timeout(timeout) }), txt = await r.text(); let j = null; try { j = JSON.parse(txt) } catch {}
+    if (r.status === 401 || r.status === 403) return { ok: false, provider: id, error: `The server rejected the key (HTTP ${r.status})`, models: [] }
+    if (r.status !== 200) return { ok: false, provider: id, error: `Could not list models (HTTP ${r.status})`, models: [] }
+    const models = [...new Set((j?.data || (Array.isArray(j) ? j : [])).map((x) => x.id || x.name).filter(Boolean))].sort((a, b) => a.localeCompare(b))
+    const v = { ok: true, provider: id, base: cur.base, count: models.length, models }; modelCache.set(ck, { at: now, v }); return v
+  } catch (e) { return { ok: false, provider: id, error: redact(e.name === 'TimeoutError' ? 'Timed out waiting for the server' : e.message || 'Network error', key), models: [] } }
+}
+export const clearModelCache = () => modelCache.clear()

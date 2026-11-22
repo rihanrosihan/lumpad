@@ -28,20 +28,23 @@ export default function CoachConfig() {
 
 // Provider dropdown: DeepSeek (original) or Tokenomix (gateway), each with its own saved key and model. "Use" / "Save & use" make the chosen one active after a connection test;
 // the key is stored sealed on the server and never returned (masked only). Switching back and forth keeps both keys.
+const AUTO = '__auto__' // dropdown marker for "no fixed model"
 export function ProviderSettings() {
   const C = useApi('/api/coach/config'), cfg = C.data
   const [sel, setSel] = useState(null), [form, setForm] = useState({ api_key: '', model: '', max: '' }), [test, setTest] = useState(null), [busy, setBusy] = useState(''), [msg, setMsg] = useState(null), [models, setModels] = useState({})
   if (!cfg?.providers) return <Card title="AI provider, API key & model"><p className="muted">Loading…</p></Card>
   const cur = sel || cfg.active, P = cfg.providers.find((x) => x.id === cur) || cfg.providers[0], inUse = cfg.providers.find((x) => x.active)
-  const val = (k, d) => (form[k] !== '' ? form[k] : d), model = val('model', P.model || ''), max = val('max', P.max_calls_per_day), dirty = !!(form.api_key || form.model || form.max)
+  const ML = useApi(P.key_set ? `/api/coach/models?provider=${cur}${form.api_key ? '&_=' + form.api_key.length : ''}` : '', P.key_set && !form.api_key), listed = ML.data?.ok ? ML.data.models : []
+  const val = (k, d) => (form[k] !== '' ? form[k] : d), model = val('model', P.model || (P.id === 'deepseek' ? AUTO : '')), max = val('max', P.max_calls_per_day), dirty = !!(form.api_key || form.model || form.max)
   const set = (k) => (e) => { setForm((f) => ({ ...f, [k]: e.target.value })); setMsg(null) }
   const pick = (id) => { setSel(id); setForm({ api_key: '', model: '', max: '' }); setTest(null); setMsg(null) }
   const refresh = () => { setForm({ api_key: '', model: '', max: '' }); setTest(null); invalidate('coach/config'); invalidate('intel/status') }
   const run = async (kind) => {
+    const modelOut = form.model === AUTO ? '' : form.model
     setBusy(kind); setMsg(null)
     try {
-      if (kind === 'test') { const t = await post('/api/coach/config/test', { provider: cur, api_key: form.api_key || undefined, model: model || undefined }); setTest(t); if (t.models?.length) setModels((m) => ({ ...m, [cur]: t.models })) }
-      else if (kind === 'save') { await post('/api/coach/config', { provider: cur, api_key: form.api_key || undefined, model: form.model !== '' ? form.model : undefined, max_calls_per_day: form.max !== '' ? form.max : undefined }); refresh(); setMsg({ ok: true, text: `Saved. The coach now uses ${P.label}.` }) }
+      if (kind === 'test') { const t = await post('/api/coach/config/test', { provider: cur, api_key: form.api_key || undefined, model: model === AUTO ? undefined : model || undefined }); setTest(t); if (t.models?.length) setModels((m) => ({ ...m, [cur]: t.models })) }
+      else if (kind === 'save') { await post('/api/coach/config', { provider: cur, api_key: form.api_key || undefined, model: form.model !== '' ? modelOut : undefined, max_calls_per_day: form.max !== '' ? form.max : undefined }); refresh(); setMsg({ ok: true, text: `Saved. The coach now uses ${P.label}.` }) }
       else if (kind === 'use') { await post('/api/coach/config', { provider: cur }); refresh(); setMsg({ ok: true, text: `Switched. The coach now uses ${P.label}.` }) }
       else { await post('/api/coach/config/reset', { provider: cur }); refresh(); setMsg({ ok: true, text: `Removed the saved key and model for ${P.label}.` }) }
     } catch (e) { setMsg({ ok: false, text: e.message || 'Failed' }) }
@@ -54,9 +57,14 @@ export function ProviderSettings() {
         <small>{P.base} · {P.id === 'deepseek' ? 'the official DeepSeek API; spend is tracked from the account balance.' : 'OpenAI-compatible gateway; it has no balance endpoint, so a daily run limit is used instead of spend.'}</small></label>
       <label className="fld"><span>API key for {P.label}</span><input type="password" autoComplete="new-password" spellCheck="false" value={form.api_key} onChange={set('api_key')} placeholder={P.key_set ? `${P.key_masked} (${P.key_source === 'saved' ? 'saved here' : 'from .env'}) — leave empty to keep` : 'paste a key'} />
         <small>Stored encrypted on the server and never shown again. A key pasted anywhere else (chat, email) is exposed: rotate it.</small></label>
-      <label className="fld"><span>Model</span><input list={'coach-models-' + cur} autoComplete="off" spellCheck="false" value={model} onChange={set('model')} placeholder={P.id === 'deepseek' ? 'auto: newest Flash' : 'e.g. deepseek-v4.1-flash'} />
-        <datalist id={'coach-models-' + cur}>{(models[cur] || []).map((m) => <option key={m} value={m} />)}</datalist>
-        <small>{(models[cur] || []).length ? `${models[cur].length} models from the last test: pick one or type an id.` : 'Run “Test connection” to load the model list.'}{P.id === 'tokenomix' ? ' Required for this provider.' : ' Empty = newest Flash.'}</small></label>
+      <label className="fld"><span>Model</span>
+        <select value={model} onChange={set('model')} aria-label="Model">
+          {P.id === 'deepseek' && <option value={AUTO}>Automatic: newest Flash</option>}
+          {P.id !== 'deepseek' && !model && <option value="" disabled>Choose a model…</option>}
+          {model && model !== AUTO && !(models[cur]?.length ? models[cur] : listed).includes(model) && <option value={model}>{model} (saved)</option>}
+          {(models[cur]?.length ? models[cur] : listed).map((m) => <option key={m} value={m}>{m}</option>)}
+        </select>
+        <small>{ML.state === 'loading' && !listed.length ? 'Loading the models available under this key…' : (models[cur]?.length || listed.length) ? `${(models[cur]?.length ? models[cur] : listed).length} models available under this key.` : (ML.data && !ML.data.ok ? ML.data.error : (P.key_set ? '' : 'Paste a key and press Test connection to load its models.'))}{P.id === 'tokenomix' ? ' A model is required for this provider.' : ''}</small></label>
       {P.custom_endpoint ? <label className="fld"><span>Max coach runs per day</span><input type="number" min="1" max="5000" value={max} onChange={set('max')} /><small>The budget guard stops new runs after this many in one day.</small></label> : null}
     </div>
     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', margin: '12px 0 4px' }}>
