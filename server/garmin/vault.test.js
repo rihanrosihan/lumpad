@@ -67,3 +67,20 @@ test('monthText: deterministic template, flags Garmin-scale metrics, omits missi
   assert.match(t, /^Garmin history 2025-03: 5 runs, 19.8 km \(longest 5.6 km\)/); assert.doesNotMatch(t, /Steady runs|Health \(/); assert.match(t, /not comparable with COROS/)
   assert.equal(monthText({ month: '2025-03', run_n: 5, run_km: 19.8, strength_n: 1, walk_n: 2, other_n: 0, ef_n: 0, health_days: 0 }), monthText({ month: '2025-03', run_n: 5, run_km: 19.8, strength_n: 1, walk_n: 2, other_n: 0, ef_n: 0, health_days: 0 }))
 })
+
+import { snapshot, schedule } from './twinhist.js'
+test('twin_history: point-in-time (rows after as_of never change the snapshot), weekly schedule ends the day before the cutoff', () => {
+  const days = (a, n) => Array.from({ length: n }, (_, i) => { const d = new Date(a + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + i); return d.toISOString().slice(0, 10) })
+  const base = { loads: days('2025-01-01', 200).map((date) => ({ date, load: 50 })), health: [], runs: days('2025-01-01', 200).map((date) => ({ date, distance_m: 8000 })),
+    sess: days('2025-01-01', 120).map((date) => ({ date, run_share: 1, distance_m: 8000, ef: 0.8, hr800: 150, pace_hr150: 400, metrics: '{}' })), vo2: [], pred: [], weights: [] }
+  const T = '2025-03-31', a = snapshot(base, T)
+  const future = { ...base, loads: [...base.loads, { date: '2025-04-05', load: 999 }], sess: [...base.sess, { date: '2025-04-05', run_share: 1, distance_m: 8000, ef: 5, hr800: 90, pace_hr150: 1, metrics: '{}' }], runs: [...base.runs, { date: '2025-04-05', distance_m: 99000 }] }
+  assert.deepEqual(snapshot(future, T), a); assert.ok(a.load.ctl > 0); assert.equal(a.aerobic.ef_easy_28d.value, 0.8)
+  const s = schedule(); assert.equal(s[0], '2024-09-29'); assert.equal(s.at(-1), '2025-12-31'); assert.ok(s.length > 60)
+})
+
+import { lapRows } from './apply.js'
+test('lapRows: per-km rows become laps, the last lap takes the remaining distance', () => {
+  const l = lapRows({ distance_m: 2500 }, [{ km: 1, sec: 400, pace: 400, hr: 150, cad: 170, gct: 280, step: 0.9, vr: 9 }, { km: 2, sec: 410, pace: 410, hr: 152 }, { km: 3, sec: 205, pace: 410, hr: 153 }])
+  assert.deepEqual(l.map((x) => x.distance_m), [1000, 1000, 500]); assert.equal(l[0].gct_ms, 280); assert.equal(l[1].power, null); assert.deepEqual(lapRows({}, null), [])
+})

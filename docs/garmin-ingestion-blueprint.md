@@ -419,8 +419,14 @@ So instead of `canonical_id` on COROS rows:
 * The existing KG screen queries were left unchanged: history sessions have no WORE edge and are older than the "newest N" views, so they do not appear there; only the overview counts grow.
 * **Go matrices gym-day query** (`lumpadd/internal/analytics/matrices.go`) got the same `source <> 'garmin'` filter as the Node one. Source only: it takes effect after the binary is rebuilt elsewhere. Until then the Go shadow matrices could differ from Node's (twin, features and graph sync already filter `source='coros'`).
 
+### P7 done: `twin_history` and laps (2026-11-22)
+* **`twin_history`** (`server/garmin/twinhist.js`, `cli.js twin-history`): 67 weekly snapshots 2024-09-29 → 2025-12-31 in `intel.db`, schema `twin_hist/1`. Deliberately NOT the live `buildTwin`: that module is bound to live module state, the 2026 plan/race projection and the Node/Go shadow comparison; refactoring production code to feed it history would be risky and a "marathon projection" for 2024 is meaningless. Instead the snapshot reuses the same pure library functions (`pmc`, `acwrRolling`, `monotonyStrain`, `distanceProgression`, `hrvState`, `rhrState`, `sleepState`) and the same field names for shared sections (load, recovery, aerobic, baselines, profile). Strictly point-in-time (unit-tested: rows after `as_of` never change a snapshot); the aerobic z-score baseline is the trailing window ending 28 days earlier (no look-ahead). Load and race predictions are Garmin-scale. Each snapshot lists its `gaps` (e.g. HRV baseline unavailable before 2025-09; aerobic z needs ≥5 steady runs). Idempotent via `inputs_hash`. The live `twin_state` is untouched.
+* **Laps** (`apply.js projectLaps`, `cli.js laps --yes`): 212 per-km laps for the 40 Garmin-only runs, computed from the FIT stream (the Garmin `splits` field is a messy measurement-array format; the FIT-derived per-km rows have exactly the shape of COROS laps). INSERT OR IGNORE, guarded by the frozen-history fingerprint (identical to the first run's hashes), idempotent. A shadow pass right after verified the Postgres mirror (0 not identical).
+* **Shoe linking: not possible from the data.** The Garmin export lists 9 shoes (name, start date, max distance) but no activity→gear mapping; inventing one from date ranges would be a guess. `g_gear` stays staged.
+
 ### Not done (and why)
-* **`twin_history`:** needs the twin builder to accept a historical data source; not started.
-* **Laps for Garmin-only runs** (from `splits_json`) and **shoe linking** (`g_gear` ↔ `gear`): staged, not projected.
-* **UI:** the Activity tab lists Garmin rows via `listMerged` once the server restarts with the new code; no dedicated history screens.
-* Code is **uncommitted**; the running server still has the old reader code until it is restarted.
+* Rebuild of the Go binary (matrices source filter, see P6): needs a Go 1.26 toolchain elsewhere.
+* Merge of branch `garmin-history-import` to `main` (auto-deploy is paused until then).
+* UI for the history (monthly view, `twin_history` trend charts, Garmin enrichment on the Activity detail): the data is available (`listMerged` attaches `garmin`); no new screens.
+* Embeddings: `memory_vec` is still empty app-wide, so history memories are FTS-only like everything else.
+* Optional: LLM-written monthly narratives (decision 5: templated only for now).

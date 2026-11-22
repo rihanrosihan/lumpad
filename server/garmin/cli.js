@@ -4,10 +4,12 @@ import { openDb } from './db.js'
 import { inventory, loadVault, report, guard } from './vault.js'
 import { stageAll } from './stage.js'
 import { dryRun } from './link.js'
-import { apply, openLive } from './apply.js'
+import { apply, openLive, projectLaps } from './apply.js'
+import { openIntel } from './fitsession.js'
 import { runFitSessions } from './fitsession.js'
 import { build as buildHistory, writeMemory } from './history.js'
 import * as graph from './graph.js'
+import { build as buildTwinHist } from './twinhist.js'
 const [cmd = 'report', ...rest] = process.argv.slice(2)
 const zip = rest.find((a) => !a.startsWith('--')) || '/opt/lumpad/garmin_backup.zip'
 const opt = (n, d) => { const a = rest.find((x) => x.startsWith(`--${n}=`)); return a ? a.split('=')[1] : d }
@@ -22,6 +24,8 @@ else if (cmd === 'history') console.log(JSON.stringify(buildHistory({ gdb: db })
 else if (cmd === 'memory') console.log(JSON.stringify(await writeMemory(), null, 1))
 else if (cmd === 'graph') console.log(JSON.stringify(await graph.apply({ dry: !rest.includes('--yes'), db }), null, 1))
 else if (cmd === 'graph-rollback') console.log(JSON.stringify(await graph.rollback(), null, 1))
+else if (cmd === 'twin-history') console.log(JSON.stringify(buildTwinHist({ gdb: db }), null, 1))
+else if (cmd === 'laps') console.log(JSON.stringify(projectLaps({ live: openLive(), idb: openIntel(), dry: !rest.includes('--yes') }), null, 1))
 else if (cmd === 'report') console.log(JSON.stringify(report(db), null, 1))
 else if (cmd === 'guard') console.log(JSON.stringify(guard()))
 else { console.error('usage: inventory|vault|stage|report|guard'); process.exit(2) }

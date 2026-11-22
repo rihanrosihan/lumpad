@@ -108,3 +108,28 @@ export function apply({ gdb = openDb(), live, dry = true, now = new Date().toISO
   return rep
 }
 export const openLive = (file = path.join(process.env.DATA_DIR || 'server/data', 'lumpad.db')) => { const d = new DatabaseSync(file); d.exec('PRAGMA busy_timeout = 15000'); return d }
+
+// Laps for Garmin-only runs (the 134 inserted rows have none): per-km rows computed from the FIT stream (fit_session_hist.km), same shape as COROS laps.
+// Additive (INSERT OR IGNORE on the PK), guarded by the same frozen-history fingerprint; idempotent.
+export function lapRows(act, kmJson) {
+  const km = typeof kmJson === 'string' ? JSON.parse(kmJson) : kmJson; if (!Array.isArray(km) || !km.length) return []
+  const n = km.length, total = act.distance_m || null, rnd = (x, d = 1) => (x == null || !Number.isFinite(x) ? null : Math.round(x * 10 ** d) / 10 ** d)
+  return km.map((k, i) => ({ idx: k.km ?? i + 1, distance_m: i < n - 1 ? 1000 : total ? Math.max(0, rnd(total - (n - 1) * 1000, 0)) : rnd((k.sec / k.pace) * 1000, 0), duration_s: k.sec, avg_pace_s_km: k.pace, avg_hr: k.hr ?? null, cadence: k.cad ?? null, power: k.power ?? null,
+    gct_ms: k.gct ?? null, max_hr: null, stride_m: k.step ?? null, vo_cm: null, vratio_pct: k.vr ?? null }))
+}
+export function projectLaps({ live, idb, dry = true }) {
+  const before = fingerprint(live), acts = live.prepare("SELECT id, distance_m, garmin_id FROM activities WHERE source='garmin' AND sport='Run'").all()
+  const km = idb.prepare('SELECT km FROM fit_session_hist WHERE garmin_id=?'), have = live.prepare('SELECT COUNT(*) n FROM laps WHERE activity_id=?')
+  const todo = acts.map((a) => ({ a, rows: lapRows(a, km.get(a.garmin_id)?.km), has: have.get(a.id).n })).filter((x) => x.rows.length && !x.has)
+  const rep = { dry, garmin_runs: acts.length, with_laps_to_add: todo.length, laps_to_add: todo.reduce((s, x) => s + x.rows.length, 0) }
+  if (dry) return rep
+  live.exec('BEGIN IMMEDIATE')
+  try {
+    const ins = live.prepare('INSERT OR IGNORE INTO laps (activity_id, idx, distance_m, duration_s, avg_pace_s_km, avg_hr, cadence, power, gct_ms, max_hr, stride_m, vo_cm, vratio_pct) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)')
+    for (const { a, rows } of todo) for (const l of rows) ins.run(a.id, l.idx, l.distance_m, l.duration_s, l.avg_pace_s_km, l.avg_hr, l.cadence, l.power, l.gct_ms, l.max_hr, l.stride_m, l.vo_cm, l.vratio_pct)
+    const after = fingerprint(live); for (const k of Object.keys(before)) if (before[k].h !== after[k].h) throw new Error('fingerprint changed for ' + k)
+    live.exec('COMMIT'); rep.after = after
+  } catch (e) { live.exec('ROLLBACK'); throw e }
+  rep.laps_total = live.prepare("SELECT COUNT(*) n FROM laps WHERE activity_id LIKE 'garmin:%'").get().n
+  return rep
+}
