@@ -47,7 +47,7 @@ export default function TodayCard({ checkin, settings, go, todayActs = [], date,
       <p className="tmr-main">{tm.why[0]}</p>
       {fc && <p className="tmr-heat"><small>Heat forecast</small> <b>Best start {fc.best_start}</b> · WBGT {fc.wbgt_best} <span className={`heat heat-${fc.band_best.toLowerCase()}`}>{fc.band_best.toLowerCase()}</span>{fc.move_earlier
         ? <> instead of {fc.wbgt_usual} <span className={`heat heat-${fc.band_usual.toLowerCase()}`}>{fc.band_usual.toLowerCase()}</span> at your usual {fc.usual_start}: <b>start earlier</b>.</>
-        : <> (usual {fc.usual_start}: {fc.wbgt_usual}): the start time makes little difference.</>}</p>}
+        : <> (usual {fc.usual_start}: {fc.wbgt_usual}): {['RED', 'BLACK'].includes(fc.band_best) ? <>no start time avoids the heat. <b>Run by heart rate, drink early, shorten if it feels off{fc.band_best === 'BLACK' ? ' or go indoors' : ''}.</b></> : 'the start time makes little difference.'}</>}</p>}
       {(tm.why.length > 1 || tm.confirm) && <details className="tmr-more"><summary>{tm.why.length > 1 ? `${tm.why.length - 1} more note${tm.why.length > 2 ? 's' : ''} and when it is re-checked` : 'When it is re-checked'}</summary>
         {tm.why.length > 1 && <ul>{tm.why.slice(1).map((w, i) => <li key={i}>{w}</li>)}</ul>}
         {tm.confirm && <small className="muted">{tm.confirm}</small>}
