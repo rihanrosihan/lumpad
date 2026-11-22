@@ -78,10 +78,10 @@ export const TOOLS = [...SNAPSHOT, ...DAYS_TOOLS, 'querySportRecords', 'getActiv
 const nowIso = () => new Date().toISOString()
 const getTask = (key) => adb.prepare('SELECT * FROM tasks WHERE key=?').get(key)
 // Insert, or re-open an existing task when its arguments/version changed or it is "recent" and was last pulled before today.
-function upsert(today, key, tool, args, day, { ver = null, refresh = false } = {}) {
+function upsert(today, key, tool, args, day, { ver = null, refresh = false, everyMs = 0 } = {}) {
   const a = JSON.stringify(args), cur = getTask(key)
   if (!cur) return adb.prepare('INSERT INTO tasks (key, tool, args, ver, day, rank, status, created_at) VALUES (?,?,?,?,?,?,?,?)').run(key, tool, a, ver, day, RANK[tool] ?? 0, 'pending', nowIso())
-  const changed = cur.args !== a || (ver != null && cur.ver !== ver), stale = refresh && ['done', 'empty', 'failed'].includes(cur.status) && (cur.done_day || '') < today
+  const changed = cur.args !== a || (ver != null && cur.ver !== ver), stale = refresh && ['done', 'empty', 'failed'].includes(cur.status) && ((cur.done_day || '') < today || (everyMs > 0 && Date.now() - Date.parse(cur.updated_at || cur.created_at) > everyMs))
   if (changed || stale) adb.prepare("UPDATE tasks SET args=?, ver=?, day=?, status='pending', attempts=0, error=NULL, updated_at=? WHERE key=?").run(a, ver, day, nowIso(), key)
 }
 const meta = (k, v) => (v === undefined ? adb.prepare('SELECT v FROM meta WHERE k=?').get(k)?.v : adb.prepare('INSERT INTO meta (k, v) VALUES (?,?) ON CONFLICT(k) DO UPDATE SET v=excluded.v').run(k, String(v)))
@@ -117,7 +117,7 @@ export function plan(today) {
     // activities, month by month (newest month first by day)
     for (let s = FROM.slice(0, 8) + '01'; s <= today; s = addDays(monthEnd(s), 1)) {
       const e = minD(monthEnd(s), today)
-      if (!getTask('sport:' + s.slice(0, 7) + ':split')) upsert(today, 'sport:' + s.slice(0, 7), 'querySportRecords', { startDate: ymd(maxD(s, FROM)), endDate: ymd(e), limit: 100 }, e, { refresh: e >= addDays(today, -7) })
+      if (!getTask('sport:' + s.slice(0, 7) + ':split')) upsert(today, 'sport:' + s.slice(0, 7), 'querySportRecords', { startDate: ymd(maxD(s, FROM)), endDate: ymd(e), limit: 100 }, e, { refresh: e >= addDays(today, -7), everyMs: e >= addDays(today, -7) ? 2 * 3600e3 : 0 }) // a run finished after this morning's pull must not wait until tomorrow
     }
     // daily health series: only from the first day the watch recorded health data (known after the "days" tools ran)
     const hf = healthFrom()

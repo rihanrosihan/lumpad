@@ -117,3 +117,11 @@ test('archive scheduler: hourly sessions, not 07:00–09:00 WIB, only with work 
   db.prepare("INSERT INTO sync_jobs (kind, status, started_at, local_date) VALUES ('archive','done',?,?)").run('2025-02-14T19:30:00.000Z', '2025-02-15')
   assert.equal(jobs.tickArchive(new Date('2025-02-14T20:00:00Z'), start, yes), null) // last session 30 min ago
 })
+
+test('a run that finished after the morning pull is picked up the same day (current month re-pulled every 2 h, not once a day)', async () => {
+  const f = fake(); await A.runArchive({ call: f.call, today: '2025-02-11', maxCalls: 1000, fetchFn })
+  const st = () => A.adb.prepare("SELECT status FROM tasks WHERE key='sport:2025-02'").get().status
+  A.plan('2025-02-11'); assert.notEqual(st(), 'pending', 'just pulled: not asked again')
+  A.adb.prepare("UPDATE tasks SET updated_at=? WHERE key='sport:2025-02'").run(new Date(Date.now() - 3 * 3600e3).toISOString())
+  A.plan('2025-02-11'); assert.equal(st(), 'pending', 'pulled 3 h ago: asked again today')
+})
