@@ -40,8 +40,11 @@ export default function TodayCard({ checkin, settings, go, todayActs = [], date,
     </div>
     {tomorrow && <div className={`today-tmr tm-${tm.level}`}>
       <div className="tmr-head"><small>Tomorrow</small><b>{tm.plan?.label ? `${tm.plan.label} · ${tm.plan.km} km` : 'No run planned'}</b><span className="tmr-pill">{tm.label}</span></div>
-      <ul>{tm.why.map((w, i) => <li key={i}>{w}</li>)}</ul>
-      {tm.confirm && <small className="muted">{tm.confirm}</small>}
+      <p className="tmr-main">{tm.why[0]}</p>
+      {(tm.why.length > 1 || tm.confirm) && <details className="tmr-more"><summary>{tm.why.length > 1 ? `${tm.why.length - 1} more note${tm.why.length > 2 ? 's' : ''} and when it is re-checked` : 'When it is re-checked'}</summary>
+        {tm.why.length > 1 && <ul>{tm.why.slice(1).map((w, i) => <li key={i}>{w}</li>)}</ul>}
+        {tm.confirm && <small className="muted">{tm.confirm}</small>}
+      </details>}
     </div>}
     {attention.length > 0 && <ul className="watch-list grid2">
       {attention.map((i) => <li key={i.id} className={`wi st-${i.status}`}>
