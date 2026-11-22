@@ -167,12 +167,14 @@ const routes = {
   'POST /api/memory/action': async (_q, req) => { const b = JSON.parse((await readBody(req, 1e4)).toString()), to = { approve: 'active', retract: 'retracted', archive: 'archived' }[b.action]; if (!to) throw Object.assign(new Error('bad action'), { status: 400 }); return setStatus(+b.id, to, principal(req) || 'athlete') },
   // provider settings (Profile → AI Coach): the key is sealed at rest and never returned; saving a new key/base/model runs a connection test first
   'GET /api/coach/config': async () => publicConfig(),
-  'POST /api/coach/config/test': async (_q, req) => { const b = JSON.parse((await readBody(req, 1e4)).toString() || '{}'); return testConnection({ base: b.base, api_key: b.api_key, model: b.model }) },
+  'POST /api/coach/config/test': async (_q, req) => { const b = JSON.parse((await readBody(req, 1e4)).toString() || '{}'); return testConnection({ provider: b.provider, api_key: b.api_key, model: b.model }) },
+  // save a provider's key/model and (by default) make it the active one; a changed key/model or a switch is tested first so a typo cannot take the coach down
   'POST /api/coach/config': async (_q, req) => {
-    const b = JSON.parse((await readBody(req, 1e4)).toString() || '{}'), changes = !!(b.base || b.api_key || b.model)
-    if (changes && !b.skip_test) { const t = await testConnection({ base: b.base, api_key: b.api_key, model: b.model }); if (!t.ok) throw Object.assign(new Error(t.error || 'Connection test failed'), { status: 400, test: t }) }
-    return { ...(await saveConfig({ base: b.base, api_key: b.api_key, model: b.model, max_calls_per_day: b.max_calls_per_day })), saved_ok: true } },
-  'POST /api/coach/config/reset': async () => resetConfig(),
+    const b = JSON.parse((await readBody(req, 1e4)).toString() || '{}'), id = b.provider || getConfig().provider, activate = b.activate !== false
+    const changes = !!(b.api_key || b.model || (activate && id !== getConfig().provider))
+    if (changes && !b.skip_test) { const t = await testConnection({ provider: id, api_key: b.api_key, model: b.model }); if (!t.ok) throw Object.assign(new Error(t.error || 'Connection test failed'), { status: 400, test: t }) }
+    return { ...(await saveConfig({ provider: id, api_key: b.api_key, model: b.model, max_calls_per_day: b.max_calls_per_day, activate })), saved_ok: true } },
+  'POST /api/coach/config/reset': async (_q, req) => { const b = JSON.parse((await readBody(req, 1e4)).toString() || '{}'); return resetConfig(b.provider || undefined) },
   'POST /api/coach/run': async (_q, req) => { const b = JSON.parse((await readBody(req, 2e4)).toString() || '{}'); if (!TASKS[b.intent || 'daily_brief']) throw Object.assign(new Error('bad intent'), { status: 400 }); return runCoach({ intent: b.intent || 'daily_brief', question: String(b.question || '').slice(0, 1000), activityId: b.activity_id || null, force: b.force === true, tools: b.tools === true }) },
   'GET /api/coach/status': async (q) => { const i = q.get('intent') || 'daily_brief'; if (!TASKS[i]) throw Object.assign(new Error('bad intent'), { status: 400 }); return coachStatus({ intent: i, question: String(q.get('question') || '').slice(0, 1000), activityId: q.get('activity_id') || null }) },
   'GET /api/coach/runs': async () => recentRuns(20),

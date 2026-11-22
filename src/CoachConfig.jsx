@@ -26,42 +26,46 @@ export default function CoachConfig() {
   </Card>
 }
 
-// Provider, key and model. Saving a changed key / URL / model first tests the connection (a tiny content-free request); the key is stored sealed and never returned.
+// Provider dropdown: DeepSeek (original) or Tokenomix (gateway), each with its own saved key and model. "Use" / "Save & use" make the chosen one active after a connection test;
+// the key is stored sealed on the server and never returned (masked only). Switching back and forth keeps both keys.
 export function ProviderSettings() {
   const C = useApi('/api/coach/config'), cfg = C.data
-  const [form, setForm] = useState({ base: '', api_key: '', model: '', max: '' }), [test, setTest] = useState(null), [busy, setBusy] = useState(''), [msg, setMsg] = useState(null), [models, setModels] = useState([])
-  if (!cfg) return <Card title="Provider, API key & model"><p className="muted">Loading…</p></Card>
-  const val = (k, d) => (form[k] !== '' ? form[k] : d), base = val('base', cfg.base), model = val('model', cfg.model || ''), max = val('max', cfg.max_calls_per_day)
+  const [sel, setSel] = useState(null), [form, setForm] = useState({ api_key: '', model: '', max: '' }), [test, setTest] = useState(null), [busy, setBusy] = useState(''), [msg, setMsg] = useState(null), [models, setModels] = useState({})
+  if (!cfg?.providers) return <Card title="AI provider, API key & model"><p className="muted">Loading…</p></Card>
+  const cur = sel || cfg.active, P = cfg.providers.find((x) => x.id === cur) || cfg.providers[0], inUse = cfg.providers.find((x) => x.active)
+  const val = (k, d) => (form[k] !== '' ? form[k] : d), model = val('model', P.model || ''), max = val('max', P.max_calls_per_day), dirty = !!(form.api_key || form.model || form.max)
   const set = (k) => (e) => { setForm((f) => ({ ...f, [k]: e.target.value })); setMsg(null) }
-  const clear = () => { setForm({ base: '', api_key: '', model: '', max: '' }); setTest(null); invalidate('coach/config'); invalidate('intel/status') }
+  const pick = (id) => { setSel(id); setForm({ api_key: '', model: '', max: '' }); setTest(null); setMsg(null) }
+  const refresh = () => { setForm({ api_key: '', model: '', max: '' }); setTest(null); invalidate('coach/config'); invalidate('intel/status') }
   const run = async (kind) => {
     setBusy(kind); setMsg(null)
     try {
-      if (kind === 'test') { const t = await post('/api/coach/config/test', { base: form.base || cfg.base, api_key: form.api_key || undefined, model: model || undefined }); setTest(t); if (t.models?.length) setModels(t.models) }
-      else if (kind === 'save') { await post('/api/coach/config', { base: form.base || undefined, api_key: form.api_key || undefined, model: form.model !== '' ? form.model : undefined, max_calls_per_day: form.max !== '' ? form.max : undefined }); clear(); setMsg({ ok: true, text: 'Saved. New briefs, reviews and answers use this provider.' }) }
-      else { await post('/api/coach/config/reset', {}); clear(); setMsg({ ok: true, text: 'Back to the default provider from the server settings.' }) }
+      if (kind === 'test') { const t = await post('/api/coach/config/test', { provider: cur, api_key: form.api_key || undefined, model: model || undefined }); setTest(t); if (t.models?.length) setModels((m) => ({ ...m, [cur]: t.models })) }
+      else if (kind === 'save') { await post('/api/coach/config', { provider: cur, api_key: form.api_key || undefined, model: form.model !== '' ? form.model : undefined, max_calls_per_day: form.max !== '' ? form.max : undefined }); refresh(); setMsg({ ok: true, text: `Saved. The coach now uses ${P.label}.` }) }
+      else if (kind === 'use') { await post('/api/coach/config', { provider: cur }); refresh(); setMsg({ ok: true, text: `Switched. The coach now uses ${P.label}.` }) }
+      else { await post('/api/coach/config/reset', { provider: cur }); refresh(); setMsg({ ok: true, text: `Removed the saved key and model for ${P.label}.` }) }
     } catch (e) { setMsg({ ok: false, text: e.message || 'Failed' }) }
     setBusy('')
   }
-  const dirty = !!(form.base || form.api_key || form.model || form.max), saved = cfg.saved || {}
-  return <Card title="Provider, API key & model" right={<Chip tone={cfg.key_set ? 'green' : 'yellow'}>{cfg.key_set ? `key ${cfg.key_masked} · ${cfg.key_source === 'saved' ? 'saved here' : 'from .env'}` : 'no key'}</Chip>}>
+  return <Card title="AI provider, API key & model" right={<Chip tone={inUse?.key_set ? 'green' : 'yellow'}>{inUse ? `in use: ${inUse.label}` : 'no provider'}</Chip>}>
     <div className="form" style={{ gridTemplateColumns: '1fr' }}>
-      <label className="fld"><span>API base URL</span><input type="url" inputMode="url" autoComplete="off" spellCheck="false" value={base} onChange={set('base')} placeholder={cfg.default_base} />
-        <small>OpenAI-compatible, https only. Default: {cfg.default_base}.</small></label>
-      <label className="fld"><span>API key</span><input type="password" autoComplete="new-password" spellCheck="false" value={form.api_key} onChange={set('api_key')} placeholder={cfg.key_set ? `${cfg.key_masked} — leave empty to keep` : 'paste a key'} />
+      <label className="fld"><span>Provider</span>
+        <select value={cur} onChange={(e) => pick(e.target.value)} aria-label="AI provider">{cfg.providers.map((x) => <option key={x.id} value={x.id}>{x.label}{x.active ? ' — in use' : ''}{x.key_set ? '' : ' — no key yet'}</option>)}</select>
+        <small>{P.base} · {P.id === 'deepseek' ? 'the official DeepSeek API; spend is tracked from the account balance.' : 'OpenAI-compatible gateway; it has no balance endpoint, so a daily run limit is used instead of spend.'}</small></label>
+      <label className="fld"><span>API key for {P.label}</span><input type="password" autoComplete="new-password" spellCheck="false" value={form.api_key} onChange={set('api_key')} placeholder={P.key_set ? `${P.key_masked} (${P.key_source === 'saved' ? 'saved here' : 'from .env'}) — leave empty to keep` : 'paste a key'} />
         <small>Stored encrypted on the server and never shown again. A key pasted anywhere else (chat, email) is exposed: rotate it.</small></label>
-      <label className="fld"><span>Model</span><input list="coach-models" autoComplete="off" spellCheck="false" value={model} onChange={set('model')} placeholder="auto: newest Flash" />
-        <datalist id="coach-models">{models.map((m) => <option key={m} value={m} />)}</datalist>
-        <small>{models.length ? `${models.length} models from the last test: pick one or type an id.` : 'Run “Test connection” to load the model list. Empty = newest Flash (DeepSeek only).'}</small></label>
-      {(cfg.custom_endpoint || form.base) ? <label className="fld"><span>Max coach runs per day</span><input type="number" min="1" max="5000" value={max} onChange={set('max')} />
-        <small>This provider has no balance endpoint, so the budget guard limits runs per day instead of spend.</small></label> : null}
+      <label className="fld"><span>Model</span><input list={'coach-models-' + cur} autoComplete="off" spellCheck="false" value={model} onChange={set('model')} placeholder={P.id === 'deepseek' ? 'auto: newest Flash' : 'e.g. deepseek-v4.1-flash'} />
+        <datalist id={'coach-models-' + cur}>{(models[cur] || []).map((m) => <option key={m} value={m} />)}</datalist>
+        <small>{(models[cur] || []).length ? `${models[cur].length} models from the last test: pick one or type an id.` : 'Run “Test connection” to load the model list.'}{P.id === 'tokenomix' ? ' Required for this provider.' : ' Empty = newest Flash.'}</small></label>
+      {P.custom_endpoint ? <label className="fld"><span>Max coach runs per day</span><input type="number" min="1" max="5000" value={max} onChange={set('max')} /><small>The budget guard stops new runs after this many in one day.</small></label> : null}
     </div>
     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', margin: '12px 0 4px' }}>
       <button type="button" className="btn sm" disabled={!!busy} onClick={() => run('test')}>{busy === 'test' ? 'Testing…' : 'Test connection'}</button>
-      <button type="button" className="btn sm primary" style={{ width: 'auto' }} disabled={!!busy || !dirty} onClick={() => run('save')}>{busy === 'save' ? 'Testing and saving…' : 'Save'}</button>
-      {(saved.base || saved.key || saved.model) && <button type="button" className="btn sm" disabled={!!busy} onClick={() => run('reset')}>Reset to default</button>}
+      {dirty ? <button type="button" className="btn sm primary" style={{ width: 'auto' }} disabled={!!busy} onClick={() => run('save')}>{busy === 'save' ? 'Testing and saving…' : `Save & use ${P.label}`}</button>
+        : !P.active && <button type="button" className="btn sm primary" style={{ width: 'auto' }} disabled={!!busy || !P.key_set} onClick={() => run('use')}>{busy === 'use' ? 'Testing and switching…' : `Use ${P.label}`}</button>}
+      {(P.saved?.key || P.saved?.model) && <button type="button" className="btn sm" disabled={!!busy} onClick={() => run('reset')}>Remove saved key</button>}
     </div>
-    {test && <p className={test.ok ? 'ok' : 'err'} role="status">{test.ok ? `✓ Connected · model ${test.model} · ${test.model_count ?? 0} models · answered in ${(test.latency_ms / 1000).toFixed(1)} s · JSON output ${test.json_mode ? 'works' : 'did not work'}${test.warning ? ' — ' + test.warning : ''}` : `✗ ${test.error}`}</p>}
+    {test && <p className={test.ok ? 'ok' : 'err'} role="status">{test.ok ? `✓ ${P.label}: connected · model ${test.model} · ${test.model_count ?? 0} models · answered in ${(test.latency_ms / 1000).toFixed(1)} s · JSON output ${test.json_mode ? 'works' : 'did not work'}${test.warning ? ' — ' + test.warning : ''}` : `✗ ${test.error}`}</p>}
     {msg && <p className={msg.ok ? 'ok' : 'err'} role={msg.ok ? 'status' : 'alert'}>{msg.text}</p>}
   </Card>
 }
