@@ -4,7 +4,7 @@ import { Card, Chip } from './ui.jsx'
 import { useApi, invalidate } from './api.js'
 
 const KIND = { session: 'Session', rest: 'Rest day', cap: 'Heart-rate limit', fuel: 'Fuel & fluids', volume: 'Weekly volume', strength: 'Strength', other: 'Other' }
-const STATUS = { followed: ['Followed', 'green'], partly: ['Partly', 'yellow'], not_followed: ['Not followed', 'red'], open: ['Waiting for the day', undefined], unknown: ['No date', undefined], void: ['Cannot be checked', undefined] }
+const STATUS = { followed: ['Followed', 'green'], partly: ['Partly', 'yellow'], not_followed: ['Not followed', 'red'], open: ['Waiting for the day', undefined], unknown: ['No date', undefined], void: ['Cannot be checked', undefined], replaced: ['Replaced by newer advice', undefined] }
 export const evidenceText = (a) => {
   const e = a.evidence || {}, t = a.target || {}, bits = []
   if (e.runs) bits.push(`ran ${e.km} km${e.avg_hr ? `, average ${e.avg_hr} bpm` : ''}`); else if (a.status && a.status !== 'open' && a.status !== 'unknown' && a.status !== 'void') bits.push('no run that day')

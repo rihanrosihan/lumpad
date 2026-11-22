@@ -52,6 +52,7 @@ export function recordAdvice(runId, parsed, { asOf = new Date(Date.now() + 7 * 3
       .run(runId, idx, at, t.for_date || null, t.kind, String(r.action).slice(0, 400), JSON.stringify(t), t.for_date ? 'open' : 'unknown')
     n += Number(res.changes)
   })
+  if (n) supersedeOlder()
   return n
 }
 
@@ -88,9 +89,17 @@ export function judge(t, a) {
   return 'void'   // food, strength, volume and open-ended advice cannot be checked from run data; the athlete can mark them by hand
 }
 
+// The coach repeats itself: tomorrow's easy run is advised in the morning brief, the post-run brief and the next one. Only the NEWEST instruction for a day and kind counts;
+// older ones become 'replaced' (kept for the record, excluded from the results and from the track record).
+export function supersedeOlder() {
+  return Number(mdb.prepare(`UPDATE coach_advice SET status='replaced' WHERE manual = 0 AND status != 'replaced' AND kind IN ('session','rest','cap') AND for_date IS NOT NULL
+    AND id NOT IN (SELECT MAX(id) FROM coach_advice WHERE kind IN ('session','rest','cap') AND for_date IS NOT NULL GROUP BY for_date, kind)`).run().changes)
+}
+
 // resolve every non-manual advice whose day is today or within the last 14 days (late data such as a FIT file can still change the result); a day that is not over and has no run yet stays open
 export function resolveAdvice(today = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10)) {
-  const rows = mdb.prepare("SELECT * FROM coach_advice WHERE manual = 0 AND for_date IS NOT NULL AND for_date <= ? AND for_date >= ?").all(today, addDays(today, -14)), out = { resolved: 0, open: 0 }
+  supersedeOlder()
+  const rows = mdb.prepare("SELECT * FROM coach_advice WHERE manual = 0 AND status != 'replaced' AND for_date IS NOT NULL AND for_date <= ? AND for_date >= ?").all(today, addDays(today, -14)), out = { resolved: 0, open: 0 }
   for (const r of rows) {
     const t = JSON.parse(r.target || '{}'), sameDay = r.for_date === new Date(Date.parse(r.created_at) + 7 * 3600e3).toISOString().slice(0, 10), a = actualsOn(r.for_date, sameDay ? Math.floor(Date.parse(r.created_at) / 1000) : 0), over = r.for_date < today
     if (!over && !a.runs && (t.kind === 'session' || t.kind === 'cap')) { out.open++; continue }      // the day is not over: no evidence yet

@@ -75,3 +75,15 @@ test('advice written AFTER a morning run is judged only by what happens after it
   A.recordAdvice(run, { recommendations: [{ action: 'No second run today; fluids and sleep', why: 'w', priority: 'now' }] }, { asOf: day })
   A.resolveAdvice('2026-12-06'); assert.equal(mdb.prepare('SELECT status FROM coach_advice WHERE run_id=?').get(run).status, 'followed')   // the morning run does not count against it
 })
+
+test('repeated advice for the same day and kind: only the newest counts, hand-set results are never replaced', () => {
+  const mk = (ts) => Number(mdb.prepare("INSERT INTO coach_run (created_at, intent, provider, ok) VALUES (?,?,?,1)").run(ts, 'daily_brief', 'deepseek').lastInsertRowid)
+  const r1 = mk('2026-12-10T00:10:00Z'), r2 = mk('2026-12-10T08:30:00Z'), r3 = mk('2026-12-11T00:10:00Z')
+  A.recordAdvice(r1, { recommendations: [{ action: 'Run 8 km easy tomorrow, heart rate under 148', why: 'w', priority: 'now' }] }, { asOf: '2026-12-10' })
+  A.recordAdvice(r2, { recommendations: [{ action: 'Run 6 km easy tomorrow, heart rate under 148', why: 'w', priority: 'now' }] }, { asOf: '2026-12-10' })
+  A.setStatus(mdb.prepare('SELECT id FROM coach_advice WHERE run_id=?').get(r1).id, 'partly')   // the athlete already marked the first one by hand
+  A.recordAdvice(r3, { recommendations: [{ action: 'Run 7 km easy today, heart rate under 148', why: 'w', priority: 'now' }] }, { asOf: '2026-12-11' })   // same day as the first two
+  const st = (r) => mdb.prepare('SELECT status FROM coach_advice WHERE run_id=?').get(r).status
+  assert.equal(st(r1), 'partly'); assert.equal(st(r2), 'replaced'); assert.equal(st(r3), 'open')   // newest wins; the manual one stays
+  const sm = A.adviceSummary({ days: 400, today: '2026-12-12' }).by_kind.session; assert.equal(sm.partly, 1)   // the replaced one is not in the track record
+})
