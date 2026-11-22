@@ -72,10 +72,10 @@ export const LIVE_VIEWS = {
   plan: `MATCH (a:PlanDay) WITH a ORDER BY a.date DESC LIMIT 28 OPTIONAL MATCH (a)-[r:EXECUTED_AS|PLANS]->(n) ${ROW('a', 'n')} LIMIT ${LIVE_MAX.edges}`,
   // the newest 60 active memories and how they connect
   memory: `MATCH (a:Memory) WHERE a.status = 'active' AND a.source <> 'kb' WITH a ORDER BY a.valid_from DESC LIMIT 60 OPTIONAL MATCH (a)-[r:PRODUCED|SUPERSEDES|CONTRADICTS|ABOUT|WRITTEN_BY]-(n) ${ROW('a', 'n')} LIMIT ${LIVE_MAX.edges}`,
-  // the last 3 weeks as a chain of days with their sessions and workouts
-  days: `MATCH (a:Day) WITH a ORDER BY a.date DESC LIMIT 21 OPTIONAL MATCH (a)-[r:NEXT_DAY|HAS_SESSION|HAS_WORKOUT|LOGGED_PAIN]-(n) ${ROW('a', 'n')} LIMIT ${LIVE_MAX.edges}`,
-  // races, rules and shoes with their sessions
-  context: `MATCH (a) WHERE a:Race OR a:Rule OR a:Shoe WITH a LIMIT 40 OPTIONAL MATCH (a)-[r:ATTEMPT_OF|WORE|SUPERSEDES]-(n) ${ROW('a', 'n')} LIMIT ${LIVE_MAX.edges}`,
+  // the last 3 weeks that have training, as a chain of days with their sessions and workouts (future plan days have none)
+  days: `MATCH (a:Day) WHERE EXISTS { (a)-[:HAS_SESSION|HAS_WORKOUT]->() } WITH a ORDER BY a.date DESC LIMIT 21 OPTIONAL MATCH (a)-[r:NEXT_DAY|HAS_SESSION|HAS_WORKOUT|LOGGED_PAIN]-(n) ${ROW('a', 'n')} LIMIT ${LIVE_MAX.edges}`,
+  // races, rules and shoes (races first) with a few of their sessions each, so no single shoe floods the picture
+  context: `MATCH (a) WHERE a:Race OR a:Rule OR a:Shoe WITH a ORDER BY CASE WHEN a:Race THEN 0 WHEN a:Rule THEN 1 ELSE 2 END LIMIT 40 CALL { WITH a OPTIONAL MATCH (a)-[r:ATTEMPT_OF|WORE|SUPERSEDES]-(n) RETURN r, n ORDER BY n.date DESC LIMIT 6 } ${ROW('a', 'n')} LIMIT ${LIVE_MAX.edges}`,
 }
 // rows → { nodes, edges, truncated }; pure so it can be tested without a database. Row = [label, key, name, date, ef, tl, wbgt, relType, outgoing, label, key, name, date, ef, tl, wbgt]
 export function toGraph(rows) {
