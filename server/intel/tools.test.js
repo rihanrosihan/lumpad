@@ -55,7 +55,7 @@ test('loop: tool call → tool message with the matching id → final JSON; usag
   const r = await C.agenticLlm({ system: 'sys', user: 'u', fetchFn: f.fetchFn })
   assert.deepEqual(r.json, answer); assert.equal(r.usage.prompt_tokens, 200); assert.equal(r.tools.calls.length, 1); assert.equal(r.tools.calls[0].ok, true); assert.ok(r.tools.ids.includes(kb)); assert.match(r.tools.evidence, /Heat acclimation/)
   const second = f.seen[1].messages; assert.equal(second.at(-1).role, 'tool'); assert.equal(second.at(-1).tool_call_id, 'c1'); assert.equal(second.at(-2).role, 'assistant'); assert.ok(second.at(-2).tool_calls)   // the assistant turn goes back unchanged
-  assert.ok(f.seen[0].tools.length === 7 && f.seen[0].tool_choice === 'auto'); assert.match(f.seen[0].messages[0].content, /EVIDENCE TOOLS/)
+  assert.ok(f.seen[0].tools.length === 7 && f.seen[0].tool_choice === 'auto'); assert.match(f.seen[0].messages[0].content, /EVIDENCE TOOLS/); assert.match(f.seen[0].messages[0].content, /ONLY values of fields named exactly "id"/)
 })
 test('loop: a failing tool is reported to the model, which can still answer', async () => {
   const f = fake([call('c1', 'find_sessions', { from: 'nonsense' }), { role: 'assistant', content: JSON.stringify(answer) }])
