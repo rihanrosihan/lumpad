@@ -22,7 +22,7 @@ if [ -r "$APP/.env.v2" ] && command -v pg_dump >/dev/null 2>&1; then
 fi
 
 # 3. encrypted, deduplicated upload (the repository password is NOT in this file; keep a copy in your own password manager)
-PATHS=("$LOCAL"); for f in "$APP/.env" "$APP/.env.v2" "$APP/server/data/kv.json"; do [ -e "$f" ] && PATHS+=("$f"); done
+PATHS=("$LOCAL"); for f in "$APP/.env" "$APP/.env.v2" "$APP/server/data/kv.json" "$APP/server/data/kv_history.json" "$APP/Running_project_export.zip"; do [ -e "$f" ] && PATHS+=("$f"); done
 log "restic backup ${#PATHS[@]} paths"
 "$RESTIC" backup --tag lumpad --host lumpad --one-file-system "${PATHS[@]}"
 

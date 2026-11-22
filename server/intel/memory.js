@@ -62,7 +62,18 @@ export const LOCKED_RULES = [
 ]
 export function seedRules() {
   let n = 0
-  for (const [title, body, tag] of LOCKED_RULES) { const r = addMemory({ tier: 'procedural', kind: 'rule', title, body, evidence_tag: tag, status: 'active', locked: 1, source: 'rules', source_ref: title, created_by: 'system' }); if (r.created) n++ }
+  // versioned upsert: an unchanged rule is a no-op; a changed one archives the old row (valid_to, source_ref renamed so the UNIQUE (source, source_ref) index is free)
+  // and inserts the new version with `supersedes`. Never throws on a revised locked rule (it used to abort the whole intelligence job).
+  for (const [title, body, tag] of LOCKED_RULES) {
+    const cur = mdb.prepare("SELECT id, body FROM memory WHERE source='rules' AND source_ref=? AND status='active'").get(title)
+    if (cur?.body === body) continue
+    tx(mdb, () => {
+      if (cur) { mdb.prepare("UPDATE memory SET status='archived', valid_to=?, source_ref=source_ref||'@'||id, locked=1, updated_at=? WHERE id=?").run(now(), now(), cur.id); audit('rule:revised', cur.id, { title }) }
+      const r = addMemory({ tier: 'procedural', kind: 'rule', title, body, evidence_tag: tag, status: 'active', locked: 1, supersedes: cur?.id ?? null, source: 'rules', source_ref: title, created_by: 'system' }); if (r.created) n++
+      // text identical to an earlier (archived) version: bring that row back instead of failing on its unique hash
+      else mdb.prepare("UPDATE memory SET status='active', valid_to=NULL, source_ref=?, locked=1, supersedes=?, updated_at=? WHERE id=?").run(title, cur && cur.id !== r.id ? cur.id : null, now(), r.id)
+    })
+  }
   // coach recommendations awaiting the athlete's approval (NOT locked, NOT active)
   addMemory({ tier: 'procedural', kind: 'rule', title: 'Race opening cap (proposal)', body: 'FM km 0–10: pace no faster than marathon pace + 10 s/km and HR ≤ ~160 even if it feels easy. Borobudur 2026 opened at HR ≈ 169 (≈ +23 bpm over baseline for that pace) and run-walk began at km 5.', evidence_tag: 'HYPOTHESIS', status: 'proposal', source: 'rules', source_ref: 'race-opening-cap', created_by: 'system' })
   return n

@@ -9,6 +9,7 @@ import { weatherJob } from './weather.js'
 import { projectLog, buildDailyFeat } from './features.js'
 import { saveTwin } from './twin.js'
 import { corrJob } from './corr.js'
+import { retentionJob } from './retention.js'
 import { seedRules } from './memory.js'
 import { extractZip, importKb } from './kb.js'
 import * as strava from '../strava.js'
@@ -27,7 +28,7 @@ export async function runIntel(kind = 'full', { trigger = 'manual', force = fals
   const id = Number(idb.prepare('INSERT INTO intel_job (kind, status, started_at) VALUES (?,?,?)').run(kind, 'running', new Date().toISOString()).lastInsertRowid), stats = {}
   const step = async (name, fn) => { const t = Date.now(); try { stats[name] = await fn(); stats[name + '_ms'] = Date.now() - t } catch (e) { stats[name] = { error: String(e.message).slice(0, 200) } }; idb.prepare('UPDATE intel_job SET stats=? WHERE id=?').run(JSON.stringify(stats), id) }
   try {
-    stats.rules = seedRules()
+    await step('rules', async () => seedRules())
     if (kind === 'full') {
       await step('strava', async () => (strava.status().connected ? strava.syncShoes() : { skipped: 'not connected' }))
       const zip = ZIP(); if (fs.existsSync(zip)) await step('kb', async () => importKb(extractZip(zip) + '/Running_project_export'))
@@ -39,7 +40,9 @@ export async function runIntel(kind = 'full', { trigger = 'manual', force = fals
     if (kind === 'full') await step('cards', () => ({ cards: buildCards() }))   // weather/shoes/pain are in the cards, so rebuild after they land
     await step('twin', () => saveTwin(trigger))
     if (kind === 'full') await step('corr', () => corrJob())
-    idb.prepare("UPDATE intel_job SET status='done', finished_at=?, stats=? WHERE id=?").run(new Date().toISOString(), JSON.stringify(stats), id)
+    if (kind === 'full') await step('retention', () => retentionJob())
+    const failed = Object.entries(stats).filter(([, v]) => v && typeof v === 'object' && v.error).map(([k]) => k); if (failed.length) stats.failed_steps = failed
+    idb.prepare("UPDATE intel_job SET status=?, finished_at=?, stats=? WHERE id=?").run(failed.length ? 'partial' : 'done', new Date().toISOString(), JSON.stringify(stats), id)
   } catch (e) { idb.prepare("UPDATE intel_job SET status='error', finished_at=?, error=?, stats=? WHERE id=?").run(new Date().toISOString(), String(e.message).slice(0, 300), JSON.stringify(stats), id); throw e }
   finally { busy = false }
   return { id, ...stats }

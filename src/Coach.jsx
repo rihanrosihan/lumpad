@@ -59,6 +59,7 @@ export function Result({ p, res }) {
     {p.recommendations?.length > 0 && <ol className="recs">{p.recommendations.map((r, i) => <li key={i}><div><Chip tone={PRIO[r.priority]?.[0]}>{PRIO[r.priority]?.[1] || r.priority}</Chip>{r.needs_athlete_ok && <Chip>needs your approval</Chip>}</div><b>{cleanId(r.action)}</b><small>{cleanId(r.why)}</small></li>)}</ol>}
     {p.twin_state_patch && Object.values(p.twin_state_patch).some((x) => x != null && x !== '') && <div className="mod yellow"><b>Suggested twin updates (not applied — check before acting)</b>
       <ul className="rules">{p.twin_state_patch.current_ef_baseline != null && <li>EF baseline → {p.twin_state_patch.current_ef_baseline}</li>}{p.twin_state_patch.shoe_alert && <li>Shoe: {cleanId(p.twin_state_patch.shoe_alert)}</li>}{p.twin_state_patch.readiness_modifier && <li>Readiness: {cleanId(p.twin_state_patch.readiness_modifier)}</li>}</ul></div>}
+    {(p.grounding?.unverified?.length > 0 || p.grounding?.bad_ids?.length > 0) && <div className="chips"><span title={`Not found in the data the coach was shown: ${[...(p.grounding.unverified || []), ...(p.grounding.bad_ids || []).map((i) => '#' + i)].join(', ')}`}><Chip tone="yellow">{(p.grounding.unverified?.length || 0) + (p.grounding.bad_ids?.length || 0)} unverified</Chip></span></div>}
     <details className="more" open><summary>Full analysis</summary><Md text={p.analysis_md} /></details>
     {wb && (wb.stored.length + wb.merged.length + wb.rejected.length > 0) && <p className="src-note">Memory: {wb.stored.length} new (awaiting confirmation) · {wb.merged.length} merged · {wb.rejected.length} rejected (numbers/citations not verified).</p>}
   </Card>
@@ -566,7 +567,7 @@ export default function Coach({ go, focus }) {
 
 export function HomeCoach({ go }) {
   const R = useApi('/api/coach/runs'), T = useApi('/api/twin'), t = T.data?.state
-  const brief = (R.data || []).find((r) => r.intent === 'daily_brief' && r.ok && r.created_at.slice(0, 10) >= new Date(Date.now() - 20 * 3600e3).toISOString().slice(0, 10)), B = useApi(brief ? `/api/coach/run?id=${brief.id}` : '', !!brief)
+  const brief = (R.data || []).find((r) => r.intent === 'daily_brief' && r.ok && new Date(new Date(r.created_at).getTime() + 7 * 3600e3).toISOString().slice(0, 10) === new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10)), B = useApi(brief ? `/api/coach/run?id=${brief.id}` : '', !!brief)
   const g = t?.load?.km_vs_4wk_avg_pct, sc = t?.projection?.scenarios
   const lastRun = (R.data || []).find((r) => r.ok), model = lastRun?.provider || lastRun?.model || null
   return <div className="card coachcard">

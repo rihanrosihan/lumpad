@@ -9,5 +9,6 @@ for (const [d, src, name] of [[db, DB_PATH, 'lumpad.snapshot.db'], [adb, ARCHIVE
   const out = path.join(path.dirname(src), name)
   fs.rmSync(out, { force: true })
   d.exec(`VACUUM INTO '${out.replace(/'/g, "''")}'`)
+  fs.chmodSync(out, 0o600)   // snapshots hold health data and sealed OAuth blobs
   console.log('snapshot', out)
 }

@@ -28,6 +28,16 @@ const readBody = (req, max = 20e6) => new Promise((ok, no) => { const c = []; le
 const KEY = /^lumpad\.[A-Za-z0-9._-]{1,80}$/
 const kvKey = (q) => { const k = q.get('key') || ''; if (!KEY.test(k)) throw Object.assign(new Error('bad key'), { status: 400 }); return k }
 
+// schema checks for the values that feed safety and the twin (ranges, types); other keys stay free-form
+function kvInvalid(k, v) {
+  if (/^lumpad\.daily\.\d{4}-\d{2}-\d{2}$/.test(k)) {
+    if (!v || typeof v !== 'object' || Array.isArray(v)) return 'daily value must be an object'
+    if (v.painSites != null) { if (typeof v.painSites !== 'object' || Array.isArray(v.painSites)) return 'painSites must be an object'; for (const x of Object.values(v.painSites)) if (typeof x !== 'number' || !(x >= 0 && x <= 10)) return 'pain must be 0–10' }
+    if (v.pain != null && v.pain !== '' && !(Number(v.pain) >= 0 && Number(v.pain) <= 10)) return 'pain must be 0–10'
+    if (v.energy != null && !(typeof v.energy === 'number' && v.energy >= 0 && v.energy <= 10)) return 'energy must be 0–10'
+  }
+  return null
+}
 const PREFIX = /^lumpad\.[A-Za-z0-9._-]{0,60}$/
 const range = (q) => { const from = q.get('from'), to = q.get('to') || from; if (!validDate(from) || !validDate(to)) throw Object.assign(new Error('bad date range'), { status: 400 }); return [from, to] }
 const baseUrl = (req) => process.env.PUBLIC_URL || `https://${req.headers.host}`
@@ -72,9 +82,21 @@ const routes = {
   'PUT /api/kv': async (q, req) => {
     const k = kvKey(q), body = JSON.parse((await readBody(req, 1e6)).toString()), kv = load('kv', {})
     if (body.value === undefined) throw Object.assign(new Error('value required'), { status: 400 }) // never wipe a stored value with an empty write
+    const bad = kvInvalid(k, body.value); if (bad) throw Object.assign(new Error(bad), { status: 400 })
+    // append-only history of every check-in / result write (who, when, previous value): an overwrite can never erase that pain was reported
+    if (/^lumpad\.(daily|results|fuel)/.test(k)) { try { const h = load('kv_history', []); h.push({ key: k, at: new Date().toISOString(), by: req.headers['x-lumpad-user'] || 'web', prev: kv[k]?.value ?? null }); save('kv_history', h.slice(-2000)) } catch (e) { console.error('kv_history', e.message) } }
     kv[k] = { value: body.value, updatedAt: new Date().toISOString() }; save('kv', kv); return { ok: true, updatedAt: kv[k].updatedAt }
   },
   'GET /api/health': async () => ({ ok: true }),
+  // monitoring view (audit M6): freshness and failure signals in one place; counts and ages only
+  'GET /api/health/deep': async () => {
+    const hr = (t) => (t ? Math.round((Date.now() - Date.parse(t)) / 36e5 * 10) / 10 : null), tw = latestTwin(), j = recentIntelJobs(1)[0]
+    const runs = mdb.prepare("SELECT ok FROM coach_run WHERE provider != 'safety' AND created_at >= ?").all(new Date(Date.now() - 7 * 864e5).toISOString())
+    const failedSteps = recentIntelJobs(20).filter((x) => x.started_at >= new Date(Date.now() - 864e5).toISOString() && (x.status === 'partial' || x.error)).length
+    return { ok: true, twin_age_h: hr(tw?.created_at), last_intel_job: j ? { kind: j.kind, status: j.status, age_h: hr(j.started_at) } : null, intel_failures_24h: failedSteps,
+      coach_ok_rate_7d: runs.length ? Math.round(runs.filter((r) => r.ok).length / runs.length * 100) / 100 : null, coach_runs_7d: runs.length,
+      alerts: [tw && hr(tw.created_at) > 30 ? 'twin older than 30 h' : null, failedSteps ? 'intel step failures in the last 24 h' : null].filter(Boolean) }
+  },
   'GET /api/graph/node': async (q) => (await import('./neo4j.js')).node(q.get('kind') || 'races'),
   'GET /api/graph/overview': async () => (await import('./neo4j.js')).overview(),
   'GET /api/data/quality': async () => {
@@ -149,7 +171,7 @@ const routes = {
       telemetry: v.telemetry.map((t) => ({ date: t.date, km: t.km_total, splits: t.km.length })), twin_version: v.twin_version } },
   'GET /api/coach/context': async (q, req) => { checkToken(req); const intent = TASKS[q.get('intent')] ? q.get('intent') : 'daily_brief', ctx = retrieveRunnerContext({ intent, question: q.get('question') || '', activityId: q.get('activity') || null }), prompt = renderPrompt(ctx, TASKS[intent])
     return { run_id: newRun({ intent, provider: 'claude-code', ctx, prompt, question: q.get('question') }), ...prompt, output_schema: OUTPUT_SCHEMA, item_ids: ctx.item_ids } },
-  'POST /api/coach/writeback': async (_q, req) => { checkToken(req); const b = JSON.parse((await readBody(req, 2e5)).toString()); return finishRun(+b.run_id, b.answer, { provider: 'claude-code', raw: JSON.stringify(b.answer) }) },
+  'POST /api/coach/writeback': async (_q, req) => { checkToken(req); const b = JSON.parse((await readBody(req, 2e5)).toString()); const row = mdb.prepare('SELECT provider, ok FROM coach_run WHERE id=?').get(+b.run_id); if (!row || row.provider !== 'claude-code' || row.ok) throw Object.assign(new Error('run not open for write-back'), { status: 409 }); return finishRun(+b.run_id, b.answer, { provider: 'claude-code', raw: JSON.stringify(b.answer) }) },
   // shoe assigned by hand on the Activity page: written to every record of the merged activity (COROS + its Strava twin) so Twin & FIT see it
   'POST /api/activities/shoe': async (_q, req) => {
     const b = JSON.parse((await readBody(req, 1e4)).toString() || '{}'), id = String(b.id || ''), a = activityDetail(id)
@@ -234,5 +256,5 @@ http.createServer(async (req, res) => {
   // (impossible for a cross-site form/img; fetch from our own origin adds it). /api/ingest authenticates with its own bearer token.
   if (req.method !== 'GET' && u.pathname !== '/api/ingest' && req.headers['x-lumpad'] !== '1') return send(res, 403, { error: 'missing X-Lumpad header' })
   try { const out = await h(u.searchParams, req, res); if (out !== null) send(res, 200, out) }
-  catch (e) { send(res, e.status || 500, { error: e.message }) }
+  catch (e) { const st = e.status || 500; if (st >= 500) console.error(req.method, u.pathname, e.message); send(res, st, { error: st >= 500 ? 'internal error (see server log)' : e.message }) }
 }).listen(process.env.PORT || 8787, '127.0.0.1', () => { console.log('lumpad api :' + (process.env.PORT || 8787)); if (process.env.SCHEDULER !== 'off') { startScheduler(); startIntelScheduler(); hooks.afterJob = () => afterSync() } })

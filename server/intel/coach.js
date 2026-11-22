@@ -7,7 +7,9 @@ const normalize = (j) => softClamp(norm0(j))
 import { complete as deepseek } from './llm.js'
 import * as claude from './anthropic.js'
 import { applyWriteback } from './writeback.js'
-import { audit } from './memory.js'
+import { verifyAnswer, measuredBase } from './grounding.js'
+import { audit, getMemory } from './memory.js'
+import { load } from '../db.js'
 import { redFlags, checkinFlags, referralFor, gateFromTwin, gateCheck, diagnosisWording } from './safety.js'
 
 const EFFORT = { daily_brief: 'low', question: 'high', session_review: 'high', weekly_review: 'high', race_plan: 'high' }
@@ -46,18 +48,28 @@ export function newRun({ intent, provider, ctx, prompt, question }) {
 export const corpusOf = (ctx) => JSON.stringify({ twin: ctx.volatile.twin, edges: ctx.volatile.correlation_edges, items: [...ctx.volatile.episodes, ...ctx.volatile.facts] })
 
 // finalize a run given a parsed answer (used by DeepSeek and by the Claude Code CLI write-back)
-export function finishRun(runId, parsed, { provider, usage = null, model = null, cost = null, raw = null } = {}) {
+export function finishRun(runId, parsed0, { provider, usage = null, model = null, cost = null, raw = null } = {}) {
+  let parsed = parsed0
   const row = mdb.prepare('SELECT context_ids, request FROM coach_run WHERE id=?').get(runId), ids = JSON.parse(row.context_ids), req = JSON.parse(row.request)
-  const errs = validate(softClamp(parsed), OUTPUT_SCHEMA); if (errs.length) { mdb.prepare('UPDATE coach_run SET ok=0, error=?, response=?, model=? WHERE id=?').run('schema: ' + errs.slice(0, 5).join('; '), raw, model, runId); return { ok: false, errors: errs } }
-  const wb = applyWriteback(parsed, { runId, itemIds: ids, corpus: req.user + '\n' + req.system, provider })
+  const errs = validate(softClamp(normalize(parsed)), OUTPUT_SCHEMA); if (errs.length) { mdb.prepare('UPDATE coach_run SET ok=0, error=?, response=?, model=? WHERE id=?').run('schema: ' + errs.slice(0, 5).join('; '), raw, model, runId); return { ok: false, errors: errs } }
+  const base = measuredBase(req.user), wb = applyWriteback(parsed, { runId, itemIds: ids, corpus: req.user + '\n' + req.system, provider, base })
+  // grounding of the athlete-facing text: unknown ids / numbers not found in the cited items or the twin are reported (and shown as a badge), never silently trusted
+  const items = (() => { try { return ids.map((i) => getMemory(i)).filter(Boolean) } catch { return [] } })(), grounding = verifyAnswer(parsed, { itemIds: ids, items, base })
+  if (grounding.bad_ids.length || grounding.unverified.length) audit('grounding:flagged', null, { bad_ids: grounding.bad_ids, unverified: grounding.unverified.slice(0, 10) }, runId)
+  parsed = { ...parsed, grounding }
   mdb.prepare('UPDATE coach_run SET ok=1, response=?, parsed=?, usage=?, cost_cny=?, model=?, error=NULL WHERE id=?').run(raw, JSON.stringify({ ...parsed, _writeback: wb }), usage ? JSON.stringify(usage) : null, cost, model, runId)
   return { ok: true, parsed, writeback: wb }
 }
 export { normalize } from './schema.js'
 // Safety pre-check: a reported red-flag symptom (in the question, or severe pain in the last two check-ins) gets a referral and NO model call.
 function safetyPre(question) {
-  const flags = redFlags(question), log = idb.prepare("SELECT pain FROM daily_log WHERE pain IS NOT NULL ORDER BY date DESC LIMIT 2").all()
-  for (const l of log) { const w = Math.max(0, ...Object.values(JSON.parse(l.pain || '{}'))); flags.push(...checkinFlags({ pain: w })) }
+  const flags = redFlags(question), log = idb.prepare("SELECT date, pain FROM daily_log WHERE pain IS NOT NULL ORDER BY date DESC LIMIT 2").all()
+  // pain ever recorded for those dates (append-only kv_history), so overwriting a severe entry with 0 cannot suppress the referral
+  let hist = []; try { hist = load('kv_history', []) } catch {}
+  for (const l of log) {
+    const prior = hist.filter((h) => h.key === 'lumpad.daily.' + l.date).flatMap((h) => { const v = h.prev || {}; return v.painSites ? Object.values(v.painSites) : v.pain !== '' && v.pain != null ? [Number(v.pain)] : [] }).filter(Number.isFinite)
+    const w = Math.max(0, ...Object.values(JSON.parse(l.pain || '{}')), ...prior); flags.push(...checkinFlags({ pain: w }))
+  }
   return [...new Map(flags.map((f) => [f.id, f])).values()]
 }
 export async function runCoach({ intent = 'daily_brief', question = '', date, activityId = null, fetchFn, force = false } = {}) {

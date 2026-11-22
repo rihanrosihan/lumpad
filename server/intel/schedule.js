@@ -13,7 +13,8 @@ let coaching = false
 export async function coachTick() {
   if (coaching || isBusy() || process.env.COACH_SCHEDULE === 'off' || !process.env.DEEPSEEK_API_KEY) return null
   const w = wibNow(), hm = w.getUTCHours() * 60 + w.getUTCMinutes(), day = today()
-  const done = (intent, q) => mdb.prepare("SELECT 1 FROM coach_run WHERE intent=? AND ok=1 AND substr(created_at,1,10) >= ? AND (? IS NULL OR question=?)").get(intent, new Date(Date.now() - 20 * 3600e3).toISOString().slice(0, 10), q ?? null, q ?? null)
+  // "done today" = created on the current WIB calendar day (the old now-20h UTC window let yesterday's brief count as today's)
+  const done = (intent, q) => mdb.prepare("SELECT 1 FROM coach_run WHERE intent=? AND ok=1 AND substr(datetime(created_at, '+7 hours'),1,10) = ? AND (? IS NULL OR question=?)").get(intent, day, q ?? null, q ?? null)
   let job = null
   if (hm >= 480 && db.prepare("SELECT 1 FROM sync_jobs WHERE kind='daily' AND local_date=? AND status='done'").get(day) && !done('daily_brief')) job = { intent: 'daily_brief' }
   else if (w.getUTCDay() === 0 && hm >= 19 * 60 && !done('weekly_review')) job = { intent: 'weekly_review' }

@@ -26,7 +26,15 @@ export const OUTPUT_SCHEMA = {
 
 const FLAG_TYPES = new Set(['gate', 'injury', 'load', 'heat', 'data_gap', 'rule', 'other'])
 // cosmetic normalisation only (flag category labels); anything that affects advice or memory stays strictly validated
-export const normalize = (j) => { if (j && Array.isArray(j.flags)) for (const f of j.flags) if (f && typeof f === 'object' && !FLAG_TYPES.has(f.type)) f.type = 'other'; return j }
+const toIds = (a) => (Array.isArray(a) ? a.map((x) => (typeof x === 'string' && /^\d+$/.test(x.trim()) ? Number(x) : x)).filter((x) => Number.isInteger(x)) : a)
+export const normalize = (j) => {
+  if (!j || typeof j !== 'object') return j
+  if (Array.isArray(j.flags)) for (const f of j.flags) if (f && typeof f === 'object' && !FLAG_TYPES.has(f.type)) f.type = 'other'
+  // ids are sometimes returned as strings ("512"); coerce, and drop anything that is not an integer id
+  if ('cited_ids' in j) j.cited_ids = toIds(j.cited_ids)
+  if (Array.isArray(j.recommendations)) for (const r of j.recommendations) if (r && typeof r === 'object' && 'evidence_ids' in r) r.evidence_ids = toIds(r.evidence_ids)
+  return j
+}
 
 // A coach answer that is only too long is not a failed answer: cut the display fields to their limit at a sentence boundary (or a space) instead of
 // burning a repair call. Structure, enums and memory writes stay strictly validated. Returns the same object.

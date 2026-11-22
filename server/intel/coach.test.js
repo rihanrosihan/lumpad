@@ -66,11 +66,11 @@ test('write-back: rejects invented numbers, uncited ids, bad tier; procedural be
   assert.equal(w({ tier: 'procedural', title: 'Cap opening HR at 160', body: 'Keep HR under 160 for the first 10 km.' }).rejected.length, 1)   // 160 is not in the evidence
   const p2 = w({ tier: 'procedural', title: 'Hold back early', body: 'Keep the opening easy (HR 169 was too high).' }); assert.equal(M.getMemory(p2.stored[0].id).status, 'proposal')
 })
-test('write-back: near-duplicates merge and are promoted after 3 observations; KB chunks and locked rules are never merge targets', () => {
+test('write-back: near-duplicates merge and are marked ready for review after 3 observations (never self-promoted); KB chunks and locked rules are never merge targets', () => {
   const body = 'Mechanical trigger cadence fell before km 5 so walking started early at km 5.', mk = (t) => W.applyWriteback({ memory_writes: [{ tier: 'semantic', kind: 'pattern', title: t, body, cites: [items.a] }] }, { itemIds: [items.a], corpus: '' })
   const a = mk('Cadence trigger precedes run-walk'); assert.equal(a.stored.length, 1)
   const b = mk('Cadence trigger precedes run-walk start'), c = mk('Cadence trigger precedes run-walk start again')
-  assert.equal(b.merged.length, 1); assert.equal(c.merged[0].promoted, true); assert.equal(M.getMemory(a.stored[0].id).status, 'active')
+  assert.equal(b.merged.length, 1); assert.equal(c.merged[0].ready_for_review, true); assert.equal(M.getMemory(a.stored[0].id).status, 'candidate')
   const kb = M.addMemory({ tier: 'semantic', kind: 'kb', title: 'KB chunk', body: 'Sleep heart rate above sixtyseven means no hard running validated nights', evidence_tag: 'KB', status: 'active', source: 'kb', source_ref: 'k#1', created_by: 'kb' })
   const r = W.applyWriteback({ memory_writes: [{ tier: 'semantic', kind: 'x', title: 'Sleep heart rate above sixtyseven', body: 'Sleep heart rate above sixtyseven means no hard running validated nights', cites: [items.a] }] }, { itemIds: [items.a], corpus: '' })
   assert.equal(r.stored.length, 1); assert.equal(M.getMemory(kb.id).n, 1)

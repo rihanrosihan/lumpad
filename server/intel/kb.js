@@ -22,7 +22,8 @@ export function chunk(body, max = 1800) {
   // a single paragraph can still exceed max (tables, long lines): hard-split at whitespace
   return out.flatMap((c) => { if (c.length <= max * 1.3) return [c]; const r = []; let i = 0; while (i < c.length) { let j = Math.min(c.length, i + max); if (j < c.length) { const sp = c.lastIndexOf(' ', j); if (sp > i + max * 0.5) j = sp } r.push(c.slice(i, j).trim()); i = j } return r.filter((x) => x.length > 80) })
 }
-const statusOf = (s) => (/^(SUPERSEDED|ARCHIVE|RETIRED)/i.test(s || '') ? 'archived' : 'active')
+// a status like "SUPERSEDED as plan · ACTIVE as execution log" is still partly in force: only fully superseded docs are archived
+export const statusOf = (s) => (/^(SUPERSEDED|ARCHIVE|RETIRED)/i.test(s || '') && !/\bACTIVE\b/i.test(s) ? 'archived' : 'active')
 
 export function importKb(dir) {
   let docs = 0, chunks = 0, skipped = 0
@@ -34,10 +35,18 @@ export function importKb(dir) {
     tx(idb, () => idb.prepare('INSERT INTO kb_docs (doc_id, title, status, source_date, supersedes, path, body, hash, imported_at) VALUES (?,?,?,?,?,?,?,?,?) ON CONFLICT(doc_id) DO UPDATE SET title=excluded.title, status=excluded.status, source_date=excluded.source_date, supersedes=excluded.supersedes, path=excluded.path, body=excluded.body, hash=excluded.hash, imported_at=excluded.imported_at')
       .run(id, fm.title || path.basename(file), fm.status || '', fm['source-date'] || null, fm.supersedes || null, path.relative(dir, file), body, hash, new Date().toISOString()))
     docs++
-    // replace this doc's chunks (retire old ones, never leave stale text active)
-    mdb.prepare("UPDATE memory SET status='archived', updated_at=? WHERE source='kb' AND source_ref LIKE ? AND status='active'").run(new Date().toISOString(), id + '#%')
-    chunk(body).forEach((c, i) => { const head = /^#{1,3} (.+)$/m.exec(c)?.[1] || fm.title || id; mdb.prepare("DELETE FROM memory WHERE source='kb' AND source_ref=?").run(`${id}#${i}`)
-      addMemory({ tier: 'semantic', kind: 'kb', title: `${id} · ${head}`.slice(0, 160), body: c, payload: { doc: id, doc_status: fm.status, source_date: fm['source-date'] }, evidence_tag: 'KB', status: statusOf(fm.status), source: 'kb', source_ref: `${id}#${i}`, created_by: 'kb', valid_from: fm['source-date'] || null }); chunks++ })
+    // replace this doc's chunks BY CONTENT, not by index: an unchanged chunk that moved (a section was inserted above it) keeps its row and is re-activated;
+    // rows whose text is gone stay archived under a renamed ref (so the UNIQUE (source, source_ref) index is free for the new indexes).
+    const nowIso = new Date().toISOString(), status = statusOf(fm.status)
+    tx(mdb, () => {
+      const old = mdb.prepare("SELECT id, hash FROM memory WHERE source='kb' AND source_ref LIKE ?").all(id + '#%'), byHash = new Map(old.map((r) => [r.hash, r]))
+      for (const r of old) mdb.prepare("UPDATE memory SET status='archived', source_ref=? , updated_at=? WHERE id=?").run(`${id}#old${r.id}`, nowIso, r.id)
+      chunk(body).forEach((c, i) => {
+        const head = /^#{1,3} (.+)$/m.exec(c)?.[1] || fm.title || id, title = `${id} · ${head}`.slice(0, 160), hash = crypto.createHash('sha256').update(`semantic|kb|${title}|${c}`).digest('hex'), hit = byHash.get(hash)
+        if (hit) { mdb.prepare('UPDATE memory SET status=?, source_ref=?, valid_from=?, updated_at=? WHERE id=?').run(status, `${id}#${i}`, fm['source-date'] || null, nowIso, hit.id); byHash.delete(hash); chunks++; return }
+        addMemory({ tier: 'semantic', kind: 'kb', title, body: c, payload: { doc: id, doc_status: fm.status, source_date: fm['source-date'] }, evidence_tag: 'KB', status, source: 'kb', source_ref: `${id}#${i}`, created_by: 'kb', valid_from: fm['source-date'] || null }); chunks++
+      })
+    })
   }
   return { docs, chunks, skipped, total: idb.prepare('SELECT COUNT(*) n FROM kb_docs').get().n }
 }
