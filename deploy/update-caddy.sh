@@ -5,7 +5,10 @@ set -euo pipefail
 CUR=/etc/caddy/Caddyfile
 DOMAIN=$(awk '/\{[[:space:]]*$/{print $1; exit}' $CUR)
 read -r USER_NAME HASH < <(awk '/basicauth[[:space:]]*\{/{f=1;next} f&&NF{print $1, $2; exit}' $CUR)
-[ -n "$DOMAIN" ] || { echo "Could not read the domain from $CUR"; exit 1; }
+# repair: the template was copied over the live file by mistake (still has the __PLACEHOLDERS__) -> pass the domain: sudo DOMAIN=example.com bash update-caddy.sh
+if [ "$DOMAIN" = "__DOMAIN__" ] || [ -z "$DOMAIN" ]; then DOMAIN=${DOMAIN_NAME:-${SITE_DOMAIN:-}}; fi
+[ -n "$DOMAIN" ] || { echo "The domain is not in $CUR any more. Run: sudo SITE_DOMAIN=your.domain bash $0"; exit 1; }
+if [ "${USER_NAME:-}" = "__USER__" ] || [ "${HASH:-}" = "__HASH__" ]; then USER_NAME=""; HASH=""; fi
 TMP=$(mktemp)
 if [ -n "$USER_NAME" ] && [ -n "$HASH" ]; then
   sed -e "s#__DOMAIN__#$DOMAIN#" -e "s#__USER__#$USER_NAME#" -e "s#__HASH__#$HASH#" /opt/lumpad/deploy/Caddyfile > "$TMP"
