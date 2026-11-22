@@ -22,7 +22,7 @@ function pillarScore(comps, weight) {
 const has = (v) => v !== '' && v != null
 
 // inputs: f (morning check-in), hrv (hrvState), rhr (rhrState), sleep (sleepState), pmcPoint, monotony, progression, muscleMax (0–3), phase, hard (bool, today's session is hard)
-export function computeReadiness({ f = {}, hrv = {}, rhr = {}, sleep = {}, pmcPoint = null, monotony = null, progression = null, muscleMax = null, phase, hard = false, sleepHR = null }) {
+export function computeReadiness({ f = {}, hrv = {}, rhr = {}, sleep = {}, pmcPoint = null, monotony = null, progression = null, muscleMax = null, phase, hard = false, sleepHR = null, aerobic = null }) {
   const w = weightsFor(phase)
   const msk = pillarScore([
     // v1.3 minimal check-in: pain (worst site) 15 + one "feel" item 12 + muscular load 3 = 30. Tibia is a pain site (cap below); soreness/hydration are optional and not scored.
@@ -58,6 +58,8 @@ export function computeReadiness({ f = {}, hrv = {}, rhr = {}, sleep = {}, pmcPo
   if (shr != null && shr > 67 && hard) caps.push({ max: 64, why: `Sleep HR ${shr} > 67 before a hard session [VALIDATED]` })
   if (f.hrv === 'reduced' && hard) caps.push({ max: 64, why: 'HRV Reduced + hard session' })
   if (f.tibia === true) caps.push({ max: 64, why: 'Tibia tender (MTSS history)' })
+  // aerobic marker (HR at 8:00/km on steady easy runs vs the athlete's own baseline): 2 SD or more over at least 3 runs = fatigue, heat or illness → easy only
+  if (aerobic && aerobic.z != null && aerobic.n >= 3 && aerobic.z >= 2) caps.push({ max: 64, why: `HR at 8:00/km +${aerobic.z} SD above baseline on steady runs (n=${aerobic.n}) → easy only` })
   const capped = score != null && caps.length ? Math.min(score, ...caps.map((c) => c.max)) : score
   return { score: capped, raw: score, capped: capped !== score, caps, tier: tierOf(capped), coverage: Math.round(haveW), weights: w, pillars }
 }

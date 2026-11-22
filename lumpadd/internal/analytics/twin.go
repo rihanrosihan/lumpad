@@ -3,12 +3,15 @@ package analytics
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/rihanrosihan/lumpad/lumpadd/internal/athlete"
@@ -174,7 +177,7 @@ type act struct {
 	DistanceM   float64
 }
 
-func loadAndReadiness(ctx context.Context, db *pgxpool.Pool, T string) (map[string]any, map[string]any, []any, error) {
+func loadAndReadiness(ctx context.Context, db *pgxpool.Pool, T string, aerZ float64, aerN int) (map[string]any, map[string]any, []any, error) {
 	from := addDays(T, -120)
 	health, err := healthRows(ctx, db, from, T)
 	if err != nil {
@@ -266,7 +269,7 @@ func loadAndReadiness(ctx context.Context, db *pgxpool.Pool, T string) (map[stri
 			break
 		}
 	}
-	rd := engine.ComputeReadiness(engine.ReadinessInput{F: f, HRV: hrv, RHR: rhr, Sleep: sleep, PMC: cur, Monotony: mono, Progression: &prog, MuscleMax: math.NaN(), Phase: phase, Hard: hard, SleepHR: shr})
+	rd := engine.ComputeReadiness(engine.ReadinessInput{F: f, HRV: hrv, RHR: rhr, Sleep: sleep, PMC: cur, Monotony: mono, Progression: &prog, MuscleMax: math.NaN(), Phase: phase, Hard: hard, SleepHR: shr, AerobicZ: aerZ, AerobicN: aerN})
 
 	weekKm, longest := 0.0, 0.0
 	for _, a := range acts {
@@ -351,19 +354,58 @@ func ptr(x *float64) any {
 }
 
 // ---- sections
-func twinAerobic(S []sess, T string) map[string]any {
+// hr800Base is the HR at 8:00/km reference valid on T: the newest athlete.baseline row (written monthly by the Node baselineJob), else the KB seed.
+type hr800Base struct {
+	Value, SD float64
+	N         int
+	Source    string
+}
+
+var seedHR800 = hr800Base{143.1, 5.0, 26, "seed: KB Jan–Sep 2026"}
+
+func hr800Baseline(ctx context.Context, db *pgxpool.Pool, T string) (hr800Base, error) {
+	var v, sd *float64
+	var n *int64
+	var src *string
+	err := db.QueryRow(ctx, `SELECT value, sd, n, source FROM athlete.baseline WHERE name='hr800' AND valid_from <= $1 ORDER BY valid_from DESC LIMIT 1`, T).Scan(&v, &sd, &n, &src)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return seedHR800, nil
+		}
+		return seedHR800, err
+	}
+	if v == nil || sd == nil || *sd <= 0 {
+		return seedHR800, nil
+	}
+	b := hr800Base{Value: *v, SD: *sd, Source: ""}
+	if n != nil {
+		b.N = int(*n)
+	}
+	if src != nil {
+		b.Source = *src
+	}
+	return b, nil
+}
+
+// jsNumStr formats like JavaScript's String(number) for ordinary values (143.1 → "143.1", 5 → "5").
+func jsNumStr(x float64) string { return strconv.FormatFloat(x, 'f', -1, 64) }
+
+// steady easy runs only (3–15 km, ≥ 90 % running): races and run-walk sessions measure effort and heat, not aerobic fitness
+func steadyRun(s sess) bool {
+	return js0(s.RunShare) >= 0.9 && js0(s.DistanceM) >= 3000 && js0(s.DistanceM) <= 15000
+}
+
+func twinAerobic(S []sess, T string, base hr800Base) map[string]any {
 	win := func(a, b int) []sess {
-		return filterS(S, func(s sess) bool { return s.Date > addDays(T, -a) && s.Date <= addDays(T, -b) })
+		return filterS(S, func(s sess) bool { return s.Date > addDays(T, -a) && s.Date <= addDays(T, -b) && steadyRun(s) })
 	}
 	hr := func(L []sess) []float64 { return vals(L, func(s sess) *float64 { return s.HR800 }) }
 	p150 := func(L []sess) []float64 { return vals(L, func(s sess) *float64 { return s.PaceHR150 }) }
 	cur, prev := hr(win(28, 0)), hr(win(56, 28))
-	easy := vals(filterS(win(28, 0), func(s sess) bool {
-		return js0(s.RunShare) >= 0.9 && js0(s.DistanceM) >= 3000 && js0(s.DistanceM) <= 15000
-	}), func(s sess) *float64 { return s.EF })
+	easy := vals(win(28, 0), func(s sess) *float64 { return s.EF })
 	var z, pv, pv150 any
 	if len(cur) > 0 {
-		z = tr((Mean(cur)-143.1)/5.0, 1)
+		z = tr((Mean(cur)-base.Value)/base.SD, 1)
 	}
 	if len(prev) > 0 {
 		pv = tr(Mean(prev), 1)
@@ -373,7 +415,7 @@ func twinAerobic(S []sess, T string) map[string]any {
 		pv150 = tr(Mean(p), 0)
 	}
 	return map[string]any{
-		"hr_at_800":     map[string]any{"value": tr(Mean(cur), 1), "n": len(cur), "z": z, "prev_28d": pv, "baseline": "143.1 ± 5.0 (Jan–Sep 2026, n=26)"},
+		"hr_at_800":     map[string]any{"value": tr(Mean(cur), 1), "n": len(cur), "z": z, "prev_28d": pv, "baseline": fmt.Sprintf("%s ± %s (%s, n=%d)", jsNumStr(base.Value), jsNumStr(base.SD), base.Source, base.N), "steady_only": true},
 		"pace_at_hr150": map[string]any{"value": pv150, "n": len(p)},
 		"ef_easy_28d":   map[string]any{"value": tr(Mean(easy), 3), "n": len(easy)},
 	}
@@ -945,7 +987,19 @@ func BuildTwin(ctx context.Context, db *pgxpool.Pool, T string) (map[string]any,
 	if err != nil {
 		return nil, err
 	}
-	load, readiness, recent, err := loadAndReadiness(ctx, db, T)
+	base, err := hr800Baseline(ctx, db, T)
+	if err != nil {
+		return nil, err
+	}
+	aer := twinAerobic(S, T, base)
+	az, an := math.NaN(), 0
+	if h, ok := aer["hr_at_800"].(map[string]any); ok {
+		if zf, ok := h["z"].(float64); ok {
+			az = zf
+		}
+		an, _ = h["n"].(int)
+	}
+	load, readiness, recent, err := loadAndReadiness(ctx, db, T, az, an)
 	if err != nil {
 		return nil, err
 	}
@@ -999,7 +1053,7 @@ func BuildTwin(ctx context.Context, db *pgxpool.Pool, T string) (map[string]any,
 		return nil, err
 	}
 	return map[string]any{"schema": TwinSchema, "as_of": T, "physiological_profile": profile, "recent_days": recent, "load": load, "readiness": readiness,
-		"baselines": twinBaselines(S, T), "intensity": twinIntensity(S, T), "strength_to_run_transfer": strength, "aerobic": twinAerobic(S, T), "durability": twinDurability(S, T),
+		"baselines": twinBaselines(S, T), "intensity": twinIntensity(S, T), "strength_to_run_transfer": strength, "aerobic": aer, "durability": twinDurability(S, T),
 		"heat": twinHeat(S), "shoes": shoes, "fade_curves": twinFadeCurves(S), "races": twinRaces(S, results), "injury": injury, "plan": twinPlan(T, results),
 		"projection": TwinProjection(T, vdot0), "sessions_with_fit": len(S), "data_gaps": gaps}, nil
 }

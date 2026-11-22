@@ -31,3 +31,8 @@ test('no check-in: pain is flagged as missing; no twin: nothing', () => {
   assert.deepEqual(watchList(null), { call: null, items: [] })
   assert.equal(painToday({ pain: '' }), null); assert.equal(painToday({ painSites: { a: 1, b: 3 } }), 3)
 })
+
+test('post-G3 twin: the steady-only aerobic marker and its own baseline are used', () => {
+  const w = watchList({ ...base, aerobic: { hr_at_800: { value: 152.3, z: 1.3, n: 4, baseline: '143.9 ± 6.6 (steady runs 2026-04-07..2026-10-04, n=20)', steady_only: true } } })
+  const h = w.items.find((i) => i.id === 'hr800'); assert.equal(h.value, 152.3); assert.equal(h.status, 'watch'); assert.match(h.ref, /143.9 ± 6.6/)
+})

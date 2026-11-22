@@ -2,6 +2,7 @@ package engine
 
 import (
 	"encoding/json"
+	"math"
 	"os"
 	"testing"
 )
@@ -28,6 +29,10 @@ type healthCase struct {
 	Hard      bool
 	SleepHR   any
 	MuscleMax any
+	Aerobic   *struct {
+		Z any
+		N int
+	}
 	HRV       any `json:"hrv"`
 	RHR       any `json:"rhr"`
 	Sleep     any `json:"sleep"`
@@ -75,7 +80,7 @@ func TestHealthAndReadinessMatchJS(t *testing.T) {
 		hrvF, _ := c.F["hrv"].(string)
 		tib, _ := c.F["tibia"].(bool)
 		rd := ComputeReadiness(ReadinessInput{F: Checkin{Pain: jnum(c.F["pain"]), Energy: jnum(c.F["energy"]), SleepHR: jnum(c.F["sleepHR"]), HRV: hrvF, Tibia: tib},
-			HRV: hrv, RHR: rhr, Sleep: sl, PMC: last, Monotony: MonotonyStrain(series), Progression: &prog, MuscleMax: jnum(c.MuscleMax), Phase: c.Phase, Hard: c.Hard, SleepHR: jnum(c.SleepHR)})
+			HRV: hrv, RHR: rhr, Sleep: sl, PMC: last, Monotony: MonotonyStrain(series), Progression: &prog, MuscleMax: jnum(c.MuscleMax), Phase: c.Phase, Hard: c.Hard, SleepHR: jnum(c.SleepHR), AerobicZ: aerZ(c.Aerobic), AerobicN: aerN(c.Aerobic)})
 		if err := same(rd, c.Readiness); err != nil {
 			t.Errorf("case %d readiness: %v", i, err)
 		}
@@ -88,4 +93,23 @@ func TestToFixedLikeJS(t *testing.T) {
 			t.Errorf("toFixed(%v,1) = %s, want %s", in, got, want)
 		}
 	}
+}
+
+func aerZ(a *struct {
+	Z any
+	N int
+}) float64 {
+	if a == nil {
+		return math.NaN()
+	}
+	return jnum(a.Z)
+}
+func aerN(a *struct {
+	Z any
+	N int
+}) int {
+	if a == nil {
+		return 0
+	}
+	return a.N
 }

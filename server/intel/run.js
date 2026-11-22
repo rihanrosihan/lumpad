@@ -8,6 +8,7 @@ import { fitJob, buildCards } from './pipeline.js'
 import { weatherJob } from './weather.js'
 import { projectLog, buildDailyFeat } from './features.js'
 import { saveTwin } from './twin.js'
+import { baselineJob } from './baseline.js'
 import { corrJob } from './corr.js'
 import { retentionJob } from './retention.js'
 import { consistencyJob } from './consistency.js'
@@ -39,6 +40,7 @@ export async function runIntel(kind = 'full', { trigger = 'manual', force = fals
     await step('log', () => ({ days: projectLog() }))
     await step('features', () => ({ days: buildDailyFeat() }))
     if (kind === 'full') await step('cards', () => ({ cards: buildCards() }))   // weather/shoes/pain are in the cards, so rebuild after they land
+    await step('baseline', () => baselineJob(new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10)))   // monthly; a no-op once this month's row exists
     await step('twin', () => saveTwin(trigger))
     if (kind === 'full') await step('corr', () => corrJob())
     if (kind === 'full') await step('retention', () => retentionJob())

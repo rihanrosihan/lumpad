@@ -19,7 +19,7 @@ function tlRatios(acts) { const by = {}, all = [0, 0]; for (const a of acts) { i
 // `f` (morning check-in) and `ov` (muscle overrides) come from the screen's own state so the score reacts as you type
 export function useModel(T, settings, vdot, f = EMPTY_DAY, ov = {}) {
   const from = addDays(T, -120)
-  const R = useApi(`/api/readiness?from=${from}&to=${T}`), A = useApi(`/api/activities/merged?from=${from}&to=${addDays(T, 1)}`), Lp = useApi(`/api/laps?from=${addDays(T, -28)}&to=${T}`)
+  const R = useApi(`/api/readiness?from=${from}&to=${T}`), A = useApi(`/api/activities/merged?from=${from}&to=${addDays(T, 1)}`), Lp = useApi(`/api/laps?from=${addDays(T, -28)}&to=${T}`), Tw = useApi('/api/twin'), aer = Tw.data?.state?.aerobic?.hr_at_800
   return useMemo(() => {
     const health = R.data?.health || [], acts = (A.data || []).filter((a) => a.date <= T), lapsById = Lp.data || {}, sess = BY_DATE[T]
     const series = dailyLoadSeries(R.data?.loads || [], from, T), P = pmc(series), cur = (R.data?.loads?.length && P.at(-1)) || null   // no synced load at all ≠ "form 0"
@@ -37,7 +37,7 @@ export function useModel(T, settings, vdot, f = EMPTY_DAY, ov = {}) {
     const nowMs = new Date(T + 'T06:00:00+07:00').getTime(), muscle = muscleMap(ev, nowMs), eff = Object.fromEntries(Object.entries(muscle).map(([k, v]) => [k, ov[k] ?? v]))
     const muscleMax = acts.length || Object.keys(ov).length ? Math.max(...Object.values(eff)) : null
     const shr = health.find((h) => h.date === T)?.sleep_hr_avg ?? null
-    const readiness = computeReadiness({ f, hrv, rhr, sleep, pmcPoint: cur, monotony: mono, progression: prog, muscleMax, phase: sess?.phase, hard: sess ? HARD.has(sess.kind) : false, sleepHR: shr })
+    const readiness = computeReadiness({ f, hrv, rhr, sleep, pmcPoint: cur, monotony: mono, progression: prog, muscleMax, phase: sess?.phase, hard: sess ? HARD.has(sess.kind) : false, sleepHR: shr, aerobic: aer?.steady_only ? { z: aer.z, n: aer.n } : null })
     const p = paces(vdot.v), week = acts.filter((a) => a.date > addDays(T, -7))
     const lapsWeek = {}; for (const a of week) if (lapsById[a.id]) lapsWeek[a.id] = lapsById[a.id]
     const intensity = intensityDistribution(week, lapsWeek, p)
@@ -45,5 +45,5 @@ export function useModel(T, settings, vdot, f = EMPTY_DAY, ov = {}) {
     return { ready: R.state === 'ok' && A.state === 'ok', state: R.state, health, acts, lapsById, series, pmc: P, cur, proj, ratios, planned14, hrv, rhr, sleep, mono, prog, muscle, muscleEff: eff, overrides: ov, readiness,
       quadrant: quadrant(health, T), hrvSeries: hrvSeries(health, T, 60), acwrRoll: acwrRolling(series), ramp: ctlRamp(P), intensity, hrmax, recov: [...health].reverse().find((h) => h.recovery_pct != null) || null,
       rhrSeries: health.filter((h) => h.date > addDays(T, -30) && h.resting_hr != null).map((h) => ({ date: h.date, rhr: h.resting_hr, base: mean(health.filter((x) => x.date < h.date && x.date >= addDays(h.date, -30)).map((x) => x.resting_hr)) })) }
-  }, [R.data, R.state, A.data, A.state, Lp.data, f, ov, T, settings.sleepNeedMin, vdot.v])
+  }, [R.data, R.state, A.data, A.state, Lp.data, f, ov, T, settings.sleepNeedMin, vdot.v, aer?.z, aer?.n, aer?.steady_only])
 }

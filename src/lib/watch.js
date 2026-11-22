@@ -55,11 +55,12 @@ export function watchList(twin, { checkin = null, sleepNeedMin = 480 } = {}) {
   }
   // 6) aerobic marker — HR at 8:00/km on STEADY easy runs only (3–15 km, ≥ 90 % running: twin.baselines.d30). twin.aerobic.hr_at_800 mixes in races and
   //    run-walk sessions (e.g. a marathon in the heat), which is effort and heat, not aerobic fitness, so it is not used here.
-  const seed = 143.1, seedSd = 5.0, d30 = twin.baselines?.d30
+  //    From the post-G3 twin on, twin.aerobic is steady-only (steady_only: true) and carries its monthly baseline: use it directly.
+  const A = twin.aerobic?.hr_at_800?.steady_only ? twin.aerobic.hr_at_800 : null, seed = 143.1, seedSd = 5.0, d30 = A ? { n: A.n, hr_at_800: A.value } : twin.baselines?.d30
   if (d30) {
-    const v = d30.hr_at_800, z = v != null ? Math.round(((v - seed) / seedSd) * 10) / 10 : null
+    const v = d30.hr_at_800, z = A ? A.z : v != null ? Math.round(((v - seed) / seedSd) * 10) / 10 : null
     const st = v == null ? 'watch' : z >= 2 ? 'alert' : z >= 1 ? 'watch' : 'ok'
-    add({ id: 'hr800', label: 'HR at 8:00/km (steady runs)', value: v, unit: v != null ? 'bpm' : '', ref: `baseline ${seed} ± ${seedSd} · n=${d30.n ?? 0}`, status: st,
+    add({ id: 'hr800', label: 'HR at 8:00/km (steady runs)', value: v, unit: v != null ? 'bpm' : '', ref: `baseline ${A ? A.baseline.split(' (')[0] : `${seed} ± ${seedSd}`} · n=${d30.n ?? 0}`, status: st,
       why: v == null ? 'No steady easy run (3–15 km, mostly running) in 30 days, so aerobic fitness cannot be read. Do one steady easy run under the Z2 cap.'
         : st === 'alert' ? `Well above baseline (${sgn(z)} SD): fatigue, heat or illness. Keep running easy until it comes back.${d30.n < 3 ? ' Few runs: treat as a warning.' : ''}` : st === 'watch' ? 'Slightly above baseline.' : 'At or below baseline: aerobic fitness on track.' })
   }

@@ -25,13 +25,13 @@ const r = (x, d = 1) => (x == null || !isFinite(x) ? null : Math.round(x * 10 **
 const sessions = (since) => idb.prepare('SELECT s.*, w.wbgt, w.temp_c AS wx_temp, w.indoor FROM fit_session s LEFT JOIN run_weather w ON w.label_id = s.label_id WHERE s.date >= ? ORDER BY s.date, s.start_ms, s.label_id').all(since) // chronological, deterministic for same-day runs
 
 // ---- load + readiness: the same code and inputs as the client (src/lib), so the numbers agree
-function loadAndReadiness(T) {
+function loadAndReadiness(T, aer = null) {
   const from = addDays(T, -120), R = readinessData(from, T), series = dailyLoadSeries(R.loads || [], from, T), P = pmc(series), cur = P.at(-1) || null
   const acts = app.prepare('SELECT * FROM activities WHERE date BETWEEN ? AND ?').all(from, T).map((a) => ({ ...a, sport_class: a.sport === 'Run' ? 'run' : 'other' })).filter((a) => a.source === 'coros')
   const settings = load('kv', {})['lumpad.settings']?.value || {}, f = load('kv', {})['lumpad.daily.' + T]?.value || {}
   const health = R.health || [], hrv = hrvState(health, T), rhr = rhrState(health, T), sleep = sleepState(health, T, settings.sleepNeedMin || 480), mono = monotonyStrain(series), prog = distanceProgression(acts, T)
   const sess = PLAN_BY[T], shr = health.find((h) => h.date === T)?.sleep_hr_avg ?? null
-  const rd = computeReadiness({ f, hrv, rhr, sleep, pmcPoint: cur, monotony: mono, progression: prog, muscleMax: null, phase: sess?.phase, hard: sess ? HARD.has(sess.kind) : false, sleepHR: shr })
+  const rd = computeReadiness({ f, hrv, rhr, sleep, pmcPoint: cur, monotony: mono, progression: prog, muscleMax: null, phase: sess?.phase, hard: sess ? HARD.has(sess.kind) : false, sleepHR: shr, aerobic: aer })
   const wk = acts.filter((a) => a.sport === 'Run' && a.date > addDays(T, -28)), longest30 = Math.max(0, ...acts.filter((a) => a.sport === 'Run' && a.date > addDays(T, -30) && a.date < T).map((a) => a.distance_m / 1000))
   const recent = health.filter((h) => h.date > addDays(T, -8)).map((h) => ({ date: h.date, hrv: h.hrv_avg ?? null, hrv_status: h.hrv_status ?? null, hrv_baseline: h.hrv_baseline ?? null, sleep_hr: h.sleep_hr_avg ?? null, rhr: h.resting_hr ?? null,
     sleep_min_asleep: h.sleep_total_min != null ? h.sleep_total_min - (h.sleep_awake_min || 0) : null, sleep_score: h.sleep_score ?? null, stress: h.stress_avg ?? null, load_short: h.load_short ?? null, load_long: h.load_long ?? null }))
@@ -43,10 +43,18 @@ function loadAndReadiness(T) {
   }
 }
 
-function aerobic(S, T) {
-  const win = (a, b) => S.filter((s) => s.date > addDays(T, -a) && s.date <= addDays(T, -b)), hr = (L) => L.map((s) => s.hr800).filter((x) => x != null), p150 = (L) => L.map((s) => s.pace_hr150).filter((x) => x != null)
-  const cur = hr(win(28, 0)), prev = hr(win(56, 28)), easy = win(28, 0).filter((s) => s.run_share >= 0.9 && s.distance_m >= 3000 && s.distance_m <= 15000).map((s) => s.ef).filter((x) => x != null)
-  return { hr_at_800: { value: r(mean(cur)), n: cur.length, z: cur.length ? r((mean(cur) - 143.1) / 5.0) : null, prev_28d: prev.length ? r(mean(prev)) : null, baseline: '143.1 ± 5.0 (Jan–Sep 2026, n=26)' },
+// HR at 8:00/km baseline valid on T (athlete_baseline, written monthly by baselineJob); the original KB value is the seed until the first row exists
+export const SEED_HR800 = { value: 143.1, sd: 5.0, n: 26, source: 'seed: KB Jan–Sep 2026', valid_from: null }
+export function hr800Baseline(T) {
+  const row = idb.prepare("SELECT value, sd, n, source, valid_from FROM athlete_baseline WHERE name='hr800' AND valid_from <= ? ORDER BY valid_from DESC LIMIT 1").get(T)
+  return row && row.value != null && row.sd > 0 ? row : SEED_HR800
+}
+// steady easy runs only (3–15 km, ≥ 90 % running): races and run-walk sessions measure effort and heat, not aerobic fitness
+export const steadyRun = (s) => s.run_share >= 0.9 && s.distance_m >= 3000 && s.distance_m <= 15000
+function aerobic(S, T, base = SEED_HR800) {
+  const win = (a, b) => S.filter((s) => s.date > addDays(T, -a) && s.date <= addDays(T, -b) && steadyRun(s)), hr = (L) => L.map((s) => s.hr800).filter((x) => x != null), p150 = (L) => L.map((s) => s.pace_hr150).filter((x) => x != null)
+  const cur = hr(win(28, 0)), prev = hr(win(56, 28)), easy = win(28, 0).map((s) => s.ef).filter((x) => x != null)
+  return { hr_at_800: { value: r(mean(cur)), n: cur.length, z: cur.length ? r((mean(cur) - base.value) / base.sd) : null, prev_28d: prev.length ? r(mean(prev)) : null, baseline: `${base.value} ± ${base.sd} (${base.source}, n=${base.n})`, steady_only: true },
     pace_at_hr150: { value: p150(win(28, 0)).length ? r(mean(p150(win(28, 0))), 0) : null, n: p150(win(28, 0)).length }, ef_easy_28d: { value: r(mean(easy), 3), n: easy.length } }
 }
 function durability(S, T) {
@@ -166,13 +174,13 @@ function strengthTransfer() {
   return { gym_vs_fresh: mx?.gym_to_stride || [], by_lag_hours: mx?.gym_lag || [], edges, note: 'associations in observational data, not proof of cause' }
 }
 export function buildTwin(T = wibDate()) {
-  const kv = load('kv', {}), S = sessions('2025-01-01'), lr = loadAndReadiness(T)
+  const kv = load('kv', {}), S = sessions('2025-01-01'), aer = aerobic(S, T, hr800Baseline(T)), lr = loadAndReadiness(T, { z: aer.hr_at_800.z, n: aer.hr_at_800.n })
   const results = kv['lumpad.results']?.value || {}, last = CHECKPOINTS.filter((c) => results[c.id]?.vdot != null && c.kind === 'tt').at(-1), vdot0 = last ? results[last.id].vdot : TARGET.baseline
   const gaps = []; const noShoe = S.filter((s) => s.date >= '2026-01-01' && !s.shoe_id).length; if (noShoe) gaps.push(`${noShoe} runs in 2026 without a shoe`)
   const noWx = idb.prepare("SELECT COUNT(*) n FROM fit_session s LEFT JOIN run_weather w ON w.label_id=s.label_id WHERE w.label_id IS NULL").get().n; if (noWx) gaps.push(`${noWx} sessions without weather`)
   if (!idb.prepare('SELECT COUNT(*) n FROM daily_log WHERE pain IS NOT NULL').get().n) gaps.push('no pain log yet')
   const pending = app.prepare("SELECT 1 FROM activities WHERE sport='Run' AND source='coros'").all().length - S.length; if (pending > 0) gaps.push(`${pending} runs have no FIT file yet (laps-only metrics)`)
-  return { schema: SCHEMA, as_of: T, physiological_profile: profile(S, T), ...lr, baselines: baselines(S, T), intensity: intensity(S, T), strength_to_run_transfer: strengthTransfer(), aerobic: aerobic(S, T), durability: durability(S, T), heat: heat(S), shoes: shoes(S), fade_curves: fadeCurves(S), races: races(S, kv), injury: injury(T), plan: plan(T, kv),
+  return { schema: SCHEMA, as_of: T, physiological_profile: profile(S, T), ...lr, baselines: baselines(S, T), intensity: intensity(S, T), strength_to_run_transfer: strengthTransfer(), aerobic: aer, durability: durability(S, T), heat: heat(S), shoes: shoes(S), fade_curves: fadeCurves(S), races: races(S, kv), injury: injury(T), plan: plan(T, kv),
     projection: projection(T, vdot0), sessions_with_fit: S.length, data_gaps: gaps }
 }
 // write a new version only when the content (minus the date) changed

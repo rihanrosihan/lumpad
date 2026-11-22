@@ -41,7 +41,7 @@ for (let c = 0; c < 60; c++) {
   const need = pick([420, 480, 510]), series = mkSeries(pick([0, 6, 20, 40]), 0.3)
   const P = pmc(series), f = { pain: pick(['', null, 0, 1, 1.5, 2, 3]), energy: pick(['', null, 1, 2, 3, 4, 5, 3.5]), sleepHR: pick(['', null, 60, 68, 70.5]), hrv: pick([undefined, 'reduced', 'balanced']), tibia: pick([undefined, true, false]) }
   const hrv = hrvState(health, date), rhr = rhrState(health, date), sleep = sleepState(health, date, need), prog = distanceProgression(acts, date), mono = monotonyStrain(series)
-  const inp = { phase: pick(PH), hard: rn() < 0.5, sleepHR: pick([null, 64, 69]), muscleMax: pick([null, 0, 1.25, 2.5, 3.5]) }
+  const inp = { phase: pick(PH), hard: rn() < 0.5, sleepHR: pick([null, 64, 69]), muscleMax: pick([null, 0, 1.25, 2.5, 3.5]), aerobic: pick([null, { z: 1.2, n: 5 }, { z: 2.4, n: 3 }, { z: 3.1, n: 2 }, { z: 2, n: 4 }, { z: null, n: 0 }]) }
   const rd = computeReadiness({ f, hrv, rhr, sleep, pmcPoint: P.at(-1) || null, monotony: mono, progression: prog, ...inp })
   out.health.push({ date, need, health, acts, series, f, ...inp, hrv, rhr, sleep, prog, readiness: rd })
 }

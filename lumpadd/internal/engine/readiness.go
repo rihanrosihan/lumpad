@@ -3,6 +3,7 @@ package engine
 import (
 	"math"
 	"math/big"
+	"strconv"
 	"strings"
 )
 
@@ -108,6 +109,8 @@ type ReadinessInput struct {
 	Phase       string
 	Hard        bool
 	SleepHR     float64 // from the night's data, NaN = none; the check-in value wins
+	AerobicZ    float64 // HR at 8:00/km on steady runs vs baseline, in SD; NaN = none
+	AerobicN    int     // steady runs behind AerobicZ
 }
 
 type Cap struct {
@@ -310,6 +313,10 @@ func ComputeReadiness(in ReadinessInput) Readiness {
 	}
 	if f.Tibia {
 		caps = append(caps, Cap{64, "Tibia tender (MTSS history)"})
+	}
+	// aerobic marker: 2 SD or more over at least 3 steady runs = fatigue, heat or illness → easy only (same rule as src/lib/readiness.js)
+	if !isNull(in.AerobicZ) && in.AerobicN >= 3 && in.AerobicZ >= 2 {
+		caps = append(caps, Cap{64, "HR at 8:00/km +" + jsNum(in.AerobicZ) + " SD above baseline on steady runs (n=" + strconv.Itoa(in.AerobicN) + ") → easy only"})
 	}
 	capped := score
 	if !isNull(score) && len(caps) > 0 {
