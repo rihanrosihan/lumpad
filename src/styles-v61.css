@@ -197,7 +197,8 @@ select.v61-tag-select[data-wtag="Race"] { background-color: var(--v-red-soft) !i
 .v61-mtoggle { display: inline-flex; background: var(--v-surface-3); border-radius: 999px; padding: 2px; gap: 2px; }
 .v61-mtoggle button { border: none; background: transparent; color: var(--v-muted); font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; cursor: pointer; }
 .v61-mtoggle button.active { background: var(--v-surface); color: var(--v-text); }
-.v61-zlist { display: flex; flex-direction: column; gap: 12px; }
+.v61-zlist { display: flex; flex-direction: column; gap: 11px; }
+.v61-zrow + .v61-zrow { border-top: 1px solid var(--v-border, var(--line, rgba(128, 128, 128, 0.22))); padding-top: 11px; }
 .v61-zrow { display: grid; grid-template-columns: minmax(112px, 140px) 1fr 70px; align-items: center; gap: 10px; font-size: 12px; min-height: 32px; }
 .v61-ztrack { height: 18px; background: var(--v-surface-3); border-radius: 7px; overflow: hidden; }
 .v61-zfill { height: 100%; border-radius: 7px; transition: width 0.35s ease; }
