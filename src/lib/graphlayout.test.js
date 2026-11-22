@@ -12,3 +12,18 @@ test('connected nodes end up closer than the average pair (the springs work)', (
   let all = 0, c = 0; for (let i = 0; i < 60; i++) for (let j = i + 1; j < 60; j++) { all += d('n' + i, 'n' + j); c++ } assert.ok(adj < all / c, `adjacent ${adj.toFixed(0)} vs average ${(all / c).toFixed(0)}`)
 })
 test('empty and degrees', () => { assert.deepEqual(layout([], []), {}); assert.deepEqual(degrees([{ id: 'a' }, { id: 'b' }], [{ from: 'a', to: 'b' }, { from: 'a', to: 'x' }]), { a: 2, b: 1 }) })
+
+import { egoGraph, matchIds, dateRange, colorScale } from './graphlayout.js'
+const G = { nodes: [{ id: 'a', name: 'Alpha run', label: 'Session', date: '2026-10-01', ef: 1.2, tl: 100, wbgt: 24 }, { id: 'b', name: 'Beta', label: 'Shoe', date: null }, { id: 'c', name: 'Gamma', label: 'Session', date: '2026-11-01', ef: 1.6, tl: 200, wbgt: 30 }, { id: 'd', name: 'Delta', label: 'Memory', date: '2026-09-01' }],
+  edges: [{ from: 'a', to: 'b', type: 'WORE' }, { from: 'c', to: 'b', type: 'WORE' }, { from: 'c', to: 'd', type: 'ABOUT' }] }
+test('focus: the node, its neighbours and the edges among them only', () => {
+  const e = egoGraph(G, 'b'); assert.deepEqual(e.nodes.map((n) => n.id).sort(), ['a', 'b', 'c']); assert.equal(e.edges.length, 2)
+  assert.equal(egoGraph(G, null), G)
+})
+test('search matches name, type and date; empty text highlights nothing', () => {
+  assert.deepEqual([...matchIds(G.nodes, 'alpha')], ['a']); assert.deepEqual([...matchIds(G.nodes, 'session')].sort(), ['a', 'c']); assert.deepEqual([...matchIds(G.nodes, '2026-11')], ['c']); assert.equal(matchIds(G.nodes, '  '), null)
+})
+test('date range and colour scale (blue low → red high, null without a value)', () => {
+  assert.deepEqual(dateRange(G.nodes), ['2026-09-01', '2026-11-01']); assert.equal(dateRange([{ id: 'x' }]), null)
+  const c = colorScale(G.nodes, 'efficiency'); assert.equal(c(G.nodes[0]), 'hsl(220 75% 50%)'); assert.equal(c(G.nodes[2]), 'hsl(0 75% 50%)'); assert.equal(c(G.nodes[1]), null); assert.equal(colorScale(G.nodes, 'nope')(G.nodes[0]), null)
+})

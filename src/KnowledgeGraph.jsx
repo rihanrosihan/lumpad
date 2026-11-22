@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Card, Chip, ProvenanceBadge, StatusPill } from './ui.jsx'
 import { useApi } from './api.js'
-import { layout, degrees } from './lib/graphlayout.js'
+import { layout, degrees, egoGraph, matchIds, dateRange, colorScale, MEASURES } from './lib/graphlayout.js'
 
 const KG_NODES = [
   { id: 'twin', label: 'Digital Twin', sub: 'Central State', cat: 'core', x: 380, y: 200, r: 34, color: '#4658D6', db: 'intel.db:twin_state', summary: 'Synthesizes physiological readiness, CTL/ATL/TSB, aerobic efficiency (HR@800), and shoe OLS slopes into one structured coaching state.' },
@@ -205,43 +205,65 @@ export default function KnowledgeGraphPanel({ twin, matrices, status }) {
 }
 
 // ---- the REAL graph (Neo4j Aura): a bounded sample from fixed read-only queries, drawn with a small force layout
-const LABEL_COLOR = { Session: '#10B981', Day: '#64748B', Memory: '#0EA5E9', Shoe: '#E28120', Weather: '#06B6D4', Race: '#EA3A3A', Rule: '#A855F7', PainSite: '#F43F5E', Decision: '#EAB308', PlanDay: '#94A3B8' }
-const LIVE_VIEWS = [['sessions', 'Recent sessions'], ['memory', 'Memory links'], ['days', 'Last 3 weeks'], ['context', 'Races, rules, shoes']]
+const LABEL_COLOR = { Session: '#10B981', Day: '#64748B', Memory: '#0EA5E9', Shoe: '#E28120', Weather: '#06B6D4', Race: '#EA3A3A', Rule: '#A855F7', PainSite: '#F43F5E', Decision: '#EAB308', PlanDay: '#94A3B8', Topic: '#F59E0B', Workout: '#8B5CF6', HeatBand: '#FB7185', CoachRun: '#14B8A6' }
+const LIVE_VIEWS = [['sessions', 'Recent sessions'], ['topics', 'Topics'], ['chains', 'Gym → run'], ['trace', 'Coach trace'], ['plan', 'Plan vs done'], ['memory', 'Memory links'], ['days', 'Last 3 weeks'], ['context', 'Races, rules, shoes']]
+const VIEW_HELP = { sessions: 'Your newest runs with their shoe, weather, heat band, topics, similar runs and memories.', topics: 'The shared vocabulary: each topic with the newest knowledge-base notes, findings and sessions that are about it.',
+  chains: 'Strength sessions in the 72 hours before a run, with the run that followed.', trace: 'What the AI coach used: the memories it retrieved and cited, the notes it wrote and the sessions it reviewed.',
+  plan: 'Planned days against the sessions actually done.', memory: 'Recent findings and how they connect.', days: 'The last three weeks as a chain of days.', context: 'Races, rules and shoes with their sessions.' }
 function LiveGraph({ overview }) {
-  const [view, setView] = useState('sessions'), [sel, setSel] = useState(null)
-  const on = !!overview?.connected, G = useApi(on ? `/api/graph/live?view=${view}` : '', on), g = G.data
+  const [view, setView] = useState('sessions'), [sel, setSel] = useState(null), [focus, setFocus] = useState(false), [q, setQ] = useState(''), [by, setBy] = useState('type'), [range, setRange] = useState(null)
+  const on = !!overview?.connected, G = useApi(on ? `/api/graph/live?view=${view}` : '', on), full = G.data
+  const g = useMemo(() => (focus && sel && full ? egoGraph(full, sel) : full), [full, focus, sel])
   const narrow = typeof window !== 'undefined' && window.innerWidth < 700, [W, H] = narrow ? [380, 540] : [760, 420]   // a taller canvas on phones keeps dots tappable
   const pos = useMemo(() => (g?.nodes?.length ? layout(g.nodes, g.edges, { W, H }) : {}), [g, W, H])
   const deg = useMemo(() => (g ? degrees(g.nodes, g.edges) : {}), [g])
   const byLabel = useMemo(() => { const c = {}; for (const n of g?.nodes || []) c[n.label] = (c[n.label] || 0) + 1; return c }, [g])
-  const nb = useMemo(() => { if (!sel || !g) return []; const m = new Map(g.nodes.map((n) => [n.id, n])); return g.edges.filter((e) => e.from === sel || e.to === sel).map((e) => ({ n: m.get(e.from === sel ? e.to : e.from), type: e.type, out: e.from === sel })).filter((x) => x.n) }, [sel, g])
-  const cur = g?.nodes?.find((n) => n.id === sel), small = (g?.nodes?.length || 0) <= 30
+  const nb = useMemo(() => { if (!sel || !full) return []; const m = new Map(full.nodes.map((n) => [n.id, n])); return full.edges.filter((e) => e.from === sel || e.to === sel).map((e) => ({ n: m.get(e.from === sel ? e.to : e.from), type: e.type, out: e.from === sel })).filter((x) => x.n) }, [sel, full])
+  const found = useMemo(() => matchIds(g?.nodes || [], q), [g, q]), dr = useMemo(() => dateRange(g?.nodes || []), [g]), color = useMemo(() => (by === 'type' ? () => null : colorScale(g?.nodes || [], by)), [g, by])
+  const lo = range?.[0] ?? dr?.[0], hi = range?.[1] ?? dr?.[1], inRange = (n) => !dr || !n.date || (n.date >= lo && n.date <= hi)
+  const cur = full?.nodes?.find((n) => n.id === sel), small = (g?.nodes?.length || 0) <= 30
   if (!overview) return null
+  const fill = (n) => (by !== 'type' ? color(n) || '#94A3B8' : LABEL_COLOR[n.label] || '#64748B')
+  const dayIdx = dr ? [Date.parse(dr[0]) / 864e5, Date.parse(dr[1]) / 864e5] : null, dayStr = (x) => new Date(x * 864e5).toISOString().slice(0, 10)
   return <Card title="Live knowledge graph" right={<StatusPill tone={on ? 'green' : 'amber'}>{on ? `${overview.total_nodes} nodes · ${overview.total_edges} edges in Neo4j` : 'not connected'}</StatusPill>}>
     {!on && <div className="muted" style={{ fontSize: '.85rem', lineHeight: 1.5 }}>
-      <p style={{ margin: '0 0 6px' }}>The picture above is the system diagram. The real graph (days, sessions, weather, shoes, memories, rules, similar-session links) appears here once Neo4j Aura is connected.</p>
-      <p style={{ margin: 0 }}>Add <code>NEO4J_URI</code>, <code>NEO4J_USER</code> and <code>NEO4J_PASSWORD</code> to <code>/opt/lumpad/.env.v2</code>, restart <code>lumpadd-serve</code>, then run <code>systemctl start lumpadd-graph-sync</code>. Expect about 1,900 nodes and 2,500 edges from your data.</p>
+      <p style={{ margin: '0 0 6px' }}>The picture above is the system diagram. The real graph (days, sessions, weather, shoes, memories, rules, topics, gym-to-run chains and the coach's trail) appears here once Neo4j Aura is connected.</p>
+      <p style={{ margin: 0 }}>Add <code>NEO4J_URI</code>, <code>NEO4J_USER</code> and <code>NEO4J_PASSWORD</code> to <code>/opt/lumpad/.env.v2</code>, restart <code>lumpadd-serve</code>, then run <code>systemctl start lumpadd-graph-sync</code>.</p>
     </div>}
     {on && <>
-      <div className="chiprow" role="group" aria-label="Graph view">{LIVE_VIEWS.map(([k, l]) => <button key={k} type="button" aria-pressed={view === k} onClick={() => { setView(k); setSel(null) }}>{l}</button>)}</div>
-      {G.state === 'loading' && !g && <p className="muted">Loading the graph…</p>}
-      {g && !g.connected && <p className="muted" role="alert">Could not read the graph{g.error ? `: ${g.error}` : ''}. Try again in a moment.</p>}
-      {g?.connected && g.nodes.length === 0 && <p className="muted">This view is empty. Run <code>systemctl start lumpadd-graph-sync</code> to project the data into Neo4j.</p>}
+      <div className="chiprow" role="group" aria-label="Graph view">{LIVE_VIEWS.map(([k, l]) => <button key={k} type="button" aria-pressed={view === k} onClick={() => { setView(k); setSel(null); setFocus(false); setRange(null) }}>{l}</button>)}</div>
+      <p className="muted" style={{ fontSize: '.78rem', margin: '6px 0 0' }}>{VIEW_HELP[view]}</p>
+      {G.state === 'loading' && !full && <p className="muted">Loading the graph…</p>}
+      {full && !full.connected && <p className="muted" role="alert">Could not read the graph{full.error ? `: ${full.error}` : ''}. Try again in a moment.</p>}
+      {full?.connected && full.nodes.length === 0 && <p className="muted">This view is empty. Run <code>systemctl start lumpadd-graph-sync</code> to project the data into Neo4j.</p>}
       {g?.nodes?.length > 0 && <>
-        <div className="chips" style={{ margin: '8px 0' }}>{Object.entries(byLabel).map(([k, v]) => <span key={k} className="chip" style={{ borderLeft: `4px solid ${LABEL_COLOR[k] || '#64748B'}` }}>{k} {v}</span>)}<span className="muted" style={{ fontSize: '.75rem', alignSelf: 'center' }}>{g.nodes.length} nodes · {g.edges.length} edges shown{g.truncated ? ' (sample, capped)' : ''}</span></div>
+        <div className="kg-tools" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', margin: '8px 0' }}>
+          <input type="search" aria-label="Search the graph" placeholder="Search name, type or date" value={q} onChange={(e) => setQ(e.target.value)} style={{ flex: '1 1 160px', minHeight: 36 }} />
+          <label className="muted" style={{ fontSize: '.75rem', display: 'flex', gap: 6, alignItems: 'center' }}>Colour by
+            <select value={by} onChange={(e) => setBy(e.target.value)} aria-label="Colour nodes by"><option value="type">Type</option>{Object.entries(MEASURES).map(([k, m]) => <option key={k} value={k}>{m.label}</option>)}</select></label>
+          <button type="button" className="link" disabled={!sel} aria-pressed={focus} onClick={() => setFocus((f) => !f)} title="Show only the selected node and its neighbours">{focus ? 'Show all' : 'Focus on selected'}</button>
+        </div>
+        {dayIdx && dayIdx[1] > dayIdx[0] && <div className="muted" style={{ fontSize: '.74rem', display: 'grid', gridTemplateColumns: 'auto 1fr 1fr auto', gap: 8, alignItems: 'center', marginBottom: 6 }}>
+          <span>{lo}</span>
+          <input type="range" aria-label="Earliest date" min={dayIdx[0]} max={dayIdx[1]} value={Date.parse(lo) / 864e5} onChange={(e) => setRange([dayStr(Math.min(+e.target.value, Date.parse(hi) / 864e5)), hi])} />
+          <input type="range" aria-label="Latest date" min={dayIdx[0]} max={dayIdx[1]} value={Date.parse(hi) / 864e5} onChange={(e) => setRange([lo, dayStr(Math.max(+e.target.value, Date.parse(lo) / 864e5))])} />
+          <span>{hi}</span></div>}
+        <div className="chips" style={{ margin: '4px 0 8px' }}>{by === 'type' ? Object.entries(byLabel).map(([k, v]) => <span key={k} className="chip" style={{ borderLeft: `4px solid ${LABEL_COLOR[k] || '#64748B'}` }}>{k} {v}</span>)
+          : <span className="chip" style={{ background: 'linear-gradient(90deg, hsl(220 75% 50% / .35), hsl(110 75% 50% / .35), hsl(0 75% 50% / .35))' }}>{MEASURES[by].label}: low → high (grey = no value)</span>}
+          <span className="muted" style={{ fontSize: '.75rem', alignSelf: 'center' }}>{g.nodes.length} nodes · {g.edges.length} edges shown{full?.truncated && !focus ? ' (sample, capped)' : ''}{found ? ` · ${found.size} match` : ''}</span></div>
         <div className="kg-canvas"><svg viewBox={`0 0 ${W} ${H}`} className="kg-svg" role="img" aria-label={`Live knowledge graph, ${g.nodes.length} nodes and ${g.edges.length} edges`}>
-          {g.edges.map((e, i) => { const a = pos[e.from], b = pos[e.to]; if (!a || !b) return null; const act = e.from === sel || e.to === sel; return <line key={i} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={act ? 'var(--cobalt)' : 'var(--muted)'} strokeWidth={act ? 2 : 0.9} strokeOpacity={act ? 0.95 : sel ? 0.12 : 0.38}><title>{e.type}</title></line> })}
-          {g.nodes.map((n) => { const p = pos[n.id]; if (!p) return null; const isSel = n.id === sel, r = 5 + Math.min(7, Math.sqrt(deg[n.id] || 0) * 1.6)
-            return <g key={n.id} className="kg-node" onClick={() => setSel(isSel ? null : n.id)} role="button" tabIndex={0} aria-label={`${n.label}: ${n.name}`} onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setSel(isSel ? null : n.id)}>
-              {isSel && <circle cx={p.x} cy={p.y} r={r + 6} fill={LABEL_COLOR[n.label] || '#64748B'} fillOpacity="0.22" stroke={LABEL_COLOR[n.label] || '#64748B'} strokeWidth="2" />}
-              <circle cx={p.x} cy={p.y} r={r} fill={LABEL_COLOR[n.label] || '#64748B'} stroke="#fff" strokeWidth="1.4" />
-              {(small || isSel) && <text x={p.x} y={p.y + r + 11} textAnchor="middle" className="kg-lbl" style={{ fontSize: 9 }}>{n.name.length > 22 ? n.name.slice(0, 21) + '…' : n.name}</text>}
+          {g.edges.map((e, i) => { const a = pos[e.from], b = pos[e.to]; if (!a || !b) return null; const act = e.from === sel || e.to === sel; return <line key={i} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={act ? 'var(--cobalt)' : 'var(--muted)'} strokeWidth={act ? 2 : 0.9} strokeOpacity={act ? 0.95 : sel || found ? 0.1 : 0.38}><title>{e.type.toLowerCase().replace(/_/g, ' ')}</title></line> })}
+          {g.nodes.map((n) => { const p = pos[n.id]; if (!p) return null; const isSel = n.id === sel, r = 5 + Math.min(7, Math.sqrt(deg[n.id] || 0) * 1.6), dim = !inRange(n) || (found && !found.has(n.id)), hit = found?.has(n.id)
+            return <g key={n.id} className="kg-node" opacity={dim ? 0.15 : 1} onClick={() => setSel(isSel ? null : n.id)} role="button" tabIndex={0} aria-label={`${n.label}: ${n.name}`} onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setSel(isSel ? null : n.id)}>
+              {(isSel || hit) && <circle cx={p.x} cy={p.y} r={r + 6} fill={fill(n)} fillOpacity="0.22" stroke={fill(n)} strokeWidth="2" />}
+              <circle cx={p.x} cy={p.y} r={r} fill={fill(n)} stroke="#fff" strokeWidth="1.4" />
+              {(small || isSel || hit) && <text x={p.x} y={p.y + r + 11} textAnchor="middle" className="kg-lbl" style={{ fontSize: 9 }}>{n.name.length > 22 ? n.name.slice(0, 21) + '…' : n.name}</text>}
             </g> })}
         </svg></div>
         <div className="kg-detail" style={{ marginTop: 8, minHeight: 44 }}>
-          {cur ? <><b>{cur.label}</b> · {cur.name} <span className="muted">({deg[cur.id] || 0} links in this view)</span>
-            <div className="kg-jumps">{nb.slice(0, 12).map((x, i) => <button key={i} type="button" className="kg-jump" onClick={() => setSel(x.n.id)}><b>{x.n.name.length > 28 ? x.n.name.slice(0, 27) + '…' : x.n.name}</b> <span>({x.out ? '→' : '←'} {x.type.toLowerCase().replace(/_/g, ' ')})</span></button>)}</div></>
-            : <span className="muted">Tap a node to see what it is connected to. Bigger dots have more links.</span>}
+          {cur ? <><b>{cur.label}</b> · {cur.name}{cur.date ? ` · ${cur.date}` : ''} <span className="muted">({deg[cur.id] || nb.length} links in this view)</span>
+            <div className="kg-jumps">{nb.slice(0, 14).map((x, i) => <button key={i} type="button" className="kg-jump" onClick={() => setSel(x.n.id)}><b>{x.n.name.length > 28 ? x.n.name.slice(0, 27) + '…' : x.n.name}</b> <span>({x.out ? '→' : '←'} {x.type.toLowerCase().replace(/_/g, ' ')})</span></button>)}</div></>
+            : <span className="muted">Tap a node to see what it is connected to. Bigger dots have more links. Use Focus to show only one node and its neighbours.</span>}
         </div>
       </>}
     </>}

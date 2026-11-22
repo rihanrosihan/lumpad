@@ -19,3 +19,22 @@ export function layout(nodes, edges, { W = 760, H = 420, pad = 18, iters = 160 }
   return Object.fromEntries(nodes.map((d, i) => [d.id, { x: Math.round(x[i] * 10) / 10, y: Math.round(y[i] * 10) / 10 }]))
 }
 export const degrees = (nodes, edges) => { const d = Object.fromEntries(nodes.map((n) => [n.id, 0])); for (const e of edges) { if (e.from in d) d[e.from]++; if (e.to in d) d[e.to]++ } return d }
+
+// ---- view helpers for the live graph (pure, tested)
+// ego network: the node and its direct neighbours, with the edges among them
+export function egoGraph(g, id) {
+  if (!g || !id) return g
+  const keep = new Set([id]); for (const e of g.edges) { if (e.from === id) keep.add(e.to); if (e.to === id) keep.add(e.from) }
+  return { ...g, nodes: g.nodes.filter((n) => keep.has(n.id)), edges: g.edges.filter((e) => keep.has(e.from) && keep.has(e.to)) }
+}
+// ids matching a search text (name, type or date); empty text matches nothing (= no highlight)
+export const matchIds = (nodes, q) => { const t = String(q || '').trim().toLowerCase(); return t ? new Set(nodes.filter((n) => `${n.name} ${n.label} ${n.date || ''}`.toLowerCase().includes(t)).map((n) => n.id)) : null }
+export const dateRange = (nodes) => { const d = nodes.map((n) => n.date).filter(Boolean).sort(); return d.length ? [d[0], d.at(-1)] : null }
+export const MEASURES = { recency: { label: 'Recency', get: (n) => (n.date ? Date.parse(n.date) / 864e5 : null) }, efficiency: { label: 'Running efficiency', get: (n) => n.ef }, load: { label: 'Training load', get: (n) => n.tl }, heat: { label: 'Heat (WBGT)', get: (n) => n.wbgt } }
+// blue (low) → red (high) over the observed range; null = no value
+export function colorScale(nodes, measure) {
+  const m = MEASURES[measure]; if (!m) return () => null
+  const v = nodes.map(m.get).filter((x) => x != null && isFinite(x)); if (!v.length) return () => null
+  const lo = Math.min(...v), hi = Math.max(...v), span = hi - lo || 1
+  return (n) => { const x = m.get(n); return x == null || !isFinite(x) ? null : `hsl(${Math.round(220 - ((x - lo) / span) * 220)} 75% 50%)` }
+}
