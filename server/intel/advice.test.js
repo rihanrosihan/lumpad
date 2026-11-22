@@ -29,7 +29,7 @@ test('judging: followed / partly / not followed for sessions, caps and rest days
 })
 test('ledger: recorded once per run, open until the day has evidence, then resolved; a hand-set status is never overwritten', () => {
   const run = Number(mdb.prepare("INSERT INTO coach_run (created_at, intent, provider, ok) VALUES ('2026-11-22T08:00:00Z','daily_brief','deepseek',1)").run().lastInsertRowid)
-  const parsed = { recommendations: [{ action: 'Run 8 km easy tomorrow, heart rate under 148', why: 'w', priority: 'now' }, { action: 'Rest on Wednesday', why: 'w', priority: 'later' }, { action: 'Think about your goals', why: 'w', priority: 'later' }] }
+  const parsed = { recommendations: [{ action: 'Run 8 km easy tomorrow, heart rate under 148', why: 'w', priority: 'now' }, { action: 'Take a rest day on Wednesday', why: 'w', priority: 'later' }, { action: 'Think about your goals', why: 'w', priority: 'later' }] }
   assert.equal(A.recordAdvice(run, parsed, { asOf: ASOF }), 3); assert.equal(A.recordAdvice(run, parsed, { asOf: ASOF }), 0)   // idempotent
   assert.deepEqual(mdb.prepare('SELECT idx, kind, status, for_date FROM coach_advice ORDER BY idx').all().map((r) => [r.kind, r.status, r.for_date]), [['session', 'open', '2026-11-23'], ['rest', 'open', '2026-11-25'], ['other', 'unknown', null]])
   assert.deepEqual(A.resolveAdvice('2026-11-23'), { resolved: 0, open: 1 })   // the day has started, no run yet: open
@@ -60,4 +60,18 @@ test('the loop closes: repeated misses become a memory CANDIDATE with the real c
   assert.equal(m.status, 'candidate'); assert.match(m.body, /5 checkable instructions.*1 were followed, 0 partly and 4 not/)
   mdb.prepare("UPDATE coach_advice SET status='followed' WHERE kind='cap'").run(); A.adherenceMemory('2026-11-20')
   assert.equal(mdb.prepare("SELECT status FROM memory WHERE source='ledger' AND source_ref='adherence:cap'").get().status, 'archived')
+})
+
+test('real sentences from the first backfill: "rest of today" is not a rest day; "no second run" is; durations and "or rest" are read correctly', () => {
+  assert.equal(A.inferTarget('Fuel and rehydrate properly for the rest of today and aim for a long night of sleep', ASOF).kind, 'fuel')
+  assert.equal(A.inferTarget('Rest of today: no second run and no gym session; fluids with salt', ASOF).kind, 'rest')
+  const d = A.inferTarget('Run 30–40 min easy today (or rest if sleep is the limiter)', ASOF); assert.deepEqual([d.kind, d.min, d.alt_rest, d.for_date], ['session', 35, true, ASOF])
+  assert.equal(A.inferTarget('Take a full rest day on Wednesday', ASOF).kind, 'rest')
+  assert.equal(A.judge(d, { runs: 0, km: 0, minutes: 0 }), 'void'); assert.equal(A.judge(d, { runs: 1, km: 5, minutes: 36, avg_hr: 140 }), 'followed'); assert.equal(A.judge(d, { runs: 1, km: 12, minutes: 110, avg_hr: 140 }), 'not_followed')
+})
+test('advice written AFTER a morning run is judged only by what happens after it', () => {
+  const day = '2026-12-05', run = Number(mdb.prepare("INSERT INTO coach_run (created_at, intent, provider, ok) VALUES (?,?,?,1)").run('2026-12-05T08:30:00Z', 'daily_brief', 'deepseek').lastInsertRowid)   // 15:30 WIB
+  app.prepare("INSERT INTO activities (id, source, source_id, date, sport, distance_m, duration_s, avg_hr, start_ts, pulled_at) VALUES ('coros:am','coros','am',?,'Run',11000,5400,150,?,'x')").run(day, Math.floor(Date.parse('2026-12-04T22:00:00Z') / 1000))   // 05:00 WIB, before the advice
+  A.recordAdvice(run, { recommendations: [{ action: 'No second run today; fluids and sleep', why: 'w', priority: 'now' }] }, { asOf: day })
+  A.resolveAdvice('2026-12-06'); assert.equal(mdb.prepare('SELECT status FROM coach_advice WHERE run_id=?').get(run).status, 'followed')   // the morning run does not count against it
 })

@@ -24,11 +24,16 @@ export function inferTarget(action, asOf, given = {}) {
     else if (/\b(today|tonight|hari ini|malam ini)\b/.test(low)) out.for_date = asOf
     else { const w = Object.keys(WEEKDAYS).find((k) => new RegExp('\\b' + k + '\\b').test(low)); if (w) { const cur = new Date(asOf + 'T12:00:00Z').getUTCDay(); out.for_date = addDays(asOf, ((WEEKDAYS[w] - cur + 7) % 7) || 7) } }
   }
+  if (out.min == null) { const m = /(\d+)(?:\s*[–-]\s*(\d+))?\s*(?:min|menit)\b/i.exec(t); if (m && /\b(run|jog|easy|lari)\b/i.test(t)) out.min = m[2] ? (+m[1] + +m[2]) / 2 : +m[1] }
+  if (out.alt_rest == null && /\b(or rest|or skip|atau istirahat)\b/i.test(t)) out.alt_rest = true   // "(or rest if sleep is the limiter)": a condition the data cannot check
+  const hasAmount = out.km != null || out.min != null
   if (!out.kind) {
-    if (/\b(rest day|rest|skip|no run|day off|do not run|don't run|libur|istirahat)\b/.test(low) && out.km == null) out.kind = 'rest'
-    else if (out.km != null && /\b(run|jog|easy|long|lari)\b/.test(low)) out.kind = 'session'
-    else if (out.hr_cap_bpm != null) out.kind = 'cap'
+    // an instruction to run an amount is a session, even when it mentions rest as an alternative; "rest of today" is not a rest day
+    if (hasAmount && /\b(run|jog|easy|long|lari)\b/.test(low)) out.kind = 'session'
+    else if (/\bno (?:second|extra|more|further) run\b/.test(low)) out.kind = 'rest'
     else if (/\b(fuel|drink|fluid|eat|carb|gel|hydrat|minum|makan)\b/.test(low)) out.kind = 'fuel'
+    else if (/\b(rest day|take a rest|full rest|rest entirely|complete rest|skip (?:the |your )?run|no run|day off|do not run|don't run|libur|istirahat total)\b/.test(low) && !hasAmount) out.kind = 'rest'
+    else if (out.hr_cap_bpm != null) out.kind = 'cap'
     else if (/\b(gym|strength|squat|leg|calf)\b/.test(low)) out.kind = 'strength'
     else if (/\b(week|volume|mileage|distance)\b/.test(low)) out.kind = 'volume'
     else out.kind = 'other'
@@ -39,26 +44,28 @@ export function inferTarget(action, asOf, given = {}) {
 // store the recommendations of one successful run (idempotent per run)
 export function recordAdvice(runId, parsed, { asOf = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10) } = {}) {
   let n = 0
+  const at = mdb.prepare('SELECT created_at FROM coach_run WHERE id=?').get(runId)?.created_at || now()   // when the advice was GIVEN (also right for backfilled runs)
   ;(parsed?.recommendations || []).forEach((r, idx) => {
     if (!r?.action) return
     const t = inferTarget(r.action, asOf, r.target || {})
     const res = mdb.prepare('INSERT OR IGNORE INTO coach_advice (run_id, idx, created_at, for_date, kind, text, target, status) VALUES (?,?,?,?,?,?,?,?)')
-      .run(runId, idx, now(), t.for_date || null, t.kind, String(r.action).slice(0, 400), JSON.stringify(t), t.for_date ? 'open' : 'unknown')
+      .run(runId, idx, at, t.for_date || null, t.kind, String(r.action).slice(0, 400), JSON.stringify(t), t.for_date ? 'open' : 'unknown')
     n += Number(res.changes)
   })
   return n
 }
 
 // ---- reading what actually happened on a day
-export function actualsOn(date) {
-  const runs = app.prepare("SELECT id, distance_m, duration_s, avg_hr FROM activities WHERE source='coros' AND sport='Run' AND date=?").all(date)
+export function actualsOn(date, afterTs = 0) {
+  // afterTs (epoch seconds): only activity that STARTED after the advice was given counts (advice written after a morning run cannot be judged by that run)
+  const runs = app.prepare("SELECT id, distance_m, duration_s, avg_hr FROM activities WHERE source='coros' AND sport='Run' AND date=? AND (? = 0 OR COALESCE(start_ts, 0) > ?)").all(date, afterTs, afterTs)
   const km = runs.reduce((s, a) => s + (a.distance_m || 0), 0) / 1000
   const dur = runs.reduce((s, a) => s + (a.duration_s || 0), 0)
-  const fit = idb.prepare('SELECT run_hr, distance_m FROM fit_session WHERE date=? AND run_hr IS NOT NULL').all(date)
+  const ids = new Set(runs.map((a) => a.id)), fit = idb.prepare('SELECT run_hr, distance_m, activity_id FROM fit_session WHERE date=? AND run_hr IS NOT NULL').all(date).filter((f) => !afterTs || ids.has(f.activity_id))
   const hrFit = fit.length ? fit.reduce((s, f) => s + f.run_hr * (f.distance_m || 1), 0) / fit.reduce((s, f) => s + (f.distance_m || 1), 0) : null   // HR while actually running, when the FIT is in
   const hrAvg = runs.length && dur ? runs.reduce((s, a) => s + (a.avg_hr || 0) * (a.duration_s || 0), 0) / dur : null
   const pain = idb.prepare("SELECT pain FROM daily_log WHERE date IN (?, ?) AND pain IS NOT NULL").all(date, addDays(date, 1)).flatMap((l) => { try { return Object.values(JSON.parse(l.pain)) } catch { return [] } }).filter(Number.isFinite)
-  return { runs: runs.length, km: Math.round(km * 10) / 10, avg_hr: hrFit != null ? Math.round(hrFit) : hrAvg ? Math.round(hrAvg) : null, hr_source: hrFit != null ? 'fit' : 'coros', pain_max_48h: pain.length ? Math.max(...pain) : null }
+  return { runs: runs.length, km: Math.round(km * 10) / 10, minutes: Math.round(dur / 60), avg_hr: hrFit != null ? Math.round(hrFit) : hrAvg ? Math.round(hrAvg) : null, hr_source: hrFit != null ? 'fit' : 'coros', pain_max_48h: pain.length ? Math.max(...pain) : null }
 }
 
 // ---- judging it (pure; the thresholds are the whole policy)
@@ -67,9 +74,9 @@ export function actualsOn(date) {
 export function judge(t, a) {
   const hrOk = (cap, hr) => (cap == null || hr == null ? 'na' : hr <= cap + 3 ? 'ok' : hr <= cap + 10 ? 'near' : 'over')
   if (t.kind === 'rest') return a.km < 1 ? 'followed' : a.km < 3 ? 'partly' : 'not_followed'
-  if (t.kind === 'session' && t.km > 0) {
-    if (!a.runs) return 'not_followed'
-    const r = a.km / t.km, h = hrOk(t.hr_cap_bpm, a.avg_hr)
+  if (t.kind === 'session' && (t.km > 0 || t.min > 0)) {
+    if (!a.runs) return t.alt_rest ? 'void' : 'not_followed'   // "or rest if ...": not running is a legitimate choice the data cannot judge
+    const r = t.km > 0 ? a.km / t.km : a.minutes / t.min, h = hrOk(t.hr_cap_bpm, a.avg_hr)
     if (r >= 0.8 && r <= 1.25 && h !== 'over' && h !== 'near') return 'followed'
     if (r >= 0.5 && r <= 1.6 && h !== 'over') return 'partly'
     return 'not_followed'
@@ -85,7 +92,7 @@ export function judge(t, a) {
 export function resolveAdvice(today = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10)) {
   const rows = mdb.prepare("SELECT * FROM coach_advice WHERE manual = 0 AND for_date IS NOT NULL AND for_date <= ? AND for_date >= ?").all(today, addDays(today, -14)), out = { resolved: 0, open: 0 }
   for (const r of rows) {
-    const t = JSON.parse(r.target || '{}'), a = actualsOn(r.for_date), over = r.for_date < today
+    const t = JSON.parse(r.target || '{}'), sameDay = r.for_date === new Date(Date.parse(r.created_at) + 7 * 3600e3).toISOString().slice(0, 10), a = actualsOn(r.for_date, sameDay ? Math.floor(Date.parse(r.created_at) / 1000) : 0), over = r.for_date < today
     if (!over && !a.runs && (t.kind === 'session' || t.kind === 'cap')) { out.open++; continue }      // the day is not over: no evidence yet
     if (!over && t.kind === 'rest' && !a.runs) { out.open++; continue }                                  // a rest day is only kept once it is over
     const status = judge(t, a), ev = JSON.stringify({ ...a, target_km: t.km ?? null, hr_cap: t.hr_cap_bpm ?? null })
