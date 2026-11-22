@@ -81,9 +81,9 @@ export function judge(t, a) {
   return 'void'   // food, strength, volume and open-ended advice cannot be checked from run data; the athlete can mark them by hand
 }
 
-// resolve every non-manual advice whose day is today or recent; a day that is not over and has no run yet stays open
+// resolve every non-manual advice whose day is today or within the last 14 days (late data such as a FIT file can still change the result); a day that is not over and has no run yet stays open
 export function resolveAdvice(today = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10)) {
-  const rows = mdb.prepare("SELECT * FROM coach_advice WHERE manual = 0 AND for_date IS NOT NULL AND for_date <= ? AND for_date >= ?").all(today, addDays(today, -4)), out = { resolved: 0, open: 0 }
+  const rows = mdb.prepare("SELECT * FROM coach_advice WHERE manual = 0 AND for_date IS NOT NULL AND for_date <= ? AND for_date >= ?").all(today, addDays(today, -14)), out = { resolved: 0, open: 0 }
   for (const r of rows) {
     const t = JSON.parse(r.target || '{}'), a = actualsOn(r.for_date), over = r.for_date < today
     if (!over && !a.runs && (t.kind === 'session' || t.kind === 'cap')) { out.open++; continue }      // the day is not over: no evidence yet
