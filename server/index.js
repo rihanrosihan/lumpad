@@ -15,6 +15,7 @@ import { listEdges } from './intel/corr.js'
 import { listMemory, setStatus, getMemory } from './intel/memory.js'
 import { runIntel, recentIntelJobs, afterSync } from './intel/run.js'
 import { startIntelScheduler } from './intel/schedule.js'
+import { adviceSummary, listAdvice, setStatus as setAdviceStatus } from './intel/advice.js'
 import { runCoach, recentRuns, getRun, newRun, finishRun, coachStatus } from './intel/coach.js'
 import { retrieveRunnerContext, renderPrompt, TASKS, OUTPUT_SCHEMA } from './intel/context.js'
 import { guardStatus, resolveModel } from './intel/llm.js'
@@ -167,6 +168,9 @@ const routes = {
   // every session that has a successful coach review (the activity feed badge used to look only at the last 20 runs of any kind)
   // newest successful review for one question (e.g. "session <id>"), however old: the run list above only holds the last 20 runs
   'GET /api/coach/latest': async (q) => mdb.prepare("SELECT id, created_at FROM coach_run WHERE intent='session_review' AND ok=1 AND question=? ORDER BY id DESC LIMIT 1").get(String(q.get('question') || '').slice(0, 200)) || null,
+  // the advice ledger: what the coach asked for and what the athlete then did (the athlete can correct a status by hand)
+  'GET /api/coach/advice': async (q) => ({ summary: adviceSummary({ days: Math.min(90, +q.get('days') || 30) }), items: listAdvice({ days: Math.min(90, +q.get('days') || 30) }) }),
+  'POST /api/coach/advice/status': async (_q, req) => { const b = JSON.parse((await readBody(req, 1e4)).toString() || '{}'); return setAdviceStatus(+b.id, String(b.status || ''), principal(req) || 'athlete') },
   'GET /api/coach/analysed': async () => mdb.prepare("SELECT DISTINCT question FROM coach_run WHERE intent='session_review' AND ok=1 AND question LIKE 'session %'").all().map((r) => r.question),
   'GET /api/coach/run': async (q) => getRun(+q.get('id')) || { error: 'not found' },
   // pull mode for a Claude routine / Claude Code: context out, answer back (same validation + write-back hook as DeepSeek)

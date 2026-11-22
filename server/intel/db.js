@@ -65,4 +65,11 @@ CREATE TABLE coach_job (key TEXT PRIMARY KEY, intent TEXT NOT NULL, attempts INT
 `, `
 ALTER TABLE coach_run ADD COLUMN req_hash TEXT;
 CREATE INDEX coach_run_hash ON coach_run(intent, req_hash);
+`, `
+-- advice ledger: every concrete recommendation, what it asked for, and what the athlete then actually did (resolved from COROS data; the athlete can override)
+CREATE TABLE coach_advice (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, run_id INTEGER NOT NULL, idx INTEGER NOT NULL, created_at TEXT NOT NULL, for_date TEXT,
+  kind TEXT NOT NULL, text TEXT NOT NULL, target TEXT, status TEXT NOT NULL DEFAULT 'open', evidence TEXT, resolved_at TEXT, manual INTEGER NOT NULL DEFAULT 0, UNIQUE (run_id, idx)
+);
+CREATE INDEX coach_advice_date ON coach_advice(for_date, status);
 `])

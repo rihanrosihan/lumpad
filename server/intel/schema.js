@@ -15,7 +15,7 @@ export const OUTPUT_SCHEMA = {
   type: 'object', required: ['summary', 'analysis_md', 'recommendations', 'flags', 'memory_writes', 'cited_ids'],
   properties: {
     summary: { type: 'string', maxLength: 900 }, analysis_md: { type: 'string', maxLength: 3000 },
-    recommendations: { type: 'array', maxItems: 8, items: { type: 'object', required: ['action', 'why', 'priority'], properties: { action: { type: 'string', maxLength: 400 }, why: { type: 'string', maxLength: 500 }, priority: { type: 'string', enum: ['now', 'this_week', 'later'] }, evidence_ids: { type: 'array', items: { type: 'integer' } }, needs_athlete_ok: { type: 'boolean' } } } },
+    recommendations: { type: 'array', maxItems: 8, items: { type: 'object', required: ['action', 'why', 'priority'], properties: { action: { type: 'string', maxLength: 400 }, why: { type: 'string', maxLength: 500 }, priority: { type: 'string', enum: ['now', 'this_week', 'later'] }, evidence_ids: { type: 'array', items: { type: 'integer' } }, needs_athlete_ok: { type: 'boolean' }, target: { type: 'object', properties: { for_date: { type: 'string' }, kind: { type: 'string', enum: ['session', 'rest', 'cap', 'fuel', 'volume', 'strength', 'other'] }, km: { type: 'number' }, hr_cap_bpm: { type: 'number' } } } } } },
     flags: { type: 'array', maxItems: 8, items: { type: 'object', required: ['type', 'text'], properties: { type: { type: 'string', enum: ['gate', 'injury', 'load', 'heat', 'data_gap', 'rule', 'other'] }, text: { type: 'string', maxLength: 300 } } } },
     memory_writes: { type: 'array', maxItems: 5, items: { type: 'object', required: ['tier', 'title', 'body', 'cites'], properties: { tier: { type: 'string', enum: ['episodic', 'semantic', 'procedural'] }, kind: { type: 'string', maxLength: 30 }, title: { type: 'string', maxLength: 140 }, body: { type: 'string', maxLength: 900 }, cites: { type: 'array', minItems: 1, items: { type: 'integer' } }, tags: { type: 'array', maxItems: 8, items: { type: 'string', maxLength: 40 } }, confidence: { type: 'number' } } } },
     cited_ids: { type: 'array', items: { type: 'integer' } },
@@ -26,13 +26,27 @@ export const OUTPUT_SCHEMA = {
 
 const FLAG_TYPES = new Set(['gate', 'injury', 'load', 'heat', 'data_gap', 'rule', 'other'])
 // cosmetic normalisation only (flag category labels); anything that affects advice or memory stays strictly validated
+// a recommendation's machine-readable target: keep only well-formed fields; anything else is dropped (the text of the advice stays authoritative)
+const KINDS = new Set(['session', 'rest', 'cap', 'fuel', 'volume', 'strength', 'other'])
+export function cleanTarget(t) {
+  if (!t || typeof t !== 'object' || Array.isArray(t)) return undefined
+  const out = {}, num = (v, lo, hi) => { const n = typeof v === 'string' ? Number(v.replace(',', '.')) : v; return typeof n === 'number' && isFinite(n) && n >= lo && n <= hi ? n : undefined }
+  if (typeof t.for_date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(t.for_date.trim())) out.for_date = t.for_date.trim()
+  if (typeof t.kind === 'string') out.kind = KINDS.has(t.kind.trim().toLowerCase()) ? t.kind.trim().toLowerCase() : 'other'
+  const km = num(t.km, 0, 100); if (km != null) out.km = km
+  const hr = num(t.hr_cap_bpm, 80, 230); if (hr != null) out.hr_cap_bpm = hr
+  return Object.keys(out).length ? out : undefined
+}
 const toIds = (a) => (Array.isArray(a) ? a.map((x) => (typeof x === 'string' && /^\d+$/.test(x.trim()) ? Number(x) : x)).filter((x) => Number.isInteger(x)) : a)
 export const normalize = (j) => {
   if (!j || typeof j !== 'object') return j
   if (Array.isArray(j.flags)) for (const f of j.flags) if (f && typeof f === 'object' && !FLAG_TYPES.has(f.type)) f.type = 'other'
   // ids are sometimes returned as strings ("512"); coerce, and drop anything that is not an integer id
   if ('cited_ids' in j) j.cited_ids = toIds(j.cited_ids)
-  if (Array.isArray(j.recommendations)) for (const r of j.recommendations) if (r && typeof r === 'object' && 'evidence_ids' in r) r.evidence_ids = toIds(r.evidence_ids)
+  if (Array.isArray(j.recommendations)) for (const r of j.recommendations) if (r && typeof r === 'object') {
+    if ('evidence_ids' in r) r.evidence_ids = toIds(r.evidence_ids)
+    if ('target' in r) r.target = cleanTarget(r.target)
+  }
   return j
 }
 

@@ -12,6 +12,7 @@ import { baselineJob } from './baseline.js'
 import { corrJob } from './corr.js'
 import { retentionJob } from './retention.js'
 import { consistencyJob } from './consistency.js'
+import { resolveAdvice, adherenceMemory } from './advice.js'
 import { seedRules } from './memory.js'
 import { extractZip, importKb } from './kb.js'
 import * as strava from '../strava.js'
@@ -43,6 +44,7 @@ export async function runIntel(kind = 'full', { trigger = 'manual', force = fals
     await step('baseline', () => baselineJob(new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10)))   // monthly; a no-op once this month's row exists
     await step('twin', () => saveTwin(trigger))
     if (kind === 'full') await step('corr', () => corrJob())
+    await step('advice', () => ({ ...resolveAdvice(), memory: adherenceMemory() }))   // judge yesterday's and today's advice against what the data now shows
     if (kind === 'full') await step('retention', () => retentionJob())
     if (kind === 'full') await step('consistency', () => consistencyJob())
     const failed = Object.entries(stats).filter(([, v]) => v && typeof v === 'object' && v.error).map(([k]) => k); if (failed.length) stats.failed_steps = failed

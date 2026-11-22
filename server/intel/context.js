@@ -8,6 +8,7 @@ import { OUTPUT_SCHEMA } from './schema.js'
 import { zMatrix, cosine, FEATURES } from './card.js'
 import { RACE_CALENDAR_TEXT } from './racecal.js'
 import { todayActivity } from './today.js'
+import { adviceSummary } from './advice.js'
 import PLAN from '../../src/data/plan.json' with { type: 'json' }
 import { redact, STABLE_ATHLETE, DEFINITIONS, INTENT_QUERY, TASKS, renderPromptPure } from './prompt.js'
 import { decompose, filterSql } from './query.js'
@@ -78,10 +79,11 @@ export function retrieveRunnerContext({ intent = 'daily_brief', question = '', d
   // 4b) what the athlete has already done today (+ load after it): the brief must not read as if the day had not started
   let todayAct; try { const rows = app.prepare("SELECT id, name, sport, distance_m, duration_s, avg_hr, avg_pace_s_km, training_load FROM activities WHERE source='coros' AND date=? ORDER BY start_ts").all(date)
     todayAct = todayActivity(rows.map((a) => ({ ...a, fit: !!idb.prepare('SELECT 1 FROM fit_session WHERE activity_id=?').get(a.id) })), twinRow, date, PLAN.find((d) => d.date === addDays(date, 1)) || null) } catch {}
+  let adviceHist; try { const a = adviceSummary({ today: date }); if (a.resolved) adviceHist = { last_days: a.days, checked: a.resolved, by_kind: a.by_kind, recent: a.recent } } catch {}
   const twin = compactTwin(twinRow.state), stable = { schema: SCHEMA, athlete: STABLE_ATHLETE, definitions: DEFINITIONS, rules }, list = [...items.values()]
   let volatile, tokens
   for (;;) {
-    volatile = { as_of: date, intent, question: redact(question), query: { filters: { ...dq.filters, shoes: dq.filters.shoes?.map((x) => x.name) }, topics: dq.topics }, twin_version: twinRow.version, twin, episodes: list.filter((i) => i.tier === 'episodic'), facts: list.filter((i) => i.tier !== 'episodic'), correlation_edges: edges, telemetry, focus_label: focus || null, today_activity: todayAct }
+    volatile = { as_of: date, intent, question: redact(question), query: { filters: { ...dq.filters, shoes: dq.filters.shoes?.map((x) => x.name) }, topics: dq.topics }, twin_version: twinRow.version, twin, episodes: list.filter((i) => i.tier === 'episodic'), facts: list.filter((i) => i.tier !== 'episodic'), correlation_edges: edges, telemetry, focus_label: focus || null, today_activity: todayAct, advice_history: adviceHist }
     tokens = EST(JSON.stringify(stable)) + EST(JSON.stringify(volatile)); if (tokens <= tokenBudget || list.length === 0) break
     if (telemetry.length > 1) { telemetry.pop(); continue }
     const drop = list.map((i, k) => [i, k]).filter(([i]) => i.why === 'text match').pop() || list.map((i, k) => [i, k]).filter(([i]) => i.why === 'recent').pop() || [list.at(-1), list.length - 1]; list.splice(drop[1], 1)

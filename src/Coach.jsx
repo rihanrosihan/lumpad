@@ -4,6 +4,7 @@ import { Card, Chip, Sheet, SegmentedTabs, StatusPill, ProvenanceBadge } from '.
 import LagExplorer from './LagExplorer.jsx'
 import ShoeDegradation from './ShoeDegradation.jsx'
 import KnowledgeGraphPanel from './KnowledgeGraph.jsx'
+import AdviceLog from './AdviceLog.jsx'
 import { useApi, fmtDur, fmtPaceS } from './api.js'
 import { fmtShort } from './lib/calendar.js'
 
@@ -484,7 +485,7 @@ function MemoryQueue({ pending, onAct }) {
   </>
 }
 
-const SECTIONS = [{ id: 'ask', label: 'Ask & Twin' }, { id: 'kg', label: 'Knowledge Graph' }, { id: 'mc', label: 'Monte Carlo & RAG' }, { id: 'lag', label: 'Lag Explorer' }, { id: 'mem', label: 'Memory Queue' }, { id: 'mat', label: 'Matrices & Episodes' }, { id: 'dur', label: 'Durability & Shoes' }]
+const SECTIONS = [{ id: 'ask', label: 'Ask & Twin' }, { id: 'kg', label: 'Knowledge Graph' }, { id: 'mc', label: 'Monte Carlo & RAG' }, { id: 'lag', label: 'Lag Explorer' }, { id: 'mem', label: 'Memory Queue' }, { id: 'adv', label: 'Advice Log' }, { id: 'mat', label: 'Matrices & Episodes' }, { id: 'dur', label: 'Durability & Shoes' }]
 const jumpTo = (id) => () => { const el = document.getElementById(id); el?.scrollIntoView({ behavior: 'smooth', block: 'start' }); el?.focus({ preventScroll: true }) }
 
 export default function Coach({ go, focus }) {
@@ -550,6 +551,7 @@ export default function Coach({ go, focus }) {
 
     {sec === 'lag' && <div id="cs-lag" tabIndex={-1}><LagExplorer /></div>}
 
+    {sec === 'adv' && <div id="cs-adv" tabIndex={-1}><AdviceLog /></div>}
     {sec === 'mem' && <div id="cs-mem" tabIndex={-1}><MemoryQueue pending={pending} onAct={act} /></div>}
 
     {sec === 'mat' && <div id="cs-mat" tabIndex={-1} className="rgrid">

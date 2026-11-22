@@ -10,6 +10,7 @@ import { applyWriteback } from './writeback.js'
 import { verifyAnswer, measuredBase } from './grounding.js'
 import { audit, getMemory } from './memory.js'
 import { scoreAnswer } from './eval/quality.js'
+import { recordAdvice } from './advice.js'
 import { load } from '../db.js'
 import { redFlags, checkinFlags, referralFor, gateFromTwin, gateCheck, diagnosisWording } from './safety.js'
 
@@ -60,6 +61,7 @@ export function finishRun(runId, parsed0, { provider, usage = null, model = null
   parsed = { ...parsed, grounding }
   // quality of what the athlete will read (voice, numbers, structure, grounding): recorded on every answer, never blocks it
   const intentRow = mdb.prepare('SELECT intent FROM coach_run WHERE id=?').get(runId); parsed.quality = scoreAnswer(parsed, { intent: intentRow?.intent || 'question', lang: coachLang() })
+  try { recordAdvice(runId, parsed) } catch (e) { console.error('advice ledger', e.message) }   // the ledger must never break an answer
   mdb.prepare('UPDATE coach_run SET ok=1, response=?, parsed=?, usage=?, cost_cny=?, model=?, error=NULL WHERE id=?').run(raw, JSON.stringify({ ...parsed, _writeback: wb }), usage ? JSON.stringify(usage) : null, cost, model, runId)
   return { ok: true, parsed, writeback: wb }
 }

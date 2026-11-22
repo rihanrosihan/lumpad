@@ -11,7 +11,7 @@ const stripText = (t) => String(t || '').replace(/\d{4}-\d{2}-\d{2}/g, ' ').repl
 export function measuredBase(userPrompt) {
   const m = /CONTEXT JSON:\n(\{.*\})/.exec(String(userPrompt || ''))
   if (!m) return ''
-  try { const c = JSON.parse(m[1]); return JSON.stringify({ twin: c.twin, telemetry: c.telemetry, correlation_edges: c.correlation_edges, today_activity: c.today_activity }) } catch { return '' }
+  try { const c = JSON.parse(m[1]); return JSON.stringify({ twin: c.twin, telemetry: c.telemetry, correlation_edges: c.correlation_edges, today_activity: c.today_activity, advice_history: c.advice_history }) } catch { return '' }
 }
 const numbersStrict = (text, have) => {
   const bad = []

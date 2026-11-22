@@ -5,6 +5,7 @@ import { useApi, invalidate } from './api.js'
 import { Md, post } from './Coach.jsx'
 import { watchList, tomorrowCheck, painToday } from './lib/watch.js'
 import { cfgOf, hrRange } from './lib/zones.js'
+import { evidenceText } from './AdviceLog.jsx'
 
 const wibDay = (ms) => new Date(ms + 7 * 3600e3).toISOString().slice(0, 10)
 // preview: 200–300 characters, cut at a sentence or word boundary
@@ -16,6 +17,7 @@ export default function TodayCard({ checkin, settings, go, todayActs = [], date,
   const B = useApi(brief ? `/api/coach/run?id=${brief.id}` : '', !!brief), p = B.data?.parsed
   const stale = useApi(`/api/coach/status?intent=daily_brief&_=${tick}`).data, needsUpdate = !!brief && todayActs.length > 0 && stale && stale.up_to_date === false
   const update = () => { setBusy(true); setErr(''); post('/api/coach/run', { intent: 'daily_brief' }).then(() => { invalidate('coach'); setTick((t) => t + 1) }).catch((e) => setErr(e.message)).finally(() => setBusy(false)) }
+  const adv = useApi('/api/coach/advice?days=3').data, lastAdvice = (adv?.items || []).find((a) => ['followed', 'partly', 'not_followed'].includes(a.status))
   if (!twin) return null
   const { call, items } = watchList(twin, { checkin, sleepNeedMin: settings?.sleepNeedMin || 480, today: todayActs, date })
   const L = twin.load || {}, fresh = twin.as_of === date && L.ctl != null && L.atl != null, hrCap = hrRange(2, cfgOf(settings || {}))[1]
@@ -38,6 +40,7 @@ export default function TodayCard({ checkin, settings, go, todayActs = [], date,
         <button type="button" className="link" aria-expanded={open} onClick={() => setOpen((o) => !o)}>{open ? 'Show less' : 'Show full brief'}</button>
       </> : <p className="muted">No AI brief yet today. <button className="link" onClick={() => go('coach', { intent: 'daily_brief' })}>Get today's brief →</button></p>}
     </div>
+    {lastAdvice && <p className="today-adv muted"><b>Last advice:</b> {lastAdvice.text.length > 90 ? lastAdvice.text.slice(0, 89) + '…' : lastAdvice.text} → <b className={`adv-${lastAdvice.status}`}>{{ followed: 'followed', partly: 'partly followed', not_followed: 'not followed' }[lastAdvice.status]}</b>{evidenceText(lastAdvice) ? ` (${evidenceText(lastAdvice)})` : ''}. <button type="button" className="link" onClick={() => go('coach', { section: 'adv' })}>Advice log →</button></p>}
     {tomorrow && <div className={`today-tmr tm-${tm.level}`}>
       <div className="tmr-head"><small>Tomorrow</small><b>{tm.plan?.label ? `${tm.plan.label} · ${tm.plan.km} km` : 'No run planned'}</b><span className="tmr-pill">{tm.label}</span></div>
       <p className="tmr-main">{tm.why[0]}</p>

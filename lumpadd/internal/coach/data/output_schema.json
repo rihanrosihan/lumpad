@@ -52,6 +52,32 @@
      },
      "needs_athlete_ok": {
       "type": "boolean"
+     },
+     "target": {
+      "type": "object",
+      "properties": {
+       "for_date": {
+        "type": "string"
+       },
+       "kind": {
+        "type": "string",
+        "enum": [
+         "session",
+         "rest",
+         "cap",
+         "fuel",
+         "volume",
+         "strength",
+         "other"
+        ]
+       },
+       "km": {
+        "type": "number"
+       },
+       "hr_cap_bpm": {
+        "type": "number"
+       }
+      }
      }
     }
    }
