@@ -8,6 +8,7 @@ import { OUTPUT_SCHEMA } from './schema.js'
 import { zMatrix, cosine, FEATURES } from './card.js'
 import { RACE_CALENDAR_TEXT } from './racecal.js'
 import { todayActivity } from './today.js'
+import PLAN from '../../src/data/plan.json' with { type: 'json' }
 import { redact, STABLE_ATHLETE, DEFINITIONS, INTENT_QUERY, TASKS, renderPromptPure } from './prompt.js'
 import { decompose, filterSql } from './query.js'
 import { db as app } from '../store.js'
@@ -76,7 +77,7 @@ export function retrieveRunnerContext({ intent = 'daily_brief', question = '', d
   // 5) budget: drop from the bottom (text matches → older episodes → edges), never the rules or the twin
   // 4b) what the athlete has already done today (+ load after it): the brief must not read as if the day had not started
   let todayAct; try { const rows = app.prepare("SELECT id, name, sport, distance_m, duration_s, avg_hr, avg_pace_s_km, training_load FROM activities WHERE source='coros' AND date=? ORDER BY start_ts").all(date)
-    todayAct = todayActivity(rows.map((a) => ({ ...a, fit: !!idb.prepare('SELECT 1 FROM fit_session WHERE activity_id=?').get(a.id) })), twinRow, date) } catch {}
+    todayAct = todayActivity(rows.map((a) => ({ ...a, fit: !!idb.prepare('SELECT 1 FROM fit_session WHERE activity_id=?').get(a.id) })), twinRow, date, PLAN.find((d) => d.date === addDays(date, 1)) || null) } catch {}
   const twin = compactTwin(twinRow.state), stable = { schema: SCHEMA, athlete: STABLE_ATHLETE, definitions: DEFINITIONS, rules }, list = [...items.values()]
   let volatile, tokens
   for (;;) {

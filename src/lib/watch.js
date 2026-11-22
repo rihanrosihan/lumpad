@@ -106,3 +106,24 @@ export function watchList(twin, { checkin = null, sleepNeedMin = 480, today = []
   items.sort((x, y) => (y.pin ? 1 : 0) - (x.pin ? 1 : 0) || RANK[x.status] - RANK[y.status] || (y.rule ? 1 : 0) - (x.rule ? 1 : 0))
   return { call, items }
 }
+
+// Tomorrow's planned session against the athlete's own rules, decided TONIGHT from the form after today's load and confirmed TOMORROW MORNING by sleep HR, HRV and pain.
+// Only existing rules decide: pain ≥ 4 rest, pain ≥ 2 shorten/stop (durability), and for HARD sessions form < −30 or ACWR > 1.3 means easy only. An easy session has no
+// load rule that forces a change, so it is kept; the checks below then only add conditions. Returns { level, label, why[], confirm }.
+const HARD_KINDS = new Set(['quality', 'tt', 'speed', 'long', 'race'])
+export function tomorrowCheck(twin, day, { after = null, pain = null, weekPlanKm = null, hrCap = null } = {}) {
+  if (!day || !(day.km > 0) || ['rest', 'gym'].includes(day.kind)) return { level: 'none', label: 'NO RUN', why: [day?.kind === 'gym' ? 'Gym day: no running planned.' : 'Rest day: nothing to adjust.'], plan: day || null }
+  const L = twin?.load || {}, hard = HARD_KINDS.has(day.kind), why = [], plan = `${day.label || day.kind} · ${day.km} km`
+  let level = 'keep', label = 'KEEP AS PLANNED'
+  if (pain != null && pain >= 4) { level = 'rest'; label = 'REST'; why.push(`Pain ${pain}/10: stop and see a clinician (red-flag rule).`) }
+  else if (pain != null && pain >= 2) { level = 'shorten'; label = 'SHORTEN OR SKIP'; why.push(`Pain ${pain}/10 ≥ 2 is a durability event: shorten or stop, no progression for 7 days.`) }
+  else if (hard && ((after != null && after < -30) || (L.acwr_ewma != null && L.acwr_ewma > 1.3))) { level = 'swap'; label = 'SWAP TO EASY'; why.push(`Hard session with ${after != null && after < -30 ? `form ${after} (below −30)` : `load ratio ${L.acwr_ewma} (above 1.3)`}: easy only until it comes down.`) }
+  else why.push(hard ? 'Hard session: form and load ratio allow it.' : 'Easy session: no rule forces a change.')
+  if (level === 'keep') {
+    if (after != null && after < -30) why.push(`Form will be ${after} after today: keep it truly easy${hrCap ? `, HR ≤ ${hrCap}` : ''}; walk breaks are fine.`)
+    const it = twin?.intensity; if (!hard && it?.easy_runs > 0 && it.easy_runs_above_z2 / it.easy_runs >= 0.5) why.push(`Your last easy runs ran above the HR cap (${it.easy_runs_above_z2}/${it.easy_runs}): hold ${hrCap ? 'HR ≤ ' + hrCap : 'the cap'}, let pace float.`)
+  }
+  const guard = L.weekly_km_4w != null ? Math.round(L.weekly_km_4w * 1.1 * 10) / 10 : null
+  if (weekPlanKm != null && guard && weekPlanKm > guard) why.push(`Planned week is ${weekPlanKm} km; your +10 % load guard allows about ${guard} km (4-week average ${L.weekly_km_4w}). Not a change for tomorrow, but the plan is above the rule.`)
+  return { level, label, why, plan, confirm: 'Re-checked at tomorrow\'s sync: sleep HR above 67 or HRV reduced downgrades a hard session; pain 2/10 or more shortens it.' }
+}

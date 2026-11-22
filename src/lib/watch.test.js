@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { watchList, painToday } from './watch.js'
+import { watchList, painToday, tomorrowCheck } from './watch.js'
 const base = { readiness: { score: 81, gate: 'green', caps: [] }, recent_days: [{ sleep_hr: 63, hrv: 67, hrv_status: 'Normal', hrv_baseline: 73, sleep_min_asleep: 392 }],
   intensity: { easy_runs: 4, easy_runs_above_z2: 4, z2_ceiling: 148, low_share_pct: 12 }, aerobic: { hr_at_800: { value: 160.9, z: 3.6, n: 3 } }, baselines: { d30: { n: 1, hr_at_800: null } },
   load: { km_vs_4wk_avg_pct: -62, tsb: -14.2 }, durability: { longest_continuous_run_km: 10, fade_onset_km_median_90d: 6 }, injury: { sites: {} } }
@@ -53,3 +53,20 @@ test('twin older than today: load after today is shown as not updated, never com
   assert.equal(w.items[0].status, 'watch'); assert.match(w.items[0].why, /not updated yet/)
 })
 test('no activity today: nothing added, call unchanged', () => assert.ok(!watchList(base, { today: [], date: '2026-11-22' }).items.some((i) => i.id === 'today_run')))
+
+const twinT = { ...base, load: { acwr_ewma: 1.4, weekly_km_4w: 15.9, tsb: -14.2 }, intensity: { easy_runs: 4, easy_runs_above_z2: 4 } }
+const easy8 = { kind: 'easy', label: 'Aerobic Endurance Run', km: 8 }
+test('tomorrow easy 8 km, form -30.3 tonight: KEEP, but truly easy, with the cap and the week-vs-guard warning', () => {
+  const c = tomorrowCheck(twinT, easy8, { after: -30.3, pain: 0, weekPlanKm: 35.5, hrCap: 153 })
+  assert.equal(c.level, 'keep'); assert.equal(c.label, 'KEEP AS PLANNED')
+  assert.ok(c.why.some((w) => /truly easy, HR ≤ 153/.test(w))); assert.ok(c.why.some((w) => /above the HR cap \(4\/4\)/.test(w))); assert.ok(c.why.some((w) => /35.5 km.*17.5 km/.test(w)))
+})
+test('tomorrow HARD with form < -30 or ACWR > 1.3: swap to easy; pain 2 shortens; pain 4 rests', () => {
+  const hard = { kind: 'quality', label: 'Intervals', km: 10 }
+  assert.equal(tomorrowCheck(twinT, hard, { after: -30.3 }).level, 'swap')
+  assert.equal(tomorrowCheck({ ...twinT, load: { acwr_ewma: 1.0 } }, hard, { after: -10 }).level, 'keep')
+  assert.equal(tomorrowCheck(twinT, easy8, { after: -5, pain: 2 }).level, 'shorten'); assert.equal(tomorrowCheck(twinT, easy8, { pain: 5 }).level, 'rest')
+})
+test('rest, gym or missing day: nothing to adjust', () => {
+  assert.equal(tomorrowCheck(twinT, { kind: 'rest', km: 0 }).level, 'none'); assert.equal(tomorrowCheck(twinT, null).level, 'none')
+})

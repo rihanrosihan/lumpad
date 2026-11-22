@@ -4,7 +4,7 @@
 // carries into tomorrow, and that is what recovery and tomorrow's session should be judged on.
 const r1 = (x) => (x == null || !isFinite(x) ? null : Math.round(x * 10) / 10)
 
-export function todayActivity(acts, twinRow, date) {
+export function todayActivity(acts, twinRow, date, tomorrow = null) {
   if (!acts?.length) return undefined
   const L = twinRow?.state?.load || {}, fresh = twinRow?.state?.as_of === date && L.ctl != null && L.atl != null
   const tl = acts.reduce((s, a) => s + (a.training_load || 0), 0)
@@ -13,6 +13,8 @@ export function todayActivity(acts, twinRow, date) {
     activities: acts.map((a) => ({ name: a.name || a.sport, sport: a.sport, km: a.distance_m ? r1(a.distance_m / 1000) : null, minutes: a.duration_s ? Math.round(a.duration_s / 60) : null,
       avg_hr: a.avg_hr ?? null, pace_s_km: a.avg_pace_s_km ? Math.round(a.avg_pace_s_km) : null, training_load: a.training_load ?? null, fit_analysed: !!a.fit })),
     tl_today: tl || null,
+    // the session planned for tomorrow, so the brief can say whether it needs adjusting
+    tomorrow_plan: tomorrow ? { date: tomorrow.date, kind: tomorrow.kind, label: tomorrow.label || null, km: tomorrow.km ?? null, planned_tl: tomorrow.tl ?? null, hr_zone: tomorrow.steps?.find?.((x) => x.t === 'run')?.z ?? null } : null,
     load: fresh ? { ctl: L.ctl, atl: L.atl, tsb_this_morning: L.tsb, tsb_after_today: r1(L.ctl - L.atl), acwr: L.acwr_ewma ?? null }
       : { note: 'the digital twin has not been rebuilt since this activity: load after today is not known yet' },
   }

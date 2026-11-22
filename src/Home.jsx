@@ -66,7 +66,7 @@ export default function Home({ vdot, settings, results, go, M: Mprop }) {
 
     </div>
 
-    <TodayCard checkin={checked ? f : null} settings={settings} go={go} todayActs={M.acts.filter((a) => a.date === T && a.sport_class !== 'strength')} date={T} />
+    <TodayCard checkin={checked ? f : null} settings={settings} go={go} todayActs={M.acts.filter((a) => a.date === T && a.sport_class !== 'strength')} date={T} tomorrow={effectiveDay(BY_DATE[addDays(T, 1)], scale.items?.[addDays(T, 1)], T)} weekPlanKm={(() => { const m = mondayOf(addDays(T, 1)); return Math.round(Array.from({ length: 7 }, (_, i) => BY_DATE[addDays(m, i)]?.km || 0).reduce((a, b) => a + b, 0) * 10) / 10 })()} />
 
     <FuelCard last={last} today={T} />
 

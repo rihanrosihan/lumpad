@@ -29,3 +29,10 @@ test('post-run brief: only after a brief exists and a run was processed later; o
   mdb.prepare("INSERT INTO coach_run (created_at, intent, provider, question, ok) VALUES ('2026-11-22T06:50:00Z','daily_brief','deepseek','after-run L1',1)").run()
   assert.equal(postRunTarget(day), null)   // done for that run
 })
+
+test('tomorrow\'s planned session is part of today_activity (so the brief can judge it)', () => {
+  const tm = { date: '2026-11-23', kind: 'easy', label: 'Aerobic Endurance Run', km: 8, tl: 103, steps: [{ t: 'wu', sec: 300 }, { t: 'run', m: 8000, z: 2 }] }
+  const t = todayActivity([run], twin('2026-11-22'), '2026-11-22', tm)
+  assert.deepEqual(t.tomorrow_plan, { date: '2026-11-23', kind: 'easy', label: 'Aerobic Endurance Run', km: 8, planned_tl: 103, hr_zone: 2 })
+  assert.equal(todayActivity([run], twin('2026-11-22'), '2026-11-22').tomorrow_plan, null)
+})
