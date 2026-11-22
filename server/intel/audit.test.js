@@ -98,3 +98,8 @@ test('memory_writes: malformed candidates are dropped, valid ones kept; the answ
     { tier: 'finding', title: 't', body: 'b', cites: [1] }, { tier: 'semantic', title: 't', body: 'b', cites: [1] }, { tier: 'semantic', title: 't', body: 'b' }, null, 'x'] })
   assert.equal(j.memory_writes.length, 1); assert.equal(j.memory_writes[0].tier, 'semantic'); assert.deepEqual(S.validate(j, S.OUTPUT_SCHEMA), [])
 })
+
+test('memory_writes cites given as strings are coerced', () => {
+  const j = S.normalize({ summary: 's', analysis_md: 'a', recommendations: [], flags: [], cited_ids: [], memory_writes: [{ tier: 'semantic', title: 't', body: 'b', cites: ['512', 7, 'x'] }] })
+  assert.deepEqual(j.memory_writes[0].cites, [512, 7]); assert.deepEqual(S.validate(j, S.OUTPUT_SCHEMA), [])
+})
