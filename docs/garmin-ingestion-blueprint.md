@@ -424,9 +424,12 @@ So instead of `canonical_id` on COROS rows:
 * **Laps** (`apply.js projectLaps`, `cli.js laps --yes`): 212 per-km laps for the 40 Garmin-only runs, computed from the FIT stream (the Garmin `splits` field is a messy measurement-array format; the FIT-derived per-km rows have exactly the shape of COROS laps). INSERT OR IGNORE, guarded by the frozen-history fingerprint (identical to the first run's hashes), idempotent. A shadow pass right after verified the Postgres mirror (0 not identical).
 * **Shoe linking: Strava only** (the Garmin export has no activity→gear mapping, so `g_gear` stays staged and unused). Done via the app's own `syncShoes` with new options (`sources=['garmin']`, `writeGear=false`, `dry`; defaults keep the nightly behaviour): Strava runs since 2024-09-01 matched to Garmin-era rows by start time ±3 min → 39 Garmin-only runs got a `gear_id` (20 Strava runs have no shoe set; no COROS row and no gear mileage touched); 164 of 173 historical runs now carry `fit_session_hist.shoe_id`; 120 `WORE` edges added to the graph (`cli.js shoes --yes`, `cli.js graph-wore --yes`), all idempotent, live WORE edges unchanged (156).
 
-### Not done (and why)
-* Rebuild of the Go binary (matrices source filter, see P6): needs a Go 1.26 toolchain elsewhere.
-* Merge of branch `garmin-history-import` to `main` (auto-deploy is paused until then).
-* UI for the history (monthly view, `twin_history` trend charts, Garmin enrichment on the Activity detail): the data is available (`listMerged` attaches `garmin`); no new screens.
-* Embeddings: `memory_vec` is still empty app-wide, so history memories are FTS-only like everything else.
-* Optional: LLM-written monthly narratives (decision 5: templated only for now).
+### P8 done: merge, push, Go rebuild (2026-11-22)
+* Branch `garmin-history-import` fast-forward merged into `main` and pushed (`ed01997`); `origin/main` == checkout, auto-deploy active again.
+* **Go binary rebuilt** on the VPS (Go 1.26.11 from go.dev, SHA-256 verified against the published value, built with `-p 1`, `GOMAXPROCS=1`, `GOMEMLIMIT=600MiB`, on disk; the toolchain was removed afterwards). Contains the `matrices.go` gym-day filter. Previous binary kept at `/var/backups/lumpad/lumpadd.pre-rebuild-20261122` (rollback = copy it back to `lumpadd/lumpadd` and restart `lumpadd-serve`). Verified: `lumpadd-serve` health reports go1.26.11, a shadow pass reported 0 not identical, and the daily graph sync ran with the new binary and left every historical node/edge intact.
+* Lesson recorded: `/tmp` on this VPS is a RAM-backed tmpfs (982 MB); never build or cache there.
+
+### Remaining (optional, not part of this import)
+* Embeddings (`memory_vec` empty app-wide): separate decision.
+* LLM-written monthly narratives (decision 5: templated only).
+* Visual check of the History screen and the Garmin card in a browser (none available on the server).
