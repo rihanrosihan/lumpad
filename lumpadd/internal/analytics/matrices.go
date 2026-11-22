@@ -73,7 +73,7 @@ func loadFeat(ctx context.Context, db *pgxpool.Pool) (map[string]feat, error) {
 }
 
 func gymDays(ctx context.Context, db *pgxpool.Pool) (map[string]bool, error) {
-	rows, err := db.Query(ctx, `SELECT DISTINCT date FROM train.activity WHERE sport IN ('Strength','WeightTraining','Workout')`)
+	rows, err := db.Query(ctx, `SELECT DISTINCT date FROM train.activity WHERE source <> 'garmin' AND sport IN ('Strength','WeightTraining','Workout')`)
 	if err != nil {
 		return nil, err
 	}

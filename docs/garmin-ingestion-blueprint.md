@@ -411,8 +411,15 @@ So instead of `canonical_id` on COROS rows:
 * `history`: `daily_feat_hist` (487 days 2024-09-01 → 2025-12-31), `history_month` (16 months), closed `athlete_baseline` rows named `garmin:hr800` / `garmin:ef` (10; the twin only reads `hr800`).
 * `memory`: 28 rows, all `status='archived'`, `created_by='garmin-import'`, never locked (16 monthly semantic roll-ups, 12 long-run episodes). Active/candidate counts unchanged (778/7); all pre-existing rows hash-identical; re-run is a no-op. Retrieval defaults to `status='active'`, so the coach does not see them unless it asks for archived.
 
+### P6 done: knowledge graph (Neo4j Aura), 2026-11-22
+* Node-side writer `server/garmin/graph.js` (the Go projector cannot be rebuilt on the VPS: no Go compiler; its daily 02:15 WIB sync only prunes Memory/Rule/pain, never Session/Day, so these nodes survive it). Run: `cli.js graph` (dry), `cli.js graph --yes`, `cli.js graph-rollback`.
+* Written: **+83 Day** (2024-09 → 2024-12 days that had no node), **+275 Session** (`label_id = garmin:<id>`), **+122 NEXT_DAY**, **+275 HAS_SESSION**; all `era='garmin_hist'`, `source='garmin'`. 42 existing Session nodes that a Garmin FIT duplicates got an additive `garmin_id`. Totals 2,188 → 2,546 nodes, 4,910 → 5,307 edges (Aura Free limit 200k/400k).
+* Checks: live (non-era) node and edge counts unchanged per label/type; re-run is a no-op; no health or GPS properties (project policy: health stays out of the graph unless NEO4J_SYNC_HEALTH=1); the Day chain is continuous 2024-09-01 → 2025-12-31; no orphan sessions; 2025 went from 0 to 245 Sessions. Before/after counts stored in `garmin.db.graph_snapshot`.
+* Not in the graph by design: archived memories (the Go sync prunes any non-active Memory), SIMILAR_TO / IN_WEATHER / WORE for history (needs weather and shoe links), the 2026-01 Garmin sessions (COROS is canonical there and already has nodes).
+* The existing KG screen queries were left unchanged: history sessions have no WORE edge and are older than the "newest N" views, so they do not appear there; only the overview counts grow.
+* **Go matrices gym-day query** (`lumpadd/internal/analytics/matrices.go`) got the same `source <> 'garmin'` filter as the Node one. Source only: it takes effect after the binary is rebuilt elsewhere. Until then the Go shadow matrices could differ from Node's (twin, features and graph sync already filter `source='coros'`).
+
 ### Not done (and why)
-* **Graph (Neo4j):** gated on your review of the SQLite stages (decision 7). Go-side change.
 * **`twin_history`:** needs the twin builder to accept a historical data source; not started.
 * **Laps for Garmin-only runs** (from `splits_json`) and **shoe linking** (`g_gear` ↔ `gear`): staged, not projected.
 * **UI:** the Activity tab lists Garmin rows via `listMerged` once the server restarts with the new code; no dedicated history screens.
