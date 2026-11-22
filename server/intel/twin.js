@@ -54,8 +54,8 @@ export const steadyRun = (s) => s.run_share >= 0.9 && s.distance_m >= 3000 && s.
 function aerobic(S, T, base = SEED_HR800) {
   const win = (a, b) => S.filter((s) => s.date > addDays(T, -a) && s.date <= addDays(T, -b) && steadyRun(s)), hr = (L) => L.map((s) => s.hr800).filter((x) => x != null), p150 = (L) => L.map((s) => s.pace_hr150).filter((x) => x != null)
   const cur = hr(win(28, 0)), prev = hr(win(56, 28)), easy = win(28, 0).map((s) => s.ef).filter((x) => x != null)
-  return { hr_at_800: { value: r(mean(cur)), n: cur.length, z: cur.length ? r((mean(cur) - base.value) / base.sd) : null, prev_28d: prev.length ? r(mean(prev)) : null, baseline: `${base.value} ± ${base.sd} (${base.source}, n=${base.n})`, steady_only: true },
-    pace_at_hr150: { value: p150(win(28, 0)).length ? r(mean(p150(win(28, 0))), 0) : null, n: p150(win(28, 0)).length }, ef_easy_28d: { value: r(mean(easy), 3), n: easy.length } }
+  return { hr_at_800: { value: cur.length ? r(mean(cur)) : null, n: cur.length, z: cur.length ? r((mean(cur) - base.value) / base.sd) : null, prev_28d: prev.length ? r(mean(prev)) : null, baseline: `${base.value} ± ${base.sd} (${base.source}, n=${base.n})`, steady_only: true },
+    pace_at_hr150: { value: p150(win(28, 0)).length ? r(mean(p150(win(28, 0))), 0) : null, n: p150(win(28, 0)).length }, ef_easy_28d: { value: easy.length ? r(mean(easy), 3) : null, n: easy.length } }
 }
 function durability(S, T) {
   const L = S.filter((s) => s.date > addDays(T, -90) && s.distance_m >= 16000), km = (s) => JSON.parse(s.km)

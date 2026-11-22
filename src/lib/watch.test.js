@@ -36,3 +36,8 @@ test('post-G3 twin: the steady-only aerobic marker and its own baseline are used
   const w = watchList({ ...base, aerobic: { hr_at_800: { value: 152.3, z: 1.3, n: 4, baseline: '143.9 ± 6.6 (steady runs 2026-04-07..2026-10-04, n=20)', steady_only: true } } })
   const h = w.items.find((i) => i.id === 'hr800'); assert.equal(h.value, 152.3); assert.equal(h.status, 'watch'); assert.match(h.ref, /143.9 ± 6.6/)
 })
+
+test('no steady runs: an empty marker (value 0 or null, n 0) is unknown, never "on track"', () => {
+  const h = watchList({ ...base, aerobic: { hr_at_800: { value: 0, z: null, n: 0, baseline: '144.3 ± 6.8 (x, n=21)', steady_only: true } } }).items.find((i) => i.id === 'hr800')
+  assert.equal(h.value, null); assert.equal(h.status, 'watch')
+})

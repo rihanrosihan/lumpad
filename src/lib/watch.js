@@ -58,7 +58,7 @@ export function watchList(twin, { checkin = null, sleepNeedMin = 480 } = {}) {
   //    From the post-G3 twin on, twin.aerobic is steady-only (steady_only: true) and carries its monthly baseline: use it directly.
   const A = twin.aerobic?.hr_at_800?.steady_only ? twin.aerobic.hr_at_800 : null, seed = 143.1, seedSd = 5.0, d30 = A ? { n: A.n, hr_at_800: A.value } : twin.baselines?.d30
   if (d30) {
-    const v = d30.hr_at_800, z = A ? A.z : v != null ? Math.round(((v - seed) / seedSd) * 10) / 10 : null
+    const v = d30.n ? d30.hr_at_800 : null, z = A ? A.z : v != null ? Math.round(((v - seed) / seedSd) * 10) / 10 : null
     const st = v == null ? 'watch' : z >= 2 ? 'alert' : z >= 1 ? 'watch' : 'ok'
     add({ id: 'hr800', label: 'HR at 8:00/km (steady runs)', value: v, unit: v != null ? 'bpm' : '', ref: `baseline ${A ? A.baseline.split(' (')[0] : `${seed} ± ${seedSd}`} · n=${d30.n ?? 0}`, status: st,
       why: v == null ? 'No steady easy run (3–15 km, mostly running) in 30 days, so aerobic fitness cannot be read. Do one steady easy run under the Z2 cap.'

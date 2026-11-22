@@ -387,6 +387,14 @@ func hr800Baseline(ctx context.Context, db *pgxpool.Pool, T string) (hr800Base, 
 	return b, nil
 }
 
+// orNil: an empty sample is unknown (null), never 0
+func orNil(ok bool, f func() any) any {
+	if !ok {
+		return nil
+	}
+	return f()
+}
+
 // jsNumStr formats like JavaScript's String(number) for ordinary values (143.1 → "143.1", 5 → "5").
 func jsNumStr(x float64) string { return strconv.FormatFloat(x, 'f', -1, 64) }
 
@@ -415,9 +423,9 @@ func twinAerobic(S []sess, T string, base hr800Base) map[string]any {
 		pv150 = tr(Mean(p), 0)
 	}
 	return map[string]any{
-		"hr_at_800":     map[string]any{"value": tr(Mean(cur), 1), "n": len(cur), "z": z, "prev_28d": pv, "baseline": fmt.Sprintf("%s ± %s (%s, n=%d)", jsNumStr(base.Value), jsNumStr(base.SD), base.Source, base.N), "steady_only": true},
+		"hr_at_800":     map[string]any{"value": orNil(len(cur) > 0, func() any { return tr(Mean(cur), 1) }), "n": len(cur), "z": z, "prev_28d": pv, "baseline": fmt.Sprintf("%s ± %s (%s, n=%d)", jsNumStr(base.Value), jsNumStr(base.SD), base.Source, base.N), "steady_only": true},
 		"pace_at_hr150": map[string]any{"value": pv150, "n": len(p)},
-		"ef_easy_28d":   map[string]any{"value": tr(Mean(easy), 3), "n": len(easy)},
+		"ef_easy_28d":   map[string]any{"value": orNil(len(easy) > 0, func() any { return tr(Mean(easy), 3) }), "n": len(easy)},
 	}
 }
 
