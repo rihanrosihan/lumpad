@@ -92,3 +92,9 @@ test('optional twin_state_patch: null and empty fields are dropped instead of fa
   assert.deepEqual(ok({ twin_state_patch: { current_ef_baseline: '1.52', shoe_alert: 'x' } }), []); assert.deepEqual(ok({ twin_state_patch: 'none' }), [])
   assert.equal(S.normalize({ twin_state_patch: { current_ef_baseline: '1.52' } }).twin_state_patch.current_ef_baseline, 1.52)
 })
+
+test('memory_writes: malformed candidates are dropped, valid ones kept; the answer still validates', () => {
+  const j = S.normalize({ summary: 's', analysis_md: 'a', recommendations: [], flags: [], cited_ids: [], memory_writes: [
+    { tier: 'finding', title: 't', body: 'b', cites: [1] }, { tier: 'semantic', title: 't', body: 'b', cites: [1] }, { tier: 'semantic', title: 't', body: 'b' }, null, 'x'] })
+  assert.equal(j.memory_writes.length, 1); assert.equal(j.memory_writes[0].tier, 'semantic'); assert.deepEqual(S.validate(j, S.OUTPUT_SCHEMA), [])
+})

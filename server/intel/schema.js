@@ -43,6 +43,8 @@ export const normalize = (j) => {
   if (Array.isArray(j.flags)) for (const f of j.flags) if (f && typeof f === 'object' && !FLAG_TYPES.has(f.type)) f.type = 'other'
   // ids are sometimes returned as strings ("512"); coerce, and drop anything that is not an integer id
   if ('cited_ids' in j) j.cited_ids = toIds(j.cited_ids)
+  // memory writes are optional, untrusted candidates: a malformed one (unknown tier, missing text, no cites) is dropped; it must never fail the whole answer
+  if (Array.isArray(j.memory_writes)) j.memory_writes = j.memory_writes.filter((w) => w && typeof w === 'object' && ['episodic', 'semantic', 'procedural'].includes(w.tier) && typeof w.title === 'string' && typeof w.body === 'string' && Array.isArray(w.cites))
   // optional suggestion block: models often send null / empty fields for what they have no suggestion for; drop them (and numeric strings become numbers)
   if (j.twin_state_patch && typeof j.twin_state_patch === 'object' && !Array.isArray(j.twin_state_patch)) {
     const t = j.twin_state_patch; for (const k of Object.keys(t)) { if (t[k] == null || t[k] === '') delete t[k]; else if (k === 'current_ef_baseline' && typeof t[k] === 'string' && isFinite(Number(t[k]))) t[k] = Number(t[k]) }
