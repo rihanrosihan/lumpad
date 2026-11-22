@@ -39,7 +39,7 @@ export function similarSessions(labelId, k = 5) {
 }
 const epiByLabel = (ids) => ids.map((l) => mdb.prepare("SELECT id, title, body, valid_from FROM memory WHERE source='fit' AND source_ref=?").get(l)).filter(Boolean)
 
-export function retrieveRunnerContext({ intent = 'daily_brief', question = '', date = wibDate(), activityId = null, tokenBudget = 24000, sinceDays = 400 } = {}) {
+export function retrieveRunnerContext({ intent = 'daily_brief', question = '', date = wibDate(), activityId = null, tokenBudget = 24000, sinceDays = 400, forecast = null } = {}) {
   const twinRow = latestTwin(); if (!twinRow) throw Object.assign(new Error('twin not built yet — run the intelligence job first'), { status: 409 })
   const items = new Map()   // id → {kind, text}: every retrievable item the model may cite
   const add = (m, why) => { if (!m || items.has(m.id)) return; items.set(m.id, { id: m.id, tier: m.tier, kind: m.kind, title: redact(m.title), body: redact(m.body), tag: m.evidence_tag, why, date: m.valid_from || null }) }
@@ -83,7 +83,7 @@ export function retrieveRunnerContext({ intent = 'daily_brief', question = '', d
   const twin = compactTwin(twinRow.state), stable = { schema: SCHEMA, athlete: STABLE_ATHLETE, definitions: DEFINITIONS, rules }, list = [...items.values()]
   let volatile, tokens
   for (;;) {
-    volatile = { as_of: date, intent, question: redact(question), query: { filters: { ...dq.filters, shoes: dq.filters.shoes?.map((x) => x.name) }, topics: dq.topics }, twin_version: twinRow.version, twin, episodes: list.filter((i) => i.tier === 'episodic'), facts: list.filter((i) => i.tier !== 'episodic'), correlation_edges: edges, telemetry, focus_label: focus || null, today_activity: todayAct, advice_history: adviceHist }
+    volatile = { as_of: date, intent, question: redact(question), query: { filters: { ...dq.filters, shoes: dq.filters.shoes?.map((x) => x.name) }, topics: dq.topics }, twin_version: twinRow.version, twin, episodes: list.filter((i) => i.tier === 'episodic'), facts: list.filter((i) => i.tier !== 'episodic'), correlation_edges: edges, telemetry, focus_label: focus || null, today_activity: todayAct, advice_history: adviceHist, planned_forecast: forecast || undefined }
     tokens = EST(JSON.stringify(stable)) + EST(JSON.stringify(volatile)); if (tokens <= tokenBudget || list.length === 0) break
     if (telemetry.length > 1) { telemetry.pop(); continue }
     const drop = list.map((i, k) => [i, k]).filter(([i]) => i.why === 'text match').pop() || list.map((i, k) => [i, k]).filter(([i]) => i.why === 'recent').pop() || [list.at(-1), list.length - 1]; list.splice(drop[1], 1)

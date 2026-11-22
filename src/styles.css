@@ -1571,3 +1571,6 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 /* the hero no longer has a tile column: use the full width instead of leaving 400px empty (which squeezed the heading to 254px at 1024) */
 @media(min-width:1024px){.hero4:not(:has(>.h4-tiles)){grid-template-columns:minmax(0,1fr)}}
 .today-adv{margin:0;font-size:.8rem;line-height:1.4}.today-adv .adv-followed{color:var(--green-t,#15803d)}.today-adv .adv-partly{color:var(--yellow-t,#92400e)}.today-adv .adv-not_followed{color:var(--red-t,#b91c1c)}
+.tmr-heat{margin:0;font-size:.8rem;line-height:1.45}.tmr-heat small{color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:.66rem}
+.heat{font-size:.68rem;font-weight:800;text-transform:uppercase;padding:1px 7px;border-radius:999px;background:#dcfce7;color:#15803d}
+.heat-yellow{background:#fef9c3;color:#854d0e}.heat-orange{background:#ffedd5;color:#9a3412}.heat-red{background:#fee2e2;color:#b91c1c}.heat-black{background:#111827;color:#f9fafb}

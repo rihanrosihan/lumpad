@@ -11,6 +11,8 @@ import { verifyAnswer, measuredBase } from './grounding.js'
 import { audit, getMemory } from './memory.js'
 import { scoreAnswer } from './eval/quality.js'
 import { recordAdvice } from './advice.js'
+import { forecastForCoach } from './forecast.js'
+import { db as appDb } from '../store.js'
 import { load } from '../db.js'
 import { redFlags, checkinFlags, referralFor, gateFromTwin, gateCheck, diagnosisWording } from './safety.js'
 
@@ -32,9 +34,10 @@ export const savedRun = (intent, hash) => mdb.prepare('SELECT id, created_at, mo
 // reviewed a different run, so refuse instead.
 export const hasFit = (activityId) => !activityId || !!idb.prepare('SELECT 1 FROM fit_session WHERE activity_id=? OR label_id=?').get(activityId, String(activityId).replace(/^coros:/, ''))
 const NO_FIT = 'The FIT file of this run is not imported yet, so it cannot be analysed. Weather, air quality, route and the coach review appear after the next COROS sync.'
-export function coachStatus({ intent = 'daily_brief', question = '', date, activityId = null } = {}) {
+const ranToday = (date) => !!appDb.prepare("SELECT 1 FROM activities WHERE source='coros' AND sport='Run' AND date=? AND distance_m >= 1000").get(date || new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10))
+export async function coachStatus({ intent = 'daily_brief', question = '', date, activityId = null } = {}) {
   if (intent === 'session_review' && !hasFit(activityId)) return { up_to_date: false, no_fit: true, reason: NO_FIT, run_id: null, last_run_id: null, last_at: null }
-  const ctx = retrieveRunnerContext({ intent, question, date, activityId }), hash = promptHash(renderPrompt(ctx, TASKS[intent] || TASKS.question))
+  const ctx = retrieveRunnerContext({ intent, question, date, activityId, forecast: await forecastForCoach(date || new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10), ranToday(date)) }), hash = promptHash(renderPrompt(ctx, TASKS[intent] || TASKS.question))
   const same = savedRun(intent, hash)
   const last = question ? mdb.prepare('SELECT id, created_at FROM coach_run WHERE ok=1 AND intent=? AND question=? ORDER BY id DESC LIMIT 1').get(intent, question) : mdb.prepare('SELECT id, created_at FROM coach_run WHERE ok=1 AND intent=? ORDER BY id DESC LIMIT 1').get(intent)
   return { up_to_date: !!same, run_id: same?.id ?? null, last_run_id: last?.id ?? null, last_at: last?.created_at ?? null, hash }
@@ -86,7 +89,7 @@ export async function runCoach({ intent = 'daily_brief', question = '', date, ac
     return { runId: id, ok: true, parsed, model: 'safety-rules', cost_cny: 0, safety: true }
   }
   if (intent === 'session_review' && !hasFit(activityId)) throw Object.assign(new Error(NO_FIT), { status: 409 })
-  const ctx = retrieveRunnerContext({ intent, question, date, activityId }), prompt = renderPrompt(ctx, TASKS[intent] || TASKS.question), reqHash = promptHash(prompt)
+  const ctx = retrieveRunnerContext({ intent, question, date, activityId, forecast: await forecastForCoach(date || new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10), ranToday(date)) }), prompt = renderPrompt(ctx, TASKS[intent] || TASKS.question), reqHash = promptHash(prompt)
   if (!force) { const hit = savedRun(intent, reqHash); if (hit) { const row = getRun(hit.id); return { runId: hit.id, ok: true, cached: true, saved_at: hit.created_at, parsed: row.parsed, model: hit.model, cost_cny: 0 } } }
   const provider = pickProvider(intent), llm = provider === 'anthropic' ? claude.complete : deepseek, runId = newRun({ intent, provider, ctx, prompt, question })
   try {

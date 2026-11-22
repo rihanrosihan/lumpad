@@ -17,6 +17,7 @@ export default function TodayCard({ checkin, settings, go, todayActs = [], date,
   const B = useApi(brief ? `/api/coach/run?id=${brief.id}` : '', !!brief), p = B.data?.parsed
   const stale = useApi(`/api/coach/status?intent=daily_brief&_=${tick}`).data, needsUpdate = !!brief && todayActs.length > 0 && stale && stale.up_to_date === false
   const update = () => { setBusy(true); setErr(''); post('/api/coach/run', { intent: 'daily_brief' }).then(() => { invalidate('coach'); setTick((t) => t + 1) }).catch((e) => setErr(e.message)).finally(() => setBusy(false)) }
+  const fc = useApi(tomorrow?.km > 0 ? `/api/forecast/session?date=${tomorrow.date}&km=${tomorrow.km}` : '', tomorrow?.km > 0).data?.forecast
   const adv = useApi('/api/coach/advice?days=3').data, lastAdvice = (adv?.items || []).find((a) => ['followed', 'partly', 'not_followed'].includes(a.status))
   if (!twin) return null
   const { call, items } = watchList(twin, { checkin, sleepNeedMin: settings?.sleepNeedMin || 480, today: todayActs, date })
@@ -44,6 +45,9 @@ export default function TodayCard({ checkin, settings, go, todayActs = [], date,
     {tomorrow && <div className={`today-tmr tm-${tm.level}`}>
       <div className="tmr-head"><small>Tomorrow</small><b>{tm.plan?.label ? `${tm.plan.label} · ${tm.plan.km} km` : 'No run planned'}</b><span className="tmr-pill">{tm.label}</span></div>
       <p className="tmr-main">{tm.why[0]}</p>
+      {fc && <p className="tmr-heat"><small>Heat forecast</small> <b>Best start {fc.best_start}</b> · WBGT {fc.wbgt_best} <span className={`heat heat-${fc.band_best.toLowerCase()}`}>{fc.band_best.toLowerCase()}</span>{fc.move_earlier
+        ? <> instead of {fc.wbgt_usual} <span className={`heat heat-${fc.band_usual.toLowerCase()}`}>{fc.band_usual.toLowerCase()}</span> at your usual {fc.usual_start}: <b>start earlier</b>.</>
+        : <> (usual {fc.usual_start}: {fc.wbgt_usual}): the start time makes little difference.</>}</p>}
       {(tm.why.length > 1 || tm.confirm) && <details className="tmr-more"><summary>{tm.why.length > 1 ? `${tm.why.length - 1} more note${tm.why.length > 2 ? 's' : ''} and when it is re-checked` : 'When it is re-checked'}</summary>
         {tm.why.length > 1 && <ul>{tm.why.slice(1).map((w, i) => <li key={i}>{w}</li>)}</ul>}
         {tm.confirm && <small className="muted">{tm.confirm}</small>}

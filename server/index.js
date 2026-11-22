@@ -15,6 +15,7 @@ import { listEdges } from './intel/corr.js'
 import { listMemory, setStatus, getMemory } from './intel/memory.js'
 import { runIntel, recentIntelJobs, afterSync } from './intel/run.js'
 import { startIntelScheduler } from './intel/schedule.js'
+import { plannedForecast } from './intel/forecast.js'
 import { adviceSummary, listAdvice, setStatus as setAdviceStatus } from './intel/advice.js'
 import { runCoach, recentRuns, getRun, newRun, finishRun, coachStatus } from './intel/coach.js'
 import { retrieveRunnerContext, renderPrompt, TASKS, OUTPUT_SCHEMA } from './intel/context.js'
@@ -171,6 +172,8 @@ const routes = {
   // the advice ledger: what the coach asked for and what the athlete then did (the athlete can correct a status by hand)
   'GET /api/coach/advice': async (q) => ({ summary: adviceSummary({ days: Math.min(90, +q.get('days') || 30) }), items: listAdvice({ days: Math.min(90, +q.get('days') || 30) }) }),
   'POST /api/coach/advice/status': async (_q, req) => { const b = JSON.parse((await readBody(req, 1e4)).toString() || '{}'); return setAdviceStatus(+b.id, String(b.status || ''), principal(req) || 'athlete') },
+  // when to run a planned day: hourly WBGT forecast, best start, and the usual start for comparison (null without GPS history or forecast)
+  'GET /api/forecast/session': async (q) => { const d = q.get('date'); if (!validDate(d)) throw Object.assign(new Error('bad date'), { status: 400 }); return { forecast: await plannedForecast(d, Math.min(60, Math.max(1, +q.get('km') || 8))) } },
   'GET /api/coach/analysed': async () => mdb.prepare("SELECT DISTINCT question FROM coach_run WHERE intent='session_review' AND ok=1 AND question LIKE 'session %'").all().map((r) => r.question),
   'GET /api/coach/run': async (q) => getRun(+q.get('id')) || { error: 'not found' },
   // pull mode for a Claude routine / Claude Code: context out, answer back (same validation + write-back hook as DeepSeek)

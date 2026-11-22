@@ -123,17 +123,17 @@ test('runCoach: an unchanged question is answered from the saved run (no model c
   }
   const a = await Co.runCoach({ intent: 'question', question: 'how is my week', date: '2026-11-21', fetchFn })
   assert.equal(a.ok, true); assert.ok(!a.cached); const n1 = chats; assert.ok(n1 >= 1)
-  const st = Co.coachStatus({ intent: 'question', question: 'how is my week', date: '2026-11-21' }); assert.equal(st.up_to_date, true); assert.equal(st.run_id, a.runId)
+  const st = await Co.coachStatus({ intent: 'question', question: 'how is my week', date: '2026-11-21' }); assert.equal(st.up_to_date, true); assert.equal(st.run_id, a.runId)
   const b = await Co.runCoach({ intent: 'question', question: 'how is my week', date: '2026-11-21', fetchFn })
   assert.equal(b.cached, true); assert.equal(b.runId, a.runId); assert.equal(b.cost_cny, 0); assert.equal(chats, n1, 'no second model call')
-  const next = Co.coachStatus({ intent: 'question', question: 'how is my week', date: '2026-11-22' }); assert.equal(next.up_to_date, false, 'a new day unlocks a new analysis')
+  const next = await Co.coachStatus({ intent: 'question', question: 'how is my week', date: '2026-11-22' }); assert.equal(next.up_to_date, false, 'a new day unlocks a new analysis')
   const c = await Co.runCoach({ intent: 'question', question: 'how is my week', date: '2026-11-22', fetchFn }); assert.ok(!c.cached); assert.ok(chats > n1)
   const n2 = chats; const d = await Co.runCoach({ intent: 'question', question: 'how is my week', date: '2026-11-22', fetchFn, force: true }); assert.ok(!d.cached); assert.ok(chats > n2)
 })
 
 test('session review of a run whose FIT is not imported yet is refused, not answered from older runs', async () => {
   const { coachStatus, runCoach } = await import('./coach.js')
-  const st = coachStatus({ intent: 'session_review', question: 'session 999000111', activityId: 'coros:999000111' })
+  const st = await coachStatus({ intent: 'session_review', question: 'session 999000111', activityId: 'coros:999000111' })
   assert.equal(st.no_fit, true)
   await assert.rejects(() => runCoach({ intent: 'session_review', question: 'session 999000111', activityId: 'coros:999000111', fetchFn: async () => { throw new Error('model must not be called') } }), /not imported yet/)
 })
