@@ -321,6 +321,13 @@ func guard(next http.Handler) http.Handler {
 			_, _ = w.Write([]byte(`{"error":"missing X-Lumpad header"}`))
 			return
 		}
+		// with LUMPAD_REQUIRE_USER=1 the proxy must have stamped a verified user (see server/auth.js); otherwise refuse
+		if os.Getenv("LUMPAD_REQUIRE_USER") == "1" && r.Header.Get("X-Lumpad-User") == "" {
+			w.Header().Set("content-type", "application/json")
+			w.WriteHeader(http.StatusUnauthorized)
+			_, _ = w.Write([]byte(`{"error":"authentication required"}`))
+			return
+		}
 		r.Body = http.MaxBytesReader(w, r.Body, 64<<10)
 		next.ServeHTTP(w, r)
 	})

@@ -28,7 +28,9 @@ __DOMAIN__ {
 		path /api/ingest
 	}
 	handle @ingest {
-		reverse_proxy 127.0.0.1:8787
+		reverse_proxy 127.0.0.1:8787 {
+			header_up -X-Lumpad-User
+		}
 	}
 	# read-only sync status (counts and dates only), bearer-token protected in the app
 	@istatus {
@@ -36,7 +38,9 @@ __DOMAIN__ {
 		path /api/ingest/status
 	}
 	handle @istatus {
-		reverse_proxy 127.0.0.1:8787
+		reverse_proxy 127.0.0.1:8787 {
+			header_up -X-Lumpad-User
+		}
 	}
 
 	# PWA install files must load WITHOUT the login: browsers fetch the manifest, service worker and icons
@@ -54,10 +58,14 @@ __DOMAIN__ {
 			__USER__ __HASH__
 		}
 		handle /api/v2/* {
-			reverse_proxy 127.0.0.1:8788
+			reverse_proxy 127.0.0.1:8788 {
+				header_up X-Lumpad-User {http.auth.user.id}
+			}
 		}
 		handle /api/* {
-			reverse_proxy 127.0.0.1:8787
+			reverse_proxy 127.0.0.1:8787 {
+				header_up X-Lumpad-User {http.auth.user.id}
+			}
 		}
 		handle {
 			root * /opt/lumpad/dist
