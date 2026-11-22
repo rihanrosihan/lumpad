@@ -11,3 +11,4 @@ lumpadd/lumpadd
 lumpadd/fitbench
 lumpadd/*.exe
 .env.v2
+Neo4j-*.txt
