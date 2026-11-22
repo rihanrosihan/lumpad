@@ -99,6 +99,7 @@ const routes = {
       alerts: [tw && hr(tw.created_at) > 30 ? 'twin older than 30 h' : null, failedSteps ? 'intel step failures in the last 24 h' : null].filter(Boolean) }
   },
   'GET /api/graph/node': async (q) => (await import('./neo4j.js')).node(q.get('kind') || 'races'),
+  'GET /api/graph/live': async (q) => (await import('./neo4j.js')).live(q.get('view') || 'sessions'),
   'GET /api/graph/overview': async () => (await import('./neo4j.js')).overview(),
   'GET /api/data/quality': async () => {
     const cov = coverage()
