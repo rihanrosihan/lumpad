@@ -171,7 +171,7 @@ export function buildTwin(T = wibDate()) {
   const gaps = []; const noShoe = S.filter((s) => s.date >= '2026-01-01' && !s.shoe_id).length; if (noShoe) gaps.push(`${noShoe} runs in 2026 without a shoe`)
   const noWx = idb.prepare("SELECT COUNT(*) n FROM fit_session s LEFT JOIN run_weather w ON w.label_id=s.label_id WHERE w.label_id IS NULL").get().n; if (noWx) gaps.push(`${noWx} sessions without weather`)
   if (!idb.prepare('SELECT COUNT(*) n FROM daily_log WHERE pain IS NOT NULL').get().n) gaps.push('no pain log yet')
-  const pending = app.prepare("SELECT id FROM activities WHERE sport='Run' AND source='coros' AND date >= '2025-01-01'").all().filter((a) => !S.some((x) => x.activity_id === a.id)).length; if (pending > 0) gaps.push(`${pending} runs have no FIT file yet (laps-only metrics)`)
+  const pending = app.prepare("SELECT 1 FROM activities WHERE sport='Run' AND source='coros'").all().length - S.length; if (pending > 0) gaps.push(`${pending} runs have no FIT file yet (laps-only metrics)`)
   return { schema: SCHEMA, as_of: T, physiological_profile: profile(S, T), ...lr, baselines: baselines(S, T), intensity: intensity(S, T), strength_to_run_transfer: strengthTransfer(), aerobic: aerobic(S, T), durability: durability(S, T), heat: heat(S), shoes: shoes(S), fade_curves: fadeCurves(S), races: races(S, kv), injury: injury(T), plan: plan(T, kv),
     projection: projection(T, vdot0), sessions_with_fit: S.length, data_gaps: gaps }
 }
