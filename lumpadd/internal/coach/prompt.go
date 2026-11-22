@@ -85,7 +85,7 @@ func RenderPrompt(c Context, task, lang string) Prompt {
 	for _, f := range StableData.Athlete.Facts {
 		sys = append(sys, "- "+f)
 	}
-	sys = append(sys, "DEFINITIONS: "+compact(StableData.Definitions), sysOutput, sysAnalysis, sysCheck, sysPatch, sysMemory)
+	sys = append(sys, "DEFINITIONS: "+compact(StableData.Definitions), sysOutput, sysAnalysis, sysCheck, sysPatch, sysMemory, sysVoice)
 	if lang == "id" {
 		sys = append(sys, langID)
 	} else {
