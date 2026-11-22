@@ -5,6 +5,8 @@ import { getJson } from './net.js'
 // so going back to a tab no longer starts from an empty screen.
 const memo = new Map(), TTL = 10 * 60 * 1000
 const fromMemo = (path) => { const m = memo.get(path); return m && Date.now() - m.t < TTL ? m.d : null }
+// drop cached responses whose path contains `prefix`, so the next render refetches (e.g. after the coach finishes an analysis)
+export const invalidate = (prefix) => { for (const k of [...memo.keys()]) if (k.includes(prefix)) memo.delete(k) }
 export function useApi(path, enabled = true) {
   const [s, setS] = useState(() => { const d = enabled && path ? fromMemo(path) : null; return { data: d, state: d ? 'ok' : enabled ? 'loading' : 'idle' } })
   useEffect(() => {

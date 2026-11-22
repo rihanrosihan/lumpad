@@ -293,7 +293,7 @@ export default function Activity({ vdot, focus, go, settings }) {
   const sel = focus?.id || null
 
   const [from, to] = monthRange(ym), prevYm = shiftMonth(ym, -1), [pf] = monthRange(prevYm)
-  const A = useApi(`/api/activities/merged?from=${pf}&to=${to}`), CR = useApi('/api/coach/runs'), analysed = useMemo(() => new Set((CR.data || []).filter((r) => r.intent === 'session_review' && r.ok).map((r) => r.question)), [CR.data]) // runs the AI coach has already reviewed
+  const A = useApi(`/api/activities/merged?from=${pf}&to=${to}`), CR = useApi('/api/coach/analysed'), analysed = useMemo(() => new Set(CR.data || []), [CR.data]) // runs the AI coach has already reviewed
   const G = useApi('/api/gear')
   const Hist = useApi(`/api/activities/merged?from=${addDays(T, -180)}&to=${T}`)
   const gear = useMemo(() => Object.fromEntries((G.data || []).map((g) => [g.id, g.name])), [G.data])
