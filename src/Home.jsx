@@ -16,6 +16,7 @@ import { useModel, plannedLoad } from './model.js'
 import { RadialGauge, Ring, Stacked100, StepChart, Sparkline } from './charts2.jsx'
 import { BarChart } from './charts.jsx'
 import FuelCard from './FuelCard.jsx'
+import WatchCard from './WatchCard.jsx'
 import { HomeCoach } from './Coach.jsx'
 import { pickShoe } from './lib/shoes.js'
 import { WorkoutDetail, WorkoutLine, mainTarget, metaFor } from './Workout.jsx'
@@ -66,6 +67,8 @@ export default function Home({ vdot, settings, results, go, M: Mprop }) {
       <p className="h4-sum">{rd.score != null ? <><b>{tier.label}</b> — {tier.advice} </> : null}<span>{summary}</span></p>
 
     </div>
+
+    <WatchCard checkin={checked ? f : null} settings={settings} go={go} />
 
     <FuelCard last={last} today={T} />
 

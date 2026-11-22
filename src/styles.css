@@ -1509,3 +1509,22 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .mq-yes { background: rgba(5,150,105,.14); color: #047857; border: 1px solid rgba(5,150,105,.4); }
 .mq-no { background: rgba(220,38,38,.1); color: #b91c1c; border: 1px solid rgba(220,38,38,.35); }
 .homenext{margin:.8em 0 .2em;font-size:.95em}
+/* Home: Today's call + watch list */
+.watch{display:grid;gap:12px}
+.watch-call{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.watch-call p{margin:0;flex:1 1 220px}
+.watch-verdict{font-weight:800;letter-spacing:.04em;padding:6px 14px;border-radius:999px;font-size:1.05rem;background:var(--green-bg,#dcfce7);color:var(--green-t,#15803d)}
+.call-easy .watch-verdict{background:#fef3c7;color:#92400e}
+.call-rest .watch-verdict{background:#fee2e2;color:#b91c1c}
+.watch-list{list-style:none;margin:0;padding:0;display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+.wi{border:1px solid var(--line,#e5e7eb);border-radius:12px;padding:10px 12px;display:grid;gap:2px;min-width:0}
+.wi-top{display:flex;gap:6px;align-items:center;font-size:.8rem;font-weight:700;color:var(--muted)}
+.wi-dot{width:8px;height:8px;border-radius:50%;background:#9ca3af;flex:none}
+.st-alert .wi-dot{background:#dc2626}.st-watch .wi-dot{background:#f59e0b}.st-ok .wi-dot{background:#16a34a}.st-info .wi-dot{background:#3b82f6}
+.st-alert{border-color:#fca5a5}
+.wi-rule{margin-left:auto;font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;opacity:.7}
+.wi-val{font-size:1.15rem}
+.wi-ref{color:var(--muted);font-size:.72rem}
+.wi-why{margin:4px 0 0;font-size:.78rem;line-height:1.35}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .call-easy .watch-verdict{background:#451a03;color:#fcd34d}:root:not([data-theme="light"]) .call-rest .watch-verdict{background:#450a0a;color:#fca5a5}:root:not([data-theme="light"]) .watch-verdict{background:#052e16;color:#86efac}}
+:root[data-theme="dark"] .call-easy .watch-verdict{background:#451a03;color:#fcd34d}:root[data-theme="dark"] .call-rest .watch-verdict{background:#450a0a;color:#fca5a5}:root[data-theme="dark"] .watch-verdict{background:#052e16;color:#86efac}
