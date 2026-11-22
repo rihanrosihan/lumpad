@@ -30,3 +30,14 @@ test('Garmin-only history rows are listed as their own activity (not dropped)', 
   const rows = [{ id: 'coros:1', source: 'coros', sport: 'Run', date: '2025-05-01', distance_m: 5000, duration_s: 1500, start_ts: 1 }, { id: 'garmin:9', source: 'garmin', sport: 'Walk', date: '2025-05-01', distance_m: 2000, duration_s: 900, start_ts: 2 }]
   const m = mergeActivities(rows); assert.equal(m.length, 2); assert.deepEqual(m.find((x) => x.id === 'garmin:9').sources, ['garmin'])
 })
+
+test('activityDetail attaches Garmin enrichment when present (and works without the table)', async () => {
+  const { db } = await import('./store.js'); const { activityDetail } = await import('./activities.js')
+  const id = 'coros:t-garmin-1'
+  db.exec("INSERT OR REPLACE INTO activities (id, source, source_id, date, start_ts, sport, distance_m, duration_s, pulled_at) VALUES ('coros:t-garmin-1','coros','t-garmin-1','2025-03-03',1,'Run',5000,1500,'x')")
+  try {
+    assert.equal(activityDetail(id).garmin, undefined)
+    db.exec("CREATE TABLE IF NOT EXISTS activity_enrichment (activity_id TEXT PRIMARY KEY, garmin_id INTEGER, primary_source TEXT, aerobic_te REAL)"); db.exec("INSERT OR REPLACE INTO activity_enrichment VALUES ('coros:t-garmin-1', 9, 'garmin', 3.2)")
+    assert.equal(activityDetail(id).garmin.aerobic_te, 3.2)
+  } finally { db.exec("DELETE FROM activities WHERE id='coros:t-garmin-1'"); db.exec('DROP TABLE IF EXISTS activity_enrichment') }
+})

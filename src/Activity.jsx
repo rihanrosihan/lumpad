@@ -7,6 +7,7 @@ import { paces, fmtPace } from './lib/vdot.js'
 import { BY_DATE, today, addDays, fmtLong, MONTHS } from './lib/calendar.js'
 import { efOf, decoupling, cumulativeKm } from './lib/analysis.js'
 import { mean } from './lib/stats.js'
+import GarminCard from './GarminCard.jsx'
 import { useStore } from './store.js'
 import { Icon, Info } from './ui.jsx'
 import { useApi, fmtDur, fmtPaceS } from './api.js'
@@ -642,6 +643,7 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
 
     {/* TAB 1: OVERVIEW */}
     {activeTab === 'overview' && <div className="v61-anim" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {a.garmin && <GarminCard g={a.garmin} />}
       {/* Conditions & Course Intel — uniform 3-row tiles */}
       <div className="v61-card">
         <div className="v61-card-head">

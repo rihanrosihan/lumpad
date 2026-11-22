@@ -27,7 +27,7 @@ function Trend({ data, lines, height = 140, label, dec = 0 }) {
 
 export default function HistoryPanel() {
   const { data: H, state } = useApi('/api/history')
-  const months = H?.months || [], weeks = H?.weeks || []
+  const months = H?.months || [], weeks = H?.weeks || [], rec = H?.recovery || []
   const bars = useMemo(() => months.map((m) => ({ date: m.month, value: m.run_km || 0, tick: m.month.slice(5) === '01' ? m.month.slice(2, 4) : m.month.slice(5) })), [months])
   const ef = useMemo(() => weeks.filter((w) => w.ef != null || w.hr800 != null), [weeks])
   const mdata = useMemo(() => months.map((m) => ({ date: m.month + '-01', sleep: m.sleep_h, rhr: m.rhr, p5: m.pred_5k_s ? m.pred_5k_s / 60 : null, vo2: m.vo2max })), [months])
@@ -64,6 +64,17 @@ export default function HistoryPanel() {
       <Legend items={[{ label: 'Sleep (h)', color: 'var(--cobalt)' }]} />
       <Trend data={mdata} lines={[{ key: 'rhr', color: 'var(--red)' }]} dec={0} height={110} label="Average resting heart rate per month" />
       <Legend items={[{ label: 'Resting HR (bpm)', color: 'var(--red)' }]} />
+    </Card>
+    <Card title="Sleep and readiness" right={<Chip>weekly average</Chip>}>
+      <Trend data={rec} lines={[{ key: 'sleep_score', color: 'var(--cobalt)' }, { key: 'readiness', color: 'var(--green)' }]} dec={0} label="Weekly sleep score and Garmin training readiness" />
+      <Legend items={[{ label: 'Sleep score', color: 'var(--cobalt)' }, { label: 'Training readiness (Garmin)', color: 'var(--green)' }]} />
+      <p className="src-note">Garmin's own 0–100 scores. Sleep scores cover {rec.filter((w) => w.sleep_score != null).length} weeks; weeks without a recorded night are skipped.</p>
+    </Card>
+    <Card title="Body Battery, stress and HRV" right={<Chip>weekly average</Chip>}>
+      <Trend data={rec} lines={[{ key: 'bb_high', color: 'var(--green)' }, { key: 'stress', color: 'var(--red)' }]} dec={0} height={110} label="Weekly Body Battery high and stress" />
+      <Legend items={[{ label: 'Body Battery (daily high)', color: 'var(--green)' }, { label: 'Stress (avg)', color: 'var(--red)' }]} />
+      {rec.some((w) => w.hrv != null) ? <><Trend data={rec} lines={[{ key: 'hrv', color: 'var(--cobalt)' }]} dec={0} height={110} label="Weekly overnight HRV" /><Legend items={[{ label: 'Overnight HRV (ms)', color: 'var(--cobalt)' }]} /></> : null}
+      <p className="src-note">HRV is only available from {rec.find((w) => w.hrv != null)?.date || '2025-09'} (Garmin HRV status started then).</p>
     </Card>
     <Card title="Garmin race predictor" right={<Chip>month end</Chip>}>
       <Trend data={mdata} lines={[{ key: 'p5', color: 'var(--green)' }]} dec={1} height={110} label="Predicted 5K time in minutes" />

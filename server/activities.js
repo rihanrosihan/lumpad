@@ -34,7 +34,8 @@ export function activityDetail(id) {
   const a = db.prepare('SELECT * FROM activities WHERE id = ?').get(id); if (!a) return null
   const [merged] = mergeActivities(db.prepare('SELECT * FROM activities WHERE date = ?').all(a.date)).filter((m) => m.ids.includes(id))
   const lap = (m) => db.prepare('SELECT * FROM laps WHERE activity_id = ? ORDER BY idx').all(m)
-  return { ...(merged || a), laps: (merged?.ids || [id]).flatMap(lap).filter((l, i, arr) => arr.findIndex((x) => x.idx === l.idx) === i) }
+  const g = [...enrichmentFor(merged?.ids || [id]).values()][0]
+  return { ...(merged || a), ...(g ? { garmin: g } : {}), laps: (merged?.ids || [id]).flatMap(lap).filter((l, i, arr) => arr.findIndex((x) => x.idx === l.idx) === i) }
 }
 export const gearList = () => db.prepare(`SELECT g.id, g.name, g.brand, g.model, g.distance_m AS lifetime_m, g.retired,
   (SELECT COALESCE(SUM(a.distance_m),0) FROM activities a WHERE a.gear_id = g.id AND a.source='strava') AS tracked_m,

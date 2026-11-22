@@ -94,3 +94,8 @@ test('history API: weekly points flatten the snapshot; payload is {available:fal
   const idb = new DatabaseSync(':memory:'); idb.exec("CREATE TABLE history_month (month TEXT, run_n INT, run_km REAL, strength_n INT, walk_n INT, other_n INT); INSERT INTO history_month VALUES ('2025-01', 4, 30.5, 1, 2, 0), ('2025-02', 3, 20, 0, 1, 1)")
   const r = historyPayload(idb, new DatabaseSync(':memory:')); assert.equal(r.available, true); assert.equal(r.totals.runs, 7); assert.equal(r.totals.run_km, 51); assert.deepEqual([r.from, r.to], ['2025-01', '2025-02'])
 })
+
+test('history API: weekly recovery aggregates', () => {
+  const idb = new DatabaseSync(':memory:'); idb.exec("CREATE TABLE history_month (month TEXT, run_n INT, run_km REAL, strength_n INT, walk_n INT, other_n INT); INSERT INTO history_month VALUES ('2025-01',1,5,0,0,0);\n CREATE TABLE daily_feat_hist (date TEXT, sleep_min REAL, sleep_score REAL, rhr REAL, hrv REAL, stress_avg REAL, readiness REAL, bb_high REAL, bb_low REAL);\n INSERT INTO daily_feat_hist VALUES ('2025-01-06',420,70,50,NULL,30,60,80,20), ('2025-01-08',480,80,52,NULL,40,70,90,30), ('2025-01-13',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)")
+  const r = historyPayload(idb, new DatabaseSync(':memory:')); assert.equal(r.recovery.length, 1); assert.deepEqual([r.recovery[0].date, r.recovery[0].sleep_h, r.recovery[0].sleep_score, r.recovery[0].rhr, r.recovery[0].nights], ['2025-01-06', 7.5, 75, 51, 2])
+})
