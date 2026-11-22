@@ -71,6 +71,9 @@ export function watchList(twin, { checkin = null, sleepNeedMin = 480 } = {}) {
     add({ id: 'km_guard', label: 'Weekly km vs 4 weeks', value: `${sgn(v)} %`, unit: '', ref: `rule: ≤ +${KM_GUARD} %`, status: st, rule: true,
       why: st === 'alert' ? 'Over the load guard: hold or reduce volume this week.' : st === 'watch' ? 'Close to the +10 % guard.' : 'Within the guard.' })
   }
+  // load ratio (acute vs chronic, EWMA): replaces the old "High load" banner in the Home header
+  if (L.acwr_ewma != null && L.acwr_ewma > 1.3) add({ id: 'acwr', label: 'Load ratio (ACWR)', value: L.acwr_ewma, unit: '', ref: 'aim 0.8–1.3', status: L.acwr_ewma > 1.5 ? 'alert' : 'watch',
+    why: 'Recent load is high for your fitness: keep hard sessions out until it comes back under 1.3.' })
   if (L.tsb != null && L.tsb < -30) add({ id: 'tsb', label: 'Form (TSB)', value: L.tsb, unit: '', ref: 'fatigued below −30', status: 'alert', why: 'Deep fatigue: no hard sessions until it rises.' })
   // 8) sleep duration
   if (day.sleep_min_asleep != null) {

@@ -16,8 +16,7 @@ import { useModel, plannedLoad } from './model.js'
 import { RadialGauge, Ring, Stacked100, StepChart, Sparkline } from './charts2.jsx'
 import { BarChart } from './charts.jsx'
 import FuelCard from './FuelCard.jsx'
-import WatchCard from './WatchCard.jsx'
-import { HomeCoach } from './Coach.jsx'
+import TodayCard from './TodayCard.jsx'
 import { pickShoe } from './lib/shoes.js'
 import { WorkoutDetail, WorkoutLine, mainTarget, metaFor } from './Workout.jsx'
 import { cfgOf, hrRange } from './lib/zones.js'
@@ -63,12 +62,10 @@ export default function Home({ vdot, settings, results, go, M: Mprop }) {
       <i />{sync === undefined ? 'Checking sync…' : sync === null ? 'Sync status unreachable — data may be stale' : sync?.lastRun ? <>Sync {ago(sync.lastRun.received_at)} · {wib(sync.lastRun.received_at)} WIB</> : 'No sync yet — no COROS/Strava data has arrived'}
     </button>
       <h1>{headline}</h1>
-      {heavy && <p className="h4-warn" role="note"><Chip tone="yellow">High load</Chip> TSB {sign(M.cur.tsb)}{acwr != null ? ` · ACWR ${acwr}` : ''} — keep hard sessions out until it comes down{recent ? ` (${recent.name || 'long run'}, ${(recent.distance_m / 1000).toFixed(1)} km on ${fmtShort(recent.date)})` : ''}.</p>}
-      <p className="h4-sum">{rd.score != null ? <><b>{tier.label}</b> — {tier.advice} </> : null}<span>{summary}</span></p>
 
     </div>
 
-    <WatchCard checkin={checked ? f : null} settings={settings} go={go} />
+    <TodayCard checkin={checked ? f : null} settings={settings} go={go} />
 
     <FuelCard last={last} today={T} />
 
@@ -120,7 +117,6 @@ export default function Home({ vdot, settings, results, go, M: Mprop }) {
         </div>}
       </div>
       <div className="hr">
-        <HomeCoach go={go} />
         <div className="b-week"><Card title={pre ? `First week · from ${fmtShort(fmon)}` : 'This week'} className="tight" right={<button className="link" onClick={() => go('calendar')}>Calendar</button>}>
       <div className="strip">{Array.from({ length: 7 }, (_, i) => addDays(stripMon, i)).map((sd, i) => { const d = BY_DATE[sd], ran = M.acts.filter((a) => a.sport_class === 'run' && a.date === sd).reduce((t, a) => t + (a.distance_m || 0) / 1000, 0)
         return <button key={sd} aria-current={sd === T ? 'date' : undefined} aria-label={`${fmtLong(sd)}: ${d ? (d.label || KIND[d.kind].label) + (d.km ? ', planned ' + d.km + ' km' : '') : 'no session'}${ran ? ', already ran ' + ran.toFixed(1) + ' km' : ''}`} className={`sc ${sd === T ? 'today' : ''} ${d ? 'k-' + d.kind : 'k-none'}`} onClick={() => go('calendar', sd)}>

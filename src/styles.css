@@ -1528,3 +1528,6 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .wi-why{margin:4px 0 0;font-size:.78rem;line-height:1.35}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .call-easy .watch-verdict{background:#451a03;color:#fcd34d}:root:not([data-theme="light"]) .call-rest .watch-verdict{background:#450a0a;color:#fca5a5}:root:not([data-theme="light"]) .watch-verdict{background:#052e16;color:#86efac}}
 :root[data-theme="dark"] .call-easy .watch-verdict{background:#451a03;color:#fcd34d}:root[data-theme="dark"] .call-rest .watch-verdict{background:#450a0a;color:#fca5a5}:root[data-theme="dark"] .watch-verdict{background:#052e16;color:#86efac}
+.today-coach p{margin:0}.today-coach .recs{margin:.4em 0 0 1.2em;gap:4px}
+.today-clear{margin:0;font-size:.8rem;color:var(--muted);display:flex;gap:6px;align-items:baseline}.today-clear .wi-dot{background:#16a34a;display:inline-block}
+.today-foot{display:flex;gap:16px;flex-wrap:wrap}
