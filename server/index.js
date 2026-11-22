@@ -95,6 +95,7 @@ const routes = {
     const runs = mdb.prepare("SELECT ok FROM coach_run WHERE provider != 'safety' AND created_at >= ?").all(new Date(Date.now() - 7 * 864e5).toISOString())
     const failedSteps = recentIntelJobs(20).filter((x) => x.started_at >= new Date(Date.now() - 864e5).toISOString() && (x.status === 'partial' || x.error)).length
     return { ok: true, twin_age_h: hr(tw?.created_at), last_intel_job: j ? { kind: j.kind, status: j.status, age_h: hr(j.started_at) } : null, intel_failures_24h: failedSteps,
+      coach_quality_pass_7d: (() => { const q = mdb.prepare("SELECT json_extract(parsed,'$.quality.pass') p FROM coach_run WHERE ok=1 AND provider != 'safety' AND json_extract(parsed,'$.quality') IS NOT NULL AND created_at >= ?").all(new Date(Date.now() - 7 * 864e5).toISOString()); return q.length ? { n: q.length, pass: Math.round(q.filter((x) => x.p).length / q.length * 100) / 100 } : null })(),
       coach_ok_rate_7d: runs.length ? Math.round(runs.filter((r) => r.ok).length / runs.length * 100) / 100 : null, coach_runs_7d: runs.length,
       alerts: [tw && hr(tw.created_at) > 30 ? 'twin older than 30 h' : null, failedSteps ? 'intel step failures in the last 24 h' : null].filter(Boolean) }
   },

@@ -1,7 +1,7 @@
 // Orchestrates one coach run: context → provider → schema validation (+1 repair) → write-back → coach_run row.
 import crypto from 'node:crypto'
 import { mdb, idb } from './db.js'
-import { retrieveRunnerContext, renderPrompt, TASKS, OUTPUT_SCHEMA } from './context.js'
+import { retrieveRunnerContext, renderPrompt, TASKS, OUTPUT_SCHEMA, coachLang } from './context.js'
 import { validate, normalize as norm0, softClamp } from './schema.js'
 const normalize = (j) => softClamp(norm0(j))
 import { complete as deepseek } from './llm.js'
@@ -9,6 +9,7 @@ import * as claude from './anthropic.js'
 import { applyWriteback } from './writeback.js'
 import { verifyAnswer, measuredBase } from './grounding.js'
 import { audit, getMemory } from './memory.js'
+import { scoreAnswer } from './eval/quality.js'
 import { load } from '../db.js'
 import { redFlags, checkinFlags, referralFor, gateFromTwin, gateCheck, diagnosisWording } from './safety.js'
 
@@ -57,6 +58,8 @@ export function finishRun(runId, parsed0, { provider, usage = null, model = null
   const items = (() => { try { return ids.map((i) => getMemory(i)).filter(Boolean) } catch { return [] } })(), grounding = verifyAnswer(parsed, { itemIds: ids, items, base })
   if (grounding.bad_ids.length || grounding.unverified.length) audit('grounding:flagged', null, { bad_ids: grounding.bad_ids, unverified: grounding.unverified.slice(0, 10) }, runId)
   parsed = { ...parsed, grounding }
+  // quality of what the athlete will read (voice, numbers, structure, grounding): recorded on every answer, never blocks it
+  const intentRow = mdb.prepare('SELECT intent FROM coach_run WHERE id=?').get(runId); parsed.quality = scoreAnswer(parsed, { intent: intentRow?.intent || 'question', lang: coachLang() })
   mdb.prepare('UPDATE coach_run SET ok=1, response=?, parsed=?, usage=?, cost_cny=?, model=?, error=NULL WHERE id=?').run(raw, JSON.stringify({ ...parsed, _writeback: wb }), usage ? JSON.stringify(usage) : null, cost, model, runId)
   return { ok: true, parsed, writeback: wb }
 }

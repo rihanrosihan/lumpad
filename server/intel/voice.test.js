@@ -5,7 +5,7 @@ import { SYS, TASKS, renderPromptPure } from './prompt.js'
 const ctx = { stable: { athlete: { goal: 'g', facts: [] }, definitions: {}, rules: [{ id: 1, title: 'r', rule: 'x', locked: true }] }, volatile: { intent: 'daily_brief', as_of: '2026-11-22', query: {}, twin: {}, correlation_edges: [], episodes: [], facts: [], telemetry: [] } }
 test('the coach voice is in every prompt: conclusion first, few numbers, no jargon, evidence kept out of the prose', () => {
   const { system } = renderPromptPure(ctx, TASKS.daily_brief, 'en')
-  assert.ok(system.includes('COACH VOICE')); assert.match(system, /ONE overall judgement/); assert.match(system, /At most 3 in the summary and about 5 in the whole analysis/)
+  assert.ok(system.includes('COACH VOICE')); assert.match(system, /ONE overall judgement/); assert.match(system, /At most 3 in the summary and at most 6 in the whole analysis/)
   assert.match(system, /do not write TSB, CTL, ATL, ACWR, EF, GCT, Pa:HR/); assert.match(system, /exact figures, ids and metric names belong only in cited_ids/)
   assert.ok(!/Twin snapshot & anomaly check|exact deltas|Pod 2 biomechanics|keep metric names \(EF/.test(system), 'the old technical instructions are gone')
 })
