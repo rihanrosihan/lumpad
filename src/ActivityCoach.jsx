@@ -12,6 +12,7 @@ export default function ActivityCoach({ id, label }) {
   const D = useApi(hit ? `/api/coach/run?id=${hit.id}` : '', !!hit), p = fresh?.parsed || D.data?.parsed
   const g = st.data?.guard, noKey = st.data && !st.data.key, paused = g?.level === 'paused'
   const run = () => { setBusy(true); setErr(''); post('/api/coach/run', { intent: 'session_review', question: q, activity_id: id }).then((r) => { setFresh(r); setTick((t) => t + 1) }).catch((e) => setErr(e.message)).finally(() => setBusy(false)) }
+  if (S?.no_fit) return <Card title="Coach analysis for this session"><p className="muted">Waiting for this run's FIT file. Weather, air quality, route map, elevation and the coach review appear after the next COROS sync (the FIT is downloaded after the run is listed). Nothing is analysed from older runs in the meantime.</p></Card>
   if (p) {
     const upToDate = fresh ? true : S ? S.up_to_date : null, when = fresh?.saved_at || hit?.created_at
     const clean = (x) => String(x || '').replace(/\bbelum ditarik\b/gi, 'not yet extracted'), sum = clean(p.summary), short = sum.length > 280 ? sum.slice(0, 277).replace(/\s+\S*$/, '') + '…' : sum

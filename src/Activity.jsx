@@ -640,7 +640,7 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
             <h2 className="v61-card-title">Conditions &amp; Course Intel</h2>
             <p className="v61-card-sub">Weather, air quality, and course conditions</p>
           </div>
-          <span className="v61-pill cobalt">{tempC == null ? 'No weather data' : tempC >= 29 ? 'Heat Stress' : 'Standard Conditions'}</span>
+          <span className="v61-pill cobalt">{tempC == null ? (SESS && SESS.found === false ? 'Waiting for FIT file' : 'No weather data') : tempC >= 29 ? 'Heat Stress' : 'Standard Conditions'}</span>
         </div>
         <div className="v61-env-grid">
           <div className="v61-env-tile">
@@ -651,7 +651,7 @@ function Detail({ id, gear, gearList = [], vdot, history, go, settings }) {
           <div className="v61-env-tile">
             <div className="v61-env-top"><span>Air Quality</span><span className={`v61-sign ${airS[1]}`}><i />{airS[0]}</span></div>
             <div className="v61-env-val">{airIdx?.category ? String(airIdx.category).replace(/\s*air quality\s*/i, '').trim() || airIdx.category : '—'}</div>
-            <div className="v61-env-sub"><span>{airIdx ? `${String(airIdx.name || 'AQI').replace(/\s*\(.*\)\s*/, '')} ${airIdx.aqi ?? ''}`.trim() : 'Not pulled for this run'}</span><span>{air ? 'At the run hour' : ''}</span></div>
+            <div className="v61-env-sub"><span>{airIdx ? `${String(airIdx.name || 'AQI').replace(/\s*\(.*\)\s*/, '')} ${airIdx.aqi ?? ''}`.trim() : (SESS && SESS.found === false ? 'Waiting for FIT file' : 'Not pulled for this run')}</span><span>{air ? 'At the run hour' : ''}</span></div>
           </div>
           <div className="v61-env-tile">
             <div className="v61-env-top"><span>Effort Load</span><span className={`v61-sign ${(a.training_load || 0) > 220 ? 'high' : 'normal'}`}><i />{(a.training_load || 0) > 220 ? 'High' : 'Normal'}</span></div>

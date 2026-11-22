@@ -130,3 +130,10 @@ test('runCoach: an unchanged question is answered from the saved run (no model c
   const c = await Co.runCoach({ intent: 'question', question: 'how is my week', date: '2026-11-22', fetchFn }); assert.ok(!c.cached); assert.ok(chats > n1)
   const n2 = chats; const d = await Co.runCoach({ intent: 'question', question: 'how is my week', date: '2026-11-22', fetchFn, force: true }); assert.ok(!d.cached); assert.ok(chats > n2)
 })
+
+test('session review of a run whose FIT is not imported yet is refused, not answered from older runs', async () => {
+  const { coachStatus, runCoach } = await import('./coach.js')
+  const st = coachStatus({ intent: 'session_review', question: 'session 999000111', activityId: 'coros:999000111' })
+  assert.equal(st.no_fit, true)
+  await assert.rejects(() => runCoach({ intent: 'session_review', question: 'session 999000111', activityId: 'coros:999000111', fetchFn: async () => { throw new Error('model must not be called') } }), /not imported yet/)
+})

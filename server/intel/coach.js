@@ -24,7 +24,12 @@ export function pickProvider(intent) {
 export const promptHash = (prompt) => crypto.createHash('sha256').update(String(prompt.system || '') + '\u0000' + String(prompt.user || '')).digest('hex').slice(0, 32)
 export const savedRun = (intent, hash) => mdb.prepare('SELECT id, created_at, model, cost_cny FROM coach_run WHERE ok=1 AND intent=? AND req_hash=? ORDER BY id DESC LIMIT 1').get(intent, hash) || null
 // is the newest saved analysis of this question still current? (no model call, no cost)
+// A per-session review needs that session's FIT metrics. Without them the retrieval silently fell back to the latest sessions and
+// reviewed a different run, so refuse instead.
+export const hasFit = (activityId) => !activityId || !!idb.prepare('SELECT 1 FROM fit_session WHERE activity_id=? OR label_id=?').get(activityId, String(activityId).replace(/^coros:/, ''))
+const NO_FIT = 'The FIT file of this run is not imported yet, so it cannot be analysed. Weather, air quality, route and the coach review appear after the next COROS sync.'
 export function coachStatus({ intent = 'daily_brief', question = '', date, activityId = null } = {}) {
+  if (intent === 'session_review' && !hasFit(activityId)) return { up_to_date: false, no_fit: true, reason: NO_FIT, run_id: null, last_run_id: null, last_at: null }
   const ctx = retrieveRunnerContext({ intent, question, date, activityId }), hash = promptHash(renderPrompt(ctx, TASKS[intent] || TASKS.question))
   const same = savedRun(intent, hash)
   const last = question ? mdb.prepare('SELECT id, created_at FROM coach_run WHERE ok=1 AND intent=? AND question=? ORDER BY id DESC LIMIT 1').get(intent, question) : mdb.prepare('SELECT id, created_at FROM coach_run WHERE ok=1 AND intent=? ORDER BY id DESC LIMIT 1').get(intent)
@@ -63,6 +68,7 @@ export async function runCoach({ intent = 'daily_brief', question = '', date, ac
     audit('safety:referral', null, { ids: red.map((f) => f.id) }, id)
     return { runId: id, ok: true, parsed, model: 'safety-rules', cost_cny: 0, safety: true }
   }
+  if (intent === 'session_review' && !hasFit(activityId)) throw Object.assign(new Error(NO_FIT), { status: 409 })
   const ctx = retrieveRunnerContext({ intent, question, date, activityId }), prompt = renderPrompt(ctx, TASKS[intent] || TASKS.question), reqHash = promptHash(prompt)
   if (!force) { const hit = savedRun(intent, reqHash); if (hit) { const row = getRun(hit.id); return { runId: hit.id, ok: true, cached: true, saved_at: hit.created_at, parsed: row.parsed, model: hit.model, cost_cny: 0 } } }
   const provider = pickProvider(intent), llm = provider === 'anthropic' ? claude.complete : deepseek, runId = newRun({ intent, provider, ctx, prompt, question })
