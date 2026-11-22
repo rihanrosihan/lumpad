@@ -32,7 +32,7 @@ const CRUMB = { home: 'Home Briefing', ready: 'Readiness & Load', activity: 'Act
 // Desktop side menu: each main page lists its sections. [label, route, sub-section id]; the phone keeps the five-item bottom bar and uses the page's own tabs.
 const SUBS = {
   ready: [['Overview', 'ready', 'all'], ['Conditions Now', 'ready', 'conditions'], ['Load · PMC', 'ready', 'load'], ['ACWR', 'ready', 'acwr'], ['Sleep', 'ready', 'sleep'], ['HRV', 'ready', 'hrv'], ['Autonomic', 'ready', 'auto']],
-  activity: [['Recent Activities', 'activity', 'recent'], ['Fitness', 'activity', 'fitness']],
+  activity: [['Recent Activities', 'activity', 'recent'], ['Fitness', 'activity', 'fitness'], ['History', 'activity', 'history']],
   calendar: [['Calendar', 'calendar', 'month'], ['Week Detail', 'calendar', 'week'], ['Plan', 'calendar', 'checklist'], ['Checkpoints', 'checkpoint', null], ['Race', 'race', null]],
   coach: [['Ask & Twin', 'coach', 'ask'], ['Knowledge Graph', 'coach', 'kg'], ['Monte Carlo & RAG', 'coach', 'mc'], ['Lag Explorer', 'coach', 'lag'], ['Memory Queue', 'coach', 'mem'], ['Matrices & Episodes', 'coach', 'mat'], ['Durability & Shoes', 'coach', 'dur']],
 }

@@ -141,6 +141,7 @@ const routes = {
   'GET /api/strava/streams': async (q) => strava.streams(+q.get('id')),
   'GET /api/strava/gear': async (q) => strava.gear(q.get('id')),
   // --- intelligence layer (docs/plan-intelligence-layer.md)
+  'GET /api/history': async () => { const { historyPayload } = await import('./garmin/historyapi.js'); return historyPayload(idb, (await import('./store.js')).db) },
   'GET /api/twin': async (q) => latestTwin(+q.get('version') || null),
   'GET /api/twin/history': async () => idb.prepare('SELECT version, as_of, created_at, trigger, json_extract(state, \'$.readiness.score\') AS readiness, json_extract(state, \'$.load.ctl\') AS ctl, json_extract(state, \'$.aerobic.hr_at_800.value\') AS hr800 FROM twin_state ORDER BY version DESC LIMIT 90').all(),
   'GET /api/twin/diff': async (q) => ({ diff: twinDiff(+q.get('a'), +q.get('b')) }),

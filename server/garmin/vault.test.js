@@ -84,3 +84,13 @@ test('lapRows: per-km rows become laps, the last lap takes the remaining distanc
   const l = lapRows({ distance_m: 2500 }, [{ km: 1, sec: 400, pace: 400, hr: 150, cad: 170, gct: 280, step: 0.9, vr: 9 }, { km: 2, sec: 410, pace: 410, hr: 152 }, { km: 3, sec: 205, pace: 410, hr: 153 }])
   assert.deepEqual(l.map((x) => x.distance_m), [1000, 1000, 500]); assert.equal(l[0].gct_ms, 280); assert.equal(l[1].power, null); assert.deepEqual(lapRows({}, null), [])
 })
+
+import { weeklyPoint, historyPayload } from './historyapi.js'
+import { DatabaseSync } from 'node:sqlite'
+test('history API: weekly points flatten the snapshot; payload is {available:false} before the import', () => {
+  const p = weeklyPoint({ as_of: '2025-05-04', state: JSON.stringify({ load: { ctl: 20, atl: 25, tsb: -5, acwr_uncoupled: 1.1, weekly_km_4w: 30 }, aerobic: { ef_easy_28d: { value: 0.8 }, hr_at_800: { value: 150 } }, recovery: { rhr: { value: 52 } }, gaps: ['x'] }) })
+  assert.deepEqual([p.date, p.ctl, p.ef, p.hr800, p.rhr, p.gaps], ['2025-05-04', 20, 0.8, 150, 52, 1])
+  assert.deepEqual(historyPayload(new DatabaseSync(':memory:'), new DatabaseSync(':memory:')), { available: false })
+  const idb = new DatabaseSync(':memory:'); idb.exec("CREATE TABLE history_month (month TEXT, run_n INT, run_km REAL, strength_n INT, walk_n INT, other_n INT); INSERT INTO history_month VALUES ('2025-01', 4, 30.5, 1, 2, 0), ('2025-02', 3, 20, 0, 1, 1)")
+  const r = historyPayload(idb, new DatabaseSync(':memory:')); assert.equal(r.available, true); assert.equal(r.totals.runs, 7); assert.equal(r.totals.run_km, 51); assert.deepEqual([r.from, r.to], ['2025-01', '2025-02'])
+})

@@ -1362,7 +1362,7 @@ select.actv56-wtag-select[data-wtag="Race"] { background-color: color-mix(in srg
 .subtabs-scroll::-webkit-scrollbar { display: none; }
 .subtabs-scroll .segtabs { display: inline-flex; min-width: max-content; }
 .subtabs-scroll .segtab { white-space: nowrap; flex: 0 0 auto; }
-.ahub-tabs .segtabs { display: grid; grid-template-columns: repeat(2, 1fr); width: 100%; }
+.ahub-tabs .segtabs { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
 .gearbtn { margin-left: 0; min-width: 44px; padding: 0; }
 .fit-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
 @media (min-width: 900px) { .fit-grid { grid-template-columns: 1fr 1fr; } .fit-grid > :first-child { grid-column: 1 / -1; } }
