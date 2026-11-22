@@ -41,3 +41,15 @@ test('no steady runs: an empty marker (value 0 or null, n 0) is unknown, never "
   const h = watchList({ ...base, aerobic: { hr_at_800: { value: 0, z: null, n: 0, baseline: '144.3 ± 6.8 (x, n=21)', steady_only: true } } }).items.find((i) => i.id === 'hr800')
   assert.equal(h.value, null); assert.equal(h.status, 'watch')
 })
+
+const ran = [{ name: 'Outdoor Run', sport_class: 'run', distance_m: 11200, training_load: 201 }]
+test('already ran today: the run leads, form before → after, and the call is about the rest of today and tomorrow', () => {
+  const w = watchList({ ...base, as_of: '2026-11-22', load: { km_vs_4wk_avg_pct: -62, tsb: -14.2, ctl: 76.1, atl: 106.4 } }, { today: ran, date: '2026-11-22', checkin: { painSites: { knee: 0 } } })
+  assert.equal(w.items[0].id, 'today_run'); assert.equal(w.items[0].status, 'alert'); assert.match(w.items[0].ref, /form -14.2 → -30.3/)
+  assert.equal(w.call.label, 'DONE'); assert.match(w.call.why, /Done today: 11.2 km, TL 201, form -14.2 → -30.3.*no hard session tomorrow/)
+})
+test('twin older than today: load after today is shown as not updated, never computed from stale numbers', () => {
+  const w = watchList({ ...base, as_of: '2026-11-21', load: { tsb: -14.2, ctl: 76.1, atl: 106.4 } }, { today: ran, date: '2026-11-22' })
+  assert.equal(w.items[0].status, 'watch'); assert.match(w.items[0].why, /not updated yet/)
+})
+test('no activity today: nothing added, call unchanged', () => assert.ok(!watchList(base, { today: [], date: '2026-11-22' }).items.some((i) => i.id === 'today_run')))

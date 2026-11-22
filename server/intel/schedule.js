@@ -10,6 +10,17 @@ import { canRun, jobKey, recordFailure, recordSuccess } from './jobledger.js'
 const wibNow = () => new Date(Date.now() + 7 * 3600e3)
 const today = () => wibNow().toISOString().slice(0, 10)
 let coaching = false
+// A new run was processed AFTER today's last brief was written (and no brief for it exists yet): the brief is out of date, so write a post-run one.
+// Pure over the two databases so it can be tested. Returns the question (stable per run: one post-run brief per run) or null.
+export function postRunTarget(day, i = idb, m = mdb) {
+  const last = m.prepare("SELECT created_at FROM coach_run WHERE intent='daily_brief' AND ok=1 AND substr(datetime(created_at, '+7 hours'),1,10) = ? ORDER BY id DESC LIMIT 1").get(day)
+  if (!last) return null   // no brief yet today: the normal brief already includes the run
+  for (const s of i.prepare('SELECT label_id FROM fit_session WHERE date=? AND processed_at > ? ORDER BY start_ms DESC').all(day, last.created_at)) {
+    const q = 'after-run ' + s.label_id
+    if (!m.prepare("SELECT 1 FROM coach_run WHERE intent='daily_brief' AND ok=1 AND question=?").get(q)) return q
+  }
+  return null
+}
 export async function coachTick() {
   if (coaching || isBusy() || process.env.COACH_SCHEDULE === 'off' || !process.env.DEEPSEEK_API_KEY) return null
   const w = wibNow(), hm = w.getUTCHours() * 60 + w.getUTCMinutes(), day = today()
@@ -17,6 +28,7 @@ export async function coachTick() {
   const done = (intent, q) => mdb.prepare("SELECT 1 FROM coach_run WHERE intent=? AND ok=1 AND substr(datetime(created_at, '+7 hours'),1,10) = ? AND (? IS NULL OR question=?)").get(intent, day, q ?? null, q ?? null)
   let job = null
   if (hm >= 480 && db.prepare("SELECT 1 FROM sync_jobs WHERE kind='daily' AND local_date=? AND status='done'").get(day) && !done('daily_brief')) job = { intent: 'daily_brief' }
+  else if (hm >= 480 && postRunTarget(day)) job = { intent: 'daily_brief', question: postRunTarget(day) }
   else if (w.getUTCDay() === 0 && hm >= 19 * 60 && !done('weekly_review')) job = { intent: 'weekly_review' }
   else {
     const s = idb.prepare("SELECT label_id, activity_id, date FROM fit_session WHERE distance_m >= 16000 AND date >= ? ORDER BY date DESC").all(new Date(Date.now() - 3 * 864e5).toISOString().slice(0, 10)).find((x) => !mdb.prepare("SELECT 1 FROM coach_run WHERE intent='session_review' AND ok=1 AND question=?").get('session ' + x.label_id))

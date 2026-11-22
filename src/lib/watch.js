@@ -13,7 +13,7 @@ export function painToday(checkin) {
   const n = v.filter(Number.isFinite); return n.length ? Math.max(...n) : null
 }
 
-export function watchList(twin, { checkin = null, sleepNeedMin = 480 } = {}) {
+export function watchList(twin, { checkin = null, sleepNeedMin = 480, today = [], date = null } = {}) {
   if (!twin) return { call: null, items: [] }
   const day = (twin.recent_days || []).at(-1) || {}, items = [], reasons = []
   const add = (it) => items.push(it)
@@ -85,8 +85,24 @@ export function watchList(twin, { checkin = null, sleepNeedMin = 480 } = {}) {
   if (D.longest_continuous_run_km != null) add({ id: 'durability', label: 'Longest continuous run', value: D.longest_continuous_run_km, unit: 'km', ref: `fade from km ${D.fade_onset_km_median_90d ?? '—'} (90 d)`, status: 'info',
     why: 'Your marathon limiter: grow it ≤ 10 % per long run, never with pain.' })
 
+  // 10) what the athlete has ALREADY done today: the morning numbers above describe the start of the day, this describes where the day left the athlete.
+  //     Form (TSB) is yesterday's CTL − ATL by definition, so CTL − ATL after today's load is the form carried into tomorrow.
+  const done = (today || []).filter((a) => (a.distance_m || 0) > 0 || (a.training_load || 0) > 0), tl = done.reduce((t, a) => t + (a.training_load || 0), 0)
+  const km = Math.round(done.reduce((t, a) => t + ((a.sport_class || 'run') === 'run' ? (a.distance_m || 0) : 0), 0) / 100) / 10
+  const fresh = twin.as_of === date && L.ctl != null && L.atl != null, after = fresh ? Math.round((L.ctl - L.atl) * 10) / 10 : null
+  if (done.length) {
+    const st = after == null ? 'watch' : after < -30 ? 'alert' : after < -20 ? 'watch' : 'info'
+    add({ id: 'today_run', label: km ? "Today's run" : "Today's training", value: km ? `${km} km` : `TL ${tl}`, unit: '', pin: true, status: st,
+      ref: `TL ${tl || '—'}${after != null ? ` · form ${L.tsb} → ${after}` : ''}`,
+      why: after == null ? 'Load after today is not updated yet (waiting for the sync).' : after < -30 ? 'Deep fatigue tonight: no hard session tomorrow; fuel, fluids, sleep.' : after < -20 ? 'Fatigued: keep tomorrow easy.' : 'Load is fine: recover normally.' })
+  }
+
   const lvl = reasons.some((r) => r.level === 'rest') ? 'rest' : reasons.length ? 'easy' : rd.score == null && !items.length ? null : 'go'
-  const call = lvl && { level: lvl, label: { go: 'GO', easy: 'EASY ONLY', rest: 'REST' }[lvl], why: lvl === 'go' ? 'No rule or gate is active.' : reasons.map((r) => r.why).join(' · ') }
-  items.sort((x, y) => RANK[x.status] - RANK[y.status] || (y.rule ? 1 : 0) - (x.rule ? 1 : 0))
+  let call = lvl && { level: lvl, label: { go: 'GO', easy: 'EASY ONLY', rest: 'REST' }[lvl], why: lvl === 'go' ? 'No rule or gate is active.' : reasons.map((r) => r.why).join(' · ') }
+  if (call && done.length) {   // after training the call is about the rest of today and tomorrow
+    const lead = `Done today: ${km ? km + ' km, ' : ''}TL ${tl || '—'}${after != null ? `, form ${L.tsb} → ${after}` : ''}. `
+    call = { ...call, label: lvl === 'go' ? 'DONE' : call.label, why: lead + (after != null && after < -30 && lvl === 'go' ? 'Deep fatigue tonight: no hard session tomorrow.' : lvl === 'go' ? 'Recover now; tomorrow follows the plan.' : call.why) }
+  }
+  items.sort((x, y) => (y.pin ? 1 : 0) - (x.pin ? 1 : 0) || RANK[x.status] - RANK[y.status] || (y.rule ? 1 : 0) - (x.rule ? 1 : 0))
   return { call, items }
 }

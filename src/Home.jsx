@@ -66,7 +66,7 @@ export default function Home({ vdot, settings, results, go, M: Mprop }) {
 
     </div>
 
-    <TodayCard checkin={checked ? f : null} settings={settings} go={go} />
+    <TodayCard checkin={checked ? f : null} settings={settings} go={go} todayActs={M.acts.filter((a) => a.date === T && a.sport_class !== 'strength')} date={T} />
 
     <FuelCard last={last} today={T} />
 
@@ -83,7 +83,7 @@ export default function Home({ vdot, settings, results, go, M: Mprop }) {
             <div className="pillc"><small>Overnight HRV</small><b>{hv.today ?? '—'}{hv.today ? ' ms' : ''}</b>{hv.enough ? <em className={hv.flagTrend ? 'warn-t' : ''}>{sign(hvPct)}% vs 7 d</em> : <em>needs 14 d</em>}<Sparkline data={hrv7} label="HRV 7 days" w={70} h={18} /></div>
             <div className="pillc"><small>Sleep duration</small><b>{sl.enough ? hm(sl.asleep_min) : '—'}</b>{sl.enough ? <div className="minibar" role="img" aria-label={`Deep ${sl.deep}% REM ${sl.rem}%`}><i style={{ width: sl.deep + '%', background: 'var(--c-long)' }} /><i style={{ width: sl.rem + '%', background: 'var(--c-tt)' }} /></div> : <em>not pulled yet</em>}{sl.enough && <em>deep+REM {sl.deep + sl.rem}%</em>}</div>
             <div className="pillc"><small>Resting HR</small><b>{rh.value ?? '—'}{rh.value != null ? ' bpm' : ''}</b><em>{rh.enough ? `${sign(rh.dev)} vs 30 d` : 'needs data'}</em></div>
-            <div className="pillc"><small>Form (TSB)</small><b>{sign(M.cur?.tsb)}</b><em>{fz ? fz.label : 'none yet'}</em><em>CTL {M.cur?.ctl ?? '—'} · ATL {M.cur?.atl ?? '—'}</em></div>
+            <div className="pillc"><small>Form (TSB)</small><b>{sign(M.cur?.tsb)}</b><em>{fz ? fz.label : 'none yet'}</em><em>CTL {M.cur?.ctl ?? '—'} · ATL {M.cur?.atl ?? '—'}</em>{(M.series.find((x) => x.date === T)?.load || 0) > 0 && M.cur && <em className="warn-t">after today's load: {sign(r1(M.cur.ctl - M.cur.atl))}</em>}</div>
           </div>
         </button>
         {day && <Card className={`sess g-sess k-${day.kind}`}>
