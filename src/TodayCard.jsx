@@ -12,7 +12,7 @@ const wibDay = (ms) => new Date(ms + 7 * 3600e3).toISOString().slice(0, 10)
 // preview: 200–300 characters, cut at a sentence or word boundary
 export const preview = (t, max = 280, min = 200) => { if (t.length <= max) return t; const c = t.slice(0, max), at = Math.max(c.lastIndexOf('. '), c.lastIndexOf('! '), c.lastIndexOf('? ')); return at >= min ? c.slice(0, at + 1) : c.replace(/\s+\S*$/, '') + '…' }
 const clean = cleanCoachText
-export default function TodayCard({ bare = false, checkin, settings, go, todayActs = [], date, tomorrow = null, weekPlanKm = null }) {
+export default function TodayCard({ checkin, settings, go, todayActs = [], date, tomorrow = null, weekPlanKm = null }) {
   const [open, setOpen] = useState(false), [tick, setTick] = useState(0), [busy, setBusy] = useState(false), [err, setErr] = useState(''), T = useApi('/api/twin'), twin = T.data?.state, R = useApi('/api/coach/runs')
   const brief = (R.data || []).find((r) => r.intent === 'daily_brief' && r.ok && wibDay(Date.parse(r.created_at)) === wibDay(Date.now()))
   const B = useApi(brief ? `/api/coach/run?id=${brief.id}` : '', !!brief), p = B.data?.parsed
@@ -26,46 +26,49 @@ export default function TodayCard({ bare = false, checkin, settings, go, todayAc
   const tm = tomorrowCheck(twin, tomorrow, { after: fresh ? Math.round((L.ctl - L.atl) * 10) / 10 : null, pain: painToday(checkin), weekPlanKm, hrCap })
   const attention = items.filter((i) => i.status === 'alert' || i.status === 'watch').slice(0, 4), clear = items.filter((i) => i.status === 'ok')
   const coachLine = p?.summary ? clean(p.summary).replace(/^(GO|EASY ONLY|REST)[.:,—\s-]*/i, '') : null
-  return <section className={`${bare ? 'combo-body' : 'card'} watch call-${call?.level || 'none'}`} aria-label="Today">
-    {call && <div className="watch-call">
-      <span className="watch-verdict">{call.label}</span>
-      <p>{call.why}</p>
-    </div>}
-    <div className="today-coach">
-      {coachLine ? <>
-        <p><b>AI coach:</b> {open ? coachLine : preview(coachLine)}</p>
-        {open && <div className="today-detail">
-          {p.recommendations?.length > 0 && <><h4>Next steps</h4><ol className="recs">{p.recommendations.map((r, i) => <li key={i}><b>{clean(r.action)}</b>{r.why && <small>{clean(r.why)}</small>}</li>)}</ol></>}
-          {p.analysis_md && <Md text={clean(p.analysis_md)} />}
-        </div>}
-        {needsUpdate && <p className="muted" role="note">This brief was written before today's training. <button type="button" className="link" disabled={busy} onClick={update}>{busy ? 'Updating… (±30–90 s)' : 'Update with today\'s run →'}</button>{err && <span className="err" role="alert"> {err}</span>}</p>}
-        <button type="button" className="link" aria-expanded={open} onClick={() => setOpen((o) => !o)}>{open ? 'Show less' : 'Show full brief'}</button>
-      </> : <p className="muted">No AI brief yet today. <button className="link" onClick={() => go('coach', { intent: 'daily_brief' })}>Get today's brief →</button></p>}
+  const sev = { alert: 'alert', watch: 'watch', ok: 'ok' }
+  return <div className={`hv2-today call-${call?.level || 'none'}`} aria-label="Today">
+    <div className="hv2-lead">
+      <div className="hv2-main">
+        {call && <div className="hv2-status"><span className="hv2-verdict">{call.label}</span><span className="hv2-why">{call.why}</span></div>}
+        {coachLine ? <div className="hv2-coach">
+          <p><b>AI coach:</b> {open ? coachLine : preview(coachLine)}</p>
+          {open && <div className="hv2-detail">
+            {p.recommendations?.length > 0 && <><h4>Next steps</h4><ol>{p.recommendations.map((r, i) => <li key={i}><b>{clean(r.action)}</b>{r.why && <small>{clean(r.why)}</small>}</li>)}</ol></>}
+            {p.analysis_md && <Md text={clean(p.analysis_md)} />}
+          </div>}
+          {needsUpdate && <p className="hv2-note" role="note">This brief was written before today's training. <button type="button" className="hv2-link" disabled={busy} onClick={update}>{busy ? 'Updating… (±30–90 s)' : 'Update with today\'s run →'}</button>{err && <span className="hv2-err" role="alert"> {err}</span>}</p>}
+          <button type="button" className="hv2-link" aria-expanded={open} onClick={() => setOpen((o) => !o)}>{open ? 'Show less ⌃' : 'Show full brief ⌄'}</button>
+        </div> : <p className="hv2-coach hv2-empty">No AI brief yet today. <button className="hv2-link" onClick={() => go('coach', { intent: 'daily_brief' })}>Get today's brief →</button></p>}
+      </div>
+      {tomorrow && <aside className={`hv2-tmr tm-${tm.level}`} aria-label="Tomorrow">
+        <div className="hv2-tmr-head"><span>Tomorrow</span><em className="hv2-tag">{tm.label}</em></div>
+        <b className="hv2-tmr-title">{tm.plan?.label ? `${tm.plan.label} · ${tm.plan.km} km` : 'No run planned'}</b>
+        <p className="hv2-tmr-text">{tm.why[0]}</p>
+        {fc && <p className="hv2-tmr-text"><b>Heat:</b> best start {fc.best_start} · WBGT {fc.wbgt_best} <span className={`heat heat-${fc.band_best.toLowerCase()}`}>{fc.band_best.toLowerCase()}</span>{fc.move_earlier
+          ? <> vs {fc.wbgt_usual} at your usual {fc.usual_start}: <b>start earlier</b>.</>
+          : <> (usual {fc.usual_start}: {fc.wbgt_usual}): {['RED', 'BLACK'].includes(fc.band_best) ? <>no start time avoids the heat. <b>Run by heart rate, drink early{fc.band_best === 'BLACK' ? ', or go indoors' : ''}.</b></> : 'little difference.'}</>}</p>}
+        {(tm.why.length > 1 || tm.confirm) && <details className="hv2-more"><summary>{tm.why.length > 1 ? `${tm.why.length - 1} more note${tm.why.length > 2 ? 's' : ''}` : 'When it is re-checked'}</summary>
+          {tm.why.length > 1 && <ul>{tm.why.slice(1).map((w, i) => <li key={i}>{w}</li>)}</ul>}
+          {tm.confirm && <small>{tm.confirm}</small>}
+        </details>}
+      </aside>}
     </div>
-    {lastAdvice && <p className="today-adv muted"><b>Last advice:</b> {lastAdvice.text.length > 90 ? lastAdvice.text.slice(0, 89) + '…' : lastAdvice.text} → <b className={`adv-${lastAdvice.status}`}>{{ followed: 'followed', partly: 'partly followed', not_followed: 'not followed' }[lastAdvice.status]}</b>{evidenceText(lastAdvice) ? ` (${evidenceText(lastAdvice)})` : ''}. <button type="button" className="link" onClick={() => go('coach', { section: 'adv' })}>Advice log →</button></p>}
-    {tomorrow && <div className={`today-tmr tm-${tm.level}`}>
-      <div className="tmr-head"><small>Tomorrow</small><b>{tm.plan?.label ? `${tm.plan.label} · ${tm.plan.km} km` : 'No run planned'}</b><span className="tmr-pill">{tm.label}</span></div>
-      <p className="tmr-main">{tm.why[0]}</p>
-      {fc && <p className="tmr-heat"><small>Heat forecast</small> <b>Best start {fc.best_start}</b> · WBGT {fc.wbgt_best} <span className={`heat heat-${fc.band_best.toLowerCase()}`}>{fc.band_best.toLowerCase()}</span>{fc.move_earlier
-        ? <> instead of {fc.wbgt_usual} <span className={`heat heat-${fc.band_usual.toLowerCase()}`}>{fc.band_usual.toLowerCase()}</span> at your usual {fc.usual_start}: <b>start earlier</b>.</>
-        : <> (usual {fc.usual_start}: {fc.wbgt_usual}): {['RED', 'BLACK'].includes(fc.band_best) ? <>no start time avoids the heat. <b>Run by heart rate, drink early, shorten if it feels off{fc.band_best === 'BLACK' ? ' or go indoors' : ''}.</b></> : 'the start time makes little difference.'}</>}</p>}
-      {(tm.why.length > 1 || tm.confirm) && <details className="tmr-more"><summary>{tm.why.length > 1 ? `${tm.why.length - 1} more note${tm.why.length > 2 ? 's' : ''} and when it is re-checked` : 'When it is re-checked'}</summary>
-        {tm.why.length > 1 && <ul>{tm.why.slice(1).map((w, i) => <li key={i}>{w}</li>)}</ul>}
-        {tm.confirm && <small className="muted">{tm.confirm}</small>}
-      </details>}
-    </div>}
-    {attention.length > 0 && <ul className="watch-list grid2">
-      {attention.map((i) => <li key={i.id} className={`wi st-${i.status}`}>
-        <div className="wi-top"><span className="wi-dot" aria-hidden="true" />{i.label}{i.rule && <small className="wi-rule">rule</small>}</div>
-        <b className="wi-val">{i.value ?? '—'}{i.value != null && i.unit ? <small> {i.unit}</small> : null}</b>
-        <small className="wi-ref">{i.ref}</small>
-        <p className="wi-why">{i.why}</p>
+    {attention.length > 0 && <ul className="hv2-signals">
+      {attention.map((i) => <li key={i.id} className={`hv2-signal s-${sev[i.status] || 'ok'}`}>
+        <div className="hv2-signal-top"><span className="hv2-dot" aria-hidden="true" /><span className="hv2-signal-name">{i.label}</span>{i.rule && <em className="hv2-tag">rule</em>}</div>
+        <b className="hv2-signal-val">{i.value ?? '—'}{i.value != null && i.unit ? <small> {i.unit}</small> : null}</b>
+        <span className="hv2-signal-ref" title={i.ref}>{i.ref}</span>
+        <p className="hv2-signal-why">{i.why}</p>
       </li>)}
     </ul>}
-    {clear.length > 0 && <p className="today-clear"><span className="wi-dot" aria-hidden="true" /> All clear: {clear.map((i) => `${i.label.toLowerCase()} ${i.value ?? ''}${i.unit && i.value != null ? ' ' + i.unit : ''}`.trim()).join(' · ')}</p>}
-    <div className="today-foot">
-      <button className="link" onClick={() => go('coach', brief ? {} : { intent: 'daily_brief' })}>Open AI coach →</button>
-      <button className="link" onClick={() => go('ready')}>Readiness details →</button>
+    <div className="hv2-foot">
+      {clear.length > 0 ? <p className="hv2-clear"><span className="hv2-dot ok" aria-hidden="true" /><span><b>All clear:</b> {clear.map((i) => `${i.label.toLowerCase()} ${i.value ?? ''}${i.unit && i.value != null ? ' ' + i.unit : ''}`.trim()).join(' · ')}</span></p> : <span />}
+      <div className="hv2-links">
+        <button className="hv2-link" onClick={() => go('coach', brief ? {} : { intent: 'daily_brief' })}>Open AI coach →</button>
+        <button className="hv2-link" onClick={() => go('ready')}>Readiness details →</button>
+      </div>
     </div>
-  </section>
+    {lastAdvice && <p className="hv2-advice"><b>Last advice:</b> {lastAdvice.text.length > 90 ? lastAdvice.text.slice(0, 89) + '…' : lastAdvice.text} → <b className={`adv-${lastAdvice.status}`}>{{ followed: 'followed', partly: 'partly followed', not_followed: 'not followed' }[lastAdvice.status]}</b>{evidenceText(lastAdvice) ? ` (${evidenceText(lastAdvice)})` : ''}. <button type="button" className="hv2-link" onClick={() => go('coach', { section: 'adv' })}>Advice log →</button></p>}
+  </div>
 }

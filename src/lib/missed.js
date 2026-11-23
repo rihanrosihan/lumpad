@@ -3,7 +3,7 @@
 import { addDays, dowOf, mondayOf } from './dates.js'
 import { isLowerDay } from './strength.js'
 
-export const AFTERNOON_FROM = 10 // WIB hour: before this the day is not "missed" yet
+export const AFTERNOON_FROM = 11 // WIB hour: before this the day is not "missed" yet
 const HARD = new Set(['quality', 'tt', 'speed', 'long'])
 const RUNKM = (d) => (d && d.km > 0 && !['rest', 'gym'].includes(d.kind) ? d.km : 0)
 const r1 = (n) => Math.round(n * 10) / 10
@@ -27,10 +27,10 @@ export function missedPlan(plan, date, ctx = {}) {
   const out = { day, km, hard, weekKm, reason, chose, scenarios: [], recommended: null, note: null, eveningFailed: false }
 
   // 1. this evening
-  const lateHard = hard && hour >= 18, tooLate = hour >= (hard ? 19 : 21)
+  const lateHard = hard && hour >= 18, tooLate = hour >= (hard ? 19 : 20)
   const ev = [
     chk(!sick, sick ? `${pain != null && pain >= 2 ? `Pain ${pain}/10` : 'Sick or pain'}: no run today (durability rule). Rest.` : 'No pain or illness reported.'),
-    chk(!tooLate, tooLate ? `It is ${hour}:00 WIB: too close to bedtime for ${hard ? 'a hard' : 'a'} session; it would cost sleep, which the next run depends on.` : `There is still time (${hard ? 'start by 19:00' : 'start by 21:00'}).`),
+    chk(!tooLate, tooLate ? `It is ${hour}:00 WIB: too close to bedtime for ${hard ? 'a hard' : 'a'} session; it would cost sleep, which the next run depends on.` : `There is still time (${hard ? 'start by 19:00' : 'start by 20:00'}).`),
     chk(!(hard && isHard(tmr)), hard && isHard(tmr) ? `Tomorrow is also hard (${tmr.label || tmr.kind}): two hard sessions in a row break the 48 h rule.` : 'Does not stack on a hard session tomorrow.'),
     chk(!(hard && tired), hard && tired ? 'You marked low energy / readiness is down: a hard session tonight is the wrong dose.' : 'Energy and readiness do not rule it out.', 'warn'),
     chk(!(hard && (lateHard || (tsb != null && tsb < -30) || (acwr != null && acwr > 1.3))), hard ? (lateHard ? 'A hard effort after 18:00 raises sleep heart rate (rule: sleep HR above 67 downgrades the next hard session).' : tsb != null && tsb < -30 ? `Form ${tsb} is below −30.` : acwr != null && acwr > 1.3 ? `Load ratio ${acwr} is above 1.3.` : 'Form and load allow a hard session.') : 'Easy session: no load rule applies.', 'warn'),

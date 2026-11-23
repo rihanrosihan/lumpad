@@ -9,7 +9,7 @@ const plan = mk([['2026-12-07', 'easy', 10], ['2026-12-08', 'rest', 0], ['2026-1
 const by = (r, id) => r.scenarios.find((s) => s.id === id)
 
 test('not shown before the afternoon, on rest days, or on race days', () => {
-  assert.equal(missedPlan(plan, '2026-12-09', { hour: 9 }), null)
+  assert.equal(missedPlan(plan, '2026-12-09', { hour: 10 }), null)
   assert.equal(missedPlan(plan, '2026-12-08', { hour: 16 }), null)
   assert.equal(missedPlan({ d: 1, '2026-12-09': { date: '2026-12-09', kind: 'race', km: 10 } }, '2026-12-09', { hour: 16 }), null)
 })
@@ -33,7 +33,7 @@ test('hard session the day before another hard day is refused for both evening-s
 test('sick or pain >= 2 recommends rest only; late hour closes the evening', () => {
   const r = missedPlan(plan, '2026-12-09', { hour: 16, pain: 3 })
   assert.equal(r.recommended, 'skip'); assert.equal(by(r, 'evening').verdict, 'no'); assert.equal(by(r, 'tomorrow').verdict, 'no'); assert.ok(r.note)
-  assert.equal(by(missedPlan(plan, '2026-12-11', { hour: 21 }), 'evening').verdict, 'no')
+  assert.equal(by(missedPlan(plan, '2026-12-11', { hour: 20 }), 'evening').verdict, 'no')
 })
 test('sunday move spills into next week and is flagged; tired prefers tomorrow over a hard evening', () => {
   const s = missedPlan(plan, '2026-12-13', { hour: 15 })
@@ -41,11 +41,11 @@ test('sunday move spills into next week and is flagged; tired prefers tomorrow o
   const t = missedPlan(plan, '2026-12-10', { hour: 15, reason: 'tired' })
   assert.notEqual(t.recommended, 'evening')
 })
-test('chose evening but 21:00 passed with no run: evening closes, fallback is tomorrow if allowed, else skip', () => {
-  const easy = missedPlan(plan, '2026-12-11', { hour: 21, chose: 'evening' }) // tomorrow easy, day after long
+test('chose evening but 20:00 passed with no run: evening closes, fallback is tomorrow if allowed, else skip', () => {
+  const easy = missedPlan(plan, '2026-12-11', { hour: 20, chose: 'evening' }) // tomorrow easy, day after long
   assert.ok(easy.eveningFailed); assert.equal(by(easy, 'evening').verdict, 'no'); assert.match(easy.note, /Tonight is closed/)
   assert.notEqual(easy.recommended, 'evening')
-  const blocked = missedPlan(plan, '2026-12-09', { hour: 21, chose: 'evening' }) // tomorrow is the hard session
+  const blocked = missedPlan(plan, '2026-12-09', { hour: 20, chose: 'evening' }) // tomorrow is the hard session
   assert.equal(blocked.recommended, 'skip')
-  assert.equal(missedPlan(plan, '2026-12-11', { hour: 20, chose: 'evening' }).eveningFailed, false)
+  assert.equal(missedPlan(plan, '2026-12-11', { hour: 19, chose: 'evening' }).eveningFailed, false)
 })

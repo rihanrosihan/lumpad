@@ -55,27 +55,29 @@ export default function Home({ vdot, settings, results, go, M: Mprop }) {
   const DAYN = fmtLong(T).split(',')[0], rh = M.rhr, acwr = M.cur?.acwr, hvPct = hv.enough && hv.roll7 ? Math.round(((hv.today - hv.roll7) / hv.roll7) * 100) : null
   const headline = day ? `${DAYN} — ${day.label || KIND[day.kind].label}${day.km ? ' · ' + day.km + ' km' : ''}` : T < PLAN_START ? `${DAYN} — Recover, then the season starts ${DAYS3[(new Date(PLAN_START + 'T12:00:00').getDay())]} ${fmtShort(PLAN_START)}` : `${DAYN} — No session`
   const summary = [hv.enough && `HRV ${hv.today} ms (${sign(hvPct)}% vs 7 d)`, rh.value != null && `RHR ${rh.value} bpm`, M.cur && `TSB ${sign(M.cur.tsb)}${fz ? ` (${fz.label})` : ''}`, acwr != null && `ACWR ${acwr}`].filter(Boolean).join(' · ')
+  const runs3 = M.acts.filter((a) => a.sport_class === 'run').slice(0, 3), hrCap = hrRange(2, cfg)[1]
   const [pv, setPv] = useState(''), briefDays = Array.from({ length: 8 }, (_, i) => effectiveDay(BY_DATE[addDays(T, i)], scale.items?.[addDays(T, i)], addDays(T, i))).filter((d) => d && d.km > 0 && !['rest', 'gym'].includes(d.kind)), pvDay = briefDays.find((d) => d.date === pv) || briefDays[0]
   const RACES = PLAN.filter((d) => d.kind === 'race' && /FM|Full/.test(d.label || '')), near = RACES.find((d) => d.date >= T), aRace = settings.raceDate
   return <section className="screen home">
-    <div className="card combo">
-      <div className="hero4 merged">
-        <div className="h4-tags"><span className="tag">DAILY BRIEFING · {fmtLong(T).split(', ').slice(1).join(', ').toUpperCase()}</span>{day && <span className="tag am">{((wk?.id || '') + ' · ' + (PHASE_NAME[day.phase] || day.phase)).toUpperCase()}</span>}</div>
-        <button className={`fresh ${sync === null ? 'warn' : sync?.lastRun ? (sync.lastRun.ok ? 'ok' : 'warn') : 'none'}`} onClick={() => go('profile')}>
+    <section className="hv2-hero">
+      <header className="hv2-banner">
+        <div className="hv2-banner-top">
+          <div className="hv2-tags"><span className="hv2-chip">DAILY BRIEFING · {fmtLong(T).split(', ').slice(1).join(', ').toUpperCase()}</span>{day && <span className="hv2-chip am">{((wk?.id || '') + ' · ' + (PHASE_NAME[day.phase] || day.phase)).toUpperCase()}</span>}</div>
+          <button className={`hv2-sync ${sync === null ? 'warn' : sync?.lastRun ? (sync.lastRun.ok ? 'ok' : 'warn') : 'none'}`} onClick={() => go('profile')}>
         <i />{sync === undefined ? 'Checking sync…' : sync === null ? 'Sync status unreachable — data may be stale' : sync?.lastRun ? <>Sync {ago(sync.lastRun.received_at)} · {wib(sync.lastRun.received_at)} WIB</> : 'No sync yet — no COROS/Strava data has arrived'}
       </button>
-        <h1>{headline}</h1>
-
-      </div>
-      <TodayCard bare checkin={checked ? f : null} settings={settings} go={go} todayActs={M.acts.filter((a) => a.date === T && a.sport_class !== 'strength')} date={T} tomorrow={effectiveDay(BY_DATE[addDays(T, 1)], scale.items?.[addDays(T, 1)], T)} weekPlanKm={(() => { const m = mondayOf(addDays(T, 1)); return Math.round(Array.from({ length: 7 }, (_, i) => BY_DATE[addDays(m, i)]?.km || 0).reduce((a, b) => a + b, 0) * 10) / 10 })()} />
-    </div>
+        </div>
+        <h1 className="hv2-title">{headline}</h1>
+      </header>
+      <TodayCard checkin={checked ? f : null} settings={settings} go={go} todayActs={M.acts.filter((a) => a.date === T && a.sport_class !== 'strength')} date={T} tomorrow={effectiveDay(BY_DATE[addDays(T, 1)], scale.items?.[addDays(T, 1)], T)} weekPlanKm={(() => { const m = mondayOf(addDays(T, 1)); return Math.round(Array.from({ length: 7 }, (_, i) => BY_DATE[addDays(m, i)]?.km || 0).reduce((a, b) => a + b, 0) * 10) / 10 })()} />
+    </section>
 
     <MissedSession day={day} date={T} runsToday={M.acts.filter((a) => a.date === T && a.sport_class === 'run').length} checkin={checked ? f : null} tier={tier?.id} />
 
     <FuelCard last={last} today={T} />
 
-    <div className="hrow">
-      <div className="hl">
+    <div className="hv2-row hv2-r75">
+      <div className="hv2-readiness">
         <button className="card hero-btn g-hero" onClick={() => go('ready')} aria-label={`Readiness ${rd.score ?? 'not available'}. Open details`}>
           <div className="hero">
             <RadialGauge value={rd.score} tone={tier ? TIER_TONE[tier.id] : 'none'} label="Readiness" size={112} sub={rd.score == null ? 'not enough data' : '/ 100'} />
@@ -90,6 +92,22 @@ export default function Home({ vdot, settings, results, go, M: Mprop }) {
             <div className="pillc"><small>Form (TSB)</small><b>{sign(M.cur?.tsb)}</b><em>{fz ? fz.label : 'none yet'}</em><em>CTL {M.cur?.ctl ?? '—'} · ATL {M.cur?.atl ?? '—'}</em>{(M.series.find((x) => x.date === T)?.load || 0) > 0 && M.cur && <em className="warn-t">after today's load: {sign(r1(M.cur.ctl - M.cur.atl))}</em>}</div>
           </div>
         </button>
+      </div>
+      <div className="hv2-weekcard card">
+        <div className="hv2-week-h"><h2>{pre ? `First week · from ${fmtShort(fmon)}` : 'This week'}</h2><button className="link" onClick={() => go('calendar')}>Calendar →</button></div>
+      <div className="strip">{Array.from({ length: 7 }, (_, i) => addDays(stripMon, i)).map((sd, i) => { const d = BY_DATE[sd], ran = M.acts.filter((a) => a.sport_class === 'run' && a.date === sd).reduce((t, a) => t + (a.distance_m || 0) / 1000, 0)
+        return <button key={sd} aria-current={sd === T ? 'date' : undefined} aria-label={`${fmtLong(sd)}: ${d ? (d.label || KIND[d.kind].label) + (d.km ? ', planned ' + d.km + ' km' : '') : 'no session'}${ran ? ', already ran ' + ran.toFixed(1) + ' km' : ''}`} className={`sc ${sd === T ? 'today' : ''} ${d ? 'k-' + d.kind : 'k-none'}`} onClick={() => go('calendar', sd)}>
+          <small>{DAYS3[(i + 1) % 7]}</small><b>{d && d.km ? d.km : '–'}</b><i>{ran ? '✓ ' + r1(ran) : d ? KIND[d.kind].short : ''}</i></button> })}</div>
+        {day && day.km > 0 && <p className="hv2-cap"><b>{DAYN} (Today):</b> {day.label || KIND[day.kind].label} <span className="num">{day.km} km{metaFor(day, cfg)?.tl ? ` · ${metaFor(day, cfg).tl} TL` : ''}</span></p>}
+        <div className="hv2-traj"><div className="hv2-week-h"><h3>Fitness toward sub-4</h3><span className="muted num">{vdot.v.toFixed(1)} → {TARGET.vdotNeeded}</span></div>
+      <div className="bar"><i style={{ width: Math.max(0, Math.min(1, (vdot.v - TARGET.baseline) / (TARGET.vdotNeeded - TARGET.baseline))) * 100 + '%' }} /></div>
+      <p className="muted">Needs {(TARGET.vdotNeeded - vdot.v).toFixed(1)} more VDOT · 1.02/mo required vs best observed pace 0.74 <Chip>HYPOTHESIS n=2</Chip></p>
+        </div>
+      </div>
+    </div>
+
+    <div className="hv2-row hv2-r66">
+      <div className="hv2-sess">
         {day && <Card className={`sess g-sess k-${day.kind}`}>
       <div className="sess-top"><Chip kind={day.kind}>{KIND[day.kind].label}</Chip>{day.scaled && <Chip tone="yellow">auto-scaled · was {day.plannedLabel}{day.plannedKm ? ` ${day.plannedKm} km` : ''}</Chip>}<span className="muted">{wk?.id} · {PHASE_NAME[day.phase] || day.phase}</span></div>
       <h2 className="sess-title">{day.label || KIND[day.kind].label}</h2>
@@ -121,17 +139,13 @@ export default function Home({ vdot, settings, results, go, M: Mprop }) {
           <button className="planb-btn" onClick={() => go('calendar', { view: 'cp' })}>Checkpoints</button>
         </div>}
       </div>
-      <div className="hr">
-        <div className="b-week"><Card title={pre ? `First week · from ${fmtShort(fmon)}` : 'This week'} className="tight" right={<button className="link" onClick={() => go('calendar')}>Calendar</button>}>
-      <div className="strip">{Array.from({ length: 7 }, (_, i) => addDays(stripMon, i)).map((sd, i) => { const d = BY_DATE[sd], ran = M.acts.filter((a) => a.sport_class === 'run' && a.date === sd).reduce((t, a) => t + (a.distance_m || 0) / 1000, 0)
-        return <button key={sd} aria-current={sd === T ? 'date' : undefined} aria-label={`${fmtLong(sd)}: ${d ? (d.label || KIND[d.kind].label) + (d.km ? ', planned ' + d.km + ' km' : '') : 'no session'}${ran ? ', already ran ' + ran.toFixed(1) + ' km' : ''}`} className={`sc ${sd === T ? 'today' : ''} ${d ? 'k-' + d.kind : 'k-none'}`} onClick={() => go('calendar', sd)}>
-          <small>{DAYS3[(i + 1) % 7]}</small><b>{d && d.km ? d.km : '–'}</b><i>{ran ? '✓ ' + r1(ran) : d ? KIND[d.kind].short : ''}</i></button> })}</div>
-    </Card></div>
-        <div className="b-traj"><Card title="Fitness toward sub-4" right={<span className="muted">{vdot.v.toFixed(1)} → {TARGET.vdotNeeded}</span>}>
-      <div className="bar"><i style={{ width: Math.max(0, Math.min(1, (vdot.v - TARGET.baseline) / (TARGET.vdotNeeded - TARGET.baseline))) * 100 + '%' }} /></div>
-      <p className="muted">Needs {(TARGET.vdotNeeded - vdot.v).toFixed(1)} more VDOT · 1.02/mo required vs best observed pace 0.74 <Chip>HYPOTHESIS n=2</Chip></p>
-    </Card></div>
-        <div className="bento4">
+      <div className="hv2-brief">
+        {briefDays.length > 0 && <div className="sbwrap"><label className="sbsel"><span>Preview session</span><select value={pvDay?.date || ''} onChange={(e) => setPv(e.target.value)} aria-label="Preview session for the smart brief">{briefDays.map((d) => <option key={d.date} value={d.date}>{d.date === T ? 'Today' : fmtShort(d.date)} · {d.label || KIND[d.kind].label} · {d.km} km</option>)}</select></label>
+          <SessionBrief day={pvDay} readiness={rd} healthRow={M.health?.at(-1)} dailyCheckin={pvDay?.date === T ? f : EMPTY_DAY} twinLoad={M.cur} vdot={vdot} /></div>}
+      </div>
+    </div>
+
+    <div className="bento4 hv2-bento">
           <button className="bx b-vol" onClick={() => go('activity')} aria-label="This week's volume, open Activities"><h3>Weekly volume</h3><div className="row-c"><Ring value={actWeek} max={(planWeek || lastWeekKm) || 1} label={`${r1(actWeek)} of ${r1(planWeek || lastWeekKm)} km`} size={78} /><div><b>{r1(actWeek)}</b><span className="muted"> / {r1(planWeek || lastWeekKm)} km</span><br /><small className="muted">{planWeek > 0 ? `planned · ${sign(r1(actWeek - actPrev))} km vs last week` : `last week ${r1(lastWeekKm)} km · no plan this week`}</small></div></div></button>
           <button className="bx b-int" onClick={() => go('ready', { mode: 'analysis' })} aria-label="7-day intensity, open analysis"><h3>7-day intensity</h3>{M.intensity ? <Stacked100 parts={[{ k: 'Low', v: M.intensity.low, c: 'var(--green)' }, { k: 'Moderate', v: M.intensity.mid, c: 'var(--yellow)' }, { k: 'High', v: M.intensity.high, c: 'var(--red)' }]} marker={70} label={`Low ${M.intensity.low}%, moderate ${M.intensity.mid}%, high ${M.intensity.high}%; target 70% low`} /> : <p className="muted">No runs yet.</p>}<small className="muted">target ≥70% low (Campos 2021)</small></button>
           <button className="bx b-load" onClick={() => go('ready', { mode: 'analysis' })} aria-label="Daily load, open analysis"><h3>Daily load</h3><BarChart data={loads7} height={64} label={`Training load this week: ${loads7.map((d) => d.value).join(', ')}`} /><small className="muted">dashed = plan (estimate)</small></button>
@@ -139,32 +153,20 @@ export default function Home({ vdot, settings, results, go, M: Mprop }) {
             <small className="muted">{nextCp && th ? `Green ≤ ${th.G} · now ±${fmtTime(raceTime(vdot.v, dist))}` : nextCp ? nextCp.name : 'sub-4:00'}</small></button>
 
         </div>
-        {briefDays.length > 0 && <div className="sbwrap"><label className="sbsel"><span>Preview session</span><select value={pvDay?.date || ''} onChange={(e) => setPv(e.target.value)} aria-label="Preview session for the smart brief">{briefDays.map((d) => <option key={d.date} value={d.date}>{d.date === T ? 'Today' : fmtShort(d.date)} · {d.label || KIND[d.kind].label} · {d.km} km</option>)}</select></label>
-          <SessionBrief day={pvDay} readiness={rd} healthRow={M.health?.at(-1)} dailyCheckin={pvDay?.date === T ? f : EMPTY_DAY} twinLoad={M.cur} vdot={vdot} /></div>}
-      </div>
-    </div>
 
-
-    {last && <div className="card">
-      <div className="prof-cmd-top">
-        <div>
-          <div className="chips" style={{ margin: "0 0 6px" }}>
-            <Chip>{fmtShort(last.date)}</Chip>
-            {last.training_load && <Chip tone="red">TL {last.training_load}</Chip>}
-            {dc && lastSteady && <Chip tone={dc.band}>Pa:Hr {dc.pct}%</Chip>}
-          </div>
-          <h3 style={{ margin: 0 }}>{last.name}</h3>
-          <p className="muted" style={{ margin: "3px 0 0", fontSize: ".82rem" }}>
-            {last.distance_m ? (last.distance_m / 1000).toFixed(2) + " km" : fmtDur(last.duration_s)}
-            {last.duration_s && last.distance_m ? ` · ${fmtDur(last.duration_s)}` : ""}
-            {last.avg_pace_s_km && last.sport_class === "run" ? ` · Pace ${fmtPaceS(last.avg_pace_s_km)}/km` : ""}
-            {last.avg_hr ? ` · HR ${last.avg_hr} bpm` : ""}
-          </p>
-        </div>
-        <div className="prof-chips">
-          <button type="button" className="btn primary sm" onClick={() => go("activity", { id: (last.ids?.[0] || last.id) })}>Open Full Run Analysis →</button>
-          <button type="button" className="btn sm" onClick={() => go("activity")}>All Activities</button>
-        </div>
+    {runs3.length > 0 && <div className="card hv2-recent">
+      <div className="hv2-recent-h"><h2>Recent Activities <span className="hv2-pill">Last {runs3.length} runs</span></h2><button type="button" className="link" onClick={() => go('activity')}>All Activities →</button></div>
+      <div className="hv2-table" role="table" aria-label="Recent runs">
+        <div className="hv2-tr hv2-th" role="row"><span>Date · Load</span><span>Activity &amp; gear</span><span>Distance</span><span>Duration</span><span>Avg pace</span><span>Avg HR</span><span>Analysis</span></div>
+        {runs3.map((a) => <div key={a.id} className="hv2-tr" role="row">
+          <span className="hv2-c-date"><b>{fmtShort(a.date)}</b>{a.training_load ? <Chip tone={a.training_load >= 100 ? 'red' : a.training_load >= 70 ? 'yellow' : 'green'}>TL {a.training_load}</Chip> : null}</span>
+          <span className="hv2-c-name"><b>{a.name}</b><small>{[a.gear_id && G.data?.find?.((g) => g.id === a.gear_id)?.name].filter(Boolean).join(' · ')}</small></span>
+          <span className="num" data-l="Distance">{a.distance_m ? (a.distance_m / 1000).toFixed(2) + ' km' : '—'}</span>
+          <span className="num" data-l="Duration">{a.duration_s ? fmtDur(a.duration_s) : '—'}</span>
+          <span className="num" data-l="Avg pace">{a.avg_pace_s_km ? fmtPaceS(a.avg_pace_s_km) + ' /km' : '—'}</span>
+          <span className="num" data-l="Avg HR">{a.avg_hr ? a.avg_hr + ' bpm' : '—'}{a.avg_hr && a.avg_hr > hrCap ? <Chip tone="yellow">&gt;{hrCap} cap</Chip> : null}</span>
+          <span><button type="button" className="btn primary sm" onClick={() => go('activity', { id: (a.ids?.[0] || a.id) })}>Open Full Run Analysis →</button></span>
+        </div>)}
       </div>
     </div>}
   </section>
