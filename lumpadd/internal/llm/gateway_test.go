@@ -415,7 +415,7 @@ func TestBuildWiresProvidersCapsAndKeys(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if r.CapCNY != 20 || len(r.Providers) != 3 || r.MaxCallsPerDay["claude"] != 20 || r.MaxCallsPerDay["gpt"] != 0 || r.MaxCallsPerDay["deepseek"] != 0 {
+	if r.CapCNY != 20 || len(r.Providers) != 3 || r.MaxCallsPerDay["claude"] != 0 || r.MaxCallsPerDay["gpt"] != 0 || r.MaxCallsPerDay["deepseek"] != 0 {
 		t.Errorf("cap %v providers %d calls/day %v", r.CapCNY, len(r.Providers), r.MaxCallsPerDay)
 	}
 	// keys are read at call time: a provider without its key fails with a clear message and the router moves on

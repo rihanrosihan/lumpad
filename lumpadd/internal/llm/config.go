@@ -119,9 +119,7 @@ func Build(c Config, kv KV, ledger Ledger, guard GuardFn, getenv func(string) st
 		}
 		if p.MaxCallsPerDay > 0 {
 			r.MaxCallsPerDay[name] = p.MaxCallsPerDay
-		} else if p.Kind != "deepseek" && !p.Prices.Known() {
-			r.MaxCallsPerDay[name] = 20 // cost unknown (no price table): cap the calls instead
-		}
+		} // no price table and no cap set: no call cap either; the owner sets max_calls_per_day per provider if wanted
 	}
 	return r, nil
 }

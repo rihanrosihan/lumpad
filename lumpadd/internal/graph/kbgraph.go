@@ -920,6 +920,10 @@ func SyncKB(ctx context.Context, aura *Client, redact func(string) string, memRo
 	if _, err := aura.Query(ctx, `MATCH (x:Exercise {src:'kbx'}), (t:Topic {id:'strength'}) MERGE (x)-[:ABOUT]->(t)`, nil); err != nil {
 		return fmt.Errorf("kb exercise topic: %w", err)
 	}
+	// provenance: which documents each coach run actually used (through the memories it retrieved or cited)
+	if _, err := aura.Query(ctx, `MATCH ()-[r:USED_DOC]->() DELETE r`, nil); err == nil {
+		_, _ = aura.Query(ctx, `MATCH (c:CoachRun)-[:CITED|RETRIEVED]->(:Memory)-[:FROM_DOC]->(d:Document) WITH c, d, count(*) AS n MERGE (c)-[u:USED_DOC]->(d) SET u.memories = n`, nil)
+	}
 	_, _ = nodes, edges
 	if r, err := aura.Query(ctx, `MATCH (n {src:'kbx'}) RETURN count(n)`, nil); err == nil && len(r.Values) == 1 {
 		if f, ok := r.Values[0][0].(float64); ok {

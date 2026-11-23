@@ -6,7 +6,8 @@
 // The browser can only send a question or ids; the Cypher below is fixed and every user term is passed as an escaped string literal.
 import { idb, mdb } from './db.js'
 import { run as neoRun, configured as neoConfigured } from '../neo4j.js'
-import { getMemory, setStatus, ftsSearch } from './memory.js'
+import crypto from 'node:crypto'
+import { getMemory, setStatus, ftsSearch, addMemory } from './memory.js'
 import { RACES } from '../../src/lib/season.js'
 
 const wib = (ms = Date.now()) => new Date(ms + 7 * 3600e3).toISOString().slice(0, 10)
@@ -44,15 +45,23 @@ export async function graphEvidence(question, { neo = neoRun } = {}) {
 export const ASK_SYSTEM = `You answer a runner's question about their own training knowledge graph. You are given EVIDENCE rows read from the graph (entities, documents, conflicts, open items, race ledger entries, checkpoints, memories).
 Rules: use ONLY the evidence; if it does not contain the answer, say plainly that the graph has nothing on it and what is missing. Quote numbers exactly as given. Name the evidence you used by its id (DOC 04.9, CONFLICT 00.3#c1, MEMORY #123, RACE 2026-11-15 …). Plain, short sentences; no diagnosis, no medical clearance.
 Return ONLY JSON: {"answer_md":"<=1500 chars","paths":["DOC 03.9 -[MENTIONS]-> Event:borobudur", …at most 6 paths you actually used],"gaps":["what the graph does not say", …at most 3]}.`
-export async function graphAsk(question, { neo = neoRun, llm } = {}) {
+export async function graphAsk(question, { neo = neoRun, llm, history = [] } = {}) {
   const q = String(question || '').trim().slice(0, 400); if (q.length < 3) throw Object.assign(new Error('Ask a question first'), { status: 400 })
+  const prior = (Array.isArray(history) ? history : []).slice(-2).map((h) => ({ q: String(h?.q || '').slice(0, 300), a: String(h?.a || '').slice(0, 700) })).filter((h) => h.q)
   if (!neoConfigured()) return { ok: false, error: 'The knowledge graph is not connected (NEO4J_* in .env.v2).' }
-  const g = await graphEvidence(q, { neo })
+  const g = await graphEvidence(prior.length && q.length < 60 ? `${prior[prior.length - 1].q} ${q}` : q, { neo }) // a short follow-up inherits the subject of the previous question
   if (!g.lines.length) return { ok: true, answer_md: 'The graph has nothing that matches these words. Try the name of a race, a shoe, a document number or a topic such as MTSS, heat or fuelling.', paths: [], gaps: [], evidence: g.ev, terms: g.terms }
   const complete = llm || (await import('./llm.js')).complete
-  const r = await complete({ system: ASK_SYSTEM, user: `QUESTION: ${q}\n\nEVIDENCE:\n${g.lines.join('\n')}`, effort: 'high', intent: 'question' })
+  const r = await complete({ system: ASK_SYSTEM, user: `${prior.length ? 'EARLIER IN THIS CONVERSATION (context only, not evidence):\n' + prior.map((h) => `Q: ${h.q}\nA: ${h.a}`).join('\n') + '\n\n' : ''}QUESTION: ${q}\n\nEVIDENCE:\n${g.lines.join('\n')}`, effort: 'high', intent: 'question' })
   if (!r.json?.answer_md) throw Object.assign(new Error('The model did not return an answer'), { status: 502 })
   return { ok: true, answer_md: String(r.json.answer_md).slice(0, 2000), paths: (r.json.paths || []).slice(0, 6).map(String), gaps: (r.json.gaps || []).slice(0, 3).map(String), evidence: g.ev, terms: g.terms, model: r.model, tokens: r.usage?.total_tokens || null }
+}
+
+// A saved answer is only a CANDIDATE: it waits in the memory inbox like every other proposal. The question, the graph paths and the evidence counts travel with it.
+export function saveAnswer({ question, answer_md, paths = [], evidence = {} }, by = 'athlete') {
+  const q = String(question || '').trim().slice(0, 300), a = String(answer_md || '').trim().slice(0, 1800); if (q.length < 3 || a.length < 10) throw Object.assign(new Error('nothing to save'), { status: 400 })
+  const ref = crypto.createHash('sha256').update(q + '|' + a).digest('hex').slice(0, 16)
+  return addMemory({ tier: 'semantic', kind: 'qa', title: ('Graph Q&A · ' + q).slice(0, 200), body: a, payload: { doc: 'graph-chat', question: q, paths: (paths || []).slice(0, 6).map(String), evidence, quote: null, models: [] }, evidence_tag: 'HYPOTHESIS', status: 'candidate', source: 'graph_ask', source_ref: ref, created_by: by, valid_from: wib() })
 }
 
 // ---------------------------------------------------------------- KB audit
@@ -102,9 +111,9 @@ export function memoryInbox({ source = '', doc = '', agreed = false, limitDocs =
     const g = p.doc || (m.source_ref || '').split('#')[0] || (m.source === 'coach' ? 'coach' : 'other')
     if (doc && g !== doc) continue
     if (agreed && (p.models || []).length < 2) continue
-    if (!groups.has(g)) groups.set(g, { doc: g, title: idb.prepare('SELECT title FROM kb_docs WHERE doc_id=?').get(g)?.title || (g === 'coach' ? 'Written by the coach' : g), count: 0, rules: 0, agreed: 0, items: [] })
-    const G = groups.get(g); G.count++; if (m.tier === 'procedural') G.rules++; if ((p.models || []).length >= 2) G.agreed = (G.agreed || 0) + 1
-    G.items.push({ id: m.id, tier: m.tier, kind: m.kind, title: m.title, body: m.body.slice(0, 600), quote: p.quote || null, quote_b: p.quote_b || null, doc_b: p.doc_b || null, models: p.models || [], agreed: (p.models || []).length >= 2, tag: m.evidence_tag, confidence: m.confidence, status: m.status, source: m.source, by: m.created_by, valid_from: m.valid_from })
+    if (!groups.has(g)) groups.set(g, { doc: g, title: idb.prepare('SELECT title FROM kb_docs WHERE doc_id=?').get(g)?.title || (g === 'coach' ? 'Written by the coach' : g), count: 0, rules: 0, agreed: 0, stale: 0, items: [] })
+    const G = groups.get(g); G.count++; if (m.tier === 'procedural') G.rules++; if ((p.models || []).length >= 2) G.agreed = (G.agreed || 0) + 1; if (p.stale) G.stale = (G.stale || 0) + 1
+    G.items.push({ id: m.id, tier: m.tier, kind: m.kind, title: m.title, body: m.body.slice(0, 600), quote: p.quote || null, quote_b: p.quote_b || null, doc_b: p.doc_b || null, stale: p.stale?.reason || null, models: p.models || [], agreed: (p.models || []).length >= 2, tag: m.evidence_tag, confidence: m.confidence, status: m.status, source: m.source, by: m.created_by, valid_from: m.valid_from })
   }
   const list = [...groups.values()].sort((a, b) => b.count - a.count || a.doc.localeCompare(b.doc))
   return { total: list.reduce((n, g) => n + g.count, 0), docs: list.length, groups: list.slice(offsetDocs, offsetDocs + limitDocs) }
@@ -129,6 +138,41 @@ export function bulkAction(ids, action, by = 'athlete', { scope = '', tier = '',
   for (const id of list) { try { const m = getMemory(id); if (!m || !['candidate', 'proposal'].includes(m.status)) { skipped.push({ id, why: 'not pending' }); continue } setStatus(id, to, by); done.push(id) } catch (e) { skipped.push({ id, why: e.message }) } }
   return { done: done.length, skipped }
 }
+
+// ---------------------------------------------------------------- stale-claim sweep
+// Deterministic: flags pending claims that the documents themselves have moved past. Nothing is retracted automatically; the flag is stored in the claim's payload and shown in the inbox.
+const OPEN_WORDS = /\b(still open|belum|pending|open item|go\/no-go|akan|rencana|planned|to be decided|menunggu|as of)\b/i
+export function staleSweep({ today = wib(), apply = true } = {}) {
+  const docs = new Map(idb.prepare('SELECT doc_id, status, source_date FROM kb_docs').all().map((d) => [d.doc_id, d]))
+  const archived = (d) => d && /^(SUPERSEDED|ARCHIVE|RETIRED)/i.test(d.status || '') && !/\bACTIVE\b/i.test(d.status)
+  const pend = mdb.prepare("SELECT id, kind, title, body, payload, valid_from FROM memory WHERE status IN ('candidate','proposal') AND source='kb_extract' AND created_by='extractor'").all()
+  const conflicts = mdb.prepare("SELECT payload FROM memory WHERE kind='conflict' AND source='kb_extract' AND status IN ('candidate','active')").all().map((r) => { try { return JSON.parse(r.payload) } catch { return {} } })
+  const out = []
+  for (const m of pend) {
+    let p = {}; try { p = JSON.parse(m.payload || '{}') } catch {}
+    const d = docs.get(p.doc), reasons = []
+    if (archived(d)) reasons.push(`its source document ${p.doc} is now archived (${d.status})`)
+    const when = dateIn(`${m.title} ${m.body}`, d?.source_date || m.valid_from, today)
+    if (when && dayDiff(today, when) > 7 && (m.kind === 'plan' || OPEN_WORDS.test(`${m.title} ${m.body}`))) reasons.push(`it describes something open or planned as of ${when}, which is ${dayDiff(today, when)} days ago`)
+    for (const c of conflicts) {
+      if (!c.quote || !c.quote_b || (c.doc !== p.doc && c.doc_b !== p.doc)) continue
+      const mine = c.doc === p.doc ? c.quote : c.quote_b, other = c.doc === p.doc ? c.doc_b : c.doc, od = docs.get(other)
+      if (norm2(p.quote || '').includes(norm2(mine).slice(0, 60)) || norm2(mine).includes(norm2(p.quote || '').slice(0, 60))) { if (od?.source_date && d?.source_date && od.source_date > d.source_date) reasons.push(`document ${other} (newer, ${od.source_date}) disagrees with it`); break }
+    }
+    if (reasons.length) out.push({ id: m.id, title: m.title, reason: reasons.join('; ') })
+  }
+  if (apply) {
+    const now = new Date().toISOString(), cur = new Set(out.map((x) => x.id))
+    for (const m of pend) {
+      let p = {}; try { p = JSON.parse(m.payload || '{}') } catch {}
+      const flag = out.find((x) => x.id === m.id)
+      if (flag) { p.stale = { reason: flag.reason, at: now }; mdb.prepare('UPDATE memory SET payload=?, updated_at=? WHERE id=?').run(JSON.stringify(p), now, m.id) }
+      else if (p.stale && !cur.has(m.id)) { delete p.stale; mdb.prepare('UPDATE memory SET payload=?, updated_at=? WHERE id=?').run(JSON.stringify(p), now, m.id) }
+    }
+  }
+  return { checked: pend.length, stale: out.length, items: out.slice(0, 50) }
+}
+const norm2 = (t) => String(t || '').toLowerCase().replace(/[*_`>#]/g, '').replace(/\s+/g, ' ').trim()
 
 // ---------------------------------------------------------------- race brief
 export function raceBrief({ today = wib() } = {}) {

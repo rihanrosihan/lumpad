@@ -57,3 +57,23 @@ test('pending queue pages without a cap and approve-all covers everything but ru
   assert.ok(r.done >= 130, 'no 300 / 60 cap'); const after = S.pendingPage({}); assert.equal(after.counts.procedural >= 1, true); assert.ok(!after.counts.semantic && !after.counts.episodic)
   assert.ok(S.bulkAction([], 'approve', 'athlete', { scope: 'pending', includeRules: true }).done >= 1)
 })
+test('stale sweep flags claims from archived docs, open items whose date has passed, and claims a newer document contradicts; it never retracts', () => {
+  const ins = idb.prepare('INSERT OR REPLACE INTO kb_docs (doc_id, title, status, source_date, supersedes, path, body, hash, imported_at) VALUES (?,?,?,?,?,?,?,?,?)')
+  ins.run('09.1', 'Old', 'SUPERSEDED', '2026-08-01', null, 'p', 'x', 'h9', 'n'); ins.run('09.2', 'Older plan', 'ACTIVE', '2026-09-01', null, 'p', 'x', 'h10', 'n'); ins.run('09.3', 'Newer', 'ACTIVE', '2026-11-10', null, 'p', 'x', 'h11', 'n')
+  const mk = (title, body, kind, doc, quote, ref) => M.addMemory({ tier: 'semantic', kind, title, body, payload: { doc, quote }, status: 'candidate', source: 'kb_extract', source_ref: ref, created_by: 'extractor', valid_from: '2026-09-01' })
+  const a = mk('09.1 · fact', 'Something old.', 'fact', '09.1', 'something old', '09.1#s0'), b = mk('09.2 · plan', 'Go/no-go still open as of 25 Oct.', 'plan', '09.2', 'go/no-go still open', '09.2#s0'), c = mk('09.2 · fact', 'Opening pace is 5:57/km.', 'fact', '09.2', 'Opening pace 5:57/km (Skenario C)', '09.2#s1'), d = mk('09.2 · fine', 'A calm fact.', 'fact', '09.2', 'calm fact', '09.2#s2')
+  M.addMemory({ tier: 'semantic', kind: 'conflict', title: 'Docs disagree', body: 'newer wins', payload: { doc: '09.2', doc_b: '09.3', quote: 'Opening pace 5:57/km', quote_b: 'Opening pace 6:15/km' }, status: 'candidate', source: 'kb_extract', source_ref: '09.2~09.3.0', created_by: 'consistency' })
+  const r = S.staleSweep({ today: '2026-11-23' }), ids = r.items.map((x) => x.id)
+  assert.ok(ids.includes(a.id) && ids.includes(b.id) && ids.includes(c.id) && !ids.includes(d.id), JSON.stringify(r.items))
+  assert.match(r.items.find((x) => x.id === a.id).reason, /archived/); assert.match(r.items.find((x) => x.id === c.id).reason, /newer/)
+  assert.equal(M.getMemory(a.id).status, 'candidate', 'flagged, not retracted'); assert.ok(JSON.parse(M.getMemory(a.id).payload).stale)
+  assert.ok(S.memoryInbox({ source: 'kb_extract' }).groups.find((g) => g.doc === '09.1').stale >= 1)
+})
+test('graph chat: a short follow-up inherits the previous subject; a saved answer is only a candidate', async () => {
+  process.env.NEO4J_URI = 'neo4j+s://x.databases.neo4j.io'; process.env.NEO4J_USER = 'u'; process.env.NEO4J_PASSWORD = 'p'
+  const seen = []; const neo = async (cy) => { seen.push(cy); return cy.includes('MATCH (e:Entity) WHERE any') ? { data: { values: [['Event:borobudur', 'Borobudur Marathon', 'Event']] } } : { data: { values: [] } } }
+  const r = await S.graphAsk('and the heat?', { neo, history: [{ q: 'what happened at borobudur', a: 'It was a DNF.' }], llm: async ({ user }) => { assert.ok(user.includes('EARLIER IN THIS CONVERSATION') && user.includes('It was a DNF.')); return { json: { answer_md: 'Heat was extreme.', paths: [], gaps: [] } } } })
+  assert.ok(seen.some((c) => c.includes('"borobudur"')), 'search terms include the earlier subject'); assert.equal(r.ok, true)
+  const saved = S.saveAnswer({ question: 'why did borobudur end', answer_md: 'It ended under a black flag.', paths: ['RACE x'] }); assert.equal(saved.created, true)
+  const m = M.getMemory(saved.id); assert.equal(m.status, 'candidate'); assert.equal(m.source, 'graph_ask'); assert.throws(() => S.saveAnswer({ question: 'x', answer_md: '' }), /nothing to save/)
+})

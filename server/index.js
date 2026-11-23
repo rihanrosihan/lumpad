@@ -17,7 +17,7 @@ import { runIntel, recentIntelJobs, afterSync } from './intel/run.js'
 import { startIntelScheduler } from './intel/schedule.js'
 import { plannedForecast } from './intel/forecast.js'
 import { adviceSummary, listAdvice, setStatus as setAdviceStatus } from './intel/advice.js'
-import { graphAsk, kbAudit, memoryInbox, pendingPage, bulkAction, raceBrief } from './intel/studio.js'
+import { graphAsk, saveAnswer, staleSweep, kbAudit, memoryInbox, pendingPage, bulkAction, raceBrief } from './intel/studio.js'
 import { getConfig, publicConfig, saveConfig, resetConfig, testConnection, listModels, getQuota, saveQuota } from './intel/llmconfig.js'
 import { runCoach, recentRuns, getRun, newRun, finishRun, coachStatus } from './intel/coach.js'
 import { retrieveRunnerContext, renderPrompt, TASKS, OUTPUT_SCHEMA } from './intel/context.js'
@@ -178,7 +178,9 @@ const routes = {
     if (changes && !b.skip_test) { const t = await testConnection({ provider: id, api_key: b.api_key, model: b.model }); if (!t.ok) throw Object.assign(new Error(t.error || 'Connection test failed'), { status: 400, test: t }) }
     return { ...(await saveConfig({ provider: id, api_key: b.api_key, model: b.model, max_calls_per_day: b.max_calls_per_day, activate })), saved_ok: true } },
   // Coach Studio: graph Q&A, knowledge-base audit, memory inbox (grouped by source document), race briefing
-  'POST /api/graph/ask': async (_q, req) => graphAsk(JSON.parse((await readBody(req, 4e3)).toString() || '{}').question),
+  'POST /api/graph/ask': async (_q, req) => { const b = JSON.parse((await readBody(req, 12e3)).toString() || '{}'); return graphAsk(b.question, { history: b.history }) },
+  'POST /api/graph/save': async (_q, req) => saveAnswer(JSON.parse((await readBody(req, 12e3)).toString() || '{}'), principal(req) || 'athlete'),
+  'POST /api/memory/sweep': async () => staleSweep(),
   'GET /api/kb/audit': async () => kbAudit(),
   'GET /api/memory/inbox': async (q) => memoryInbox({ source: q.get('source') || '', doc: q.get('doc') || '', agreed: q.get('agreed') === '1', limitDocs: Math.min(+q.get('docs') || 12, 40), offsetDocs: Math.max(+q.get('offset') || 0, 0) }),
   'GET /api/memory/pending': async (q) => pendingPage({ tier: q.get('tier') || '', offset: q.get('offset'), limit: q.get('limit') }),

@@ -36,12 +36,14 @@ func SyncSplits(ctx context.Context, pool *pgxpool.Pool, aura *Client, sessRows 
 	for _, c := range []string{
 		"CREATE CONSTRAINT km_id IF NOT EXISTS FOR (k:Km) REQUIRE k.id IS UNIQUE",
 		"CREATE CONSTRAINT trainweek_id IF NOT EXISTS FOR (w:TrainWeek) REQUIRE w.id IS UNIQUE",
+		"CREATE CONSTRAINT lap_id IF NOT EXISTS FOR (l:Lap) REQUIRE l.id IS UNIQUE",
+		"CREATE CONSTRAINT weatherhour_id IF NOT EXISTS FOR (h:WeatherHour) REQUIRE h.id IS UNIQUE",
 	} {
 		if _, err := aura.Query(ctx, c, nil); err != nil {
 			return fmt.Errorf("splits constraint: %w", err)
 		}
 	}
-	for _, q := range []string{`MATCH (k:Km) DETACH DELETE k`, `MATCH (w:TrainWeek) DETACH DELETE w`} {
+	for _, q := range []string{`MATCH (k:Km) DETACH DELETE k`, `MATCH (w:TrainWeek) DETACH DELETE w`, `MATCH (l:Lap) DETACH DELETE l`, `MATCH (h:WeatherHour) DETACH DELETE h`, `MATCH ()-[r:COMPARED_TO]->() DELETE r`} {
 		if _, err := aura.Query(ctx, q, nil); err != nil {
 			return fmt.Errorf("splits reset: %w", err)
 		}
@@ -90,6 +92,78 @@ func SyncSplits(ctx context.Context, pool *pgxpool.Pool, aura *Client, sessRows 
 	if _, err := aura.Query(ctx, `MATCH (s:Session)-[:HAS_KM]->(k:Km) WHERE s.onset_km IS NOT NULL AND k.km = toInteger(floor(s.onset_km)) + 1 MERGE (s)-[:ONSET_AT]->(k)`, nil); err != nil {
 		return fmt.Errorf("onset links: %w", err)
 	}
+
+	// km-level comparison across races of the same class (full vs full, half vs half): the same km of the older race points at the newer one with the pace / heart-rate difference
+	if _, err := aura.Query(ctx, `
+		MATCH (r1:RaceEntry)-[:DONE_AS]->(s1:Session), (r2:RaceEntry)-[:DONE_AS]->(s2:Session)
+		WHERE r1.date < r2.date AND s1.distance_m >= 15000 AND s2.distance_m >= 15000
+		  AND ((s1.distance_m >= 30000 AND s2.distance_m >= 30000) OR (s1.distance_m < 30000 AND s2.distance_m < 30000))
+		MATCH (s1)-[:HAS_KM]->(a:Km), (s2)-[:HAS_KM]->(b:Km) WHERE a.km = b.km
+		MERGE (a)-[c:COMPARED_TO]->(b) SET c.d_pace_s = b.pace_s - a.pace_s, c.d_hr = b.hr - a.hr, c.from_race = r1.name, c.to_race = r2.name`, nil); err != nil {
+		return fmt.Errorf("km compare: %w", err)
+	}
+
+	// laps (manual and auto laps: intervals, time trials, race splits as the watch recorded them)
+	var laps, lapNext []map[string]any
+	if rs, err := pool.Query(ctx, `SELECT s.label_id, l.activity_id, l.idx, l.distance_m, l.duration_s, l.avg_pace_s_km, l.avg_hr, l.max_hr, l.cadence, l.power, l.gct_ms, l.stride_m
+		FROM train.lap l JOIN train.session_metric s ON s.activity_id = l.activity_id ORDER BY l.activity_id, l.idx`); err == nil {
+		prev, prevAct := "", ""
+		for rs.Next() {
+			var lid, act string
+			var idx int64
+			var dist, dur, pace, hr, mx, cad, pw, gct, stride *float64
+			if rs.Scan(&lid, &act, &idx, &dist, &dur, &pace, &hr, &mx, &cad, &pw, &gct, &stride) != nil {
+				continue
+			}
+			id := fmt.Sprintf("%s:L%d", lid, idx)
+			laps = append(laps, map[string]any{"id": id, "s": lid, "idx": idx, "dist": dist, "dur": dur, "pace": pace, "hr": hr, "max_hr": mx, "cad": cad, "power": pw, "gct": gct, "stride": stride})
+			if prevAct == act && prev != "" {
+				lapNext = append(lapNext, map[string]any{"a": prev, "b": id})
+			}
+			prev, prevAct = id, act
+		}
+		rs.Close()
+	}
+	if err := runBatches(ctx, aura, laps, 250, `UNWIND $rows AS r CREATE (l:Lap {id: r.id, idx: r.idx, distance_m: r.dist, duration_s: r.dur, pace_s: r.pace, hr: r.hr, max_hr: r.max_hr, cadence: r.cad, power: r.power, gct_ms: r.gct, stride_m: r.stride})
+		WITH l, r MATCH (s:Session {label_id: r.s}) MERGE (s)-[:HAS_LAP]->(l)`); err != nil {
+		return fmt.Errorf("laps: %w", err)
+	}
+	if err := runBatches(ctx, aura, lapNext, 400, `UNWIND $rows AS r MATCH (a:Lap {id: r.a}), (b:Lap {id: r.b}) MERGE (a)-[:NEXT_LAP]->(b)`); err != nil {
+		return fmt.Errorf("lap chain: %w", err)
+	}
+
+	// hourly weather of every outdoor session; the session points at the hour it started in
+	var hours []map[string]any
+	if rs, err := pool.Query(ctx, `SELECT w.label_id, w.hours, COALESCE(s.start_hour, -1) FROM train.run_weather w JOIN train.session_metric s ON s.label_id = w.label_id WHERE w.indoor = 0 AND w.hours IS NOT NULL AND w.hours <> ''`); err == nil {
+		for rs.Next() {
+			var lid, raw string
+			var startH float64
+			if rs.Scan(&lid, &raw, &startH) != nil {
+				continue
+			}
+			var hs []struct {
+				H    int      `json:"h"`
+				Temp *float64 `json:"temp"`
+				RH   *float64 `json:"rh"`
+				Dew  *float64 `json:"dew"`
+				Wind *float64 `json:"wind"`
+				Rad  *float64 `json:"rad"`
+			}
+			if json.Unmarshal([]byte(raw), &hs) != nil {
+				continue
+			}
+			for _, h := range hs {
+				hours = append(hours, map[string]any{"id": fmt.Sprintf("%s:H%02d", lid, h.H), "w": lid, "h": h.H, "temp": h.Temp, "rh": h.RH, "dew": h.Dew, "wind": h.Wind, "rad": h.Rad, "start": startH >= 0 && int(startH) == h.H, "s": lid})
+			}
+		}
+		rs.Close()
+	}
+	if err := runBatches(ctx, aura, hours, 250, `UNWIND $rows AS r CREATE (h:WeatherHour {id: r.id, hour: r.h, temp_c: r.temp, rh: r.rh, dew_c: r.dew, wind_ms: r.wind, rad_wm2: r.rad})
+		WITH h, r MATCH (w:Weather {label_id: r.w}) MERGE (w)-[:HAS_HOUR]->(h)
+		WITH h, r WHERE r.start MATCH (s:Session {label_id: r.s}) MERGE (s)-[:STARTED_IN]->(h)`); err != nil {
+		return fmt.Errorf("weather hours: %w", err)
+	}
+	st.Laps, st.WeatherHours = len(laps), len(hours)
 
 	// training weeks
 	type wk struct {
