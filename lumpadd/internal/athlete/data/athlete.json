@@ -29,38 +29,109 @@
  ],
  "pbs": {
   "400m": "1:58",
+  "1/2 mile": "4:04",
   "1K": "5:07",
   "mile": "8:27",
-  "5K": "31:42",
-  "10K": "1:00:55 (26 Jul 2026)",
-  "15K": "1:55:56",
-  "HM": "2:54:11"
+  "2 mile": "18:42",
+  "5K": "29:21",
+  "10K": "59:48 (best effort; official 1:00:55, 26 Jul 2026)",
+  "15K": "1:51:45",
+  "10 mile": "2:02:18",
+  "20K": "2:36:55",
+  "HM": "2:45:24 (qualifier time trial 30 Aug 2026; best official HM 3:05:30)",
+  "30K": "4:19:28",
+  "marathon": "6:42:18 best effort (Jakim 2026 official 6:53:03)"
  },
  "races": [
   {
+   "date": "2024-12-08",
+   "name": "Milo ACTIV 2024 10K",
+   "km": 10.13
+  },
+  {
+   "date": "2025-01-12",
+   "name": "Soekarno Run 10K",
+   "km": 10
+  },
+  {
+   "date": "2025-03-09",
+   "name": "Run to Iftar 5K",
+   "km": 5
+  },
+  {
+   "date": "2025-05-25",
+   "name": "Bogor City Trail Run",
+   "km": 11.5
+  },
+  {
    "date": "2025-06-15",
-   "name": "LPS Half Marathon",
-   "km": 21.1
+   "name": "LPS Monas Half Marathon",
+   "km": 21.5
+  },
+  {
+   "date": "2025-08-03",
+   "name": "UI Trail Run",
+   "km": 6.15
+  },
+  {
+   "date": "2025-08-10",
+   "name": "Made in Indonesia Run 5K",
+   "km": 5
   },
   {
    "date": "2025-08-17",
-   "name": "Semarak 17 Agustus Fun Trail 17K, Sentul (+1780 m)",
+   "name": "Sentul Ultra 17K (+1780 m) — DNF (fell)",
    "km": 17
   },
   {
+   "date": "2025-08-24",
+   "name": "Total Combat Run 7K",
+   "km": 7
+  },
+  {
+   "date": "2025-09-21",
+   "name": "Guardian Run 10K",
+   "km": 10
+  },
+  {
    "date": "2025-10-25",
-   "name": "JRF Half Marathon 2025",
-   "km": 21.1
+   "name": "JRF Half Marathon 2025 — net 3:05:30",
+   "km": 21.65
   },
   {
    "date": "2025-11-16",
-   "name": "Borobudur Marathon 2025 (FM)",
-   "km": 42.2
+   "name": "Century Run 4.3K (forgot to press start)",
+   "km": 4.3
+  },
+  {
+   "date": "2025-12-07",
+   "name": "Milo Active Race 10K",
+   "km": 10
+  },
+  {
+   "date": "2026-05-24",
+   "name": "Starbucks 5K",
+   "km": 5.68
   },
   {
    "date": "2026-06-14",
    "name": "Jakim 2026 (FM) — 6:53:03 official",
    "km": 42.2
+  },
+  {
+   "date": "2026-07-26",
+   "name": "Head & Shoulders Super Cool Run 10K — net 1:00:55 (10K PB, official)",
+   "km": 10
+  },
+  {
+   "date": "2026-09-13",
+   "name": "MILO ACTIV Indonesia Race 10K",
+   "km": 10
+  },
+  {
+   "date": "2026-10-24",
+   "name": "JRF Half Marathon 2026 (run-walk)",
+   "km": 21.1
   },
   {
    "date": "2026-10-25",

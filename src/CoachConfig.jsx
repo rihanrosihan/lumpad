@@ -13,7 +13,8 @@ export default function CoachConfig() {
     {!st ? <p className="muted">Loading…</p> : <>
       <dl className="kv">
         <div><dt>Model</dt><dd>{st.model?.name || 'not chosen yet'}</dd></div>
-        <div><dt>Spend this month</dt><dd>¥{(g?.spend_cny ?? 0).toFixed(2)} of ¥{g?.cap_cny}{g?.level === 'paused' ? ' · paused' : g?.level === 'limited' ? ' · limited' : ''}</dd></div>
+        {g?.mode === 'calls' ? <div><dt>Runs today</dt><dd>{g.calls_today ?? 0}{g.max_calls_per_day ? ` of ${g.max_calls_per_day}` : ' (no daily limit)'} · token quota is in the provider card below</dd></div>
+        : <div><dt>Spend this month</dt><dd>¥{(g?.spend_cny ?? 0).toFixed(2)} of ¥{g?.cap_cny}{g?.level === 'paused' ? ' · paused' : g?.level === 'limited' ? ' · limited' : ''}</dd></div>}
         <div><dt>FIT sessions analysed</dt><dd>{st.counts.fit_sessions}</dd></div>
         <div><dt>Memory</dt><dd>{(st.memory || []).reduce((s, m) => s + m.n, 0)} items</dd></div>
       </dl>
@@ -21,7 +22,8 @@ export default function CoachConfig() {
         <div className="seg" role="group" aria-label="Coach answer language">{[['en', 'English'], ['id', 'Bahasa Indonesia']].map(([k, l]) => <button key={k} aria-pressed={lang === k} className={lang === k ? 'on' : ''} onClick={() => setLang(k)}>{l}</button>)}</div>
         <small className="muted">Applies to new briefs, reviews and answers. The app itself stays in English.</small></div>
       <div className="bar" role="img" aria-label={`Coach spend ${pct}%`}><i style={{ width: pct + '%', background: pct >= 80 ? 'var(--red-t)' : 'var(--accent)' }} /></div>
-      <p className="muted">The monthly spend cap is a server setting (<code>DEEPSEEK_MONTHLY_CAP_CNY</code> in <code>.env</code>). With a key installed, your health and training context is sent to the model provider you choose below.</p>
+      {g?.mode !== 'calls' && <p className="muted">The monthly spend cap is a server setting (<code>DEEPSEEK_MONTHLY_CAP_CNY</code> in <code>.env</code>). With a key installed, your health and training context is sent to the model provider you choose below.</p>}
+      {g?.mode === 'calls' && <p className="muted">With a key installed, your health and training context is sent to the model provider you choose below. This gateway has no balance endpoint, so the quota is tracked by hand in the provider card.</p>}
     </>}
   </Card>
 }

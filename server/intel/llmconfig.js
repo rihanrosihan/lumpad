@@ -120,7 +120,7 @@ export const clearModelCache = () => modelCache.clear()
 
 // Tokenomix plan quota: the portal has no API we can call, so the figures are typed in by hand (snapshot below until the first save) and shown as a card.
 export const QUOTA_FILE = 'tokenomix_quota', PORTAL_URL = 'https://tokenomixai.com/en/portal'
-const QUOTA_SNAPSHOT = { total_m: 100, used_m: 1.48, valid_until: '2026-12-20', status: 'active', as_of: '2026-11-23' }
+const QUOTA_SNAPSHOT = { total_m: 600, used_m: 119.4, valid_until: '2026-12-21', status: 'active', as_of: '2026-11-23' }
 export function getQuota() {
   let q = null; try { q = load(QUOTA_FILE, null) } catch {}
   q = q || QUOTA_SNAPSHOT

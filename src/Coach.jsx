@@ -506,6 +506,7 @@ export default function Coach({ go, focus }) {
   const st = useApi('/api/intel/status')
   const twin = useApi('/api/twin')
   const mat = useApi('/api/intel/matrices')
+  const QU = useApi('/api/coach/quota')
   const PC = useApi(`/api/memory/pending?limit=1&_=${tick}`), pc = PC.data, pending = { length: pc?.total || 0 }, pendingRules = pc?.counts?.procedural || 0, pendingOther = pending.length - pendingRules
 
   const act = (id, action) => post('/api/memory/action', { id, action }).then(() => setTick((x) => x + 1)).catch((e) => alert(e.message))
@@ -533,7 +534,7 @@ export default function Coach({ go, focus }) {
         <div>
           <h1>AI Coach, Digital Twin &amp; Validated Rules</h1>
           <p className="sub">
-            {s ? `${s.model?.name || 'Model not set'} · Usage: ¥${f1(g?.spend_cny, 2)} / ¥${g?.cap_cny} this month · ${s.counts.fit_sessions} FIT parsed · ${s.counts.weather} Weather logs · ${s.counts.kb_docs} KB docs` : 'Hybrid RAG · Knowledge Graph · Digital Twin · Athlete Memory'}
+            {s ? `${s.model?.name || 'Model not set'} · ${g?.mode === 'calls' ? (QU.data ? `Tokens: ${QU.data.left_m}M of ${QU.data.total_m}M left (${QU.data.left_pct}%) · ${QU.data.days_left} days` : 'Tokens: —') + ` · ${g.calls_today ?? 0} runs today` : `Usage: ¥${f1(g?.spend_cny, 2)} / ¥${g?.cap_cny} this month`} · ${s.counts.fit_sessions} FIT parsed · ${s.counts.weather} Weather logs · ${s.counts.kb_docs} KB docs` : 'Hybrid RAG · Knowledge Graph · Digital Twin · Athlete Memory'}
           </p>
         </div>
         <div className="prof-chips">
