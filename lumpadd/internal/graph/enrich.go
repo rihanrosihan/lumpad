@@ -307,6 +307,10 @@ func SyncEnrich(ctx context.Context, pool *pgxpool.Pool, aura *Client, redact fu
 	if err := SyncKB(ctx, aura, redact, memRows, st); err != nil {
 		st.KBError = err.Error()
 	}
+	// 7. Performance layer (after the KB layer: it hangs the planned VDOT line on the checkpoints and the goal entity)
+	if err := SyncPerf(ctx, pool, aura, st); err != nil {
+		st.KBError = strings.TrimSpace(st.KBError + " perf: " + err.Error())
+	}
 	return nil
 }
 

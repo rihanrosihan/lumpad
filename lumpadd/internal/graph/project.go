@@ -37,6 +37,8 @@ type SyncStats struct {
 	KmNodes        int    `json:"km_nodes"`
 	TrainWeeks     int    `json:"train_weeks"`
 	Laps           int    `json:"laps"`
+	PerfPoints     int    `json:"perf_points"`
+	PBs            int    `json:"pbs"`
 	WeatherHours   int    `json:"weather_hours"`
 	KBNodes        int    `json:"kb_nodes"`
 	KBEdges        int    `json:"kb_edges"`

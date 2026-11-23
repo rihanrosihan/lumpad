@@ -134,6 +134,7 @@ export default function KnowledgeGraphPanel({ twin, matrices, status }) {
   }))
 
   return <>
+  <LiveGraph overview={aura.data} />
   <Card title="Coach architecture (design schematic)" right={<span className="chips" style={{ margin: 0 }}><ProvenanceBadge type="MODEL" /><Chip>Schematic, not live data</Chip></span>}>
     <p className="muted">A fixed diagram of how the coach's data sources connect. Click any node to inspect its backing SQLite table, connected edges, and how AI Coach retrieves it during Hybrid RAG reasoning. The live knowledge graph, with its real node and edge counts, is shown below.</p>
     <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginTop: 8, marginBottom: 8, padding: '8px 10px', borderRadius: 10, background: 'var(--surface2)', border: '1px solid var(--line)', fontSize: '.78rem' }}>
@@ -200,18 +201,49 @@ export default function KnowledgeGraphPanel({ twin, matrices, status }) {
       </div>
     </div>
   </Card>
-  <LiveGraph overview={aura.data} />
   </>
 }
 
 // ---- the REAL graph (Neo4j Aura): a bounded sample from fixed read-only queries, drawn with a small force layout
-const LABEL_COLOR = { Session: '#10B981', Day: '#64748B', Memory: '#0EA5E9', Shoe: '#E28120', Weather: '#06B6D4', Race: '#EA3A3A', Rule: '#A855F7', PainSite: '#F43F5E', Decision: '#EAB308', PlanDay: '#94A3B8', Topic: '#F59E0B', Workout: '#8B5CF6', HeatBand: '#FB7185', CoachRun: '#14B8A6' }
-const LIVE_VIEWS = [['sessions', 'Recent sessions'], ['topics', 'Topics'], ['chains', 'Gym → run'], ['trace', 'Coach trace'], ['plan', 'Plan vs done'], ['memory', 'Memory links'], ['days', 'Last 3 weeks'], ['races', 'All races'], ['context', 'Races, rules, shoes']]
-const VIEW_HELP = { races: 'Every race in the ledger (04.1), newest first: the canonical race, its ledger entry, the session you ran, the event, and the next race in the chain.', sessions: 'Your newest runs with their shoe, weather, heat band, topics, similar runs and memories.', topics: 'The shared vocabulary: each topic with the newest knowledge-base notes, findings and sessions that are about it.',
+const LABEL_COLOR = { PerfDomain: '#6366F1', PerfPoint: '#22C55E', PB: '#F97316', Session: '#10B981', Day: '#64748B', Memory: '#0EA5E9', Shoe: '#E28120', Weather: '#06B6D4', Race: '#EA3A3A', Rule: '#A855F7', PainSite: '#F43F5E', Decision: '#EAB308', PlanDay: '#94A3B8', Topic: '#F59E0B', Workout: '#8B5CF6', HeatBand: '#FB7185', CoachRun: '#14B8A6' }
+const LIVE_VIEWS = [['performance', 'Performance'], ['sessions', 'Recent sessions'], ['topics', 'Topics'], ['chains', 'Gym → run'], ['trace', 'Coach trace'], ['plan', 'Plan vs done'], ['memory', 'Memory links'], ['days', 'Last 3 weeks'], ['races', 'All races'], ['context', 'Races, rules, shoes']]
+const VIEW_HELP = { performance: 'PERFORMANCE is the hub; its domains are VDOT, COROS running fitness, cardiovascular efficiency, durability, speed & personal bests, and training load. Each dot is one measurement; personal bests point at the run that set them; races point at the VDOT they showed; the planned VDOT line sits beside what you actually ran.', races: 'Every race in the ledger (04.1), newest first: the canonical race, its ledger entry, the session you ran, the event, and the next race in the chain.', sessions: 'Your newest runs with their shoe, weather, heat band, topics, similar runs and memories.', topics: 'The shared vocabulary: each topic with the newest knowledge-base notes, findings and sessions that are about it.',
   chains: 'Strength sessions in the 72 hours before a run, with the run that followed.', trace: 'What the AI coach used: the memories it retrieved and cited, the notes it wrote and the sessions it reviewed.',
   plan: 'Planned days against the sessions actually done.', memory: 'Recent findings and how they connect: related notes, what produced them, topics, and any real contradictions.', days: 'The last three weeks as a chain of days.', context: 'Races, rules and shoes with their sessions.' }
+const sgn = (d) => (d.direction === 'improving' ? { c: '#16a34a', t: '▲ improving' } : d.direction === 'worsening' ? { c: '#dc2626', t: '▼ worsening' } : { c: '#64748b', t: '● steady' })
+const mmss = (s) => (s == null ? '—' : `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`)
+const hms = (s) => (s == null ? '—' : s >= 3600 ? `${Math.floor(s / 3600)}:${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}:${String(Math.round(s % 60)).padStart(2, '0')}` : mmss(s))
+function Tile({ title, value, sub, tr, fmt = (x) => x }) {
+  const s = tr && tr.delta != null ? sgn(tr) : null
+  return <div className="hyp-card" style={{ minWidth: 150 }}><small className="muted">{title}</small><b style={{ fontSize: '1.25rem' }}>{value ?? '—'}</b>{sub && <small className="muted">{sub}</small>}{s && <small style={{ color: s.c }}>{s.t} ({fmt(tr.prior)} → {fmt(tr.recent)})</small>}</div>
+}
+// Performance first: this is what Lumpad is for. Numbers come from the same sources as the Performance layer of the graph below.
+export function PerformancePanel() {
+  const S = useApi('/api/perf/summary'), s = S.data
+  if (!s) return <Card title="Performance"><p className="muted">{S.state === 'error' ? 'Could not load performance.' : 'Loading…'}</p></Card>
+  const v = s.vdot, c = s.coros, ca = s.cardio, du = s.durability, pb = s.speed.pbs, pct = v.latest_effort ? Math.max(0, Math.min(100, ((v.latest_effort.value - v.baseline) / (v.needed - v.baseline)) * 100)) : 0
+  return <Card title="Performance" right={<Chip tone="green">main focus</Chip>}>
+    <p className="muted" style={{ marginTop: 0 }}>Goal: {`sub-4:00 marathon needs VDOT ${v.needed} (race-equivalent ${v.race_equivalent}). Baseline ${v.baseline} (official 10K, Jul 2026).`}</p>
+    <div className="bar" role="img" aria-label={`VDOT progress ${Math.round(pct)}% of the way from baseline to needed`}><i style={{ width: pct + '%', background: 'var(--accent)' }} /></div>
+    <small className="muted">{v.latest_effort ? `Latest effort-implied VDOT ${v.latest_effort.value} (${v.latest_effort.date}) · best in 90 days ${v.best_effort_90d ?? '—'} · gap to needed ${v.gap_to_needed}` : 'No effort-implied VDOT yet'}. {v.note}</small>
+    <div className="hyp-grid" style={{ marginTop: 10 }}>
+      <Tile title="VDOT (effort-implied)" value={v.latest_effort?.value} sub={`needed ${v.needed}`} tr={v.trend} />
+      <Tile title="VO₂max (COROS)" value={c?.vo2max} sub={c ? `as of ${c.date}` : 'no COROS fitness yet'} />
+      <Tile title="Running fitness (COROS)" value={c?.running_level} sub={c ? `threshold ${mmss(c.threshold_pace_s_km)}/km` : ''} />
+      <Tile title="Efficiency factor" value={ca.ef.recent} sub="higher = more speed per heartbeat" tr={ca.ef} />
+      <Tile title="Cardiac drift (pace:HR)" value={ca.drift_pahr.recent != null ? ca.drift_pahr.recent + ' %' : null} sub="lower = steadier heart rate" tr={ca.drift_pahr} />
+      <Tile title="Run share, long runs" value={du.run_share.recent != null ? Math.round(du.run_share.recent * 100) + ' %' : null} sub={`${du.long_runs} runs ≥ 16 km · longest ${du.longest_km} km`} tr={du.run_share} fmt={(x) => (x == null ? '—' : Math.round(x * 100) + '%')} />
+      <Tile title="Fade starts at km" value={du.onset_km.recent} sub="later = better durability" tr={du.onset_km} />
+      <Tile title="Run pace" value={s.speed.run_pace.recent != null ? mmss(s.speed.run_pace.recent) + '/km' : null} sub="average of recent runs" tr={s.speed.run_pace} fmt={mmss} />
+    </div>
+    {c && <p style={{ margin: '10px 0 0' }}><b>COROS race predictions:</b> 5K {hms(c.pred_5k_s)} · 10K {hms(c.pred_10k_s)} · half {hms(c.pred_hm_s)} · marathon {hms(c.pred_marathon_s)}</p>}
+    {Object.keys(pb).length > 0 && <><b style={{ display: 'block', marginTop: 10 }}>Personal bests (fastest consecutive km in any run)</b>
+      <div className="chiprow" style={{ marginTop: 4 }}>{Object.entries(pb).map(([k, x]) => <span key={k} className="chip">{k.replace('k', ' km')}: {hms(x.secs)} ({mmss(x.pace)}/km) · {x.date}</span>)}</div></>}
+  </Card>
+}
+
 function LiveGraph({ overview }) {
-  const [view, setView] = useState('sessions'), [sel, setSel] = useState(null), [focus, setFocus] = useState(false), [q, setQ] = useState(''), [by, setBy] = useState('type'), [range, setRange] = useState(null)
+  const [view, setView] = useState('performance'), [sel, setSel] = useState(null), [focus, setFocus] = useState(false), [q, setQ] = useState(''), [by, setBy] = useState('type'), [range, setRange] = useState(null)
   const on = !!overview?.connected, G = useApi(on ? `/api/graph/live?view=${view}` : '', on), full = G.data
   const g = useMemo(() => (focus && sel && full ? egoGraph(full, sel) : full), [full, focus, sel])
   const narrow = typeof window !== 'undefined' && window.innerWidth < 700, [W, H] = narrow ? [380, 540] : [760, 420]   // a taller canvas on phones keeps dots tappable

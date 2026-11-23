@@ -26,7 +26,7 @@ test('live(): fixed views only; rows become de-duplicated, direction-correct nod
   const rows = [['Session', 'S1', 'Run 1', '2026-11-01', 1.5, 120, null, 'WORE', true, 'Shoe', 'g1', 'Vaporfly', null, null, null, null], ['Session', 'S1', 'Run 1', '2026-11-01', 1.5, 120, null, 'WORE', true, 'Shoe', 'g1', 'Vaporfly', null, null, null, null], ['Session', 'S1', 'Run 1', '2026-11-01', 1.5, 120, null, 'SIMILAR_TO', false, 'Session', 'S0', 'Run 0', '2026-10-20', 1.4, 90, null], ['Memory', 7, 'm', null, null, null, null, null, null, null, null, null, null, null, null, null]]
   const fetchFn = async (url, opt) => { sent.push(JSON.parse(opt.body).statement); return { ok: true, json: async () => ({ data: { fields: [], values: rows } }) } }
   const g = await N.live('MATCH (n) DETACH DELETE n', { fetchFn, env: N.neoEnv({ file }) })
-  assert.equal(g.view, 'sessions'); assert.equal(sent[0], N.LIVE_VIEWS.sessions); assert.ok(!/DELETE|SET |CREATE|MERGE/i.test(sent[0]))
+  assert.equal(g.view, 'performance'); assert.equal(sent[0], N.LIVE_VIEWS.performance); assert.ok(!/DELETE|SET |CREATE|MERGE/i.test(sent[0]))
   assert.equal(g.nodes.length, 4); assert.equal(g.edges.length, 2)
   assert.deepEqual(g.edges.find((e) => e.type === 'SIMILAR_TO'), { from: 'Session:S0', to: 'Session:S1', type: 'SIMILAR_TO' })   // direction flag false = the other node points at this one
   for (const v of Object.values(N.LIVE_VIEWS)) assert.ok(!/DELETE|SET |CREATE|MERGE|REMOVE|DROP/i.test(v), 'live views are read-only')
@@ -40,7 +40,7 @@ test('toGraph caps nodes; live() with no settings does not call out', async () =
 test('node properties for colouring are carried; every view is read-only and bounded', () => {
   const g = N.toGraph([['Session', 'S1', 'Run', '2026-11-01T06:00', 1.5, 120, 28.1, 'WORE', true, 'Shoe', 'g1', 'Vaporfly', null, null, null, null]])
   assert.deepEqual(g.nodes[0], { id: 'Session:S1', label: 'Session', name: 'Run', date: '2026-11-01', ef: 1.5, tl: 120, wbgt: 28.1 })
-  assert.deepEqual(Object.keys(N.LIVE_VIEWS).sort(), ['chains', 'context', 'days', 'memory', 'plan', 'races', 'sessions', 'topics', 'trace'])
+  assert.deepEqual(Object.keys(N.LIVE_VIEWS).sort(), ['chains', 'context', 'days', 'memory', 'performance', 'plan', 'races', 'sessions', 'topics', 'trace'])
   for (const [k, v] of Object.entries(N.LIVE_VIEWS)) assert.match(v, /LIMIT \d+/, k + ' must be bounded')
 })
 test('the default views also carry every race, from one extra read-only query', async () => {

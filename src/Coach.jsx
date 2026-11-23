@@ -4,7 +4,7 @@ import { useSub } from './useSub.js'
 import { Card, Chip, Sheet, SegmentedTabs, StatusPill, ProvenanceBadge } from './ui.jsx'
 import LagExplorer from './LagExplorer.jsx'
 import ShoeDegradation from './ShoeDegradation.jsx'
-import KnowledgeGraphPanel from './KnowledgeGraph.jsx'
+import KnowledgeGraphPanel, { PerformancePanel } from './KnowledgeGraph.jsx'
 import AdviceLog from './AdviceLog.jsx'
 import { GraphAsk, KbAudit, MemoryInbox } from './Studio.jsx'
 import { useApi, invalidate, fmtDur, fmtPaceS } from './api.js'
@@ -553,7 +553,7 @@ export default function Coach({ go, focus }) {
       <TwinPillars twin={twin.data} />
     </div>}
 
-    {sec === 'kg' && <div id="cs-kg" tabIndex={-1}><GraphAsk /><KnowledgeGraphPanel twin={twin.data} matrices={mat.data} status={s} /><KbAudit /></div>}
+    {sec === 'kg' && <div id="cs-kg" tabIndex={-1}><PerformancePanel /><GraphAsk /><KnowledgeGraphPanel twin={twin.data} matrices={mat.data} status={s} /><KbAudit /></div>}
 
     {sec === 'mc' && <div id="cs-mc" tabIndex={-1} className="rgrid">
       <div><Sub4AdaptiveCard twin={twin.data} /><TwinMonteCarlo twin={twin.data} /><TwinHistory /></div>

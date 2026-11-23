@@ -55,13 +55,20 @@ export async function overview(opts = {}) {
 
 // ---- live graph for the Knowledge Graph screen: a bounded sample of the REAL graph, from fixed read-only queries (the browser only picks a view name).
 // Each endpoint is flattened to (label, key, name, date, ef, tl, wbgt): the properties the page can colour by. Health-derived labels exist only when NEO4J_SYNC_HEALTH=1 on the Go side.
-const P = (v) => `labels(${v})[0], coalesce(toString(${v}.label_id), toString(${v}.date), toString(${v}.gear_id), toString(${v}.race_id), toString(${v}.id), toString(${v}.site), toString(${v}.name)), coalesce(${v}.intent + ' · ' + ${v}.day, ${v}.title, ${v}.model, ${v}.name, ${v}.label, toString(${v}.date), toString(${v}.label_id), toString(${v}.id)), coalesce(${v}.date, ${v}.day, ${v}.valid_from), ${v}.ef, coalesce(${v}.tl, ${v}.planned_tl), ${v}.wbgt`
+const P = (v) => `labels(${v})[0], coalesce(CASE WHEN ${v}.metric IS NOT NULL OR ${v}.rank IS NOT NULL THEN toString(${v}.id) END, toString(${v}.label_id), toString(${v}.date), toString(${v}.gear_id), toString(${v}.race_id), toString(${v}.id), toString(${v}.site), toString(${v}.name)), coalesce(CASE WHEN ${v}.metric IS NOT NULL THEN ${v}.metric + ' ' + toString(${v}.value) END, CASE WHEN ${v}.rank IS NOT NULL THEN 'PB ' + toString(${v}.distance_km) + ' km #' + toString(${v}.rank) END, ${v}.intent + ' · ' + ${v}.day, ${v}.title, ${v}.model, ${v}.name, ${v}.label, toString(${v}.date), toString(${v}.label_id), toString(${v}.id)), coalesce(${v}.date, ${v}.day, ${v}.valid_from), ${v}.ef, coalesce(${v}.tl, ${v}.planned_tl), ${v}.wbgt`
 const ROW = (a, n) => `RETURN ${P(a)}, type(r), startNode(r) = ${a}, ${P(n)}`
 const REL = "['HAS_SESSION','WORE','IN_WEATHER','IN_BAND','ATTEMPT_OF','PRODUCED','SIMILAR_TO','CONTRADICTS','SUPERSEDES','NEXT_DAY','LOGGED_PAIN','ABOUT','HAS_WORKOUT','PRECEDED','RETRIEVED','CITED','WRITTEN_BY','REVIEWED','PLANS','EXECUTED_AS','RELATED_TO']"
 export const LIVE_MAX = { nodes: 220, edges: 460 }
 // the default views always carry EVERY race (with the session that was run), so the picture is not limited to the races of the newest runs
 export const RACES_ALWAYS = `MATCH (a:Race) OPTIONAL MATCH (a)-[r:ATTEMPT_OF]-(n:Session) ${'RETURN '}${P('a')}, type(r), startNode(r) = a, ${P('n')} LIMIT 120`
-const WITH_RACES = new Set(['sessions', 'days'])
+const PERF_EXTRA = [
+  `MATCH (a:PerfDomain)-[r:PART_OF]->(n:PerfDomain) ${ROW('a', 'n')}`,
+  `MATCH (a:PB)-[r:ACHIEVED_IN]->(n:Session) ${ROW('a', 'n')} LIMIT 40`,
+  `MATCH (a:PerfPoint {metric: 'vdot_line'})-[r:OF_DOMAIN]->(n:PerfDomain) ${ROW('a', 'n')} LIMIT 24`,
+  `MATCH (a:Race)-[r:IMPLIES]->(n:PerfPoint) ${ROW('a', 'n')} LIMIT 30`,
+  `MATCH (a:PerfDomain)-[r:TARGETS]->(n:Entity) ${ROW('a', 'n')}`,
+]
+const EXTRA = { sessions: [RACES_ALWAYS], days: [RACES_ALWAYS], performance: PERF_EXTRA }
 export const LIVE_VIEWS = {
   // newest 30 sessions with everything one hop away
   sessions: `MATCH (a:Session) WITH a ORDER BY a.date DESC LIMIT 30 MATCH (a)-[r]-(n) WHERE type(r) IN ${REL} ${ROW('a', 'n')} LIMIT ${LIVE_MAX.edges}`,
@@ -77,6 +84,8 @@ export const LIVE_VIEWS = {
   memory: `MATCH (a:Memory) WHERE a.status = 'active' AND a.source <> 'kb' WITH a ORDER BY a.valid_from DESC LIMIT 60 OPTIONAL MATCH (a)-[r:PRODUCED|SUPERSEDES|CONTRADICTS|RELATED_TO|ABOUT|WRITTEN_BY]-(n) ${ROW('a', 'n')} LIMIT ${LIVE_MAX.edges}`,
   // the last 3 weeks that have training, as a chain of days with their sessions and workouts (future plan days have none)
   days: `MATCH (a:Day) WHERE EXISTS { (a)-[:HAS_SESSION|HAS_WORKOUT]->() } WITH a ORDER BY a.date DESC LIMIT 21 OPTIONAL MATCH (a)-[r:NEXT_DAY|HAS_SESSION|HAS_WORKOUT|LOGGED_PAIN]-(n) ${ROW('a', 'n')} LIMIT ${LIVE_MAX.edges}`,
+  // PERFORMANCE (the main focus): the hub, its six domains, the newest observations of each (VDOT, COROS fitness, cardio, durability, speed, load) and where they connect
+  performance: `MATCH (a:PerfDomain) CALL { WITH a MATCH (a)<-[r:OF_DOMAIN]-(n) WHERE n.date IS NULL OR n.date <= toString(date()) RETURN r, n ORDER BY n.date DESC LIMIT 12 } ${ROW('a', 'n')} LIMIT ${LIVE_MAX.edges}`,
   // EVERY race: the canonical races and every ledger entry (04.1), with the session that was run, the event, the ledger link and the next race
   races: `MATCH (a) WHERE a:Race OR a:RaceEntry WITH a ORDER BY a.date DESC LIMIT 80 OPTIONAL MATCH (a)-[r:ATTEMPT_OF|LEDGER_OF|DONE_AS|OF_EVENT|NEXT_RACE]-(n) ${ROW('a', 'n')} LIMIT ${LIVE_MAX.edges}`,
   // races, rules and shoes (races first) with a few of their sessions each, so no single shoe floods the picture
@@ -99,10 +108,10 @@ export function toGraph(rows) {
 }
 export async function live(view, opts = {}) {
   const env = opts.env || neoEnv(); if (!configured(env)) return { connected: false, nodes: [], edges: [] }
-  const v = Object.hasOwn(LIVE_VIEWS, view) ? view : 'sessions'
+  const v = Object.hasOwn(LIVE_VIEWS, view) ? view : 'performance'
   try {
-    const [j, rj] = await Promise.all([run(LIVE_VIEWS[v], { ...opts, env, timeout: 8000 }), WITH_RACES.has(v) ? run(RACES_ALWAYS, { ...opts, env, timeout: 8000 }).catch(() => null) : null])
-    return { connected: true, view: v, ...toGraph([...(rj?.data?.values || []), ...(j?.data?.values || [])]) }
+    const [j, ...extra] = await Promise.all([run(LIVE_VIEWS[v], { ...opts, env, timeout: 8000 }), ...(EXTRA[v] || []).map((q) => run(q, { ...opts, env, timeout: 8000 }).catch(() => null))])
+    return { connected: true, view: v, ...toGraph([...extra.flatMap((x) => x?.data?.values || []), ...(j?.data?.values || [])]) }
   }
   catch (err) { return { connected: false, view: v, error: err.message, nodes: [], edges: [] } }
 }
