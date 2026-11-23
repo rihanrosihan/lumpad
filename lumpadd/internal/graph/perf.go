@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"os"
 	"sort"
+	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -198,17 +200,30 @@ func SyncPerf(ctx context.Context, pool *pgxpool.Pool, aura *Client, st *SyncSta
 		es := best[w]
 		sort.Slice(es, func(i, j int) bool { return es[i].secs < es[j].secs })
 		for r := 0; r < 3 && r < len(es); r++ {
-			pbs = append(pbs, map[string]any{"id": fmt.Sprintf("pb:%dk:%d", w, r+1), "kind": "fastest", "km": w, "rank": r + 1, "time_s": round(es[r].secs, 0), "pace_s": round(es[r].secs/float64(w), 1), "date": es[r].date, "s": es[r].label, "vdot": round(vdotFromRace(float64(w)*1000, es[r].secs), 1)})
+			pbs = append(pbs, map[string]any{"id": fmt.Sprintf("pb:%dk:%d", w, r+1), "kind": "fastest", "km": w, "rank": r + 1, "time_s": round(es[r].secs, 0), "pace_s": round(es[r].secs/float64(w), 1), "date": es[r].date, "s": es[r].label, "vdot": round(vdotFromRace(float64(w)*1000, es[r].secs), 1), "label": fmt.Sprintf("FIT best %d km #%d", w, r+1)})
 		}
 	}
 	sort.Slice(longest, func(i, j int) bool { return longest[i].secs > longest[j].secs })
 	for r := 0; r < 3 && r < len(longest); r++ {
-		pbs = append(pbs, map[string]any{"id": fmt.Sprintf("pb:longest:%d", r+1), "kind": "longest", "km": round(longest[r].secs/1000, 1), "rank": r + 1, "time_s": nil, "pace_s": nil, "date": longest[r].date, "s": longest[r].label, "vdot": nil})
+		pbs = append(pbs, map[string]any{"id": fmt.Sprintf("pb:longest:%d", r+1), "kind": "longest", "km": round(longest[r].secs/1000, 1), "rank": r + 1, "time_s": nil, "pace_s": nil, "date": longest[r].date, "s": longest[r].label, "vdot": nil, "label": fmt.Sprintf("Longest run #%d", r+1)})
 	}
-	if err := runBatches(ctx, aura, pbs, 60, `UNWIND $rows AS r CREATE (b:PB {id: r.id, kind: r.kind, distance_km: r.km, rank: r.rank, time_s: r.time_s, pace_s: r.pace_s, date: r.date, vdot: r.vdot})
+	if err := runBatches(ctx, aura, pbs, 60, `UNWIND $rows AS r CREATE (b:PB {id: r.id, is_pb: true, source: 'fit', label: r.label, kind: r.kind, distance_km: r.km, rank: r.rank, time_s: r.time_s, pace_s: r.pace_s, date: r.date, vdot: r.vdot})
 		WITH b, r MATCH (d:PerfDomain {id: CASE WHEN r.kind = 'longest' THEN 'durability' ELSE 'speed' END}) MERGE (b)-[:OF_DOMAIN]->(d)
 		WITH b, r MATCH (s:Session {label_id: r.s}) MERGE (b)-[:ACHIEVED_IN]->(s)`); err != nil {
 		return fmt.Errorf("perf pbs: %w", err)
+	}
+
+	// ---- Strava's own all-time PRs (the official records; best efforts can start anywhere in a run). The Node app saves them to strava_prs.json when you paste the block from Strava.
+	sp, spErr := stravaPRs()
+	if spErr == nil && len(sp) > 0 {
+		if err := runBatches(ctx, aura, sp, 30, `UNWIND $rows AS r CREATE (b:PB {id: r.id, is_pb: true, source: 'strava', label: r.label, kind: 'strava', distance_km: r.km, rank: 0, time_s: r.time_s, pace_s: r.pace_s, date: r.date, vdot: r.vdot, url: r.url, activity_id: r.activity_id, activity_name: r.name})
+			WITH b, r MATCH (d:PerfDomain {id: 'speed'}) MERGE (b)-[:OF_DOMAIN]->(d)
+			WITH b, r WHERE r.date IS NOT NULL
+			CALL { WITH b, r MATCH (s:Session {date: r.date}) WITH s ORDER BY s.distance_m DESC LIMIT 1 MERGE (b)-[:ACHIEVED_IN]->(s) }
+			CALL { WITH b, r MATCH (rc:Race {date: r.date}) MERGE (b)-[:SET_IN]->(rc) }`); err != nil {
+			return fmt.Errorf("perf strava prs: %w", err)
+		}
+		pbs = append(pbs, sp...)
 	}
 
 	// ---- derived links (all deleted with their nodes on the next sync)
@@ -237,4 +252,46 @@ func SyncPerf(ctx context.Context, pool *pgxpool.Pool, aura *Client, st *SyncSta
 	}
 	st.PerfPoints, st.PBs = len(all), len(pbs)
 	return nil
+}
+
+// stravaPRs reads the records the Node app saved (STRAVA_PRS_FILE, default /opt/lumpad/server/data/strava_prs.json); absent file = no Strava layer.
+func stravaPRs() ([]map[string]any, error) {
+	path := os.Getenv("STRAVA_PRS_FILE")
+	if path == "" {
+		path = "/opt/lumpad/server/data/strava_prs.json"
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	var doc struct {
+		PRs []struct {
+			Label      string  `json:"label"`
+			Meters     float64 `json:"meters"`
+			TimeS      float64 `json:"time_s"`
+			Pace       float64 `json:"pace_s_km"`
+			Vdot       float64 `json:"vdot"`
+			ActivityID *string `json:"activity_id"`
+			URL        *string `json:"url"`
+			Date       *string `json:"date"`
+			Name       *string `json:"activity_name"`
+		} `json:"prs"`
+	}
+	if err := json.Unmarshal(raw, &doc); err != nil {
+		return nil, err
+	}
+	var out []map[string]any
+	for _, p := range doc.PRs {
+		out = append(out, map[string]any{"id": "sb:" + strings.ToLower(strings.NewReplacer(" ", "-", "/", "-").Replace(p.Label)), "label": fmt.Sprintf("Strava PR %s %s", p.Label, hms(p.TimeS)), "km": round(p.Meters/1000, 3),
+			"time_s": p.TimeS, "pace_s": p.Pace, "vdot": p.Vdot, "url": p.URL, "activity_id": p.ActivityID, "date": p.Date, "name": p.Name})
+	}
+	return out, nil
+}
+
+func hms(s float64) string {
+	t := int(s + 0.5)
+	if t >= 3600 {
+		return fmt.Sprintf("%d:%02d:%02d", t/3600, t%3600/60, t%60)
+	}
+	return fmt.Sprintf("%d:%02d", t/60, t%60)
 }

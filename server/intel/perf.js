@@ -4,6 +4,7 @@ import { idb } from './db.js'
 import { db as appDb } from '../store.js'
 import { vdotFromRace } from '../../src/lib/vdot.js'
 import { TARGET } from '../../src/lib/plan.js'
+import { loadPRs } from './prs.js'
 
 const med = (a) => { const x = a.filter(Number.isFinite).sort((p, q) => p - q); return x.length ? (x.length % 2 ? x[(x.length - 1) / 2] : (x[x.length / 2 - 1] + x[x.length / 2]) / 2) : null }
 const r1 = (x, n = 1) => (x == null ? null : +x.toFixed(n))
@@ -40,6 +41,7 @@ export function perfSummary() {
       since: fOld && fOld.date !== f0.date ? { date: fOld.date, vo2max: fOld.vo2max, running_level: fOld.running_level } : null },
     cardio: { ef: trend(col('ef'), 'up'), drift_pahr: trend(col('drift_pahr'), 'down'), hr800: trend(col('hr800'), 'down'), pace_hr150: trend(col('pace_hr150'), 'down') },
     durability: { long_runs: longs.length, run_share: trend(longs.filter((s) => s.run_share != null).map((s) => s.run_share), 'up', 4), onset_km: trend(longs.filter((s) => s.onset_km != null).map((s) => s.onset_km), 'up', 4), gct_fade: trend(longs.filter((s) => s.gct_fade != null).map((s) => s.gct_fade), 'down', 4), longest_km: r1(Math.max(0, ...ses.map((s) => (s.distance_m || 0) / 1000))) },
+    strava_prs: (() => { const d = loadPRs(); const rel = d.prs.filter((p) => p.meters >= 3000 && p.meters <= 21100); const best = rel.reduce((m, p) => (!m || p.vdot > m.vdot ? p : m), null); return { updated: d.updated, prs: d.prs, best_vdot: best ? { value: best.vdot, label: best.label, url: best.url } : null } })(),
     speed: { pbs: pb, run_pace: trend(col('run_pace'), 'down') },
     load,
   }

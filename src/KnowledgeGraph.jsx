@@ -213,6 +213,17 @@ const VIEW_HELP = { performance: 'PERFORMANCE is the hub; its domains are VDOT, 
 const sgn = (d) => (d.direction === 'improving' ? { c: '#16a34a', t: '▲ improving' } : d.direction === 'worsening' ? { c: '#dc2626', t: '▼ worsening' } : { c: '#64748b', t: '● steady' })
 const mmss = (s) => (s == null ? '—' : `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`)
 const hms = (s) => (s == null ? '—' : s >= 3600 ? `${Math.floor(s / 3600)}:${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}:${String(Math.round(s % 60)).padStart(2, '0')}` : mmss(s))
+function StravaPRs({ s }) {
+  const d = s.strava_prs, [open, setOpen] = useState(false), [text, setText] = useState(''), [msg, setMsg] = useState(null), [busy, setBusy] = useState(false)
+  const save = async () => { setBusy(true); setMsg(null); try { const r = await fetch('/api/perf/prs', { method: 'POST', headers: { 'content-type': 'application/json', 'x-lumpad': '1' }, body: JSON.stringify({ text }) }); const j = await r.json(); if (!r.ok) throw new Error(j.error || r.status); setMsg({ ok: true, text: `Saved ${j.count} records. Reload to see them.` }); setText('') } catch (e) { setMsg({ ok: false, text: e.message }) } setBusy(false) }
+  return <div style={{ marginTop: 10 }}>
+    <b style={{ display: 'block' }}>Personal records (Strava, all-time){d.best_vdot ? ` · best PR-implied VDOT ${d.best_vdot.value} (${d.best_vdot.label})` : ''}</b>
+    {d.prs.length > 0 ? <div className="chiprow" style={{ marginTop: 4 }}>{d.prs.map((p) => <a key={p.label} className="chip" href={p.url || undefined} target="_blank" rel="noopener noreferrer" title={`${p.activity_name || ''} ${p.date || ''} · VDOT ${p.vdot}`}>{p.label}: {hms(p.time_s)} <span className="muted">({mmss(p.pace_s_km)}/km{p.date ? ' · ' + p.date : ''})</span></a>)}</div> : <p className="muted">No Strava records saved yet. Paste the Best Efforts block from your Strava profile below.</p>}
+    <small className="muted">{d.updated ? `Updated ${d.updated.slice(0, 10)}. ` : ''}Strava has no feed for these, so they are pasted in. </small><button type="button" className="btn sm" onClick={() => setOpen(!open)}>{open ? 'Cancel' : 'Update from Strava'}</button>
+    {open && <div style={{ marginTop: 6 }}><textarea rows={6} style={{ width: '100%' }} value={text} onChange={(e) => setText(e.target.value)} placeholder={'400m    1:58 https://www.strava.com/activities/…\n5K    29:21 …\nMarathon    6:42:18 …'} aria-label="Strava best efforts" /><button type="button" className="btn sm primary" style={{ width: 'auto' }} disabled={busy || text.trim().length < 5} onClick={save}>{busy ? 'Saving…' : 'Save records'}</button></div>}
+    {msg && <p className={msg.ok ? 'ok' : 'err'} role="status">{msg.text}</p>}
+  </div>
+}
 function Tile({ title, value, sub, tr, fmt = (x) => x }) {
   const s = tr && tr.delta != null ? sgn(tr) : null
   return <div className="hyp-card" style={{ minWidth: 150 }}><small className="muted">{title}</small><b style={{ fontSize: '1.25rem' }}>{value ?? '—'}</b>{sub && <small className="muted">{sub}</small>}{s && <small style={{ color: s.c }}>{s.t} ({fmt(tr.prior)} → {fmt(tr.recent)})</small>}</div>
@@ -237,8 +248,10 @@ export function PerformancePanel() {
       <Tile title="Run pace" value={s.speed.run_pace.recent != null ? mmss(s.speed.run_pace.recent) + '/km' : null} sub="average of recent runs" tr={s.speed.run_pace} fmt={mmss} />
     </div>
     {c && <p style={{ margin: '10px 0 0' }}><b>COROS race predictions:</b> 5K {hms(c.pred_5k_s)} · 10K {hms(c.pred_10k_s)} · half {hms(c.pred_hm_s)} · marathon {hms(c.pred_marathon_s)}</p>}
-    {Object.keys(pb).length > 0 && <><b style={{ display: 'block', marginTop: 10 }}>Personal bests (fastest consecutive km in any run)</b>
-      <div className="chiprow" style={{ marginTop: 4 }}>{Object.entries(pb).map(([k, x]) => <span key={k} className="chip">{k.replace('k', ' km')}: {hms(x.secs)} ({mmss(x.pace)}/km) · {x.date}</span>)}</div></>}
+    <StravaPRs s={s} />
+    {Object.keys(pb).length > 0 && <details className="more" style={{ marginTop: 8 }}><summary>Cross-check: fastest consecutive whole km in your FIT files</summary>
+      <div className="chiprow" style={{ marginTop: 4 }}>{Object.entries(pb).map(([k, x]) => <span key={k} className="chip">{k.replace('k', ' km')}: {hms(x.secs)} ({mmss(x.pace)}/km) · {x.date}</span>)}</div>
+      <small className="muted">Whole-km windows from the COROS files since Sep 2025 only, so they can be slower than Strava's best efforts, which start anywhere in a run.</small></details>}
   </Card>
 }
 

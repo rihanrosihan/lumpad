@@ -49,6 +49,7 @@ export async function activities(after) {
   save('strava_acts', acts); return acts
 }
 export const streams = (id) => get(`/activities/${id}/streams?keys=time,distance,heartrate,cadence,watts,velocity_smooth&key_by_type=true`).then((r) => r.data)
+export const activity = (id) => get('/activities/' + id).then((r) => r.data) // detail incl. start_date_local, name and best_efforts
 export const gear = (id) => get('/gear/' + id).then((r) => r.data) // mileage shown in gear.distance (m)
 
 // ---- shoe backfill (Lumpad intelligence layer P0.2): Strava knows the shoe of each run, COROS does not.
