@@ -17,7 +17,7 @@ import { runIntel, recentIntelJobs, afterSync } from './intel/run.js'
 import { startIntelScheduler } from './intel/schedule.js'
 import { plannedForecast } from './intel/forecast.js'
 import { adviceSummary, listAdvice, setStatus as setAdviceStatus } from './intel/advice.js'
-import { graphAsk, kbAudit, memoryInbox, bulkAction, raceBrief } from './intel/studio.js'
+import { graphAsk, kbAudit, memoryInbox, pendingPage, bulkAction, raceBrief } from './intel/studio.js'
 import { getConfig, publicConfig, saveConfig, resetConfig, testConnection, listModels, getQuota, saveQuota } from './intel/llmconfig.js'
 import { runCoach, recentRuns, getRun, newRun, finishRun, coachStatus } from './intel/coach.js'
 import { retrieveRunnerContext, renderPrompt, TASKS, OUTPUT_SCHEMA } from './intel/context.js'
@@ -181,7 +181,8 @@ const routes = {
   'POST /api/graph/ask': async (_q, req) => graphAsk(JSON.parse((await readBody(req, 4e3)).toString() || '{}').question),
   'GET /api/kb/audit': async () => kbAudit(),
   'GET /api/memory/inbox': async (q) => memoryInbox({ source: q.get('source') || '', doc: q.get('doc') || '', agreed: q.get('agreed') === '1', limitDocs: Math.min(+q.get('docs') || 12, 40), offsetDocs: Math.max(+q.get('offset') || 0, 0) }),
-  'POST /api/memory/bulk': async (_q, req) => { const b = JSON.parse((await readBody(req, 2e4)).toString() || '{}'); return bulkAction(b.ids, b.action, principal(req) || 'athlete') },
+  'GET /api/memory/pending': async (q) => pendingPage({ tier: q.get('tier') || '', offset: q.get('offset'), limit: q.get('limit') }),
+  'POST /api/memory/bulk': async (_q, req) => { const b = JSON.parse((await readBody(req, 2e4)).toString() || '{}'); return bulkAction(b.ids, b.action, principal(req) || 'athlete', { scope: b.scope, tier: b.tier, includeRules: b.include_rules === true }) },
   'GET /api/race/brief': async () => raceBrief(),
   'GET /api/coach/quota': async () => getQuota(),
   'POST /api/coach/quota': async (_q, req) => saveQuota(JSON.parse((await readBody(req, 1e4)).toString() || '{}')),

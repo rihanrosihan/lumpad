@@ -109,10 +109,22 @@ export function memoryInbox({ source = '', doc = '', agreed = false, limitDocs =
   const list = [...groups.values()].sort((a, b) => b.count - a.count || a.doc.localeCompare(b.doc))
   return { total: list.reduce((n, g) => n + g.count, 0), docs: list.length, groups: list.slice(offsetDocs, offsetDocs + limitDocs) }
 }
+// One page of the pending queue (candidates + rule proposals), newest first, with counts for the tabs and the header: no fixed cap, the browser pages through it.
+export function pendingPage({ tier = '', offset = 0, limit = 25 } = {}) {
+  const lim = Math.min(Math.max(+limit || 25, 1), 100), off = Math.max(+offset || 0, 0), t = ['semantic', 'episodic', 'procedural'].includes(tier) ? tier : ''
+  const counts = Object.fromEntries(mdb.prepare(`SELECT tier, COUNT(*) n FROM memory WHERE status IN ${PENDING} GROUP BY tier`).all().map((r) => [r.tier, r.n]))
+  const total = Object.values(counts).reduce((a, b) => a + b, 0), shown = t ? counts[t] || 0 : total
+  const items = mdb.prepare(`SELECT id, tier, kind, title, substr(body,1,320) AS body, evidence_tag, n, status, source, created_by, created_at FROM memory WHERE status IN ${PENDING} ${t ? 'AND tier=@t' : ''} ORDER BY id DESC LIMIT @lim OFFSET @off`).all(t ? { t, lim, off } : { lim, off })
+  return { total, shown, counts, offset: off, limit: lim, items }
+}
 // bulk approve / retract; locked rules are skipped, never changed. A proposal approved here becomes an ACTIVE rule the coach is bound by.
-export function bulkAction(ids, action, by = 'athlete') {
+// scope 'pending' acts on EVERY pending item (no 300 cap); rule proposals are included only when includeRules is true, because an approved rule binds the coach.
+export function bulkAction(ids, action, by = 'athlete', { scope = '', tier = '', includeRules = false } = {}) {
   const to = { approve: 'active', retract: 'retracted', archive: 'archived' }[action]; if (!to) throw Object.assign(new Error('bad action'), { status: 400 })
-  const list = [...new Set((Array.isArray(ids) ? ids : []).map(Number).filter(Number.isInteger))].slice(0, 300); if (!list.length) throw Object.assign(new Error('no ids'), { status: 400 })
+  const list = scope === 'pending'
+    ? mdb.prepare(`SELECT id FROM memory WHERE status IN ${PENDING} ${tier ? 'AND tier=@tier' : ''} ${includeRules ? '' : "AND tier != 'procedural'"} ORDER BY id`).all(tier ? { tier } : {}).map((r) => r.id)
+    : [...new Set((Array.isArray(ids) ? ids : []).map(Number).filter(Number.isInteger))].slice(0, 300)
+  if (!list.length) { if (scope === 'pending') return { done: 0, skipped: [] }; throw Object.assign(new Error('no ids'), { status: 400 }) }
   const done = [], skipped = []
   for (const id of list) { try { const m = getMemory(id); if (!m || !['candidate', 'proposal'].includes(m.status)) { skipped.push({ id, why: 'not pending' }); continue } setStatus(id, to, by); done.push(id) } catch (e) { skipped.push({ id, why: e.message }) } }
   return { done: done.length, skipped }

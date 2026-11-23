@@ -7,7 +7,7 @@ import ShoeDegradation from './ShoeDegradation.jsx'
 import KnowledgeGraphPanel from './KnowledgeGraph.jsx'
 import AdviceLog from './AdviceLog.jsx'
 import { GraphAsk, KbAudit, MemoryInbox } from './Studio.jsx'
-import { useApi, fmtDur, fmtPaceS } from './api.js'
+import { useApi, invalidate, fmtDur, fmtPaceS } from './api.js'
 import { fmtShort } from './lib/calendar.js'
 
 // ---- rich markdown (bold, inline code/citations, tables, numbered/bullet lists, paragraphs) — no raw HTML injection
@@ -447,14 +447,17 @@ function EpisodeCards() {
 }
 
 // ---- Memory Hypothesis Queue (All / Semantic / Episodic filter + 3-col grid) + Correlations
-function MemoryQueue({ pending, onAct }) {
-  const [tierFilter, setTierFilter] = useState('all')
+const PAGE = 24
+function MemoryQueue({ tick, onAct }) {
+  const [tierFilter, setTierFilter] = useState('all'), [page, setPage] = useState(0)
   const E = useApi('/api/intel/edges')
-  const semCount = pending.filter((m) => m.tier === 'semantic').length
-  const epiCount = pending.filter((m) => m.tier === 'episodic').length
-  const shown = tierFilter === 'all' ? pending : pending.filter((m) => m.tier === tierFilter)
+  const Q = useApi(`/api/memory/pending?limit=${PAGE}&offset=${page * PAGE}${tierFilter === 'all' ? '' : '&tier=' + tierFilter}&_=${tick}`), q = Q.data
+  const shown = q?.items || [], counts = q?.counts || {}, total = q?.total || 0, pages = Math.max(1, Math.ceil((q?.shown || 0) / PAGE))
+  const semCount = counts.semantic || 0, epiCount = counts.episodic || 0, ruleCount = counts.procedural || 0
+  const pending = { length: total }
+  const pick = (t) => { setTierFilter(t); setPage(0) }
   return <>
-    <Card title={`Athlete Memory & Hypothesis Confirmation Queue (${pending.length})`} right={<SegmentedTabs tabs={[{ id: 'all', label: 'All', badge: pending.length }, { id: 'semantic', label: 'Semantic', badge: semCount }, { id: 'episodic', label: 'Episodic', badge: epiCount }]} value={tierFilter} onChange={setTierFilter} label="Hypothesis tier" />}>
+    <Card title={`Athlete Memory & Hypothesis Confirmation Queue (${pending.length})`} right={<SegmentedTabs tabs={[{ id: 'all', label: 'All', badge: total }, { id: 'semantic', label: 'Semantic', badge: semCount }, { id: 'episodic', label: 'Episodic', badge: epiCount }, { id: 'procedural', label: 'Rules', badge: ruleCount }]} value={tierFilter} onChange={pick} label="Hypothesis tier" />}>
       <div className="mq-help">
         <p><b>What is this?</b> After analysing your runs, the coach writes down things it <i>thinks</i> are true about you (for example "your HR drifts in hot evening runs"). They are only hypotheses until you decide.</p>
         <ul>
@@ -466,7 +469,7 @@ function MemoryQueue({ pending, onAct }) {
       </div>
       {shown.length > 0 ? <div className="hyp-grid">
         {shown.map((m) => <div key={m.id} className="hyp-card">
-          <div className="chips" style={{ margin: 0 }}><Chip tone={m.tier === 'semantic' ? 'green' : undefined}>{m.tier === 'semantic' ? 'lasting pattern' : 'one run'}</Chip><Chip>seen ×{m.n}</Chip></div>
+          <div className="chips" style={{ margin: 0 }}><Chip tone={m.tier === 'semantic' ? 'green' : m.tier === 'procedural' ? 'yellow' : undefined}>{m.tier === 'semantic' ? 'lasting pattern' : m.tier === 'procedural' ? 'rule proposal' : 'one run'}</Chip><Chip>seen ×{m.n}</Chip></div>
           <b style={{ fontSize: '.86rem' }}>{cleanId(m.title)}</b>
           <small className="muted" style={{ flex: 1 }}>{cleanId(m.body)}</small>
           <p className="mq-q">Does this match your experience?</p>
@@ -475,7 +478,14 @@ function MemoryQueue({ pending, onAct }) {
             <button className="mq-no" onClick={() => onAct(m.id, 'retract')}>✕ No, discard</button>
           </div>
         </div>)}
-      </div> : <p className="muted">No hypotheses awaiting confirmation in this view.</p>}
+      </div> : <p className="muted">{Q.state === 'loading' ? 'Loading…' : 'No hypotheses awaiting confirmation in this view.'}</p>}
+      {pages > 1 && <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center', margin: '12px 0 0', flexWrap: 'wrap' }} role="navigation" aria-label="Memory queue pages">
+        <button type="button" className="btn sm" disabled={page === 0} onClick={() => setPage(0)}>« First</button>
+        <button type="button" className="btn sm" disabled={page === 0} onClick={() => setPage(page - 1)}>‹ Prev</button>
+        <span className="muted">Page {page + 1} of {pages} · {q.shown} items</span>
+        <button type="button" className="btn sm" disabled={page >= pages - 1} onClick={() => setPage(page + 1)}>Next ›</button>
+        <button type="button" className="btn sm" disabled={page >= pages - 1} onClick={() => setPage(pages - 1)}>Last »</button>
+      </div>}
     </Card>
     {E.data?.length > 0 && <Card title="FDR-Supported Correlations (Association, Not Cause)" right={<Chip>{E.data.length} edges</Chip>}>
       <div className="hyp-grid">{E.data.map((e) => <div key={e.id} className="hyp-card">
@@ -496,17 +506,16 @@ export default function Coach({ go, focus }) {
   const st = useApi('/api/intel/status')
   const twin = useApi('/api/twin')
   const mat = useApi('/api/intel/matrices')
-  const C = useApi(`/api/memory?status=candidate&limit=30&_=${tick}`)
-  const P = useApi(`/api/memory?status=proposal&limit=30&_=${tick}`)
-  const pending = [...(P.data || []), ...(C.data || [])]
+  const PC = useApi(`/api/memory/pending?limit=1&_=${tick}`), pc = PC.data, pending = { length: pc?.total || 0 }, pendingRules = pc?.counts?.procedural || 0, pendingOther = pending.length - pendingRules
 
   const act = (id, action) => post('/api/memory/action', { id, action }).then(() => setTick((x) => x + 1)).catch((e) => alert(e.message))
   const approveAll = async () => {
-    if (!pending.length || approvingAll) return
+    if (!pendingOther || approvingAll) return
+    if (!confirm(`Remember all ${pendingOther} pending items${pendingRules ? ` (the ${pendingRules} rule proposals stay for you to review one by one)` : ''}?`)) return
     setApprovingAll(true)
     try {
-      for (const m of pending) await post('/api/memory/action', { id: m.id, action: 'approve' })
-      setTick((x) => x + 1)
+      await post('/api/memory/bulk', { scope: 'pending', action: 'approve' })
+      invalidate('memory'); setTick((x) => x + 1)
     } catch (e) { alert(e.message) }
     finally { setApprovingAll(false) }
   }
@@ -531,8 +540,8 @@ export default function Coach({ go, focus }) {
           <button type="button" className="btn sm" disabled={s?.busy} onClick={() => post('/api/intel/run', { kind: 'full' }).then(() => location.reload())}>
             {s?.busy ? 'Running pipeline…' : 'Run Analysis Now'}
           </button>
-          {pending.length > 0 && <button type="button" className="btn primary sm" disabled={approvingAll} onClick={approveAll} style={{ background: '#059669' }}>
-            {approvingAll ? 'Saving…' : `✓ Remember all ${pending.length}`}
+          {pendingOther > 0 && <button type="button" className="btn primary sm" disabled={approvingAll} onClick={approveAll} style={{ background: '#059669' }}>
+            {approvingAll ? 'Saving…' : `✓ Remember all ${pendingOther}`}
           </button>}
         </div>
       </div>
@@ -554,7 +563,7 @@ export default function Coach({ go, focus }) {
     {sec === 'lag' && <div id="cs-lag" tabIndex={-1}><LagExplorer /></div>}
 
     {sec === 'adv' && <div id="cs-adv" tabIndex={-1}><AdviceLog /></div>}
-    {sec === 'mem' && <div id="cs-mem" tabIndex={-1}><MemoryInbox /><MemoryQueue pending={pending} onAct={act} /></div>}
+    {sec === 'mem' && <div id="cs-mem" tabIndex={-1}><MemoryInbox /><MemoryQueue tick={tick} onAct={act} /></div>}
 
     {sec === 'mat' && <div id="cs-mat" tabIndex={-1} className="rgrid">
       <CorrelationMatrices data={mat.data} />

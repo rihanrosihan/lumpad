@@ -47,3 +47,13 @@ test('race brief: next race, days to go and what to do next', () => {
   const b = S.raceBrief({ today: '2027-06-01' }); assert.equal(b.race.name, 'Jakim FM'); assert.equal(b.days_to_go, 12); assert.match(b.suggest, /race plan/i)
   assert.equal(S.raceBrief({ today: '2030-01-01' }).race, null)
 })
+test('pending queue pages without a cap and approve-all covers everything but rule proposals', () => {
+  for (let i = 0; i < 130; i++) M.addMemory({ tier: i % 2 ? 'semantic' : 'episodic', kind: 'fact', title: 'bulk ' + i, body: 'b' + i, status: 'candidate', source: 'coach', source_ref: 'bulk#' + i, created_by: 'test' })
+  M.addMemory({ tier: 'procedural', kind: 'rule', title: 'a rule', body: 'r', status: 'proposal', source: 'coach', source_ref: 'bulk#r', created_by: 'test' })
+  const p1 = S.pendingPage({ limit: 24 }), p2 = S.pendingPage({ limit: 24, offset: 24 })
+  assert.ok(p1.total >= 131 && p1.items.length === 24 && p2.items.length === 24 && p1.items[0].id !== p2.items[0].id && p1.counts.procedural >= 1)
+  assert.ok(S.pendingPage({ tier: 'semantic' }).items.every((x) => x.tier === 'semantic') && S.pendingPage({ limit: 500 }).items.length <= 100)
+  const r = S.bulkAction([], 'approve', 'athlete', { scope: 'pending' })
+  assert.ok(r.done >= 130, 'no 300 / 60 cap'); const after = S.pendingPage({}); assert.equal(after.counts.procedural >= 1, true); assert.ok(!after.counts.semantic && !after.counts.episodic)
+  assert.ok(S.bulkAction([], 'approve', 'athlete', { scope: 'pending', includeRules: true }).done >= 1)
+})
