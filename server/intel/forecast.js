@@ -3,7 +3,7 @@
 // PRIVACY: only coordinates rounded to 0.1° (~11 km) and a date leave the server. The result is advice about WHEN to run; it never changes a locked rule.
 import { idb } from './db.js'
 import { wbgtShade, cellOf } from './weather.js'
-import PLAN from '../../src/data/plan.json' with { type: 'json' }
+import { PLAN } from '../plan/read.js'
 
 // the official JRF 2026 flag-protocol bands (the same thresholds as lumpadd/internal/graph WBGTBand)
 export const bandOf = (w) => (w >= 32.3 ? 'BLACK' : w >= 27.9 ? 'RED' : w >= 25.7 ? 'ORANGE' : w >= 22.3 ? 'YELLOW' : 'GREEN')

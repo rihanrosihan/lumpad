@@ -7,7 +7,7 @@ import { idb, mdb, tx } from './db.js'
 import { parseFitFile, toSeries, PARSER_VERSION } from './fit.js'
 import { sessionMetrics, perKm, classify, gradeSeries, BASELINE } from './metrics.js'
 import { buildCard, features, zMatrix, cosine, FEATURES } from './card.js'
-import PLAN from '../../src/data/plan.json' with { type: 'json' }
+import { PLAN } from '../plan/read.js'
 
 const RUN = new Set([100, 101, 102, 103]), PLAN_BY = Object.fromEntries(PLAN.map((d) => [d.date, d]))
 const dataDir = () => process.env.DATA_DIR || path.resolve('server/data')

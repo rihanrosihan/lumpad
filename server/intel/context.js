@@ -10,7 +10,7 @@ import { RACE_CALENDAR_TEXT } from './racecal.js'
 import { todayActivity } from './today.js'
 import { timeFrame, frameNote, sessionFacts, loadAfter, sinceThen } from './timeframe.js'
 import { adviceSummary } from './advice.js'
-import PLAN from '../../src/data/plan.json' with { type: 'json' }
+import { PLAN } from '../plan/read.js'
 import { redact, STABLE_ATHLETE, DEFINITIONS, INTENT_QUERY, TASKS, renderPromptPure } from './prompt.js'
 import { decompose, filterSql } from './query.js'
 import { db as app } from '../store.js'

@@ -7,7 +7,7 @@
 import { idb } from './db.js'
 import { db as app } from '../store.js'
 import { ATHLETE, Z2_CEILING } from '../../src/lib/athlete.js'
-import PLAN from '../../src/data/plan.json' with { type: 'json' }
+import { PLAN } from '../plan/read.js'
 
 const PLAN_BY = Object.fromEntries(PLAN.map((d) => [d.date, d]))
 const avg = (a) => { const v = a.filter((x) => x != null && Number.isFinite(x)); return v.length ? v.reduce((s, x) => s + x, 0) / v.length : null }

@@ -25,6 +25,7 @@ import { guardStatus, resolveModel } from './intel/llm.js'
 import { status as archiveStatus } from './coros/archive.js'
 import { listMerged, activityDetail, gearList, gearRate, setShoe, readinessData, lapsInRange, exportRows, toCsv } from './activities.js'
 import { authorize, principal } from './auth.js'
+import { PLAN_META, planRange, planDay } from './plan/read.js'
 import { applyIngest, checkToken, syncStatus, coverage, healthRange, activitiesRange, lapsOf, validDate } from './ingest.js'
 
 const send = (res, code, body, headers = {}) => { res.writeHead(code, { 'content-type': 'application/json', ...headers }); res.end(JSON.stringify(body)) }
@@ -227,6 +228,10 @@ const routes = {
   'POST /api/coros/fit': async (_q, req) => { const a = await coros.parseFit(await readBody(req)); save('coros_acts', [a, ...load('coros_acts', [])].slice(0, 500)); return a },
   'GET /api/coros/activities': async () => load('coros_acts', []),
   'GET /api/coros/plan': async () => load('coros_plan', { rows: null, at: null }),
+  // adaptive plan engine, read path (P1). Source is PLAN_SOURCE=json (default) or engine; see server/plan/read.js
+  'GET /api/plan/status': async () => ({ ...PLAN_META }),
+  'GET /api/plan/range': async (q) => { const from = q.get('from') || undefined, to = q.get('to') || undefined; if ((from && !validDate(from)) || (to && !validDate(to))) throw Object.assign(new Error('from/to must be YYYY-MM-DD'), { status: 400 }); return { source: PLAN_META.source, version: PLAN_META.version, days: planRange(from, to) } },
+  'GET /api/plan/day': async (q) => { const date = q.get('date'); if (!validDate(date)) throw Object.assign(new Error('date must be YYYY-MM-DD'), { status: 400 }); return { source: PLAN_META.source, version: PLAN_META.version, day: planDay(date) } },
   'GET /api/library': async () => lib.list(),
   'POST /api/library': async (_q, req) => lib.add(JSON.parse((await readBody(req, 1e5)).toString())),
   'DELETE /api/library': async (q) => lib.remove(q.get('id')),

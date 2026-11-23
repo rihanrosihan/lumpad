@@ -12,7 +12,7 @@ import { computeReadiness } from '../../src/lib/readiness.js'
 import { vdotFromRace, raceTime } from '../../src/lib/vdot.js'
 import { CHECKPOINTS, TARGET, killGate } from '../../src/lib/plan.js'
 import { HARD } from '../../src/lib/gate.js'
-import PLAN from '../../src/data/plan.json' with { type: 'json' }
+import { PLAN } from '../plan/read.js'
 import { ATHLETE, Z2_CEILING } from '../../src/lib/athlete.js'
 import { listEdges } from './corr.js'
 import { matrices } from './matrices.js'

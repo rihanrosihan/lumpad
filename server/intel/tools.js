@@ -8,7 +8,7 @@ import { filterSql } from './query.js'
 import { ftsSearch, sortByEvidence } from './memory.js'
 import { latestTwin } from './twin.js'
 import { estimate, cfgOf } from '../../src/lib/zones.js'
-import PLAN from '../../src/data/plan.json' with { type: 'json' }
+import { PLAN } from '../plan/read.js'
 
 const PLAN_BY = Object.fromEntries(PLAN.map((d) => [d.date, d]))
 const r1 = (x, d = 1) => (x == null || !isFinite(x) ? null : Math.round(x * 10 ** d) / 10 ** d)

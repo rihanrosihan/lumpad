@@ -2,7 +2,7 @@
 import { db as app } from '../store.js'
 import { load } from '../db.js'
 import { idb, tx } from './db.js'
-import PLAN from '../../src/data/plan.json' with { type: 'json' }
+import { PLAN } from '../plan/read.js'
 
 const PLAN_BY = Object.fromEntries(PLAN.map((d) => [d.date, d]))
 const addDays = (s, n) => { const d = new Date(s + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10) }
