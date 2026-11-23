@@ -67,9 +67,9 @@ export function activate(db, versionId, { adjustmentId = null, expectedParent = 
 }
 
 // one audit row per change; created when a change is proposed (or directly at activation for imports and manual edits). Append-only (DB triggers).
-export function recordAdjustment(db, { trigger = null, from = null, to, loop, scope, operators = [], diff = [], rules = [], inputs = {}, rationale, rationaleLlm = null, auto = 0, expected = null }) {
-  return Number(db.prepare(`INSERT INTO plan_adjustment (created_at, trigger_id, from_version, to_version, loop, scope_from, scope_to, operators, diff, rules, inputs, rationale_det, rationale_llm, auto, expected)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(now(), trigger, from, to, loop, scope[0], scope[1], J(operators), J(diff), J(rules), J(inputs), rationale, rationaleLlm, auto ? 1 : 0, expected ? J(expected) : null).lastInsertRowid)
+export function recordAdjustment(db, { trigger = null, from = null, to, loop, scope, operators = [], diff = [], rules = [], inputs = {}, rationale, rationaleLlm = null, coachRunId = null, llmTokens = null, auto = 0, expected = null }) {
+  return Number(db.prepare(`INSERT INTO plan_adjustment (created_at, trigger_id, from_version, to_version, loop, scope_from, scope_to, operators, diff, rules, inputs, rationale_det, rationale_llm, coach_run_id, llm_tokens, auto, expected)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(now(), trigger, from, to, loop, scope[0], scope[1], J(operators), J(diff), J(rules), J(inputs), rationale, rationaleLlm, coachRunId, llmTokens, auto ? 1 : 0, expected ? J(expected) : null).lastInsertRowid)
 }
 export const addEvent = (db, adjustmentId, event, by, detail = null) => db.prepare('INSERT INTO plan_adjustment_event (adjustment_id, at, event, by, detail) VALUES (?,?,?,?,?)').run(adjustmentId, now(), event, by, detail ? J(detail) : null)
 

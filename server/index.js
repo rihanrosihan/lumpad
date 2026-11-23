@@ -30,12 +30,15 @@ import { planDb } from './plan/db.js'
 import { activeZones, runZoneWatch } from './plan/zonewatch.js'
 import { resolveDay } from './plan/resolve.js'
 import { handlers as planHandlers } from './plan/api.js'
-const PH = planHandlers({ latestTwin: () => latestTwin() })
+const PH = planHandlers({ latestTwin: () => latestTwin(), mdb,
+  complete: (o) => import('./intel/llm.js').then((m) => m.complete(o)),   // the existing gateway: monthly cap, guard and provider settings apply
+  memoryRows: () => { try { return mdb.prepare("SELECT id, tier, kind, title, evidence_tag, status, payload FROM memory WHERE status='active' ORDER BY id DESC LIMIT 400").all() } catch { return [] } } })
 const planBody = async (req) => JSON.parse((await readBody(req, 2e4)).toString() || '{}')
 import { applyIngest, checkToken, syncStatus, coverage, healthRange, activitiesRange, lapsOf, validDate } from './ingest.js'
 
 // P2 shadow job (opt-in, PLAN_ZONEWATCH=1): after each COROS job, re-resolve benchmarks, store a new zone set when they moved, raise triggers. Writes only plan.db.
-const zoneWatchJob = async () => { if (process.env.PLAN_ZONEWATCH !== '1') return; try { const { db: app } = await import('./store.js'), kv = load('kv', {}), fitness = app.prepare('SELECT date, threshold_pace_s_km FROM fitness_daily ORDER BY date DESC LIMIT 14').all(); runZoneWatch({ db: planDb(), today: new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10), settings: kv['lumpad.settings']?.value || {}, results: kv['lumpad.results']?.value || {}, fitness }) } catch (e) { console.error('plan zonewatch', e.message) } }
+const zoneWatchJob = async () => { if (process.env.PLAN_STATS === '1') try { const { db: app } = await import('./store.js'), { refreshTemplateStats } = await import('./plan/stats.js'); refreshTemplateStats(planDb(), { appDb: app, intelDb: idb, today: new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10) }) } catch (e) { console.error('plan stats', e.message) }
+  if (process.env.PLAN_ZONEWATCH !== '1') return; try { const { db: app } = await import('./store.js'), kv = load('kv', {}), fitness = app.prepare('SELECT date, threshold_pace_s_km FROM fitness_daily ORDER BY date DESC LIMIT 14').all(); runZoneWatch({ db: planDb(), today: new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10), settings: kv['lumpad.settings']?.value || {}, results: kv['lumpad.results']?.value || {}, fitness }) } catch (e) { console.error('plan zonewatch', e.message) } }
 const send = (res, code, body, headers = {}) => { res.writeHead(code, { 'content-type': 'application/json', ...headers }); res.end(JSON.stringify(body)) }
 const readBody = (req, max = 20e6) => new Promise((ok, no) => { const c = []; let n = 0; req.on('data', (d) => { n += d.length; if (n > max) { no(Object.assign(new Error('payload too large'), { status: 413 })); req.destroy() } else c.push(d) }); req.on('end', () => ok(Buffer.concat(c))) })
 
@@ -244,6 +247,7 @@ const routes = {
   'GET /api/plan/proposals': async () => PH.proposals(),
   'GET /api/plan/audit': async (q) => PH.audit(q),
   'GET /api/plan/menu': async (q) => PH.menu(q),
+  'POST /api/plan/menu/choose': async (_q, req) => PH.menuChoose(await planBody(req), principal(req)),
   'POST /api/plan/proposals/accept': async (_q, req) => PH.accept(await planBody(req), principal(req)),
   'POST /api/plan/proposals/reject': async (_q, req) => PH.reject(await planBody(req), principal(req)),
   'POST /api/plan/revert': async (_q, req) => PH.revert(await planBody(req), principal(req)),
@@ -256,6 +260,7 @@ const routes = {
   'GET /api/plan/availability': async () => PH.availability(),
   'PUT /api/plan/availability': async (_q, req) => PH.setAvailability(await planBody(req), principal(req)),
   'POST /api/plan/macro': async (_q, req) => PH.macro(await planBody(req), principal(req)),
+  'POST /api/plan/why': async (_q, req) => PH.why(await planBody(req), principal(req)),
   'GET /api/plan/zones': async () => { const z = activeZones(planDb()); if (!z) throw Object.assign(new Error('no zone set yet'), { status: 404 }); return z },
   'GET /api/plan/day': async (q) => { const date = q.get('date'); if (!validDate(date)) throw Object.assign(new Error('date must be YYYY-MM-DD'), { status: 400 }); return { source: PLAN_META.source, version: PLAN_META.version, day: planDay(date) } },
   'GET /api/library': async () => lib.list(),

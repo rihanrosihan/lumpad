@@ -9,6 +9,14 @@ import { validate, repair, weekTotals } from './kernel.js'
 
 export const FREEZES = [['2027-05-30', '2027-06-20'], ['2027-10-03', '2027-10-24']]   // no software cutovers (remaining-work §1)
 export const RAMADAN = ['2027-02-01', '2027-03-14']
+// Rebuild one generated session with a different template (same day, never more km than the slot had). Used by the AI selector (P5).
+const META = { 'coros.P10541': ['quality', 'Steady Run · Aerobic Power'], 'coros.P10547': ['quality', 'Threshold Intervals'], 'coros.P10544': ['quality', 'Aerobic Power Alternations'], 'coros.P10594': ['long', 'Long Run'], 'coros.P10545': ['long', 'Long Run · Aerobic Power finish'] }
+export const hiKmOf = (d) => (d.kind === 'quality' || d.template === 'coros.P10545' ? flat(d.steps || []).filter((s) => (s.z || 0) >= 3 && s.m).reduce((a, s) => a + s.m / 1000, 0) : 0)
+export function rebuildSlot(day, tpl, km = day.km) {
+  const m = META[tpl]; if (!m) return null
+  const s = session(day.date, tpl, km); if (s.km > day.km + 0.05) return null   // never more load than the slot had
+  return { ...day, kind: m[0], label: m[1], km: s.km, steps: s.steps, sec: s.est.sec, tl: s.est.tl, template: tpl }
+}
 export const inFreeze = (d) => FREEZES.some(([a, b]) => d >= a && d <= b)
 const r05 = (x) => Math.round(x * 2) / 2, f05 = (x) => Math.floor(x * 10 + 1e-9) / 10, f1 = (x) => Math.floor(x * 10) / 10, r1 = (x) => Math.round(x * 10) / 10
 const NOTE = { easy: 'Conversational: hold the HR zone, let pace float in heat.', long: 'Fuel from 45 min (30–60 g/h), drink to thirst, sodium in heat.', quality: 'Hold the zone evenly; recoveries stay in zone 2.', rest: 'REST DAY' }

@@ -7,7 +7,7 @@
     "dev": "vite --host",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node --test src/lib/*.test.js server/*.test.js server/coros/*.test.js server/intel/*.test.js server/intel/eval/*.test.js server/garmin/*.test.js server/plan/*.test.js",
+    "test": "node --test src/*.test.js src/lib/*.test.js server/*.test.js server/coros/*.test.js server/intel/*.test.js server/intel/eval/*.test.js server/garmin/*.test.js server/plan/*.test.js",
     "server": "node server/index.js",
     "intel": "node --env-file=.env server/intel/cli.js run",
     "fit:import": "node --env-file=.env server/coros/fitimport-cli.js",

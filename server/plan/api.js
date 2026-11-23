@@ -8,6 +8,8 @@ import { raise, openTriggers } from './triggers.js'
 import { propose, accept, reject, revert, openProposals, expireProposals } from './proposals.js'
 import { syncPlan } from './read.js'
 import { listGoals, upsertGoal, seedGoals, getAvailability, setAvailability, proposeMacro } from './macroflow.js'
+import { proposeMacroCoach } from './coachflow.js'
+import { explainAdjustment, coachEnabled } from './planllm.js'
 
 const err = (status, message) => Object.assign(new Error(message), { status })
 export const needUser = (user) => { if (!user) throw err(401, 'authentication required for plan changes'); return user }
@@ -20,7 +22,7 @@ function twinCtx(latestTwin) {
 }
 const after = (db) => { expireProposals(db); return syncPlan({ db }) }
 
-export function handlers({ latestTwin }) {
+export function handlers({ latestTwin, complete = null, mdb = null, memoryRows = () => [] }) {
   return {
     proposals: () => { const db = planDb(); expireProposals(db); return { proposals: openProposals(db), triggers: openTriggers(db) } },
     audit: (q) => { const db = planDb(), lim = Math.min(+q.get('limit') || 50, 200)
@@ -47,8 +49,22 @@ export function handlers({ latestTwin }) {
     availability: () => getAvailability(planDb()),
     setAvailability: (body, user) => { needUser(user); return setAvailability(planDb(), body) },
     // Plan v2 / regeneration: builds a kernel-checked macro PROPOSAL from the actual 4-week volume; nothing changes until it is accepted
-    macro: (body, user) => { needUser(user); const c = twinCtx(latestTwin), s = latestTwin?.()?.state
-      return proposeMacro(planDb(), { ctx: { weekly4w: s?.load?.weekly_km_4w ?? 15, longest30: s?.load?.longest_run_km_30d ?? 0, guardBaseline: body.guard_baseline, cutbackRatio: body.cutback_ratio, peakCap: body.peak_cap_km }, force: body.force === true, by: 'engine' }) },
+    macro: async (body, user) => { needUser(user); const s = latestTwin?.()?.state, args = { ctx: { weekly4w: s?.load?.weekly_km_4w ?? 15, longest30: s?.load?.longest_run_km_30d ?? 0, guardBaseline: body.guard_baseline, cutbackRatio: body.cutback_ratio, cutbackEvery: body.cutback_every, peakCap: body.peak_cap_km }, force: body.force === true }
+      // with PLAN_COACH=1 (and a model wired in) the AI selector picks among kernel-checked options; otherwise, or on any failure, the engine's own ranking is used
+      if (body.coach !== false && coachEnabled() && complete && mdb) return proposeMacroCoach(planDb(), args, { complete, mdb, twinState: s, memoryRows: memoryRows() })
+      return proposeMacro(planDb(), { ...args, by: 'engine' }) },
+    // "why?" for one change (<= 80 words, grounded); falls back to the engine's own explanation
+    why: async (body, user) => { needUser(user); const db = planDb(), a = db.prepare('SELECT * FROM plan_adjustment WHERE id=?').get(+body.adjustment_id); if (!a) throw err(404, 'adjustment not found')
+      const adj = { ...a, operators: JSON.parse(a.operators), rules: JSON.parse(a.rules), diff: JSON.parse(a.diff) }; return explainAdjustment({ adjustment: adj, complete, mdb }) },
+    // the athlete tapped option B or C on the daily menu: that tap IS the approval, so the kernel-checked proposal is applied in the same call (A = as planned, no change)
+    menuChoose: (body, user) => { needUser(user); const date = body.date, opt = body.option; if (!DATE.test(date || '')) throw err(400, 'date must be YYYY-MM-DD'); if (!['A', 'B', 'C'].includes(opt)) throw err(400, 'option must be A, B or C')
+      if (opt === 'A') return { ok: true, chosen: 'A', changed: false }
+      const db = planDb(), c = twinCtx(latestTwin), menu = dailyMenu(planMap(db), date, { gate: c.gate, availMin: +body.avail_min || undefined, wbgt: +body.wbgt || undefined, aqiBad: body.aqi_bad === true, redFlag: body.red_flag === true })
+      const o = menu.options.find((x) => x.id === opt); if (!o?.patch) throw err(409, `option ${opt} is not available for ${date} any more`)
+      const trig = raise(db, { type: 'manual', source: 'athlete', key: `menu:${date}:${opt}:${o.patch.operator}`, payload: { date, option: opt, operator: o.patch.operator } })
+      const r = propose(db, { patches: [o.patch], trigger: trig.id, today: wibDate(), inputs: { menu: date, option: opt } }); if (!r.ok) return { ok: false, ...r }
+      if (r.duplicate) return { ok: true, chosen: opt, changed: false, note: 'already chosen' }
+      const done = r.auto ? { auto: true } : accept(db, r.adjustment, { by: 'athlete' }); return { ok: true, chosen: opt, changed: true, adjustment: r.adjustment, sync: after(db), ...done, by: user } },
     feedback: (body, user) => { needUser(user); if (!DATE.test(body.date || '')) throw err(400, 'date must be YYYY-MM-DD')
       const rpe = body.rpe == null ? null : +body.rpe; if (rpe != null && !(rpe >= 1 && rpe <= 10)) throw err(400, 'rpe must be 1-10'); if (body.verdict && !['too_easy', 'right', 'too_hard'].includes(body.verdict)) throw err(400, 'verdict must be too_easy, right or too_hard')
       const db = planDb(), id = Number(db.prepare('INSERT INTO session_feedback (date, rpe, verdict, text, created_at) VALUES (?,?,?,?,?)').run(body.date, rpe, body.verdict ?? null, String(body.text ?? '').slice(0, 500) || null, new Date().toISOString()).lastInsertRowid)

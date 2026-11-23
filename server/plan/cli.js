@@ -29,4 +29,7 @@ else if (cmd === 'resolve') {
   const fitness = app.prepare('SELECT date, threshold_pace_s_km FROM fitness_daily ORDER BY date DESC LIMIT 14').all()
   const settings = kv['lumpad.settings']?.value || {}, results = kv['lumpad.results']?.value || {}, res = resolveBenchmarks({ settings, results, fitness, today })
   console.log(Object.values(res.benchmarks).map((b) => `${b.metric}=${JSON.stringify(b.value)} (${b.source})`).join('\n')); console.log(runZoneWatch({ db, today, settings, results, fitness }))
-} else { console.log('usage: import | verify | report | resolve'); process.exit(2) }
+} else if (cmd === 'stats') {
+  const { db: app } = await import('../store.js'), { idb } = await import('../intel/db.js'), { refreshTemplateStats } = await import('./stats.js'), r = refreshTemplateStats(db, { appDb: app, intelDb: idb, today: wibDate() })
+  console.log({ templates: r.saved }); for (const x of r.rows) console.log(x.template_id, 'n=' + x.n, 'adherence=' + x.adherence, 'tiz=' + x.tiz, 'pain48h=' + x.pain48h_rate, 'skip=' + x.skip_rate, 'last=' + x.last_done)
+} else { console.log('usage: import | verify | report | resolve | stats'); process.exit(2) }

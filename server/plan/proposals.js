@@ -58,13 +58,14 @@ export function revert(db, adjustmentId, { today = wibDate(), by = 'athlete' } =
   if (!['applied'].includes(last)) throw Object.assign(new Error(`adjustment is ${last}, only an applied change can be reverted`), { status: 409 })
   const rows = db.prepare('SELECT * FROM plan_session WHERE version_id=?').all(a.to_version), sessions = []
   for (const r of rows) {
-    const act = db.prepare('SELECT version_id FROM plan_active_day WHERE date=? AND slot=?').get(r.date, r.slot)
-    if (act && act.version_id !== a.to_version) throw Object.assign(new Error(`a later change touches ${r.date}`), { status: 409 })
+    // refuse only when the day no longer holds what this adjustment produced (content hash, not version id: undoing a later change restores the same content)
+    const act = db.prepare('SELECT s.hash FROM plan_active_day a JOIN plan_session s ON s.id=a.session_id WHERE a.date=? AND a.slot=?').get(r.date, r.slot)
+    if (act && act.hash !== r.hash) throw Object.assign(new Error(`a later change touches ${r.date}`), { status: 409 })
     if (r.date < today) throw Object.assign(new Error(`${r.date} is in the past`), { status: 422 })
     const prev = db.prepare("SELECT s.* FROM plan_session s JOIN plan_version v ON v.id=s.version_id WHERE s.date=? AND s.slot=? AND v.status IN ('active','superseded') AND v.id < ? ORDER BY v.id DESC LIMIT 1").get(r.date, r.slot, a.to_version)
-    sessions.push(prev ? { ...prev, op: prev.op, dose: P(prev.dose), steps: P(prev.steps), est: P(prev.est), tags: P(prev.tags), legacy: P(prev.legacy), origin: 'revert' } : { date: r.date, slot: r.slot, op: 'clear', kind: 'rest', label: '', origin: 'revert' })
+    sessions.push(prev ? { ...prev, op: prev.op, dose: P(prev.dose), steps: P(prev.steps), est: P(prev.est), tags: P(prev.tags), legacy: P(prev.legacy), origin: 'revert', hash: prev.hash } : { date: r.date, slot: r.slot, op: 'clear', kind: 'rest', label: '', origin: 'revert' })
   }
-  const cur = activeVersion(db), v = createVersion(db, { kind: 'revert', parentId: cur.id, status: 'proposed', sessions: sessions.map((s) => ({ ...s, hash: undefined })), inputs: { revert_of: adjustmentId } })
+  const cur = activeVersion(db), v = createVersion(db, { kind: 'revert', parentId: cur.id, status: 'proposed', sessions, inputs: { revert_of: adjustmentId } })
   const diff = sessions.map((s) => ({ date: s.date, after: s.op === 'clear' ? null : { kind: s.kind, label: s.label, km: s.dose?.km ?? null } }))
   const adj = recordAdjustment(db, { from: cur.id, to: v.id, loop: 'revert', scope: [sessions.map((s) => s.date).sort()[0], sessions.map((s) => s.date).sort().at(-1)], operators: ['revert'], diff, rules: [], inputs: { revert_of: adjustmentId }, rationale: `Reverted adjustment ${adjustmentId}: ${a.rationale_det}` })
   addEvent(db, adj, 'proposed', by)

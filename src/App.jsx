@@ -10,10 +10,11 @@ const Coach = lazy(() => import('./Coach.jsx'))
 const DayPage = lazy(() => import('./DayPage.jsx'))
 const Biometrics = lazy(() => import('./Biometrics.jsx'))
 const PlanSync = lazy(() => import('./PlanSync.jsx'))
+const PlanEngine = lazy(() => import('./PlanEngine.jsx'))
 import { EMPTY_BIO, latest, classifyBP } from './lib/bio.js'
 import { CHECKPOINTS, TARGET } from './lib/plan.js'
 import { paces, fmtPace } from './lib/vdot.js'
-import { today, diffDays, PLAN, fmtShort, fmtLong } from './lib/calendar.js'
+import { today, diffDays, PLAN, fmtShort, fmtLong, PLAN_ENABLED } from './lib/calendar.js'
 import { EMPTY_DAY } from './lib/gate.js'
 import { useSyncStatus2, wib } from './sync.js'
 import { useModel } from './model.js'
@@ -24,16 +25,16 @@ import { readSub, setSubInUrl } from './useSub.js'
 const PAGES = {
   home: { label: 'Home', icon: 'home' }, ready: { label: 'Readiness', icon: 'ready', short: 'Ready' }, activity: { label: 'Activities', icon: 'run', short: 'Activity' },
   calendar: { label: 'Calendar', icon: 'cal', short: 'Calendar' },  analysis: { label: 'Run Analysis', icon: 'run' }, plan: { label: 'Plan Sync', icon: 'sync', short: 'Sync' }, day: { label: 'Day Plan', icon: 'day' }, checkpoint: { label: 'Checkpoints', icon: 'bars' }, race: { label: 'Races', icon: 'flag' },
-  coach: { label: 'AI Coach', icon: 'coach', short: 'Coach' }, biometrics: { label: 'Biometrics', icon: 'heart', short: 'Labs' }, profile: { label: 'Profile', icon: 'user' },
+  planengine: { label: 'Plan engine', icon: 'sync', short: 'Plan' }, coach: { label: 'AI Coach', icon: 'coach', short: 'Coach' }, biometrics: { label: 'Biometrics', icon: 'heart', short: 'Labs' }, profile: { label: 'Profile', icon: 'user' },
 }
-const GROUPS = [['Menu', ['home', 'ready', 'activity', 'calendar', 'coach']]]
+const GROUPS = [['Menu', ['home', 'ready', 'activity', 'calendar', 'coach']], ...(PLAN_ENABLED ? [['Plan engine (preview)', ['planengine']]] : [])]   // the adaptive plan screen is opt-in (see lib/planapi.js)
 // breadcrumb under the brand (mockup wording)
 const CRUMB = { home: 'Home Briefing', ready: 'Readiness & Load', activity: 'Activities Catalog', calendar: 'Macrocycle Calendar', plan: 'Plan Sync', day: 'Day Plan', checkpoint: 'Checkpoint Roadmap', race: 'Races Hub', coach: 'AI Coach & Rules', biometrics: 'Biometrics & Labs', profile: 'Profile & Fleet' }
 // Desktop side menu: each main page lists its sections. [label, route, sub-section id]; the phone keeps the five-item bottom bar and uses the page's own tabs.
 const SUBS = {
   ready: [['Overview', 'ready', 'all'], ['Conditions Now', 'ready', 'conditions'], ['Load · PMC', 'ready', 'load'], ['ACWR', 'ready', 'acwr'], ['Sleep', 'ready', 'sleep'], ['HRV', 'ready', 'hrv'], ['Autonomic', 'ready', 'auto']],
   activity: [['Recent Activities', 'activity', 'recent'], ['Fitness', 'activity', 'fitness'], ['History', 'activity', 'history']],
-  calendar: [['Calendar', 'calendar', 'month'], ['Week Detail', 'calendar', 'week'], ['Plan', 'calendar', 'checklist'], ['Checkpoints', 'checkpoint', null], ['Race', 'race', null]],
+  calendar: [['Calendar', 'calendar', 'month'], ['Week Detail', 'calendar', 'week'], ['Plan', 'calendar', 'checklist'], ['Checkpoints', 'checkpoint', null], ['Race', 'race', null], ...(PLAN_ENABLED ? [['Plan engine', 'planengine', null]] : [])],
   coach: [['Ask & Twin', 'coach', 'ask'], ['Knowledge Graph', 'coach', 'kg'], ['Monte Carlo & RAG', 'coach', 'mc'], ['Lag Explorer', 'coach', 'lag'], ['Memory Queue', 'coach', 'mem'], ['Matrices & Episodes', 'coach', 'mat'], ['Durability & Shoes', 'coach', 'dur']],
 }
 const BOTTOM = ['home', 'ready', 'activity', 'calendar', 'coach']
@@ -120,7 +121,7 @@ export default function App() {
     checkpoint: nextCp ? 'CP1–' + CHECKPOINTS.length : null, biometrics: (bio.bp?.length || 0) + (bio.glu?.length || 0) + (bio.weight?.length || 0) + (bio.lab?.length || 0) ? 'LABS' : null, race: nextRace ? 'D-' + dNext : null,
   }
   const cur = tab === 'activity' && focus?.id ? 'activity-detail' : tab
-  const subOf = { day: 'calendar', plan: 'calendar', checkpoint: 'calendar', race: 'calendar', analysis: 'activity' }
+  const subOf = { day: 'calendar', planengine: 'calendar', plan: 'calendar', checkpoint: 'calendar', race: 'calendar', analysis: 'activity' }
   const navBtn = (k, cls) => <button key={k} className={`${cls} ${(k === 'analysis' ? cur === 'activity-detail' : (tab === k || (cls === 'nb' && subOf[tab] === k)) && !(k === 'activity' && cur === 'activity-detail')) ? 'on' : ''} ${subOf[k] ? 'sub' : ''}`} aria-current={(k === 'analysis' ? cur === 'activity-detail' : tab === k) ? 'page' : undefined}
     onClick={() => (k === 'analysis' ? (lastRunId ? go('activity', { id: lastRunId }) : go('activity')) : go(k, k === 'day' ? T : null))}><Icon n={PAGES[k].icon} size={cls === 'rb' ? 18 : 22} /><span>{cls === 'nb' ? PAGES[k].short || PAGES[k].label : PAGES[k].label}</span></button>
   const goSub = (route, sid) => { setMenu(false); const url = '/' + route + (sid ? '?s=' + sid : ''); if (location.pathname + location.search !== url) history.pushState(null, '', url); window.dispatchEvent(new PopStateEvent('popstate')); window.scrollTo(0, 0) }
@@ -167,6 +168,7 @@ export default function App() {
           {tab === 'coach' && <Coach go={go} focus={focus} />}
           {tab === 'calendar' && <Calendar view="month" vdot={vdot} results={results} setResults={setResults} focus={null} settings={settings} go={go} />}
           {tab === 'plan' && <PlanSync go={go} />}
+          {tab === 'planengine' && <PlanEngine />}
           {tab === 'day' && <DayPage date={focus || T} vdot={vdot} settings={settings} go={go} />}
           {tab === 'checkpoint' && <Calendar view="cp" vdot={vdot} results={results} setResults={setResults} focus={focus} settings={settings} go={go} />}
           {tab === 'race' && <Calendar view="race" vdot={vdot} results={results} setResults={setResults} focus={focus} settings={settings} go={go} />}

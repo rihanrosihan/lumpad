@@ -2,7 +2,7 @@ import SessionBrief from './SessionBrief.jsx'
 import { useStore } from './store.js'
 import { evaluate, EMPTY_DAY, hasInput, HARD } from './lib/gate.js'
 import { pickShoe } from './lib/shoes.js'
-import { BY_DATE, today, addDays, fmtLong, diffDays, KIND, PHASE_NAME } from './lib/calendar.js'
+import { BY_DATE, today, addDays, fmtLong, diffDays, KIND, PHASE_NAME, PLAN_ENABLED } from './lib/calendar.js'
 import { Card, Chip, StrengthChips, Icon, StatusPill } from './ui.jsx'
 import { useApi, fmtDur, fmtPaceS } from './api.js'
 import { WorkoutDetail, WorkoutLine, mainTarget, stepsFor } from './Workout.jsx'
@@ -18,6 +18,7 @@ const RULES = ['Sleep HR ≤ 67 bpm for hard sessions', 'Sleep HRV not Reduced f
 const cpOf = (d) => d?.tags.find((t) => /^CP\d+$/.test(t))
 
 // One full page per training day: prescription, structure, pre-workout gate, shoe, what was actually run.
+import PlanMenuCard from './PlanMenuCard.jsx'
 export default function DayPage({ date, vdot, settings, go }) {
   const T = today(), [scale] = useStore('lumpad.scale', {}), d = effectiveDay(BY_DATE[date], scale.items?.[date], T)
   const [f] = useStore('lumpad.daily.' + date, EMPTY_DAY), [regs] = useStore('lumpad.registrations', {})
@@ -94,7 +95,8 @@ export default function DayPage({ date, vdot, settings, go }) {
         {stepsFor(d).length > 0 && <Card title="Workout Segments & Target Paces" right={<Chip>VDOT {vdot.v.toFixed(1)}</Chip>}>
           <WorkoutDetail day={d} settings={settings} />
         </Card>}
-        {corosCard}
+        {PLAN_ENABLED && (isToday || away > 0) && !past && <PlanMenuCard date={date} />}
+    {corosCard}
         {RACE_BY_DATE[date]?.route === 'jakim' && <JakimBenchmark settings={settings} compact onOpen={() => go('route')} />}
         {RACE_BY_DATE[date]?.route && <CourseMap routeId={RACE_BY_DATE[date].route} pace={RACE_BY_DATE[date].pace?.[1]} goal="sub 5:00" go={go} />}
 

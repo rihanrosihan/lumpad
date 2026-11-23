@@ -1,0 +1,22 @@
+/* Plan engine screen (namespace pe-). Uses the app's theme variables, so light and dark both work. */
+.pe-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:8px 0}
+.pe-form label,.pe-avrow b{display:flex;flex-direction:column;gap:4px;font-size:.8rem;font-weight:600;color:var(--muted)}
+.pe-form input,.pe-form select,.pe-avrow input,.pe-avrow select{width:100%;min-height:44px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface2);color:var(--text);font:inherit}
+.pe-msg{margin-top:10px;padding:8px 12px;border-radius:10px;font-size:.88rem;background:var(--surface2)}
+.pe-msg.green{background:color-mix(in srgb,var(--green) 14%,var(--surface));color:var(--green-t)}.pe-msg.red{background:color-mix(in srgb,var(--red) 14%,var(--surface));color:var(--red-t)}
+.pe-chart{margin:8px 0}.pe-chart svg{width:100%;height:auto;display:block}.pe-chart figcaption{font-size:.75rem;color:var(--muted);margin-top:4px}
+.pe-grid{stroke:var(--line);stroke-width:1}.pe-ax{fill:var(--muted);font-size:10px}
+.pe-bar.old{fill:var(--muted);opacity:.45}.pe-bar.new{fill:var(--cobalt)}
+.pe-key{display:inline-block;width:10px;height:10px;border-radius:2px;margin:0 4px 0 8px;vertical-align:baseline}.pe-key.old{background:var(--muted);opacity:.45}.pe-key.new{background:var(--cobalt)}
+.pe-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;list-style:none;padding:0;margin:10px 0}
+.pe-stats li{background:var(--surface2);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column}.pe-stats b{font-size:1.05rem}.pe-stats span{font-size:.75rem;color:var(--muted)}
+.pe-list{list-style:none;padding:0;margin:6px 0}.pe-list li{padding:6px 0;border-top:1px solid var(--line);font-size:.88rem}.pe-list li:first-child{border-top:0}
+.pe-diff details{border-top:1px solid var(--line);padding:6px 0}.pe-diff summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:center;gap:8px}
+.pe-diff ul{list-style:none;padding:0;margin:4px 0 8px}.pe-diff li{display:flex;gap:10px;font-size:.85rem;padding:3px 0}.pe-diff li b{min-width:54px}.pe-diff li s{color:var(--muted)}
+.pe-rules{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.pe-av{display:flex;flex-direction:column;gap:6px}.pe-avrow{display:grid;grid-template-columns:96px 1fr 1fr;gap:8px;align-items:center}
+.pe-avrow:has(button){grid-template-columns:1fr 1fr auto}
+.pe-table{width:100%;border-collapse:collapse;font-size:.9rem}.pe-table th,.pe-table td{text-align:left;padding:8px 6px;border-top:1px solid var(--line)}.pe-table th{font-size:.75rem;color:var(--muted);border-top:0}
+.pe-audit{border-top:1px solid var(--line);padding:10px 0}.pe-audit p{font-size:.88rem}
+.pe-goal small,.pe-opt small{display:block;color:var(--muted);font-size:.78rem}
+@media(max-width:420px){.pe-avrow{grid-template-columns:84px 1fr 1fr}}

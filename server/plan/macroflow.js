@@ -88,7 +88,8 @@ export function macroHold(db, today, { force = false, triggerTypes = [] } = {}) 
   }
   return { hold: false }
 }
-export function proposeMacro(db, { today = wibDate(), ctx = {}, trigger = null, triggerTypes = [], force = false, by = 'engine' } = {}) {
+// Two steps so an AI selector (P5) can sit in between: prepareMacro = holds + generate + kernel check (sync, deterministic); finishMacro = diff, version, audit row.
+export function prepareMacro(db, { today = wibDate(), ctx = {}, triggerTypes = [], force = false } = {}) {
   const cur = activeVersion(db); if (!cur) return { ok: false, reason: 'no active plan version' }
   const h = macroHold(db, today, { force, triggerTypes }); if (h.hold) return { ok: false, held: true, reason: h.why }
   const goals = listGoals(db); if (!goals.length) return { ok: false, reason: 'no goals: seed or add the race calendar first' }
@@ -96,21 +97,26 @@ export function proposeMacro(db, { today = wibDate(), ctx = {}, trigger = null, 
   const c = { weekly4w: 15, longest30: 0, ...ctx, guardBaseline: ctx.guardBaseline ?? A?.params?.guard_baseline ?? 'literal', cutbackRatio: ctx.cutbackRatio ?? A?.params?.cutback_ratio ?? 0.9, peakCap: ctx.peakCap ?? A?.params?.peak_cap_km ?? 60 }
   const g = generate({ today, plan, goals, availability: av, ctx: c }), chk = checkCandidate(g.days, c, g.report.start)
   if (chk.violations.length) return { ok: false, reason: 'the generated plan breaks the guardrails; not proposed', violations: chk.violations.slice(0, 10) }
-  const before = Object.fromEntries(plan.map((d) => [d.date, d])), changed = chk.days.filter((d) => !before[d.date] || sig(before[d.date]) !== sig(d))
+  return { ok: true, cur, goals, A, av, plan, c, g, chk, today }
+}
+export function finishMacro(db, prep, { trigger = null, by = 'engine', days = null, report = null, rationaleLlm = null, coachRunId = null, tokens = null, coachNotes = null } = {}) {
+  const { cur, goals, A, av, plan, c, g, chk } = prep, finalDays = days || chk.days
+  const before = Object.fromEntries(plan.map((d) => [d.date, d])), changed = finalDays.filter((d) => !before[d.date] || sig(before[d.date]) !== sig(d))
   if (!changed.length) return { ok: true, no_change: true }
   const sessions = changed.map((d) => ({ ...sessionFromDay(d, 'generated'), template_id: d.template ?? null }))
-  const wb = nonRaceWeeks(plan), wa = nonRaceWeeks(chk.days), keyChanges = changed.filter((d) => keyKind.has(d.kind) || keyKind.has(before[d.date]?.kind)).length
+  const wb = nonRaceWeeks(plan), wa = nonRaceWeeks(finalDays), keyChanges = changed.filter((d) => keyKind.has(d.kind) || keyKind.has(before[d.date]?.kind)).length
   const summary = { start: g.report.start, weeks_before: wb, weeks_after: wa, peak_before: Math.max(...Object.values(wb)), peak_after: g.report.peak_km, changed_days: changed.length, key_session_changes: keyChanges,
-    guard_baseline: c.guardBaseline, cutback: g.report.cutback, conflicts: g.report.conflicts, shortfalls: g.report.shortfalls, kept_violations: chk.kept_violations.length, repaired: chk.repaired }
-  const v = createVersion(db, { kind: 'macro', parentId: cur.id, baseMacroId: cur.id, status: 'proposed', sessions, goalId: A?.id ?? null, inputs: { goals: goals.map((x) => [x.race_date, x.cls, x.distance_m]), avail: av, ctx: [c.weekly4w, c.longest30, c.guardBaseline, c.cutbackRatio, c.peakCap], start: g.report.start }, summary })
+    guard_baseline: c.guardBaseline, cutback: g.report.cutback, conflicts: g.report.conflicts, shortfalls: g.report.shortfalls, kept_violations: chk.kept_violations.length, repaired: chk.repaired, ...(coachNotes ? { coach: coachNotes } : {}) }
+  const v = createVersion(db, { kind: 'macro', parentId: cur.id, baseMacroId: cur.id, status: 'proposed', sessions, goalId: A?.id ?? null, inputs: { goals: goals.map((x) => [x.race_date, x.cls, x.distance_m]), avail: av, ctx: [c.weekly4w, c.longest30, c.guardBaseline, c.cutbackRatio, c.peakCap], start: g.report.start, picks: coachNotes?.applied ?? null }, summary })
   if (!v.created) { const a = db.prepare('SELECT id FROM plan_adjustment WHERE to_version=?').get(v.id); return { ok: true, duplicate: true, version: v.id, adjustment: a?.id ?? null, summary } }
   const diff = changed.map((d) => ({ date: d.date, before: before[d.date] ? { kind: before[d.date].kind, label: before[d.date].label, km: before[d.date].km } : null, after: { kind: d.kind, label: d.label, km: d.km } }))
   const rationale = `Season regenerated from ${g.report.start}: weekly volume now starts from your actual ${c.weekly4w} km (4-week average) and ramps inside the load guard (${c.guardBaseline === 'build' ? 'baseline = previous 4 build weeks' : 'rule as written'}), cutback every ${g.report.cutback.every} weeks at ×${g.report.cutback.ratio}, taper and recovery around ${goals.length} goal race(s). Peak ${summary.peak_after} km/week (was ${summary.peak_before}); ${changed.length} days changed, ${keyChanges} key sessions.${g.report.conflicts.length ? ` ${g.report.conflicts.length} checkpoint(s) postponed because the load cannot carry them.` : ''}`
-  const adj = recordAdjustment(db, { trigger, from: cur.id, to: v.id, loop: 'macro', scope: [diff[0].date, diff.at(-1).date], operators: ['macro'], diff, rules: ['R-LOAD-10', 'R-LR-110', 'R-48H', 'R-TAPER', 'R-RACE-LOCK', 'R-PAST'].map((id) => ({ id, status: 'pass' })), inputs: { weekly4w: c.weekly4w, longest30: c.longest30, guard_baseline: c.guardBaseline, peak_cap_km: c.peakCap, goals: goals.length, freeze_windows: FREEZES }, rationale, expected: { peak_after: summary.peak_after } })
+  const adj = recordAdjustment(db, { trigger, from: cur.id, to: v.id, loop: 'macro', scope: [diff[0].date, diff.at(-1).date], operators: ['macro'], diff, rules: ['R-LOAD-10', 'R-LR-110', 'R-48H', 'R-TAPER', 'R-RACE-LOCK', 'R-PAST'].map((id) => ({ id, status: 'pass' })), inputs: { weekly4w: c.weekly4w, longest30: c.longest30, guard_baseline: c.guardBaseline, peak_cap_km: c.peakCap, goals: goals.length, freeze_windows: FREEZES }, rationale, rationaleLlm, coachRunId, llmTokens: tokens, expected: { peak_after: summary.peak_after } })
   addEvent(db, adj, 'proposed', by)
   if (trigger) markHandled(db, trigger)
   return { ok: true, version: v.id, adjustment: adj, summary, changed_days: changed.length }
 }
+export function proposeMacro(db, args = {}) { const prep = prepareMacro(db, args); return prep.ok ? finishMacro(db, prep, { trigger: args.trigger ?? null, by: args.by ?? 'engine' }) : prep }
 // open macro triggers -> one proposal (escalations, goal and availability edits). Marks them handled or leaves them held.
 export function handleMacroTriggers(db, args = {}) {
   const open = db.prepare("SELECT id, type FROM plan_trigger WHERE route='macro' AND status='new' ORDER BY id").all(); if (!open.length) return { handled: 0 }
