@@ -77,7 +77,7 @@ func TestAnthropicRequestAndResponse(t *testing.T) {
 	if sys["text"] != "STABLE" || sys["cache_control"].(map[string]any)["type"] != "ephemeral" {
 		t.Errorf("the stable prompt must be a cached system block: %v", h.Body["system"])
 	}
-	if h.Body["model"] != "claude-sonnet-5-5" || h.Body["max_tokens"] != float64(24000) {
+	if h.Body["model"] != "claude-sonnet-5-5" || h.Body["max_tokens"] != float64(AnthropicMax) {
 		t.Errorf("model/max_tokens: %v %v", h.Body["model"], h.Body["max_tokens"])
 	}
 	if th, _ := h.Body["thinking"].(map[string]any); th["type"] != "enabled" || th["budget_tokens"] != float64(6000) {
@@ -167,7 +167,7 @@ func TestAnthropicTruncationRetriesOnceAtLowEffort(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !resp.RetriedLow || len(f.hits) != 2 || f.hits[1].Body["max_tokens"] != float64(16000) {
+	if !resp.RetriedLow || len(f.hits) != 2 || f.hits[1].Body["max_tokens"] != float64(AnthropicMax) {
 		t.Errorf("retry: %+v hits %d", resp, len(f.hits))
 	}
 	if _, has := f.hits[1].Body["thinking"]; has {
@@ -207,7 +207,7 @@ func TestOpenAICompatFixedModelPriceCostNoBalanceCalls(t *testing.T) {
 		t.Fatalf("exactly one request, no balance or model calls: %+v", f.hits)
 	}
 	b := f.hits[0].Body
-	if b["model"] != "gpt-x" || b["max_completion_tokens"] != float64(24000) || b["reasoning_effort"] != "high" || b["max_tokens"] != nil {
+	if b["model"] != "gpt-x" || b["max_completion_tokens"] != nil || b["reasoning_effort"] != "high" || b["max_tokens"] != nil {
 		t.Errorf("body %v", b)
 	}
 	want := (400*2 + 600*0.5 + 100*8) / 1e6 * 7

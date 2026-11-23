@@ -99,7 +99,7 @@ func (p *Anthropic) Complete(ctx context.Context, r Request) (Response, error) {
 	}
 	max := r.MaxTokens
 	if max == 0 {
-		max = Budget(effort)
+		max = AnthropicMax
 	}
 	resp, err := p.once(ctx, r, effort, max)
 	ae, ok := err.(*APIError)
@@ -109,7 +109,7 @@ func (p *Anthropic) Complete(ctx context.Context, r Request) (Response, error) {
 	// cut off by max_tokens (thinking counts inside it): retry once without extended thinking and with a larger answer share
 	max2 := r.MaxTokens
 	if max2 == 0 {
-		max2 = Budget("low") * 2
+		max2 = AnthropicMax
 	}
 	r2, err2 := p.once(ctx, r, "low", max2)
 	if err2 != nil {
@@ -178,6 +178,9 @@ func (p *Anthropic) once(ctx context.Context, r Request, effort string, maxToken
 	cost := p.Prices.Cost(tokens, write)
 	if stop == "max_tokens" {
 		return Response{}, &APIError{Status: 502, Msg: "response truncated (max_tokens) — the model used its whole budget before finishing", Truncated: true, Text: text.String(), CostCNY: cost}
+	}
+	if err := tooLong(p.ProviderName, text.String()); err != nil {
+		return Response{}, err
 	}
 	usageRaw, _ := json.Marshal(j["usage"])
 	return Response{Text: text.String(), JSON: ParseJSONLenient(text.String()), Usage: usageRaw, Tokens: tokens, Provider: p.ProviderName, Model: p.Model, ModelName: p.Model, CostCNY: cost, Effort: effort, Finish: stop}, nil

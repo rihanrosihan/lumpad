@@ -5,6 +5,7 @@ package llm
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"unicode/utf16"
 )
 
@@ -69,6 +70,19 @@ type Provider interface {
 	// Complete makes one call including the provider's own retries; it never falls back to another provider.
 	Complete(ctx context.Context, r Request) (Response, error)
 }
+
+// MaxOutputChars: the only output limit — characters of the reply, not tokens. A longer reply is rejected (not cut, so JSON is never silently broken).
+const MaxOutputChars = 60000
+
+func tooLong(provider, text string) error {
+	if n := len(utf16.Encode([]rune(text))); n > MaxOutputChars {
+		return &APIError{Status: 502, Msg: fmt.Sprintf("%s reply too long (%d characters, limit %d)", provider, n, MaxOutputChars)}
+	}
+	return nil
+}
+
+// AnthropicMax: the Messages API requires max_tokens, so the "no limit" default is the model's output ceiling.
+const AnthropicMax = 64000
 
 // Budget: max_tokens by effort (the hidden reasoning counts inside it, so 'high' needs far more than the answer itself).
 func Budget(effort string) int {

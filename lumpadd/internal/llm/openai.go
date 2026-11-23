@@ -129,10 +129,7 @@ func (p *OpenAI) Complete(ctx context.Context, r Request) (Response, error) {
 	if effort == "" {
 		effort = "high"
 	}
-	max := r.MaxTokens
-	if max == 0 {
-		max = Budget(effort)
-	}
+	max := r.MaxTokens // 0 = no output cap sent: the provider's own limit applies
 	resp, err := p.once(ctx, r, effort, max)
 	if err == nil {
 		return resp, nil
@@ -141,11 +138,7 @@ func (p *OpenAI) Complete(ctx context.Context, r Request) (Response, error) {
 	if !ok || !ae.Truncated || effort == "low" {
 		return resp, err
 	}
-	max2 := r.MaxTokens
-	if max2 == 0 {
-		max2 = Budget("low") * 2
-	}
-	r2, err2 := p.once(ctx, r, "low", max2)
+	r2, err2 := p.once(ctx, r, "low", r.MaxTokens)
 	if err2 != nil {
 		return r2, err2
 	}
@@ -174,7 +167,10 @@ func (p *OpenAI) once(ctx context.Context, r Request, effort string, maxTokens i
 	if tp == "" {
 		tp = "max_tokens"
 	}
-	body := map[string]any{"model": model.ID, "messages": msgs, tp: maxTokens, "stream": false}
+	body := map[string]any{"model": model.ID, "messages": msgs, "stream": false}
+	if maxTokens > 0 {
+		body[tp] = maxTokens
+	}
 	if !p.NoJSONMode {
 		body["response_format"] = map[string]any{"type": "json_object"}
 	}
@@ -230,6 +226,9 @@ func (p *OpenAI) once(ctx context.Context, r Request, effort string, maxTokens i
 	}
 	if finish == "length" {
 		return Response{}, &APIError{Status: 502, Msg: "response truncated (max_tokens) — the model used its whole budget before finishing", Truncated: true, Text: text, CostCNY: cost}
+	}
+	if err := tooLong(p.ProviderName, text); err != nil {
+		return Response{}, err
 	}
 	usageRaw, _ := json.Marshal(j["usage"])
 	if j["usage"] == nil {

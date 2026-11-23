@@ -144,6 +144,11 @@ func TestDeepSeekMatchesNodeClientTraces(t *testing.T) {
 			}
 			for i, want := range tr.Requests {
 				g := got[i]
+				if tr.Opts.MaxTokens == 0 { // the Node client capped output by effort; the Go gateway deliberately sends no cap
+					if m, ok := want.Body.(map[string]any); ok {
+						delete(m, "max_tokens")
+					}
+				}
 				if g.Method != want.Method || g.Path != want.Path || !reflect.DeepEqual(g.Auth, want.Auth) || !reflect.DeepEqual(g.Body, want.Body) {
 					gj, _ := json.Marshal(g)
 					wj, _ := json.Marshal(want)
