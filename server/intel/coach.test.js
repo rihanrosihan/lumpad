@@ -145,3 +145,8 @@ test('custom gateway: a high-effort reply is streamed (SSE) so a proxy cannot cu
   const r = await L2.apiStream('/chat/completions', { model: 'm', messages: [] }, { fetchFn })
   assert.equal(sent.stream, true); assert.equal(r.choices[0].message.content, '{"a":7}'); assert.equal(r.choices[0].finish_reason, 'stop'); assert.equal(r.usage.total_tokens, 8)
 })
+test('softClamp drops a memory write that cites nothing instead of failing the answer', async () => {
+  const S = await import('./schema.js')
+  const j = S.softClamp({ summary: 's', analysis_md: 'a', recommendations: [], flags: [], cited_ids: [], memory_writes: [{ tier: 'episodic', title: 't', body: 'b', cites: [] }, { tier: 'episodic', title: 't2', body: 'b2', cites: [5] }] })
+  assert.equal(j.memory_writes.length, 1); assert.equal(j.memory_writes[0].title, 't2')
+})

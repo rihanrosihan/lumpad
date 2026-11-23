@@ -59,7 +59,7 @@ export const normalize = (j) => {
 }
 
 // A coach answer that is only too long is not a failed answer: cut the display fields to their limit at a sentence boundary (or a space) instead of
-// burning a repair call. Structure, enums and memory writes stay strictly validated. Returns the same object.
+// burning a repair call. Structure and enums stay strictly validated; a memory write without citations is dropped (never stored). Returns the same object.
 const clipText = (t, max) => {
   if (typeof t !== 'string' || t.length <= max) return t
   const cut = t.slice(0, max - 1), at = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('\n'), cut.lastIndexOf('; '))
@@ -68,6 +68,8 @@ const clipText = (t, max) => {
 export function softClamp(j, S = OUTPUT_SCHEMA) {
   if (!j || typeof j !== 'object') return j
   for (const k of ['summary', 'analysis_md']) if (typeof j[k] === 'string') j[k] = clipText(j[k], S.properties[k].maxLength)
+  // a memory write that cites nothing is ungrounded and is never stored; drop just that write instead of failing the whole (otherwise good) answer
+  if (Array.isArray(j.memory_writes)) j.memory_writes = j.memory_writes.filter((w) => w && Array.isArray(w.cites) && w.cites.length >= 1)
   for (const [k, fields] of [['recommendations', ['action', 'why']], ['flags', ['text']]]) {
     const sp = S.properties[k]; if (!Array.isArray(j[k])) continue
     if (j[k].length > sp.maxItems) j[k] = j[k].slice(0, sp.maxItems)
