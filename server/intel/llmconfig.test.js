@@ -96,3 +96,13 @@ test('Tokenomix quota: snapshot default, manual update, validation', () => {
   q = C.saveQuota({ used_m: '60', valid_until: '2026-12-31' }); assert.equal(q.left_m, 540); assert.equal(q.left_pct, 90); assert.equal(C.getQuota().used_m, 60)
   assert.throws(() => C.saveQuota({ used_m: 700 }), /between 0 and the total/); assert.throws(() => C.saveQuota({ valid_until: 'soon' }), /date/); assert.throws(() => C.saveQuota({ total_m: -1 }), /positive/)
 })
+
+test('token counting feeds an estimate and a level: ok, low, critical', async () => {
+  C.saveQuota({ total_m: 100, used_m: 50, valid_until: '2099-01-01' }, { now: '2026-11-23T00:00:00.000Z' })
+  assert.equal(C.getQuota().level, 'ok'); assert.equal(C.getQuota().est_left_m, 50)
+  C.recordTokens(30e6, 'm', '2026-11-24T00:00:00.000Z'); const q = C.getQuota(); assert.equal(q.spent_since_m, 30); assert.equal(q.est_left_m, 20); assert.equal(q.level, 'ok')
+  C.recordTokens(12e6, 'm', '2026-11-24T01:00:00.000Z'); assert.equal(C.getQuota().level, 'low')
+  C.recordTokens(7.5e6, 'm', '2026-11-24T02:00:00.000Z'); assert.equal(C.getQuota().level, 'critical')
+  C.recordTokens(5e6, 'm', '2026-11-22T00:00:00.000Z'); assert.equal(C.getQuota().spent_since_m, 49.5, 'tokens before the last manual update are not counted again')
+  assert.equal(C.quotaLevel({ days_left: 0, est_left_pct: 90 }), 'critical'); assert.equal(C.quotaLevel({ days_left: 5, est_left_pct: 90 }), 'low')
+})

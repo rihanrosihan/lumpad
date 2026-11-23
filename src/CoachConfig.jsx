@@ -85,11 +85,12 @@ export function ProviderSettings() {
 function TokenomixQuota() {
   const Q = useApi('/api/coach/quota'), q = Q.data, [edit, setEdit] = useState(false), [f, setF] = useState({}), [err, setErr] = useState('')
   if (!q) return null
-  const low = q.left_pct <= 10 || q.days_left <= 7, v = (k) => (f[k] !== undefined ? f[k] : q[k]), used = q.total_m > 0 ? Math.min(100, 100 - q.left_pct) : 0
+  const low = q.level !== 'ok', v = (k) => (f[k] !== undefined ? f[k] : q[k]), used = q.total_m > 0 ? Math.min(100, 100 - q.left_pct) : 0
   const save = async () => { try { await post('/api/coach/quota', f); invalidate('coach/quota'); setEdit(false); setF({}); setErr('') } catch (e) { setErr(e.message || 'Failed') } }
   return <div style={{ marginTop: 12 }}>
     <dl className="kv">
-      <div><dt>Quota left</dt><dd>{q.left_m}M of {q.total_m}M · {q.left_pct}% left{low ? ' · low' : ''}</dd></div>
+      <div><dt>Quota left</dt><dd>≈ {q.est_left_m}M of {q.total_m}M · {q.est_left_pct}% left{q.level === 'critical' ? ' · CRITICAL: bulk jobs paused' : q.level === 'low' ? ' · low' : ''}</dd></div>
+      <div><dt>Estimate</dt><dd>{q.left_m}M at your last update + {q.spent_since_m}M spent by Lumpad since (counted per call)</dd></div>
       <div><dt>Used</dt><dd>{q.used_m}M ({used}%)</dd></div>
       <div><dt>Valid until</dt><dd>{q.valid_until} · {q.days_left > 0 ? `${q.days_left} days left` : 'expired'}</dd></div>
       <div><dt>Status</dt><dd>{q.status}</dd></div>

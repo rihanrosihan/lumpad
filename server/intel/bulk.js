@@ -1,5 +1,6 @@
 // Bulk coach jobs that use the model heavily: backfill session reviews, race post-mortems, and memory extraction from the knowledge-base documents.
 //   node --env-file=.env server/intel/bulk.js reviews     [--limit N] [--conc 2] [--dry]   one high-effort review for every FIT session that has none yet (newest first)
+//   node --env-file=.env server/intel/bulk.js nightly                                       what is NEW only (reviews, extraction, consistency, stale sweep), small caps; skipped when the token quota is critical (see lumpad-nightly.timer)
 //   node --env-file=.env server/intel/bulk.js postmortems [--limit N] [--conc 2] [--dry]   one race post-mortem per race in the ledger that has a FIT file
 //   node --env-file=.env server/intel/bulk.js extract     [--limit N] [--conc 4] [--chunk 6000] [--dry]   (--chunk 2500 = a finer second pass; sentences already claimed are skipped)
 //   node --env-file=.env server/intel/bulk.js consistency [--limit N] [--conc 4] [--dry]   find contradictions between documents that reference each other → candidates   claims from the KB documents → memory CANDIDATES (you approve them in the memory view)
@@ -11,19 +12,22 @@ import crypto from 'node:crypto'
 const dir = process.env.DATA_DIR || path.resolve('server/data')
 if (process.getuid?.() === 0) { const st = fs.statSync(dir); if (st.uid !== 0) { process.setgid(st.gid); process.setuid(st.uid) } }
 const [cmd, ...rest] = process.argv.slice(2), arg = (k, d) => { const i = rest.indexOf('--' + k); return i >= 0 ? rest[i + 1] : d }, flag = (k) => rest.includes('--' + k)
-const limit = Number(arg('limit', 0)) || Infinity, dry = flag('dry')
+let limit = Number(arg('limit', 0)) || Infinity
+const dry = flag('dry')
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a)
 
 // run `fn` over items with a small worker pool; one failure never stops the batch
-export async function pool(items, conc, fn) {
-  const out = { ok: 0, failed: 0, errors: [] }; let i = 0
+export async function pool(items, conc, fn, { stop } = {}) {
+  const out = { ok: 0, failed: 0, errors: [], stopped: false }; let i = 0
   await Promise.all(Array.from({ length: Math.max(1, conc) }, async () => {
-    while (i < items.length) { const k = i++; try { await fn(items[k], k); out.ok++ } catch (e) { out.failed++; out.errors.push(`${items[k]?.label || items[k]?.id || k}: ${String(e.message).slice(0, 160)}`); log('  failed', items[k]?.label || k, '-', String(e.message).slice(0, 140)) } }
+    while (i < items.length) { if (stop?.()) { out.stopped = true; break } const k = i++; try { await fn(items[k], k); out.ok++ } catch (e) { out.failed++; out.errors.push(`${items[k]?.label || items[k]?.id || k}: ${String(e.message).slice(0, 160)}`); log('  failed', items[k]?.label || k, '-', String(e.message).slice(0, 140)) } }
   }))
   return out
 }
 
 const { idb, mdb } = await import('./db.js')
+const { getQuota, quotaLevel } = await import('./llmconfig.js')
+const quotaStop = () => quotaLevel() === 'critical'   // the token quota is (nearly) used up or the plan has expired: bulk work stops, interactive coach calls still work
 
 // ---- 1) session reviews
 export function unreviewedSessions() {
@@ -62,7 +66,7 @@ async function coachJobs(intent, items, conc) {
     const res = await runCoach({ intent, question: (intent === 'race_postmortem' ? 'race ' : 'session ') + s.label_id, activityId: s.activity_id || s.label_id })
     log(`  [${k + 1}/${items.length}] ${s.label} -> run ${res.runId}${res.cached ? ' (cached)' : ''} ${res.ok === false ? 'NOT OK' : 'ok'}`)
     if (res.ok === false) throw new Error(res.error || 'run not ok')
-  })
+  }, { stop: quotaStop })
   log(`${intent}: done ${r.ok} ok, ${r.failed} failed in ${Math.round((Date.now() - t0) / 60000)} min`)
 }
 
@@ -128,7 +132,7 @@ async function extract(conc, chunkSize = 6000, model = null) {
     Object.assign(totals, { claims: totals.claims + memories.length, created: totals.created + created, dup: totals.dup + dup, dropped: totals.dropped + dropped.length, tokens: totals.tokens + (res.usage?.total_tokens || 0) })
     prog[j.hash] = { at: new Date().toISOString(), n: memories.length }; fs.writeFileSync(progressFile, JSON.stringify(prog), { mode: 0o600 })
     log(`  ${j.label}: ${memories.length} claims (${created} new, ${agreed} agreed with another model, ${dup} dup, ${dropped.length} dropped)`)
-  })
+  }, { stop: quotaStop })
   log(`extract: done — ${r.ok} chunks ok, ${r.failed} failed; ${totals.created} new candidates, ${totals.dup} duplicates, ${totals.dropped} dropped (no faithful quote); ${totals.tokens} tokens`)
 }
 
@@ -169,8 +173,21 @@ async function consistency(conc) {
     for (const m of ms) if (addMemory(m).created) created++
     prog[hashOf(p)] = { at: new Date().toISOString(), n: ms.length }; fs.writeFileSync(progressFile, JSON.stringify(prog), { mode: 0o600 })
     log(`  [${k + 1}/${todo.length}] ${p.label}: ${ms.length} contradictions`)
-  })
+  }, { stop: quotaStop })
   log(`consistency: done — ${r.ok} pairs ok, ${r.failed} failed, ${created} new candidates`)
+}
+
+// ---- 5) nightly: only what is NEW since the last run, with small caps; skipped when the token quota is critical, trimmed when it is low
+export async function nightly() {
+  const q = getQuota(), lvl = quotaLevel(q), scale = lvl === 'low' ? 0.3 : 1
+  log(`nightly: quota ${q.est_left_m}M of ${q.total_m}M left (${lvl}), ${q.days_left} days`)
+  if (lvl === 'critical') { log('nightly: quota critical, nothing run'); return { skipped: 'quota' } }
+  const n = (x) => Math.max(1, Math.round(x * scale)), res = {}
+  limit = n(25); await coachJobs('session_review', unreviewedSessions().slice(0, limit), 3); res.reviews = limit
+  limit = n(40); await extract(3, 6000, null); res.extract = limit
+  limit = n(15); await consistency(3); res.consistency = limit
+  const { staleSweep } = await import('./studio.js'); const s = staleSweep(); log(`nightly: stale sweep checked ${s.checked}, flagged ${s.stale}`); res.stale = s.stale
+  log('nightly: done ' + JSON.stringify(res)); return res
 }
 
 if (process.argv[1] && import.meta.url.endsWith(path.basename(process.argv[1]))) {
@@ -179,6 +196,7 @@ if (process.argv[1] && import.meta.url.endsWith(path.basename(process.argv[1])))
     else if (cmd === 'postmortems') await coachJobs('race_postmortem', raceSessions().slice(0, limit), Number(arg('conc', 2)))
     else if (cmd === 'extract') await extract(Number(arg('conc', 4)), Number(arg('chunk', 6000)), arg('model') || null)
     else if (cmd === 'consistency') await consistency(Number(arg('conc', 4)))
-    else { console.error('commands: reviews | postmortems | extract [--chunk N] [--model ID: a second model; claims both models make are marked as agreed] | consistency   [--limit N] [--conc N] [--dry]'); process.exit(2) }
+    else if (cmd === 'nightly') await nightly()
+    else { console.error('commands: nightly | reviews | postmortems | extract [--chunk N] [--model ID: a second model; claims both models make are marked as agreed] | consistency   [--limit N] [--conc N] [--dry]'); process.exit(2) }
   } catch (e) { console.error('error:', e.message); process.exit(1) }
 }

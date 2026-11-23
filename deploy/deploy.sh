@@ -34,6 +34,9 @@ cp deploy/lumpad.service /etc/systemd/system/lumpad.service && systemctl daemon-
 chmod +x deploy/autodeploy.sh
 cp deploy/lumpad-autodeploy.service deploy/lumpad-autodeploy.timer /etc/systemd/system/ && systemctl daemon-reload
 systemctl enable --now lumpad-autodeploy.timer >/dev/null 2>&1 || true
+# Nightly coach work at 03:30 WIB (new session reviews, KB extraction, consistency, stale sweep); skipped when the token quota is critical. Disable: systemctl disable --now lumpad-nightly.timer
+cp deploy/lumpad-nightly.service deploy/lumpad-nightly.timer /etc/systemd/system/ && systemctl daemon-reload
+systemctl enable --now lumpad-nightly.timer >/dev/null 2>&1 || true
 systemctl restart lumpad
 sleep 1
 # v2 (Go + Postgres, redesign): rebuild + migrate after each deploy once set up (deploy/v2/setup-v2.sh). Never fails the Node deploy.

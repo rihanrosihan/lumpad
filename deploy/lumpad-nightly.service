@@ -1,0 +1,11 @@
+[Unit]
+Description=Lumpad nightly coach work (new session reviews, extraction, consistency, stale sweep) - skipped when the token quota is critical
+After=network-online.target lumpad.service
+
+[Service]
+Type=oneshot
+User=lumpad
+WorkingDirectory=/opt/lumpad
+ExecStart=/usr/bin/bash -c '/usr/bin/node --env-file=/opt/lumpad/.env /opt/lumpad/server/intel/bulk.js nightly >> /opt/lumpad/server/data/tmp/nightly.log 2>&1'
+TimeoutStartSec=3000
+Nice=15

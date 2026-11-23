@@ -40,3 +40,8 @@ test('two models: the same sentence is recognised as one claim, different ones a
   assert.equal(B.sameClaim('Opening pace 6:15/km aktif', 'Creatine baru dibeli 18 Sep'), false)
   assert.equal(B.sameClaim('threshold pace 5:50 per km dengan caveat', 'threshold pace 5:50 per km tanpa caveat'), true)
 })
+
+test('pool stops taking new items when the quota guard says so', async () => {
+  let n = 0; const r = await B.pool([1, 2, 3, 4, 5], 1, async () => { n++ }, { stop: () => n >= 2 })
+  assert.equal(n, 2); assert.equal(r.stopped, true)
+})

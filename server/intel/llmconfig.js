@@ -3,6 +3,7 @@
 // The key is never returned by any function that feeds the API (publicConfig returns a masked form) and never appears in test results or error text.
 import fs from 'node:fs'
 import { load, save } from '../db.js'
+import { mdb } from './db.js'
 import { seal, unseal } from '../coros/oauth.js'
 
 export const DEFAULT_BASE = 'https://api.deepseek.com', FILE = 'llm_config', DEFAULT_MAX_CALLS = 0 // 0 = no daily run limit
@@ -121,11 +122,21 @@ export const clearModelCache = () => modelCache.clear()
 // Tokenomix plan quota: the portal has no API we can call, so the figures are typed in by hand (snapshot below until the first save) and shown as a card.
 export const QUOTA_FILE = 'tokenomix_quota', PORTAL_URL = 'https://tokenomixai.com/en/portal'
 const QUOTA_SNAPSHOT = { total_m: 600, used_m: 119.4, valid_until: '2026-12-21', status: 'active', as_of: '2026-11-23' }
+// Tokens this app spends are counted per call (insert-only, so several processes can write at once), so the quota card can estimate what is left between two manual updates.
+export function recordTokens(n, model = null, at = new Date().toISOString()) {
+  const t = Math.round(Number(n)); if (!(t > 0)) return
+  try { mdb.exec('CREATE TABLE IF NOT EXISTS token_spend (ts TEXT NOT NULL, tokens INTEGER NOT NULL, model TEXT)'); mdb.prepare('INSERT INTO token_spend (ts, tokens, model) VALUES (?,?,?)').run(at, t, model) } catch { /* counting must never break a call */ }
+}
+const spentSince = (iso) => { try { mdb.exec('CREATE TABLE IF NOT EXISTS token_spend (ts TEXT NOT NULL, tokens INTEGER NOT NULL, model TEXT)'); return mdb.prepare('SELECT COALESCE(SUM(tokens),0) n FROM token_spend WHERE ts > ?').get(iso || '1970').n / 1e6 } catch { return 0 } }
+// ok | low (≤ 10 % left or ≤ 7 days) | critical (≤ 2 % left or expired): bulk jobs stop at critical, interactive coach calls are never blocked
+export const quotaLevel = (q = getQuota()) => (q.days_left <= 0 || q.est_left_pct <= 2 ? 'critical' : q.est_left_pct <= 10 || q.days_left <= 7 ? 'low' : 'ok')
 export function getQuota() {
   let q = null; try { q = load(QUOTA_FILE, null) } catch {}
   q = q || QUOTA_SNAPSHOT
   const left = Math.max(0, q.total_m - q.used_m), days = Math.ceil((Date.parse(q.valid_until + 'T23:59:59+07:00') - Date.now()) / 864e5)
-  return { ...q, left_m: Math.round(left * 100) / 100, left_pct: q.total_m > 0 ? Math.round((left / q.total_m) * 100) : 0, days_left: days, portal: PORTAL_URL }
+  const spent = spentSince(q.saved_at), estLeft = Math.max(0, left - spent)
+  const out = { ...q, left_m: Math.round(left * 100) / 100, left_pct: q.total_m > 0 ? Math.round((left / q.total_m) * 100) : 0, spent_since_m: Math.round(spent * 100) / 100, est_left_m: Math.round(estLeft * 100) / 100, est_left_pct: q.total_m > 0 ? Math.round((estLeft / q.total_m) * 100) : 0, days_left: days, portal: PORTAL_URL }
+  return { ...out, level: quotaLevel(out) }
 }
 export function saveQuota({ total_m, used_m, valid_until, status } = {}, { now = new Date().toISOString() } = {}) {
   const cur = getQuota(), t = total_m === undefined || total_m === '' ? cur.total_m : Number(total_m), u = used_m === undefined || used_m === '' ? cur.used_m : Number(used_m)
@@ -133,5 +144,5 @@ export function saveQuota({ total_m, used_m, valid_until, status } = {}, { now =
   if (!(t > 0 && t <= 1e6)) throw Object.assign(new Error('Total quota must be a positive number of millions of tokens'), { status: 400 })
   if (!(u >= 0 && u <= t)) throw Object.assign(new Error('Used must be between 0 and the total'), { status: 400 })
   if (!/^\d{4}-\d{2}-\d{2}$/.test(v) || Number.isNaN(Date.parse(v))) throw Object.assign(new Error('Valid until must be a date (YYYY-MM-DD)'), { status: 400 })
-  save(QUOTA_FILE, { total_m: t, used_m: u, valid_until: v, status: st, as_of: now.slice(0, 10) }); return getQuota()
+  save(QUOTA_FILE, { total_m: t, used_m: u, valid_until: v, status: st, as_of: now.slice(0, 10), saved_at: now }); return getQuota()
 }

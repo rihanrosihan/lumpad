@@ -2,7 +2,7 @@
 // Model = the newest "Flash" in GET /models (DEEPSEEK_MODEL=auto-flash) or an explicit id. Spend cap from the ACCOUNT balance (no price table): month spend = sum of balance drops.
 import { mdb } from './db.js'
 import { load, save } from '../db.js'
-import { getConfig, DEFAULT_BASE } from './llmconfig.js'
+import { getConfig, DEFAULT_BASE, recordTokens } from './llmconfig.js'
 
 // base URL, key and model come from Profile → AI Coach (llm_config.json, key sealed) with the DEEPSEEK_* variables in .env as the default
 const BASE = () => getConfig().base
@@ -114,6 +114,7 @@ async function completeOnce({ system, user, messages, effort = 'high', maxTokens
   const text = j.choices?.[0]?.message?.content ?? '', finish = j.choices?.[0]?.finish_reason
   if (finish === 'length') throw Object.assign(new Error('response truncated (max_tokens) — the model used its whole budget before finishing'), { status: 502, text, truncated: true, cost_cny: pre != null && post != null ? +Math.max(0, pre - post).toFixed(4) : null })
   let json = null; try { json = JSON.parse(stripFence(text)) } catch {}
+  if (getConfig().custom_endpoint) recordTokens(j.usage?.total_tokens ?? ((j.usage?.prompt_tokens || 0) + (j.usage?.completion_tokens || 0)), model.id)
   return { text, json, usage: j.usage || null, model: model.id, model_name: model.name, cost_cny: costFromUsage(j.usage) ?? (pre != null && post != null ? +Math.max(0, pre - post).toFixed(4) : null), effort }
 }
 
@@ -130,5 +131,6 @@ export async function completeWithTools({ messages, tools, effort = 'low', maxTo
   }
   if (!j) throw lastErr
   const ch = j.choices?.[0]; if (!ch?.message) throw Object.assign(new Error('no message in the model reply'), { status: 502 })
+  if (getConfig().custom_endpoint) recordTokens(j.usage?.total_tokens ?? ((j.usage?.prompt_tokens || 0) + (j.usage?.completion_tokens || 0)), model.id)
   return { message: ch.message, finish: ch.finish_reason, usage: j.usage || null, model: model.id, model_name: model.name }
 }
