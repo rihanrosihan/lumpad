@@ -134,8 +134,8 @@ export default function KnowledgeGraphPanel({ twin, matrices, status }) {
   }))
 
   return <>
-  <Card title="Athlete Coaching Knowledge Graph" right={<span className="chips" style={{ margin: 0 }}><ProvenanceBadge type="MODEL" /><Chip>9 Nodes · 14 Edges</Chip></span>}>
-    <p className="muted">Click any node to inspect its backing SQLite table, connected edges, and how AI Coach retrieves it during Hybrid RAG reasoning.</p>
+  <Card title="Coach architecture (design schematic)" right={<span className="chips" style={{ margin: 0 }}><ProvenanceBadge type="MODEL" /><Chip>Schematic, not live data</Chip></span>}>
+    <p className="muted">A fixed diagram of how the coach's data sources connect. Click any node to inspect its backing SQLite table, connected edges, and how AI Coach retrieves it during Hybrid RAG reasoning. The live knowledge graph, with its real node and edge counts, is shown below.</p>
     <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginTop: 8, marginBottom: 8, padding: '8px 10px', borderRadius: 10, background: 'var(--surface2)', border: '1px solid var(--line)', fontSize: '.78rem' }}>
       <StatusPill tone={aura.data?.connected ? 'green' : 'amber'}>{aura.data?.connected ? `Neo4j AuraDB Live · ${aura.data.total_nodes} nodes · ${aura.data.total_edges} edges` : aura.data?.configured ? 'Neo4j AuraDB Standby (PG16 active)' : 'Local PG16 + SQLite Graph'}</StatusPill>
       {aura.data?.connected && Object.entries(aura.data.nodes || {}).slice(0, 8).map(([k, v]) => <Chip key={k}>{k}: {v}</Chip>)}
