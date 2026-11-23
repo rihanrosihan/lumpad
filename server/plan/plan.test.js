@@ -74,9 +74,9 @@ function randomPlan(R, weeks = 12) {
   for (let i = 0; i < weeks * 7; i++, t = addDays(t, 1)) { const kind = KINDS[Math.floor(R() * KINDS.length)], km = kind === 'rest' ? 0 : Math.round((3 + R() * 25) * 10) / 10; days.push({ date: t, kind, km, label: kind === 'race' ? 'R' : '', tags: [] }) }
   return days
 }
-test('AC-P0-6: property - repair never raises load or changes a race; leaves only block items (500 random plans)', () => {
-  const R = rng(7); let blocked = 0
-  for (let i = 0; i < 500; i++) {
+test('AC-P0-6: property - repair never raises load or changes a race; leaves only block items (PLAN_PROP_N random plans, default 500)', () => {
+  const R = rng(7), N = +process.env.PLAN_PROP_N || 500; let blocked = 0
+  for (let i = 0; i < N; i++) {
     const days = randomPlan(R, 10), ctx = { seed: true, weekly4w: 5 + R() * 40, longest30: 5 + R() * 30 }, { days: fixed, blocks } = repair(days, ctx), by = Object.fromEntries(days.map((d) => [d.date, d])), fx = Object.fromEntries(fixed.map((d) => [d.date, d]))
     for (const f of fixed) { const o = by[f.date]; assert.ok(f.km <= o.km + 1e-9, 'km raised'); if (o.kind === 'race') { assert.equal(f.km, o.km); assert.equal(f.kind, 'race') } }
     const blockedWeeks = new Set(blocks.map((b) => b.date)); blocked += blocks.length

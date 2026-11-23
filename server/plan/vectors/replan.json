@@ -1,0 +1,2712 @@
+[
+ {
+  "name": "go-test: gate + creep + low TIZ + taper",
+  "input": {
+   "AsOf": "2027-10-10",
+   "Prev4WeekAvgKm": 0,
+   "PlannedWeekKm": 55,
+   "Max30dLongRunKm": 0,
+   "NextWeekLongRunKm": 0,
+   "MissedLongRun": false,
+   "PainEventLast7d": false,
+   "GateActive": true,
+   "GateReason": "Sleep HR 71 > 67",
+   "RecentQualityTIZ": [
+    62,
+    58
+   ],
+   "EasyRunsAboveZ214d": 3,
+   "DaysToARace": 14,
+   "PeakWeekKm": 70,
+   "Next72h": [
+    {
+     "date": "2027-10-11",
+     "kind": "quality",
+     "label": "Tempo 10K",
+     "km": 12
+    },
+    {
+     "date": "2027-10-12",
+     "kind": "easy",
+     "label": "Easy 8K",
+     "km": 8
+    }
+   ]
+  },
+  "proposals": [
+   {
+    "rule_id": "gate_72h_downgrade",
+    "scope_from": "2027-10-11",
+    "scope_to": "2027-10-11",
+    "changes": [
+     {
+      "date": "2027-10-11",
+      "from": {
+       "date": "2027-10-11",
+       "kind": "quality",
+       "label": "Tempo 10K",
+       "km": 12
+      },
+      "to": {
+       "date": "2027-10-11",
+       "kind": "easy",
+       "label": "Easy / Rehab (gate downgrade)",
+       "km": 9,
+       "hr_max": 148
+      }
+     }
+    ],
+    "reason": "Active gate (Sleep HR 71 > 67): downgrade hard sessions in next 72h to easy/rehab.",
+    "expected": {
+     "pain_max": 0,
+     "hr_cap_bpm": 148
+    }
+   },
+   {
+    "rule_id": "quality_low_compliance_stepdown",
+    "scope_from": "2027-10-10",
+    "scope_to": "2027-10-10",
+    "changes": null,
+    "pace_delta_s_km": 15,
+    "reason": "Last 2 quality sessions had <70% time in zone (62%, 58%): lower target pace by one step (+15 s/km) without adding volume.",
+    "expected": {
+     "next_quality_tiz_min_pct": 75
+    }
+   },
+   {
+    "rule_id": "z2_intensity_creep",
+    "scope_from": "2027-10-10",
+    "scope_to": "2027-10-10",
+    "changes": [
+     {
+      "date": "2027-10-12",
+      "from": {
+       "date": "2027-10-12",
+       "kind": "easy",
+       "label": "Easy 8K",
+       "km": 8
+      },
+      "to": {
+       "date": "2027-10-12",
+       "kind": "easy",
+       "label": "Easy 8K (HR-capped ≤148)",
+       "km": 8,
+       "hr_max": 148
+      }
+     }
+    ],
+    "reason": "3 easy runs averaged above Z2 ceiling (148 bpm) in the last 14 days: enforce HR-capped easy runs.",
+    "expected": {
+     "easy_avg_hr_max": 148
+    }
+   },
+   {
+    "rule_id": "taper_volume_window",
+    "scope_from": "2027-10-10",
+    "scope_to": "2027-10-10",
+    "changes": null,
+    "cap_km": 42,
+    "reason": "Taper window (14 days to A-race): keep weekly volume in 28.0–42.0 km (-40% to -60% of 70.0 km peak) with 1 sharp quality session.",
+    "expected": {
+     "weekly_km_min": 28,
+     "weekly_km_max": 42,
+     "quality_sessions": 1
+    }
+   }
+  ],
+  "caps": [
+   42,
+   0
+  ]
+ },
+ {
+  "name": "gate default reason, long + race downgraded, km cap 10",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 0,
+   "PlannedWeekKm": 0,
+   "Max30dLongRunKm": 0,
+   "NextWeekLongRunKm": 0,
+   "MissedLongRun": false,
+   "PainEventLast7d": false,
+   "GateActive": true,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": [
+    {
+     "date": "2026-11-20",
+     "kind": "long",
+     "label": "Long",
+     "km": 30
+    },
+    {
+     "date": "2026-11-21",
+     "kind": "race",
+     "label": "R",
+     "km": 42.2,
+     "hr_max": 150
+    },
+    {
+     "date": "2026-11-22",
+     "kind": "rest",
+     "label": "",
+     "km": 0
+    }
+   ]
+  },
+  "proposals": [
+   {
+    "rule_id": "gate_72h_downgrade",
+    "scope_from": "2026-11-20",
+    "scope_to": "2026-11-21",
+    "changes": [
+     {
+      "date": "2026-11-20",
+      "from": {
+       "date": "2026-11-20",
+       "kind": "long",
+       "label": "Long",
+       "km": 30
+      },
+      "to": {
+       "date": "2026-11-20",
+       "kind": "easy",
+       "label": "Easy / Rehab (gate downgrade)",
+       "km": 10,
+       "hr_max": 148
+      }
+     },
+     {
+      "date": "2026-11-21",
+      "from": {
+       "date": "2026-11-21",
+       "kind": "race",
+       "label": "R",
+       "km": 42.2,
+       "hr_max": 150
+      },
+      "to": {
+       "date": "2026-11-21",
+       "kind": "easy",
+       "label": "Easy / Rehab (gate downgrade)",
+       "km": 10,
+       "hr_max": 148
+      }
+     }
+    ],
+    "reason": "Active gate (validated physiological/pain gate active): downgrade hard sessions in next 72h to easy/rehab.",
+    "expected": {
+     "pain_max": 0,
+     "hr_cap_bpm": 148
+    }
+   }
+  ],
+  "caps": [
+   0,
+   0
+  ]
+ },
+ {
+  "name": "gate active but nothing hard in 72h",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 0,
+   "PlannedWeekKm": 0,
+   "Max30dLongRunKm": 0,
+   "NextWeekLongRunKm": 0,
+   "MissedLongRun": false,
+   "PainEventLast7d": false,
+   "GateActive": true,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": [
+    {
+     "date": "2026-11-20",
+     "kind": "easy",
+     "label": "E",
+     "km": 5
+    }
+   ]
+  },
+  "proposals": [],
+  "caps": [
+   0,
+   0
+  ]
+ },
+ {
+  "name": "weekly exactly at cap: no proposal",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 40,
+   "PlannedWeekKm": 44,
+   "Max30dLongRunKm": 0,
+   "NextWeekLongRunKm": 0,
+   "MissedLongRun": false,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [],
+  "caps": [
+   44,
+   0
+  ]
+ },
+ {
+  "name": "weekly just over cap (tolerance 0.05)",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 40,
+   "PlannedWeekKm": 44.1,
+   "Max30dLongRunKm": 0,
+   "NextWeekLongRunKm": 0,
+   "MissedLongRun": false,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "weekly_progression_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Weekly planned volume (44.1 km) exceeds +10% cap over 4-week average (40.0 km).",
+    "expected": {
+     "weekly_km_max": 44,
+     "pain_max": 1
+    },
+    "cap_km": 44
+   }
+  ],
+  "caps": [
+   44,
+   0
+  ]
+ },
+ {
+  "name": "pain freeze",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 30,
+   "PlannedWeekKm": 31,
+   "Max30dLongRunKm": 0,
+   "NextWeekLongRunKm": 0,
+   "MissedLongRun": false,
+   "PainEventLast7d": true,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "pain_progression_freeze",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Pain >= 2/10 in last 7 days freezes weekly progression at 4-week average (30.0 km).",
+    "expected": {
+     "weekly_km_max": 30,
+     "pain_max": 1
+    },
+    "cap_km": 30
+   }
+  ],
+  "caps": [
+   30,
+   0
+  ]
+ },
+ {
+  "name": "long run over 110% + missed long run",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 0,
+   "PlannedWeekKm": 0,
+   "Max30dLongRunKm": 20,
+   "NextWeekLongRunKm": 26,
+   "MissedLongRun": true,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "long_run_110_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Missed long run cannot add extra volume: Next long run (26.0 km) exceeds 110% of 30-day longest run (20.0 km → cap 22.0 km).",
+    "expected": {
+     "long_run_km_max": 22,
+     "durability_pain_max": 1
+    },
+    "cap_km": 22
+   }
+  ],
+  "caps": [
+   0,
+   22
+  ]
+ },
+ {
+  "name": "long run within cap",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 0,
+   "PlannedWeekKm": 0,
+   "Max30dLongRunKm": 20,
+   "NextWeekLongRunKm": 22,
+   "MissedLongRun": false,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [],
+  "caps": [
+   0,
+   22
+  ]
+ },
+ {
+  "name": "TIZ one low session only",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 0,
+   "PlannedWeekKm": 0,
+   "Max30dLongRunKm": 0,
+   "NextWeekLongRunKm": 0,
+   "MissedLongRun": false,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": [
+    90,
+    60
+   ],
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [],
+  "caps": [
+   0,
+   0
+  ]
+ },
+ {
+  "name": "creep with no easy sessions in 72h",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 0,
+   "PlannedWeekKm": 0,
+   "Max30dLongRunKm": 0,
+   "NextWeekLongRunKm": 0,
+   "MissedLongRun": false,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 4,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": [
+    {
+     "date": "2026-11-20",
+     "kind": "quality",
+     "label": "Q",
+     "km": 10
+    }
+   ]
+  },
+  "proposals": [
+   {
+    "rule_id": "z2_intensity_creep",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "4 easy runs averaged above Z2 ceiling (148 bpm) in the last 14 days: enforce HR-capped easy runs.",
+    "expected": {
+     "easy_avg_hr_max": 148
+    }
+   }
+  ],
+  "caps": [
+   0,
+   0
+  ]
+ },
+ {
+  "name": "taper at 22 days: no rule",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 0,
+   "PlannedWeekKm": 70,
+   "Max30dLongRunKm": 0,
+   "NextWeekLongRunKm": 0,
+   "MissedLongRun": false,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 22,
+   "PeakWeekKm": 80,
+   "Next72h": null
+  },
+  "proposals": [],
+  "caps": [
+   70,
+   0
+  ]
+ },
+ {
+  "name": "taper within window",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 0,
+   "PlannedWeekKm": 48,
+   "Max30dLongRunKm": 0,
+   "NextWeekLongRunKm": 0,
+   "MissedLongRun": false,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 10,
+   "PeakWeekKm": 80,
+   "Next72h": null
+  },
+  "proposals": [],
+  "caps": [
+   48,
+   0
+  ]
+ },
+ {
+  "name": "random 0",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 31.4,
+   "PlannedWeekKm": 37,
+   "Max30dLongRunKm": 12.1,
+   "NextWeekLongRunKm": 10.6,
+   "MissedLongRun": true,
+   "PainEventLast7d": true,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 94,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "pain_progression_freeze",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Pain >= 2/10 in last 7 days freezes weekly progression at 4-week average (31.4 km).",
+    "expected": {
+     "weekly_km_max": 31.4,
+     "pain_max": 1
+    },
+    "cap_km": 31.4
+   }
+  ],
+  "caps": [
+   31.4,
+   10.6
+  ]
+ },
+ {
+  "name": "random 1",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 79.7,
+   "PlannedWeekKm": 87.6,
+   "Max30dLongRunKm": 30.5,
+   "NextWeekLongRunKm": 37,
+   "MissedLongRun": false,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 4,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "long_run_110_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Next long run (37.0 km) exceeds 110% of 30-day longest run (30.5 km → cap 33.6 km).",
+    "expected": {
+     "long_run_km_max": 33.6,
+     "durability_pain_max": 1
+    },
+    "cap_km": 33.6
+   }
+  ],
+  "caps": [
+   87.6,
+   33.6
+  ]
+ },
+ {
+  "name": "random 2",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 75.1,
+   "PlannedWeekKm": 86.4,
+   "Max30dLongRunKm": 31.3,
+   "NextWeekLongRunKm": 26.5,
+   "MissedLongRun": false,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "weekly_progression_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Weekly planned volume (86.4 km) exceeds +10% cap over 4-week average (75.1 km).",
+    "expected": {
+     "weekly_km_max": 82.6,
+     "pain_max": 1
+    },
+    "cap_km": 82.6
+   }
+  ],
+  "caps": [
+   82.6,
+   26.5
+  ]
+ },
+ {
+  "name": "random 3",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 25.1,
+   "PlannedWeekKm": 26.8,
+   "Max30dLongRunKm": 29.9,
+   "NextWeekLongRunKm": 22.4,
+   "MissedLongRun": true,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [],
+  "caps": [
+   26.8,
+   22.4
+  ]
+ },
+ {
+  "name": "random 4",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 59.3,
+   "PlannedWeekKm": 70.3,
+   "Max30dLongRunKm": 19.1,
+   "NextWeekLongRunKm": 24.1,
+   "MissedLongRun": false,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "weekly_progression_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Weekly planned volume (70.3 km) exceeds +10% cap over 4-week average (59.3 km).",
+    "expected": {
+     "weekly_km_max": 65.2,
+     "pain_max": 1
+    },
+    "cap_km": 65.2
+   },
+   {
+    "rule_id": "long_run_110_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Next long run (24.1 km) exceeds 110% of 30-day longest run (19.1 km → cap 21.0 km).",
+    "expected": {
+     "long_run_km_max": 21,
+     "durability_pain_max": 1
+    },
+    "cap_km": 21
+   }
+  ],
+  "caps": [
+   65.2,
+   21
+  ]
+ },
+ {
+  "name": "random 5",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 21.4,
+   "PlannedWeekKm": 22.4,
+   "Max30dLongRunKm": 14.6,
+   "NextWeekLongRunKm": 11.7,
+   "MissedLongRun": false,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [],
+  "caps": [
+   22.4,
+   11.7
+  ]
+ },
+ {
+  "name": "random 6",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 29,
+   "PlannedWeekKm": 18,
+   "Max30dLongRunKm": 16.5,
+   "NextWeekLongRunKm": 15.2,
+   "MissedLongRun": true,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 94,
+   "Next72h": null
+  },
+  "proposals": [],
+  "caps": [
+   18,
+   15.2
+  ]
+ },
+ {
+  "name": "random 7",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 52.9,
+   "PlannedWeekKm": 48.3,
+   "Max30dLongRunKm": 18.1,
+   "NextWeekLongRunKm": 14.5,
+   "MissedLongRun": false,
+   "PainEventLast7d": true,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [],
+  "caps": [
+   48.3,
+   14.5
+  ]
+ },
+ {
+  "name": "random 8",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 43.1,
+   "PlannedWeekKm": 39.1,
+   "Max30dLongRunKm": 27,
+   "NextWeekLongRunKm": 21.5,
+   "MissedLongRun": false,
+   "PainEventLast7d": true,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 16,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [],
+  "caps": [
+   39.1,
+   21.5
+  ]
+ },
+ {
+  "name": "random 9",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 46.9,
+   "PlannedWeekKm": 38.8,
+   "Max30dLongRunKm": 15,
+   "NextWeekLongRunKm": 18.9,
+   "MissedLongRun": false,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "long_run_110_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Next long run (18.9 km) exceeds 110% of 30-day longest run (15.0 km → cap 16.5 km).",
+    "expected": {
+     "long_run_km_max": 16.5,
+     "durability_pain_max": 1
+    },
+    "cap_km": 16.5
+   }
+  ],
+  "caps": [
+   38.8,
+   16.5
+  ]
+ },
+ {
+  "name": "random 10",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 41.1,
+   "PlannedWeekKm": 29.9,
+   "Max30dLongRunKm": 13.7,
+   "NextWeekLongRunKm": 15.5,
+   "MissedLongRun": false,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "long_run_110_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Next long run (15.5 km) exceeds 110% of 30-day longest run (13.7 km → cap 15.1 km).",
+    "expected": {
+     "long_run_km_max": 15.1,
+     "durability_pain_max": 1
+    },
+    "cap_km": 15.1
+   }
+  ],
+  "caps": [
+   29.9,
+   15.1
+  ]
+ },
+ {
+  "name": "random 11",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 43,
+   "PlannedWeekKm": 29.1,
+   "Max30dLongRunKm": 11.1,
+   "NextWeekLongRunKm": 15.1,
+   "MissedLongRun": false,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 10,
+   "PeakWeekKm": 79,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "long_run_110_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Next long run (15.1 km) exceeds 110% of 30-day longest run (11.1 km → cap 12.2 km).",
+    "expected": {
+     "long_run_km_max": 12.2,
+     "durability_pain_max": 1
+    },
+    "cap_km": 12.2
+   }
+  ],
+  "caps": [
+   29.1,
+   12.2
+  ]
+ },
+ {
+  "name": "random 12",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 69.7,
+   "PlannedWeekKm": 55.6,
+   "Max30dLongRunKm": 31.9,
+   "NextWeekLongRunKm": 30.4,
+   "MissedLongRun": false,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 85,
+   "Next72h": null
+  },
+  "proposals": [],
+  "caps": [
+   55.6,
+   30.4
+  ]
+ },
+ {
+  "name": "random 13",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 38.8,
+   "PlannedWeekKm": 33.2,
+   "Max30dLongRunKm": 21.4,
+   "NextWeekLongRunKm": 25.1,
+   "MissedLongRun": false,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 75,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "long_run_110_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Next long run (25.1 km) exceeds 110% of 30-day longest run (21.4 km → cap 23.5 km).",
+    "expected": {
+     "long_run_km_max": 23.5,
+     "durability_pain_max": 1
+    },
+    "cap_km": 23.5
+   }
+  ],
+  "caps": [
+   33.2,
+   23.5
+  ]
+ },
+ {
+  "name": "random 14",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 42.2,
+   "PlannedWeekKm": 35.2,
+   "Max30dLongRunKm": 32.5,
+   "NextWeekLongRunKm": 46.6,
+   "MissedLongRun": false,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 70,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "long_run_110_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Next long run (46.6 km) exceeds 110% of 30-day longest run (32.5 km → cap 35.8 km).",
+    "expected": {
+     "long_run_km_max": 35.8,
+     "durability_pain_max": 1
+    },
+    "cap_km": 35.8
+   }
+  ],
+  "caps": [
+   35.2,
+   35.8
+  ]
+ },
+ {
+  "name": "random 15",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 50.2,
+   "PlannedWeekKm": 77.9,
+   "Max30dLongRunKm": 22.1,
+   "NextWeekLongRunKm": 32.7,
+   "MissedLongRun": false,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "weekly_progression_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Weekly planned volume (77.9 km) exceeds +10% cap over 4-week average (50.2 km).",
+    "expected": {
+     "weekly_km_max": 55.2,
+     "pain_max": 1
+    },
+    "cap_km": 55.2
+   },
+   {
+    "rule_id": "long_run_110_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Next long run (32.7 km) exceeds 110% of 30-day longest run (22.1 km → cap 24.3 km).",
+    "expected": {
+     "long_run_km_max": 24.3,
+     "durability_pain_max": 1
+    },
+    "cap_km": 24.3
+   }
+  ],
+  "caps": [
+   55.2,
+   24.3
+  ]
+ },
+ {
+  "name": "random 16",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 59.6,
+   "PlannedWeekKm": 55.9,
+   "Max30dLongRunKm": 11.2,
+   "NextWeekLongRunKm": 11.9,
+   "MissedLongRun": false,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 15,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [],
+  "caps": [
+   55.9,
+   11.9
+  ]
+ },
+ {
+  "name": "random 17",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 56.9,
+   "PlannedWeekKm": 60.8,
+   "Max30dLongRunKm": 26,
+   "NextWeekLongRunKm": 23.5,
+   "MissedLongRun": false,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 22,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [],
+  "caps": [
+   60.8,
+   23.5
+  ]
+ },
+ {
+  "name": "random 18",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 73.8,
+   "PlannedWeekKm": 83.9,
+   "Max30dLongRunKm": 27.7,
+   "NextWeekLongRunKm": 41.5,
+   "MissedLongRun": false,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 81,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "weekly_progression_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Weekly planned volume (83.9 km) exceeds +10% cap over 4-week average (73.8 km).",
+    "expected": {
+     "weekly_km_max": 81.2,
+     "pain_max": 1
+    },
+    "cap_km": 81.2
+   },
+   {
+    "rule_id": "long_run_110_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Next long run (41.5 km) exceeds 110% of 30-day longest run (27.7 km → cap 30.5 km).",
+    "expected": {
+     "long_run_km_max": 30.5,
+     "durability_pain_max": 1
+    },
+    "cap_km": 30.5
+   }
+  ],
+  "caps": [
+   81.2,
+   30.5
+  ]
+ },
+ {
+  "name": "random 19",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 55,
+   "PlannedWeekKm": 74.1,
+   "Max30dLongRunKm": 16,
+   "NextWeekLongRunKm": 11.5,
+   "MissedLongRun": false,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "weekly_progression_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Weekly planned volume (74.1 km) exceeds +10% cap over 4-week average (55.0 km).",
+    "expected": {
+     "weekly_km_max": 60.5,
+     "pain_max": 1
+    },
+    "cap_km": 60.5
+   }
+  ],
+  "caps": [
+   60.5,
+   11.5
+  ]
+ },
+ {
+  "name": "random 20",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 52.1,
+   "PlannedWeekKm": 52.5,
+   "Max30dLongRunKm": 10.7,
+   "NextWeekLongRunKm": 12.6,
+   "MissedLongRun": true,
+   "PainEventLast7d": true,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 7,
+   "PeakWeekKm": 82,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "pain_progression_freeze",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Pain >= 2/10 in last 7 days freezes weekly progression at 4-week average (52.1 km).",
+    "expected": {
+     "weekly_km_max": 52.1,
+     "pain_max": 1
+    },
+    "cap_km": 52.1
+   },
+   {
+    "rule_id": "long_run_110_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Missed long run cannot add extra volume: Next long run (12.6 km) exceeds 110% of 30-day longest run (10.7 km → cap 11.8 km).",
+    "expected": {
+     "long_run_km_max": 11.8,
+     "durability_pain_max": 1
+    },
+    "cap_km": 11.8
+   },
+   {
+    "rule_id": "taper_volume_window",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "cap_km": 49.2,
+    "reason": "Taper window (7 days to A-race): keep weekly volume in 32.8–49.2 km (-40% to -60% of 82.0 km peak) with 1 sharp quality session.",
+    "expected": {
+     "weekly_km_min": 32.8,
+     "weekly_km_max": 49.2,
+     "quality_sessions": 1
+    }
+   }
+  ],
+  "caps": [
+   49.2,
+   11.8
+  ]
+ },
+ {
+  "name": "random 21",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 43,
+   "PlannedWeekKm": 54.5,
+   "Max30dLongRunKm": 33.4,
+   "NextWeekLongRunKm": 39.4,
+   "MissedLongRun": true,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 23,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "weekly_progression_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Weekly planned volume (54.5 km) exceeds +10% cap over 4-week average (43.0 km).",
+    "expected": {
+     "weekly_km_max": 47.3,
+     "pain_max": 1
+    },
+    "cap_km": 47.3
+   },
+   {
+    "rule_id": "long_run_110_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Missed long run cannot add extra volume: Next long run (39.4 km) exceeds 110% of 30-day longest run (33.4 km → cap 36.7 km).",
+    "expected": {
+     "long_run_km_max": 36.7,
+     "durability_pain_max": 1
+    },
+    "cap_km": 36.7
+   }
+  ],
+  "caps": [
+   47.3,
+   36.7
+  ]
+ },
+ {
+  "name": "random 22",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 51.1,
+   "PlannedWeekKm": 68.9,
+   "Max30dLongRunKm": 25.7,
+   "NextWeekLongRunKm": 30.1,
+   "MissedLongRun": true,
+   "PainEventLast7d": true,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 3,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "pain_progression_freeze",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Pain >= 2/10 in last 7 days freezes weekly progression at 4-week average (51.1 km).",
+    "expected": {
+     "weekly_km_max": 51.1,
+     "pain_max": 1
+    },
+    "cap_km": 51.1
+   },
+   {
+    "rule_id": "long_run_110_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Missed long run cannot add extra volume: Next long run (30.1 km) exceeds 110% of 30-day longest run (25.7 km → cap 28.3 km).",
+    "expected": {
+     "long_run_km_max": 28.3,
+     "durability_pain_max": 1
+    },
+    "cap_km": 28.3
+   }
+  ],
+  "caps": [
+   51.1,
+   28.3
+  ]
+ },
+ {
+  "name": "random 23",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 43.7,
+   "PlannedWeekKm": 54.4,
+   "Max30dLongRunKm": 28.7,
+   "NextWeekLongRunKm": 39.1,
+   "MissedLongRun": true,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "weekly_progression_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Weekly planned volume (54.4 km) exceeds +10% cap over 4-week average (43.7 km).",
+    "expected": {
+     "weekly_km_max": 48.1,
+     "pain_max": 1
+    },
+    "cap_km": 48.1
+   },
+   {
+    "rule_id": "long_run_110_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Missed long run cannot add extra volume: Next long run (39.1 km) exceeds 110% of 30-day longest run (28.7 km → cap 31.6 km).",
+    "expected": {
+     "long_run_km_max": 31.6,
+     "durability_pain_max": 1
+    },
+    "cap_km": 31.6
+   }
+  ],
+  "caps": [
+   48.1,
+   31.6
+  ]
+ },
+ {
+  "name": "random 24",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 62.5,
+   "PlannedWeekKm": 84.6,
+   "Max30dLongRunKm": 22.6,
+   "NextWeekLongRunKm": 28.1,
+   "MissedLongRun": true,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "weekly_progression_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Weekly planned volume (84.6 km) exceeds +10% cap over 4-week average (62.5 km).",
+    "expected": {
+     "weekly_km_max": 68.8,
+     "pain_max": 1
+    },
+    "cap_km": 68.8
+   },
+   {
+    "rule_id": "long_run_110_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Missed long run cannot add extra volume: Next long run (28.1 km) exceeds 110% of 30-day longest run (22.6 km → cap 24.9 km).",
+    "expected": {
+     "long_run_km_max": 24.9,
+     "durability_pain_max": 1
+    },
+    "cap_km": 24.9
+   }
+  ],
+  "caps": [
+   68.8,
+   24.9
+  ]
+ },
+ {
+  "name": "random 25",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 72.3,
+   "PlannedWeekKm": 85.9,
+   "Max30dLongRunKm": 13.9,
+   "NextWeekLongRunKm": 15.5,
+   "MissedLongRun": false,
+   "PainEventLast7d": true,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 93,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "pain_progression_freeze",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Pain >= 2/10 in last 7 days freezes weekly progression at 4-week average (72.3 km).",
+    "expected": {
+     "weekly_km_max": 72.3,
+     "pain_max": 1
+    },
+    "cap_km": 72.3
+   },
+   {
+    "rule_id": "long_run_110_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Next long run (15.5 km) exceeds 110% of 30-day longest run (13.9 km → cap 15.3 km).",
+    "expected": {
+     "long_run_km_max": 15.3,
+     "durability_pain_max": 1
+    },
+    "cap_km": 15.3
+   }
+  ],
+  "caps": [
+   72.3,
+   15.3
+  ]
+ },
+ {
+  "name": "random 26",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 29.8,
+   "PlannedWeekKm": 46.9,
+   "Max30dLongRunKm": 19.3,
+   "NextWeekLongRunKm": 23.8,
+   "MissedLongRun": false,
+   "PainEventLast7d": true,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "pain_progression_freeze",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Pain >= 2/10 in last 7 days freezes weekly progression at 4-week average (29.8 km).",
+    "expected": {
+     "weekly_km_max": 29.8,
+     "pain_max": 1
+    },
+    "cap_km": 29.8
+   },
+   {
+    "rule_id": "long_run_110_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Next long run (23.8 km) exceeds 110% of 30-day longest run (19.3 km → cap 21.2 km).",
+    "expected": {
+     "long_run_km_max": 21.2,
+     "durability_pain_max": 1
+    },
+    "cap_km": 21.2
+   }
+  ],
+  "caps": [
+   29.8,
+   21.2
+  ]
+ },
+ {
+  "name": "random 27",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 75.4,
+   "PlannedWeekKm": 56.8,
+   "Max30dLongRunKm": 13.5,
+   "NextWeekLongRunKm": 18.2,
+   "MissedLongRun": false,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 6,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "long_run_110_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Next long run (18.2 km) exceeds 110% of 30-day longest run (13.5 km → cap 14.9 km).",
+    "expected": {
+     "long_run_km_max": 14.9,
+     "durability_pain_max": 1
+    },
+    "cap_km": 14.9
+   }
+  ],
+  "caps": [
+   56.8,
+   14.9
+  ]
+ },
+ {
+  "name": "random 28",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 71.5,
+   "PlannedWeekKm": 104.2,
+   "Max30dLongRunKm": 31,
+   "NextWeekLongRunKm": 23.9,
+   "MissedLongRun": false,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "weekly_progression_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Weekly planned volume (104.2 km) exceeds +10% cap over 4-week average (71.5 km).",
+    "expected": {
+     "weekly_km_max": 78.7,
+     "pain_max": 1
+    },
+    "cap_km": 78.7
+   }
+  ],
+  "caps": [
+   78.7,
+   23.9
+  ]
+ },
+ {
+  "name": "random 29",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 72.9,
+   "PlannedWeekKm": 98.9,
+   "Max30dLongRunKm": 28.3,
+   "NextWeekLongRunKm": 29.9,
+   "MissedLongRun": false,
+   "PainEventLast7d": true,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "pain_progression_freeze",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Pain >= 2/10 in last 7 days freezes weekly progression at 4-week average (72.9 km).",
+    "expected": {
+     "weekly_km_max": 72.9,
+     "pain_max": 1
+    },
+    "cap_km": 72.9
+   }
+  ],
+  "caps": [
+   72.9,
+   29.9
+  ]
+ },
+ {
+  "name": "random 30",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 30.6,
+   "PlannedWeekKm": 31.4,
+   "Max30dLongRunKm": 13.7,
+   "NextWeekLongRunKm": 11.1,
+   "MissedLongRun": false,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 6,
+   "PeakWeekKm": 92,
+   "Next72h": null
+  },
+  "proposals": [],
+  "caps": [
+   31.4,
+   11.1
+  ]
+ },
+ {
+  "name": "random 31",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 78.7,
+   "PlannedWeekKm": 81.4,
+   "Max30dLongRunKm": 19.6,
+   "NextWeekLongRunKm": 15.6,
+   "MissedLongRun": true,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 12,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [],
+  "caps": [
+   81.4,
+   15.6
+  ]
+ },
+ {
+  "name": "random 32",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 38.7,
+   "PlannedWeekKm": 34.7,
+   "Max30dLongRunKm": 27.3,
+   "NextWeekLongRunKm": 24.2,
+   "MissedLongRun": false,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 22,
+   "PeakWeekKm": 72,
+   "Next72h": null
+  },
+  "proposals": [],
+  "caps": [
+   34.7,
+   24.2
+  ]
+ },
+ {
+  "name": "random 33",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 36.4,
+   "PlannedWeekKm": 51.1,
+   "Max30dLongRunKm": 32.1,
+   "NextWeekLongRunKm": 34.4,
+   "MissedLongRun": true,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "weekly_progression_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Weekly planned volume (51.1 km) exceeds +10% cap over 4-week average (36.4 km).",
+    "expected": {
+     "weekly_km_max": 40,
+     "pain_max": 1
+    },
+    "cap_km": 40
+   }
+  ],
+  "caps": [
+   40,
+   34.4
+  ]
+ },
+ {
+  "name": "random 34",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 17.7,
+   "PlannedWeekKm": 12.2,
+   "Max30dLongRunKm": 26.6,
+   "NextWeekLongRunKm": 34.3,
+   "MissedLongRun": true,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "long_run_110_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Missed long run cannot add extra volume: Next long run (34.3 km) exceeds 110% of 30-day longest run (26.6 km → cap 29.3 km).",
+    "expected": {
+     "long_run_km_max": 29.3,
+     "durability_pain_max": 1
+    },
+    "cap_km": 29.3
+   }
+  ],
+  "caps": [
+   12.2,
+   29.3
+  ]
+ },
+ {
+  "name": "random 35",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 19,
+   "PlannedWeekKm": 14.8,
+   "Max30dLongRunKm": 29.7,
+   "NextWeekLongRunKm": 26.5,
+   "MissedLongRun": false,
+   "PainEventLast7d": true,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [],
+  "caps": [
+   14.8,
+   26.5
+  ]
+ },
+ {
+  "name": "random 36",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 64.4,
+   "PlannedWeekKm": 71.7,
+   "Max30dLongRunKm": 20.6,
+   "NextWeekLongRunKm": 26.2,
+   "MissedLongRun": true,
+   "PainEventLast7d": true,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "pain_progression_freeze",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Pain >= 2/10 in last 7 days freezes weekly progression at 4-week average (64.4 km).",
+    "expected": {
+     "weekly_km_max": 64.4,
+     "pain_max": 1
+    },
+    "cap_km": 64.4
+   },
+   {
+    "rule_id": "long_run_110_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Missed long run cannot add extra volume: Next long run (26.2 km) exceeds 110% of 30-day longest run (20.6 km → cap 22.7 km).",
+    "expected": {
+     "long_run_km_max": 22.7,
+     "durability_pain_max": 1
+    },
+    "cap_km": 22.7
+   }
+  ],
+  "caps": [
+   64.4,
+   22.7
+  ]
+ },
+ {
+  "name": "random 37",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 79.6,
+   "PlannedWeekKm": 78.3,
+   "Max30dLongRunKm": 15.6,
+   "NextWeekLongRunKm": 21.9,
+   "MissedLongRun": false,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "long_run_110_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Next long run (21.9 km) exceeds 110% of 30-day longest run (15.6 km → cap 17.2 km).",
+    "expected": {
+     "long_run_km_max": 17.2,
+     "durability_pain_max": 1
+    },
+    "cap_km": 17.2
+   }
+  ],
+  "caps": [
+   78.3,
+   17.2
+  ]
+ },
+ {
+  "name": "random 38",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 58,
+   "PlannedWeekKm": 92.8,
+   "Max30dLongRunKm": 25.6,
+   "NextWeekLongRunKm": 25,
+   "MissedLongRun": true,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 63,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "weekly_progression_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Weekly planned volume (92.8 km) exceeds +10% cap over 4-week average (58.0 km).",
+    "expected": {
+     "weekly_km_max": 63.8,
+     "pain_max": 1
+    },
+    "cap_km": 63.8
+   }
+  ],
+  "caps": [
+   63.8,
+   25
+  ]
+ },
+ {
+  "name": "random 39",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 61.1,
+   "PlannedWeekKm": 76,
+   "Max30dLongRunKm": 30.9,
+   "NextWeekLongRunKm": 40.7,
+   "MissedLongRun": true,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 4,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "weekly_progression_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Weekly planned volume (76.0 km) exceeds +10% cap over 4-week average (61.1 km).",
+    "expected": {
+     "weekly_km_max": 67.2,
+     "pain_max": 1
+    },
+    "cap_km": 67.2
+   },
+   {
+    "rule_id": "long_run_110_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Missed long run cannot add extra volume: Next long run (40.7 km) exceeds 110% of 30-day longest run (30.9 km → cap 34.0 km).",
+    "expected": {
+     "long_run_km_max": 34,
+     "durability_pain_max": 1
+    },
+    "cap_km": 34
+   }
+  ],
+  "caps": [
+   67.2,
+   34
+  ]
+ },
+ {
+  "name": "random 40",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 48.2,
+   "PlannedWeekKm": 39.6,
+   "Max30dLongRunKm": 16.5,
+   "NextWeekLongRunKm": 12.1,
+   "MissedLongRun": true,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [],
+  "caps": [
+   39.6,
+   12.1
+  ]
+ },
+ {
+  "name": "random 41",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 43.8,
+   "PlannedWeekKm": 43.4,
+   "Max30dLongRunKm": 29.9,
+   "NextWeekLongRunKm": 34,
+   "MissedLongRun": false,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 80,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "long_run_110_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Next long run (34.0 km) exceeds 110% of 30-day longest run (29.9 km → cap 32.9 km).",
+    "expected": {
+     "long_run_km_max": 32.9,
+     "durability_pain_max": 1
+    },
+    "cap_km": 32.9
+   }
+  ],
+  "caps": [
+   43.4,
+   32.9
+  ]
+ },
+ {
+  "name": "random 42",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 28.3,
+   "PlannedWeekKm": 24.5,
+   "Max30dLongRunKm": 21.4,
+   "NextWeekLongRunKm": 32,
+   "MissedLongRun": true,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "long_run_110_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Missed long run cannot add extra volume: Next long run (32.0 km) exceeds 110% of 30-day longest run (21.4 km → cap 23.5 km).",
+    "expected": {
+     "long_run_km_max": 23.5,
+     "durability_pain_max": 1
+    },
+    "cap_km": 23.5
+   }
+  ],
+  "caps": [
+   24.5,
+   23.5
+  ]
+ },
+ {
+  "name": "random 43",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 68.6,
+   "PlannedWeekKm": 68,
+   "Max30dLongRunKm": 16.7,
+   "NextWeekLongRunKm": 23.7,
+   "MissedLongRun": false,
+   "PainEventLast7d": true,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "long_run_110_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Next long run (23.7 km) exceeds 110% of 30-day longest run (16.7 km → cap 18.4 km).",
+    "expected": {
+     "long_run_km_max": 18.4,
+     "durability_pain_max": 1
+    },
+    "cap_km": 18.4
+   }
+  ],
+  "caps": [
+   68,
+   18.4
+  ]
+ },
+ {
+  "name": "random 44",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 78.5,
+   "PlannedWeekKm": 56.9,
+   "Max30dLongRunKm": 18.3,
+   "NextWeekLongRunKm": 23.1,
+   "MissedLongRun": false,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "long_run_110_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Next long run (23.1 km) exceeds 110% of 30-day longest run (18.3 km → cap 20.1 km).",
+    "expected": {
+     "long_run_km_max": 20.1,
+     "durability_pain_max": 1
+    },
+    "cap_km": 20.1
+   }
+  ],
+  "caps": [
+   56.9,
+   20.1
+  ]
+ },
+ {
+  "name": "random 45",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 26.4,
+   "PlannedWeekKm": 26.5,
+   "Max30dLongRunKm": 29.4,
+   "NextWeekLongRunKm": 29,
+   "MissedLongRun": false,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 84,
+   "Next72h": null
+  },
+  "proposals": [],
+  "caps": [
+   26.5,
+   29
+  ]
+ },
+ {
+  "name": "random 46",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 25,
+   "PlannedWeekKm": 16.3,
+   "Max30dLongRunKm": 13.6,
+   "NextWeekLongRunKm": 17.5,
+   "MissedLongRun": true,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "long_run_110_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Missed long run cannot add extra volume: Next long run (17.5 km) exceeds 110% of 30-day longest run (13.6 km → cap 15.0 km).",
+    "expected": {
+     "long_run_km_max": 15,
+     "durability_pain_max": 1
+    },
+    "cap_km": 15
+   }
+  ],
+  "caps": [
+   16.3,
+   15
+  ]
+ },
+ {
+  "name": "random 47",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 61,
+   "PlannedWeekKm": 39.6,
+   "Max30dLongRunKm": 12.9,
+   "NextWeekLongRunKm": 14.8,
+   "MissedLongRun": false,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "long_run_110_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Next long run (14.8 km) exceeds 110% of 30-day longest run (12.9 km → cap 14.2 km).",
+    "expected": {
+     "long_run_km_max": 14.2,
+     "durability_pain_max": 1
+    },
+    "cap_km": 14.2
+   }
+  ],
+  "caps": [
+   39.6,
+   14.2
+  ]
+ },
+ {
+  "name": "random 48",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 79.6,
+   "PlannedWeekKm": 110.6,
+   "Max30dLongRunKm": 16.8,
+   "NextWeekLongRunKm": 14.7,
+   "MissedLongRun": false,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 94,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "weekly_progression_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Weekly planned volume (110.6 km) exceeds +10% cap over 4-week average (79.6 km).",
+    "expected": {
+     "weekly_km_max": 87.6,
+     "pain_max": 1
+    },
+    "cap_km": 87.6
+   }
+  ],
+  "caps": [
+   87.6,
+   14.7
+  ]
+ },
+ {
+  "name": "random 49",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 66.1,
+   "PlannedWeekKm": 83.2,
+   "Max30dLongRunKm": 17.1,
+   "NextWeekLongRunKm": 17.1,
+   "MissedLongRun": true,
+   "PainEventLast7d": true,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "pain_progression_freeze",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Pain >= 2/10 in last 7 days freezes weekly progression at 4-week average (66.1 km).",
+    "expected": {
+     "weekly_km_max": 66.1,
+     "pain_max": 1
+    },
+    "cap_km": 66.1
+   }
+  ],
+  "caps": [
+   66.1,
+   17.1
+  ]
+ },
+ {
+  "name": "random 50",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 44.7,
+   "PlannedWeekKm": 44.4,
+   "Max30dLongRunKm": 31.7,
+   "NextWeekLongRunKm": 44,
+   "MissedLongRun": true,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 95,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "long_run_110_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Missed long run cannot add extra volume: Next long run (44.0 km) exceeds 110% of 30-day longest run (31.7 km → cap 34.9 km).",
+    "expected": {
+     "long_run_km_max": 34.9,
+     "durability_pain_max": 1
+    },
+    "cap_km": 34.9
+   }
+  ],
+  "caps": [
+   44.4,
+   34.9
+  ]
+ },
+ {
+  "name": "random 51",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 34.5,
+   "PlannedWeekKm": 32.4,
+   "Max30dLongRunKm": 33.9,
+   "NextWeekLongRunKm": 40,
+   "MissedLongRun": true,
+   "PainEventLast7d": true,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 95,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "long_run_110_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Missed long run cannot add extra volume: Next long run (40.0 km) exceeds 110% of 30-day longest run (33.9 km → cap 37.3 km).",
+    "expected": {
+     "long_run_km_max": 37.3,
+     "durability_pain_max": 1
+    },
+    "cap_km": 37.3
+   }
+  ],
+  "caps": [
+   32.4,
+   37.3
+  ]
+ },
+ {
+  "name": "random 52",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 62.1,
+   "PlannedWeekKm": 62.7,
+   "Max30dLongRunKm": 25.5,
+   "NextWeekLongRunKm": 22.8,
+   "MissedLongRun": true,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [],
+  "caps": [
+   62.7,
+   22.8
+  ]
+ },
+ {
+  "name": "random 53",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 25.9,
+   "PlannedWeekKm": 30,
+   "Max30dLongRunKm": 11.7,
+   "NextWeekLongRunKm": 13.5,
+   "MissedLongRun": true,
+   "PainEventLast7d": true,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 99,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "pain_progression_freeze",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Pain >= 2/10 in last 7 days freezes weekly progression at 4-week average (25.9 km).",
+    "expected": {
+     "weekly_km_max": 25.9,
+     "pain_max": 1
+    },
+    "cap_km": 25.9
+   },
+   {
+    "rule_id": "long_run_110_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Missed long run cannot add extra volume: Next long run (13.5 km) exceeds 110% of 30-day longest run (11.7 km → cap 12.9 km).",
+    "expected": {
+     "long_run_km_max": 12.9,
+     "durability_pain_max": 1
+    },
+    "cap_km": 12.9
+   }
+  ],
+  "caps": [
+   25.9,
+   12.9
+  ]
+ },
+ {
+  "name": "random 54",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 61.5,
+   "PlannedWeekKm": 84.6,
+   "Max30dLongRunKm": 31.3,
+   "NextWeekLongRunKm": 28.2,
+   "MissedLongRun": false,
+   "PainEventLast7d": true,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "pain_progression_freeze",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Pain >= 2/10 in last 7 days freezes weekly progression at 4-week average (61.5 km).",
+    "expected": {
+     "weekly_km_max": 61.5,
+     "pain_max": 1
+    },
+    "cap_km": 61.5
+   }
+  ],
+  "caps": [
+   61.5,
+   28.2
+  ]
+ },
+ {
+  "name": "random 55",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 59.7,
+   "PlannedWeekKm": 47.8,
+   "Max30dLongRunKm": 21,
+   "NextWeekLongRunKm": 25,
+   "MissedLongRun": false,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "long_run_110_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Next long run (25.0 km) exceeds 110% of 30-day longest run (21.0 km → cap 23.1 km).",
+    "expected": {
+     "long_run_km_max": 23.1,
+     "durability_pain_max": 1
+    },
+    "cap_km": 23.1
+   }
+  ],
+  "caps": [
+   47.8,
+   23.1
+  ]
+ },
+ {
+  "name": "random 56",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 20.6,
+   "PlannedWeekKm": 30,
+   "Max30dLongRunKm": 21.5,
+   "NextWeekLongRunKm": 30.3,
+   "MissedLongRun": false,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "weekly_progression_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Weekly planned volume (30.0 km) exceeds +10% cap over 4-week average (20.6 km).",
+    "expected": {
+     "weekly_km_max": 22.7,
+     "pain_max": 1
+    },
+    "cap_km": 22.7
+   },
+   {
+    "rule_id": "long_run_110_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Next long run (30.3 km) exceeds 110% of 30-day longest run (21.5 km → cap 23.7 km).",
+    "expected": {
+     "long_run_km_max": 23.7,
+     "durability_pain_max": 1
+    },
+    "cap_km": 23.7
+   }
+  ],
+  "caps": [
+   22.7,
+   23.7
+  ]
+ },
+ {
+  "name": "random 57",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 67.6,
+   "PlannedWeekKm": 91.3,
+   "Max30dLongRunKm": 28.7,
+   "NextWeekLongRunKm": 27.9,
+   "MissedLongRun": true,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "weekly_progression_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Weekly planned volume (91.3 km) exceeds +10% cap over 4-week average (67.6 km).",
+    "expected": {
+     "weekly_km_max": 74.4,
+     "pain_max": 1
+    },
+    "cap_km": 74.4
+   }
+  ],
+  "caps": [
+   74.4,
+   27.9
+  ]
+ },
+ {
+  "name": "random 58",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 26.6,
+   "PlannedWeekKm": 29.2,
+   "Max30dLongRunKm": 30.6,
+   "NextWeekLongRunKm": 29.8,
+   "MissedLongRun": true,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 0,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [],
+  "caps": [
+   29.2,
+   29.8
+  ]
+ },
+ {
+  "name": "random 59",
+  "input": {
+   "AsOf": "2026-11-19",
+   "Prev4WeekAvgKm": 38.7,
+   "PlannedWeekKm": 34.6,
+   "Max30dLongRunKm": 22.3,
+   "NextWeekLongRunKm": 26.8,
+   "MissedLongRun": true,
+   "PainEventLast7d": false,
+   "GateActive": false,
+   "GateReason": "",
+   "RecentQualityTIZ": null,
+   "EasyRunsAboveZ214d": 0,
+   "DaysToARace": 6,
+   "PeakWeekKm": 0,
+   "Next72h": null
+  },
+  "proposals": [
+   {
+    "rule_id": "long_run_110_cap",
+    "scope_from": "2026-11-19",
+    "scope_to": "2026-11-19",
+    "changes": null,
+    "reason": "Missed long run cannot add extra volume: Next long run (26.8 km) exceeds 110% of 30-day longest run (22.3 km → cap 24.5 km).",
+    "expected": {
+     "long_run_km_max": 24.5,
+     "durability_pain_max": 1
+    },
+    "cap_km": 24.5
+   }
+  ],
+  "caps": [
+   34.6,
+   24.5
+  ]
+ }
+]
