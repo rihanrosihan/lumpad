@@ -165,21 +165,21 @@ const OPEN_WORDS = /\b(still open|belum|pending|open item|go\/no-go|akan|rencana
 export function staleSweep({ today = wib(), apply = true } = {}) {
   const docs = new Map(idb.prepare('SELECT doc_id, status, source_date FROM kb_docs').all().map((d) => [d.doc_id, d]))
   const archived = (d) => d && /^(SUPERSEDED|ARCHIVE|RETIRED)/i.test(d.status || '') && !/\bACTIVE\b/i.test(d.status)
-  const pend = mdb.prepare("SELECT id, kind, title, body, payload, valid_from FROM memory WHERE status IN ('candidate','proposal') AND source='kb_extract' AND created_by='extractor'").all()
+  const pend = mdb.prepare("SELECT id, kind, title, body, payload, valid_from, status FROM memory WHERE status IN ('candidate','proposal','active') AND source='kb_extract' AND created_by='extractor'").all()
   const conflicts = mdb.prepare("SELECT payload FROM memory WHERE kind='conflict' AND source='kb_extract' AND status IN ('candidate','active')").all().map((r) => { try { return JSON.parse(r.payload) } catch { return {} } })
   const out = []
   for (const m of pend) {
     let p = {}; try { p = JSON.parse(m.payload || '{}') } catch {}
-    const d = docs.get(p.doc), reasons = []
-    if (archived(d)) reasons.push(`its source document ${p.doc} is now archived (${d.status})`)
+    const d = docs.get(p.doc), reasons = []; let strong = false
+    if (archived(d)) { reasons.push(`its source document ${p.doc} is now archived (${d.status})`); strong = true }
     const when = dateIn(`${m.title} ${m.body}`, d?.source_date || m.valid_from, today)
     if (when && dayDiff(today, when) > 7 && (m.kind === 'plan' || OPEN_WORDS.test(`${m.title} ${m.body}`))) reasons.push(`it describes something open or planned as of ${when}, which is ${dayDiff(today, when)} days ago`)
     for (const c of conflicts) {
       if (!c.quote || !c.quote_b || (c.doc !== p.doc && c.doc_b !== p.doc)) continue
       const mine = c.doc === p.doc ? c.quote : c.quote_b, other = c.doc === p.doc ? c.doc_b : c.doc, od = docs.get(other)
-      if (norm2(p.quote || '').includes(norm2(mine).slice(0, 60)) || norm2(mine).includes(norm2(p.quote || '').slice(0, 60))) { if (od?.source_date && d?.source_date && od.source_date > d.source_date) reasons.push(`document ${other} (newer, ${od.source_date}) disagrees with it`); break }
+      if (norm2(p.quote || '').includes(norm2(mine).slice(0, 60)) || norm2(mine).includes(norm2(p.quote || '').slice(0, 60))) { if (od?.source_date && d?.source_date && od.source_date > d.source_date) { reasons.push(`document ${other} (newer, ${od.source_date}) disagrees with it`); strong = true } break }
     }
-    if (reasons.length) out.push({ id: m.id, title: m.title, reason: reasons.join('; ') })
+    if (reasons.length) out.push({ id: m.id, title: m.title, status: m.status, strong, reason: reasons.join('; ') })
   }
   if (apply) {
     const now = new Date().toISOString(), cur = new Set(out.map((x) => x.id))
@@ -190,7 +190,7 @@ export function staleSweep({ today = wib(), apply = true } = {}) {
       else if (p.stale && !cur.has(m.id)) { delete p.stale; mdb.prepare('UPDATE memory SET payload=?, updated_at=? WHERE id=?').run(JSON.stringify(p), now, m.id) }
     }
   }
-  return { checked: pend.length, stale: out.length, items: out.slice(0, 50) }
+  return { checked: pend.length, stale: out.length, strong: out.filter((x) => x.strong).length, stale_active: out.filter((x) => x.status === 'active').length, all: out.map((x) => ({ id: x.id, status: x.status, strong: x.strong })), items: out.slice(0, 50) }
 }
 const norm2 = (t) => String(t || '').toLowerCase().replace(/[*_`>#]/g, '').replace(/\s+/g, ' ').trim()
 
