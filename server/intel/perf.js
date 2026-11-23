@@ -15,8 +15,9 @@ export function trend(vals, better = 'up', n = 5) {
   return { recent: r1(a, 3), prior: r1(b, 3), delta: r1(d, 3), direction: Math.abs(d) <= tol ? 'flat' : (d > 0) === (better === 'up') ? 'improving' : 'worsening' }
 }
 // fastest run of `w` consecutive km (a gap in the km series breaks it); seconds, or null
-export function bestWindow(km, w) {
-  const ks = [...km].sort((a, b) => a.km - b.km); let best = null
+// only COMPLETE kilometres count: the last row of a run is a partial km (a few metres) and would make an impossible 1 km time
+export function bestWindow(km, w, distM = Infinity) {
+  const full = Math.floor(distM / 1000), ks = km.filter((k) => k.km <= full && k.sec >= 150 && k.sec <= 1500).sort((a, b) => a.km - b.km); let best = null
   for (let i = 0; i + w <= ks.length; i++) { if (ks[i + w - 1].km - ks[i].km !== w - 1) continue; let s = 0; for (let j = i; j < i + w; j++) s += ks[j].sec || 0; if (s > 0 && (best == null || s < best)) best = s }
   return best
 }
@@ -25,9 +26,9 @@ export function perfSummary() {
   const col = (k, filter = () => true) => ses.filter((s) => s[k] != null && filter(s)).map((s) => s[k])
   const long = (s) => (s.distance_m || 0) >= 16000
   // VDOT of every session's best effort (5 K / 10 K window, or the whole run when it was mostly run)
-  const vd = ses.map((s) => { let b = 0; for (const w of [5, 10]) { const t = bestWindow(s.km, w); if (t) b = Math.max(b, vdotFromRace(w * 1000, t)) } if ((s.distance_m || 0) >= 8000 && s.elapsed_s && (s.run_share || 0) >= 0.85) b = Math.max(b, vdotFromRace(s.distance_m, s.elapsed_s)); return b > 20 && b < 85 ? { date: s.date, v: b } : null }).filter(Boolean)
+  const vd = ses.map((s) => { let b = 0; for (const w of [5, 10]) { const t = bestWindow(s.km, w, s.distance_m); if (t) b = Math.max(b, vdotFromRace(w * 1000, t)) } if ((s.distance_m || 0) >= 8000 && s.elapsed_s && (s.run_share || 0) >= 0.85) b = Math.max(b, vdotFromRace(s.distance_m, s.elapsed_s)); return b > 25 && b < 75 ? { date: s.date, v: b } : null }).filter(Boolean)
   const latestVd = vd.at(-1) || null, bestVd90 = vd.filter((x) => x.date >= new Date(Date.now() - 90 * 864e5).toISOString().slice(0, 10)).reduce((m, x) => Math.max(m, x.v), 0) || null
-  const pb = {}; for (const w of [1, 3, 5, 10, 15, 20]) { let best = null; for (const s of ses) { const t = bestWindow(s.km, w); if (t && (!best || t < best.secs)) best = { secs: Math.round(t), pace: Math.round(t / w), date: s.date, label: s.label_id, vdot: r1(vdotFromRace(w * 1000, t)) } } if (best) pb[w + 'k'] = best }
+  const pb = {}; for (const w of [1, 3, 5, 10, 15, 20]) { let best = null; for (const s of ses) { const t = bestWindow(s.km, w, s.distance_m); if (t && (!best || t < best.secs)) best = { secs: Math.round(t), pace: Math.round(t / w), date: s.date, label: s.label_id, vdot: r1(vdotFromRace(w * 1000, t)) } } if (best) pb[w + 'k'] = best }
   const fit = appDb.prepare('SELECT * FROM fitness_daily ORDER BY date DESC LIMIT 30').all(), f0 = fit[0] || null, fOld = fit.at(-1) || null
   const load = appDb.prepare('SELECT date, load_short, load_long, load_ratio FROM health_daily WHERE load_long IS NOT NULL ORDER BY date DESC LIMIT 1').get() || null
   const longs = ses.filter(long)

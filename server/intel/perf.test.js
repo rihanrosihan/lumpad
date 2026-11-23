@@ -15,3 +15,9 @@ test('best window: fastest consecutive km, a gap in the series breaks the window
   assert.equal(P.bestWindow(km, 3), 810, '6-7-8 is the fastest three in a row'); assert.equal(P.bestWindow(km, 4), 1270, 'only 1-4 is contiguous'); assert.equal(P.bestWindow(km, 5), null)
 })
 test('summary builds from an empty database without failing', () => { const s = P.perfSummary(); assert.equal(s.vdot.baseline, 31.7); assert.equal(s.coros, null); assert.deepEqual(s.speed.pbs, {}) })
+
+test('a partial last kilometre can never become a record', () => {
+  const km = [{ km: 1, sec: 300 }, { km: 2, sec: 300 }, { km: 3, sec: 20 }]
+  assert.equal(P.bestWindow(km, 1, 2050), 300); assert.equal(P.bestWindow(km, 3, 2050), null)
+  assert.equal(P.bestWindow([{ km: 1, sec: 40 }], 1, 5000), null, 'an impossible km time is dropped')
+})

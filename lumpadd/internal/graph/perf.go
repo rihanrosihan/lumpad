@@ -96,6 +96,15 @@ func SyncPerf(ctx context.Context, pool *pgxpool.Pool, aura *Client, st *SyncSta
 			}
 			var ks []kmRow
 			_ = json.Unmarshal([]byte(kmRaw), &ks)
+			// only complete kilometres with a plausible time (the last row of a run is a partial km)
+			full := int(dist / 1000)
+			kept := ks[:0]
+			for _, k := range ks {
+				if k.Km <= full && k.Sec >= 150 && k.Sec <= 1500 {
+					kept = append(kept, k)
+				}
+			}
+			ks = kept
 			sort.Slice(ks, func(i, j int) bool { return ks[i].Km < ks[j].Km })
 			bestV := 0.0
 			for _, w := range windows {
@@ -129,7 +138,7 @@ func SyncPerf(ctx context.Context, pool *pgxpool.Pool, aura *Client, st *SyncSta
 					bestV = v
 				}
 			}
-			if bestV > 20 && bestV < 85 {
+			if bestV > 25 && bestV < 75 {
 				pts = append(pts, map[string]any{"id": lid + ":vdot_effort", "metric": "vdot_effort", "domain": "vdot", "unit": "VDOT", "date": dt, "value": round(bestV, 1), "s": lid, "src": "fit"})
 			}
 			longest = append(longest, effort{lid, dt, dist})
