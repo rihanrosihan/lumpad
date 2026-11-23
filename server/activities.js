@@ -40,6 +40,11 @@ export function activityDetail(id) {
 export const gearList = () => db.prepare(`SELECT g.id, g.name, g.brand, g.model, g.distance_m AS lifetime_m, g.retired,
   (SELECT COALESCE(SUM(a.distance_m),0) FROM activities a WHERE a.gear_id = g.id AND a.source='strava') AS tracked_m,
   (SELECT MAX(a.date) FROM activities a WHERE a.gear_id = g.id) AS last_used FROM gear g ORDER BY g.retired, g.distance_m DESC`).all()
+// Recent use per shoe (last 28 days, Strava-tagged runs): the basis of "weeks left at the current rate" on the shoe card.
+export const gearRate = (today = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10)) => {
+  const from = new Date(Date.parse(today + 'T00:00:00Z') - 28 * 864e5).toISOString().slice(0, 10)
+  return db.prepare("SELECT gear_id AS id, ROUND(SUM(distance_m)/1000.0, 1) AS km28, COUNT(*) AS runs28 FROM activities WHERE gear_id IS NOT NULL AND source='strava' AND date >= ? GROUP BY gear_id").all(from).map((r) => ({ ...r, km_per_week: +(r.km28 / 4).toFixed(1) }))
+}
 // Everything the Readiness tab needs for a date window; derived metrics (form, ramp, zones) are computed client-side in src/lib/metrics.js
 export function readinessData(from, to) {
   return {

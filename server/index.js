@@ -17,12 +17,13 @@ import { runIntel, recentIntelJobs, afterSync } from './intel/run.js'
 import { startIntelScheduler } from './intel/schedule.js'
 import { plannedForecast } from './intel/forecast.js'
 import { adviceSummary, listAdvice, setStatus as setAdviceStatus } from './intel/advice.js'
+import { graphAsk, kbAudit, memoryInbox, bulkAction, raceBrief } from './intel/studio.js'
 import { getConfig, publicConfig, saveConfig, resetConfig, testConnection, listModels, getQuota, saveQuota } from './intel/llmconfig.js'
 import { runCoach, recentRuns, getRun, newRun, finishRun, coachStatus } from './intel/coach.js'
 import { retrieveRunnerContext, renderPrompt, TASKS, OUTPUT_SCHEMA } from './intel/context.js'
 import { guardStatus, resolveModel } from './intel/llm.js'
 import { status as archiveStatus } from './coros/archive.js'
-import { listMerged, activityDetail, gearList, setShoe, readinessData, lapsInRange, exportRows, toCsv } from './activities.js'
+import { listMerged, activityDetail, gearList, gearRate, setShoe, readinessData, lapsInRange, exportRows, toCsv } from './activities.js'
 import { authorize, principal } from './auth.js'
 import { applyIngest, checkToken, syncStatus, coverage, healthRange, activitiesRange, lapsOf, validDate } from './ingest.js'
 
@@ -66,6 +67,7 @@ const routes = {
   'GET /api/activities/merged': async (q) => listMerged(...range(q)),
   'GET /api/activities/detail': async (q) => { const a = activityDetail(q.get('id') || ''); if (!a) throw Object.assign(new Error('not found'), { status: 404 }); return a },
   'GET /api/gear': async () => gearList(),
+  'GET /api/gear/rate': async () => gearRate(),
   'GET /api/readiness': async (q) => readinessData(...range(q)),
   'GET /api/laps': async (q) => lapsInRange(...range(q)),
   // personal data export (behind the web login): activities / health as CSV or JSON
@@ -175,6 +177,12 @@ const routes = {
     const changes = !!(b.api_key || b.model || (activate && id !== getConfig().provider))
     if (changes && !b.skip_test) { const t = await testConnection({ provider: id, api_key: b.api_key, model: b.model }); if (!t.ok) throw Object.assign(new Error(t.error || 'Connection test failed'), { status: 400, test: t }) }
     return { ...(await saveConfig({ provider: id, api_key: b.api_key, model: b.model, max_calls_per_day: b.max_calls_per_day, activate })), saved_ok: true } },
+  // Coach Studio: graph Q&A, knowledge-base audit, memory inbox (grouped by source document), race briefing
+  'POST /api/graph/ask': async (_q, req) => graphAsk(JSON.parse((await readBody(req, 4e3)).toString() || '{}').question),
+  'GET /api/kb/audit': async () => kbAudit(),
+  'GET /api/memory/inbox': async (q) => memoryInbox({ source: q.get('source') || '', doc: q.get('doc') || '', limitDocs: Math.min(+q.get('docs') || 12, 40), offsetDocs: Math.max(+q.get('offset') || 0, 0) }),
+  'POST /api/memory/bulk': async (_q, req) => { const b = JSON.parse((await readBody(req, 2e4)).toString() || '{}'); return bulkAction(b.ids, b.action, principal(req) || 'athlete') },
+  'GET /api/race/brief': async () => raceBrief(),
   'GET /api/coach/quota': async () => getQuota(),
   'POST /api/coach/quota': async (_q, req) => saveQuota(JSON.parse((await readBody(req, 1e4)).toString() || '{}')),
   'POST /api/coach/config/reset': async (_q, req) => { const b = JSON.parse((await readBody(req, 1e4)).toString() || '{}'); return resetConfig(b.provider || undefined) },

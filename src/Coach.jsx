@@ -6,6 +6,7 @@ import LagExplorer from './LagExplorer.jsx'
 import ShoeDegradation from './ShoeDegradation.jsx'
 import KnowledgeGraphPanel from './KnowledgeGraph.jsx'
 import AdviceLog from './AdviceLog.jsx'
+import { GraphAsk, KbAudit, MemoryInbox } from './Studio.jsx'
 import { useApi, fmtDur, fmtPaceS } from './api.js'
 import { fmtShort } from './lib/calendar.js'
 
@@ -543,7 +544,7 @@ export default function Coach({ go, focus }) {
       <TwinPillars twin={twin.data} />
     </div>}
 
-    {sec === 'kg' && <div id="cs-kg" tabIndex={-1}><KnowledgeGraphPanel twin={twin.data} matrices={mat.data} status={s} /></div>}
+    {sec === 'kg' && <div id="cs-kg" tabIndex={-1}><GraphAsk /><KnowledgeGraphPanel twin={twin.data} matrices={mat.data} status={s} /><KbAudit /></div>}
 
     {sec === 'mc' && <div id="cs-mc" tabIndex={-1} className="rgrid">
       <div><Sub4AdaptiveCard twin={twin.data} /><TwinMonteCarlo twin={twin.data} /><TwinHistory /></div>
@@ -553,7 +554,7 @@ export default function Coach({ go, focus }) {
     {sec === 'lag' && <div id="cs-lag" tabIndex={-1}><LagExplorer /></div>}
 
     {sec === 'adv' && <div id="cs-adv" tabIndex={-1}><AdviceLog /></div>}
-    {sec === 'mem' && <div id="cs-mem" tabIndex={-1}><MemoryQueue pending={pending} onAct={act} /></div>}
+    {sec === 'mem' && <div id="cs-mem" tabIndex={-1}><MemoryInbox /><MemoryQueue pending={pending} onAct={act} /></div>}
 
     {sec === 'mat' && <div id="cs-mat" tabIndex={-1} className="rgrid">
       <CorrelationMatrices data={mat.data} />

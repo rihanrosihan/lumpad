@@ -6,6 +6,7 @@ import { BarChart } from './charts.jsx'
 import CourseMap from './CourseMap.jsx'
 import JrfCourseMap from './JrfCourseMap.jsx'
 import JakimBenchmark from './JakimBenchmark.jsx'
+import { RaceBrief } from './Studio.jsx'
 import { RaceDayTravel, CourseStreetView } from './RaceGoogle.jsx'
 
 const JRF_COPS = [
@@ -156,6 +157,7 @@ export default function Race({ settings, go }) {
   ]
 
   return <>
+    <RaceBrief />
     <div className="card prof-cmd">
       <div className="prof-cmd-top">
         <div>

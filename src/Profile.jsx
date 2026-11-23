@@ -86,6 +86,7 @@ export default function Profile({ vdot, results, settings, setSettings, go }) {
 
   const sync = useSyncStatus(), ss = useSyncStatus2()
   const G = useApi('/api/gear')
+  const GR = useApi('/api/gear/rate'), rate = Object.fromEntries((GR.data || []).map((x) => [x.id, x.km_per_week]))
   const R = useApi(`/api/readiness?from=${addDays(T, -30)}&to=${T}`)
   const A = useApi(`/api/activities/merged?from=${addDays(T, -365)}&to=${T}`)
   const L = useApi(`/api/laps?from=${addDays(T, -365)}&to=${T}`)
@@ -117,7 +118,8 @@ export default function Profile({ vdot, results, settings, setSettings, go }) {
     const used = (g.lifetime_m || 0) / 1000
     const f = used / life
     const st = shoeStats(acts, g.id, T)
-    return { ...g, role, life, used, f, st, c: SHOE_C[i % SHOE_C.length] }
+    const kmw = rate[g.id] || 0, weeksLeft = kmw > 0 ? Math.max(0, Math.round((life - used) / kmw)) : null
+    return { ...g, role, life, used, f, st, kmw, weeksLeft, c: SHOE_C[i % SHOE_C.length] }
   })
   const filteredShoes = shoeRows.filter((s) => shoeFilter === 'all' ? true : shoeFilter === 'warn' ? s.used >= 600 || s.f >= 0.85 : s.used < 600)
   const exp = (what, fmt) => `/api/export?what=${what}&format=${fmt}`
@@ -288,6 +290,7 @@ export default function Profile({ vdot, results, settings, setSettings, go }) {
               <b>{g.name}</b>
               <StatusPill tone={g.f > 0.9 || g.used >= 600 ? 'red' : g.f > 0.7 ? 'amber' : 'green'}>{Math.round(g.used)} / {g.life} km</StatusPill>
             </div>
+            <small className="muted">{g.kmw > 0 ? (g.weeksLeft === 0 ? 'At or past its life target' : `≈ ${g.weeksLeft} weeks to ${g.life} km at ${g.kmw} km/week`) : 'Not used in the last 4 weeks'}</small>
             <small className="muted">{ROLES.find((r) => r[0] === g.role)?.[1]} · {g.st.runs} runs{g.st.avgPace ? ` · avg ${fmtPace(g.st.avgPace)}/km` : ''}</small>
             <ProgressBar value={g.used} max={g.life} tone={g.f > 0.9 || g.used >= 600 ? 'red' : g.f > 0.7 ? 'amber' : 'green'} label={`${Math.round(g.used)} of ${g.life} km`} />
             <div className="form two">
