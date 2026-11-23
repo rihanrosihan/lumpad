@@ -464,7 +464,9 @@ func (g *KBGraph) parseLedger(d *KBDoc, t mdTable) {
 		if !ok {
 			continue
 		}
-		name := cell(r, ri)
+		rawName := cell(r, ri)
+		counted := !strings.Contains(strings.ReplaceAll(rawName, "*", ""), "~~") // a struck-through row (e.g. the Urbana qualifier) is kept as data but is not a counted race
+		name := strings.TrimSpace(strings.ReplaceAll(rawName, "~", ""))
 		tier := ""
 		if m := regexp.MustCompile(`(?i)tier ([A-C])`).FindStringSubmatch(name); m != nil {
 			tier = strings.ToUpper(m[1])
@@ -480,7 +482,7 @@ func (g *KBGraph) parseLedger(d *KBDoc, t mdTable) {
 		}
 		g.seen["r"+date+slug(name)] = true
 		g.Races = append(g.Races, kbRow{"id": date + "-" + slug(name), "date": date, "name": name, "distance": cell(r, di), "result": res, "tier": tier,
-			"dnf": strings.Contains(strings.ToUpper(res), "DNF"), "dns": strings.Contains(strings.ToUpper(res), "DNS"), "note": truncRunes(cell(r, ni), 300), "doc": d.ID})
+			"counted": counted, "dnf": strings.Contains(strings.ToUpper(res), "DNF"), "dns": strings.Contains(strings.ToUpper(res), "DNS"), "note": truncRunes(cell(r, ni), 300), "doc": d.ID})
 	}
 }
 
@@ -818,7 +820,7 @@ func SyncKB(ctx context.Context, aura *Client, redact func(string) string, memRo
 	}
 
 	// race ledger → canonical races by date
-	if err := run(g.Races, 60, `UNWIND $rows AS r CREATE (e:RaceEntry {id: r.id, src: 'kbx'}) SET e.date = r.date, e.name = r.name, e.distance = r.distance, e.result = r.result, e.tier = r.tier, e.dnf = r.dnf, e.dns = r.dns, e.note = r.note
+	if err := run(g.Races, 60, `UNWIND $rows AS r CREATE (e:RaceEntry {id: r.id, src: 'kbx'}) SET e.date = r.date, e.name = r.name, e.distance = r.distance, e.result = r.result, e.tier = r.tier, e.dnf = r.dnf, e.dns = r.dns, e.counted = r.counted, e.note = r.note
 		WITH e, r MATCH (d:Document {id: r.doc}) MERGE (e)-[:RECORDED_IN]->(d)`, true); err != nil {
 		return fmt.Errorf("kb races: %w", err)
 	}
@@ -826,7 +828,7 @@ func SyncKB(ctx context.Context, aura *Client, redact func(string) string, memRo
 		`MATCH (e:RaceEntry), (r:Race) WHERE r.date = e.date MERGE (e)-[:LEDGER_OF]->(r)`,
 		`MATCH (e:RaceEntry), (s:Session) WHERE s.date = e.date MERGE (e)-[:DONE_AS]->(s)`,
 		// every ledger race becomes a Race node too (the canonical list only holds a few), so the Races view and every Race query see the whole history
-		`MATCH (e:RaceEntry) WHERE NOT EXISTS { (e)-[:LEDGER_OF]->(:Race) } MERGE (r:Race {race_id: 'ledger:' + e.id}) SET r.src = 'kbx', r.date = e.date, r.name = e.name, r.class = 'HISTORY', r.result = e.result, r.distance_text = e.distance, r.status = CASE WHEN e.dns THEN 'DNS' WHEN e.dnf THEN 'DNF' ELSE 'Finish' END MERGE (e)-[:LEDGER_OF]->(r)`,
+		`MATCH (e:RaceEntry) WHERE NOT EXISTS { (e)-[:LEDGER_OF]->(:Race) } MERGE (r:Race {race_id: 'ledger:' + e.id}) SET r.src = 'kbx', r.date = e.date, r.name = e.name, r.class = 'HISTORY', r.result = e.result, r.distance_text = e.distance, r.status = CASE WHEN e.counted = false THEN 'Not counted' WHEN e.dns THEN 'DNS' WHEN e.dnf THEN 'DNF' ELSE 'Finish' END MERGE (e)-[:LEDGER_OF]->(r)`,
 		`MATCH (r:Race {src:'kbx'})<-[:LEDGER_OF]-(e:RaceEntry)-[:DONE_AS]->(s:Session) MERGE (s)-[:ATTEMPT_OF]->(r)`,
 		`MATCH (e:RaceEntry {src:'kbx'}), (t:Topic {id:'race'}) MERGE (e)-[:ABOUT]->(t)`,
 		`MATCH (e:RaceEntry {dnf: true}), (en:Entity {id:'Condition:heat-illness'}) WHERE toLower(e.note) CONTAINS 'heat' OR toLower(e.note) CONTAINS 'black flag' MERGE (e)-[:FACED]->(en)`,
