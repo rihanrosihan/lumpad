@@ -1,7 +1,8 @@
 // Bulk coach jobs that use the model heavily: backfill session reviews, race post-mortems, and memory extraction from the knowledge-base documents.
 //   node --env-file=.env server/intel/bulk.js reviews     [--limit N] [--conc 2] [--dry]   one high-effort review for every FIT session that has none yet (newest first)
 //   node --env-file=.env server/intel/bulk.js postmortems [--limit N] [--conc 2] [--dry]   one race post-mortem per race in the ledger that has a FIT file
-//   node --env-file=.env server/intel/bulk.js extract     [--limit N] [--conc 3] [--dry]   claims from the KB documents → memory CANDIDATES (you approve them in the memory view)
+//   node --env-file=.env server/intel/bulk.js extract     [--limit N] [--conc 4] [--chunk 6000] [--dry]   (--chunk 2500 = a finer second pass; sentences already claimed are skipped)
+//   node --env-file=.env server/intel/bulk.js consistency [--limit N] [--conc 4] [--dry]   find contradictions between documents that reference each other → candidates   claims from the KB documents → memory CANDIDATES (you approve them in the memory view)
 // Everything is resumable: a finished item is never run twice (a saved run with the same prompt is reused, extraction keeps a progress file). Started as root it drops to the owner of
 // server/data first, like cli.js. Nothing is written as active knowledge: reviews follow the normal coach write-back rules, extracted claims are candidates / proposals.
 import fs from 'node:fs'
@@ -89,25 +90,26 @@ export function claimsToMemories(reply, { docId, chunkText, ref, sourceDate, doc
   }
   return { memories: out, dropped }
 }
-async function extract(conc) {
+async function extract(conc, chunkSize = 6000) {
   const { chunk, statusOf, parseDoc } = await import('./kb.js'), { complete } = await import('./llm.js'), { addMemory } = await import('./memory.js')
   const progressFile = path.join(dir, 'tmp', 'extract-progress.json'); fs.mkdirSync(path.dirname(progressFile), { recursive: true, mode: 0o700 })
   let prog = {}; try { prog = JSON.parse(fs.readFileSync(progressFile, 'utf8')) } catch {}
   const jobs = []
   for (const d of idb.prepare('SELECT doc_id, title, status, source_date, body FROM kb_docs ORDER BY doc_id').all()) {
     if (statusOf(d.status) === 'archived') continue
-    chunk(parseDoc(d.body).body, 6000).forEach((c, i) => { const hash = crypto.createHash('sha256').update(EXTRACT_SYSTEM + '|' + c).digest('hex').slice(0, 24); if (!prog[hash]) jobs.push({ label: `${d.doc_id}#${i}`, hash, doc: d, text: c, ref: `${d.doc_id}#x${i}` }) })
+    chunk(parseDoc(d.body).body, chunkSize).forEach((c, i) => { const hash = crypto.createHash('sha256').update(EXTRACT_SYSTEM + '|' + c).digest('hex').slice(0, 24); if (!prog[hash]) jobs.push({ label: `${d.doc_id}#${i}`, hash, doc: d, text: c, ref: `${d.doc_id}#x${i}` }) })
   }
   const todo = jobs.slice(0, limit)
   log(`extract: ${todo.length} chunks to read (${jobs.length - todo.length} deferred, ${Object.keys(prog).length} already done)`)
   if (dry) { todo.slice(0, 15).forEach((j) => log('  would read', j.label, j.text.length, 'chars')); return }
+  const quotes = new Set(mdb.prepare("SELECT json_extract(payload,'$.quote') q FROM memory WHERE source='kb_extract'").all().map((r) => norm(r.q))) // a finer pass never re-adds a sentence that already has a claim
   const totals = { claims: 0, created: 0, dup: 0, dropped: 0, tokens: 0 }
   const r = await pool(todo, conc, async (j) => {
     const res = await complete({ system: EXTRACT_SYSTEM, user: `Document ${j.doc.doc_id} — ${j.doc.title} (status: ${j.doc.status || 'n/a'}, date: ${j.doc.source_date || 'n/a'})\n\nTEXT:\n${j.text}`, effort: 'high', intent: 'weekly_review' })
     if (!res.json || !Array.isArray(res.json.claims)) throw new Error('reply was not {"claims":[…]}')
     const { memories, dropped } = claimsToMemories(res.json, { docId: j.doc.doc_id, chunkText: j.text, ref: j.ref, sourceDate: j.doc.source_date, docStatus: j.doc.status })
     let created = 0, dup = 0
-    for (const m of memories) { const a = addMemory(m); if (a.created) created++; else dup++ }
+    for (const m of memories) { const qk = norm(m.payload.quote); if (quotes.has(qk)) { dup++; continue } const a = addMemory(m); if (a.created) { created++; quotes.add(qk) } else dup++ }
     Object.assign(totals, { claims: totals.claims + memories.length, created: totals.created + created, dup: totals.dup + dup, dropped: totals.dropped + dropped.length, tokens: totals.tokens + (res.usage?.total_tokens || 0) })
     prog[j.hash] = { at: new Date().toISOString(), n: memories.length }; fs.writeFileSync(progressFile, JSON.stringify(prog), { mode: 0o600 })
     log(`  ${j.label}: ${memories.length} claims (${created} new, ${dup} dup, ${dropped.length} dropped)`)
@@ -115,11 +117,53 @@ async function extract(conc) {
   log(`extract: done — ${r.ok} chunks ok, ${r.failed} failed; ${totals.created} new candidates, ${totals.dup} duplicates, ${totals.dropped} dropped (no faithful quote); ${totals.tokens} tokens`)
 }
 
+// ---- 4) cross-document consistency: for every pair of active documents that reference each other, ask where they contradict (quotes from both sides must be verbatim)
+export const CONSISTENCY_SYSTEM = `You compare two documents from the same runner's training project (Indonesian and English mixed) and find places where they CONTRADICT each other (a different number, date, rule, target, status or decision for the same thing).
+Return ONLY JSON: {"contradictions":[{"topic":"<=100 chars","a_quote":"<=240 chars copied EXACTLY from document A","b_quote":"<=240 chars copied EXACTLY from document B","explanation":"<=350 chars: what differs and which is likely current (use the dates and status lines), in English","severity":"high|medium|low"}]}.
+Rules: both quotes must be verbatim substrings of their document or the item is discarded. Ignore differences the documents themselves already mark as resolved, superseded, corrected or historical. Ignore wording differences with the same meaning. At most 6; {"contradictions":[]} when they agree.`
+export function docPairs() {
+  const docs = idb.prepare('SELECT doc_id, title, status, source_date, body FROM kb_docs ORDER BY doc_id').all(), by = new Map(docs.map((d) => [d.doc_id, d])), pairs = new Map()
+  const archived = (d) => /^(SUPERSEDED|ARCHIVE|RETIRED)/i.test(d.status || '') && !/\bACTIVE\b/i.test(d.status)
+  for (const d of docs) { if (archived(d)) continue; for (const m of d.body.matchAll(/`(\d{2}\.\d{1,2})`/g)) { const t = by.get(m[1]); if (t && t.doc_id !== d.doc_id && !archived(t)) { const k = [d.doc_id, t.doc_id].sort().join('|'); pairs.set(k, (pairs.get(k) || 0) + 1) } } }
+  return [...pairs].sort((a, b) => b[1] - a[1]).map(([k, n]) => ({ label: k.replace('|', ' vs '), a: by.get(k.split('|')[0]), b: by.get(k.split('|')[1]), refs: n }))
+}
+export function contradictionsToMemories(reply, { a, b, ref }) {
+  const out = [], hayA = norm(a.body), hayB = norm(b.body)
+  for (const c of Array.isArray(reply?.contradictions) ? reply.contradictions.slice(0, 6) : []) {
+    const aq = String(c?.a_quote || '').trim(), bq = String(c?.b_quote || ''). trim(), topic = String(c?.topic || '').trim().slice(0, 100), ex = String(c?.explanation || '').trim().slice(0, 450)
+    if (!topic || !ex || !aq || !bq || !hayA.includes(norm(aq)) || !hayB.includes(norm(bq))) continue
+    out.push({ tier: 'semantic', kind: 'conflict', title: `Docs disagree · ${topic} (${a.doc_id} vs ${b.doc_id})`.slice(0, 200), body: ex, payload: { doc: a.doc_id, doc_b: b.doc_id, quote: aq.slice(0, 300), quote_b: bq.slice(0, 300), severity: ['high', 'medium', 'low'].includes(c.severity) ? c.severity : 'medium', extracted: true },
+      evidence_tag: 'HYPOTHESIS', confidence: null, status: 'candidate', source: 'kb_extract', source_ref: `${ref}.${out.length}`, created_by: 'consistency', valid_from: [a.source_date, b.source_date].filter(Boolean).sort().pop() || null })
+  }
+  return out
+}
+async function consistency(conc) {
+  const { complete } = await import('./llm.js'), { addMemory } = await import('./memory.js')
+  const progressFile = path.join(dir, 'tmp', 'consistency-progress.json'); fs.mkdirSync(path.dirname(progressFile), { recursive: true, mode: 0o700 })
+  let prog = {}; try { prog = JSON.parse(fs.readFileSync(progressFile, 'utf8')) } catch {}
+  const hashOf = (p) => crypto.createHash('sha256').update(CONSISTENCY_SYSTEM + p.a.body + p.b.body).digest('hex').slice(0, 24)
+  const todo = docPairs().filter((p) => !prog[hashOf(p)]).slice(0, limit)
+  log(`consistency: ${todo.length} document pairs to compare`)
+  if (dry) { todo.slice(0, 15).forEach((p) => log('  would compare', p.label, p.refs, 'refs')); return }
+  let created = 0
+  const r = await pool(todo, conc, async (p, k) => {
+    const cut = (d) => d.body.length > 24000 ? d.body.slice(0, 24000) : d.body
+    const res = await complete({ system: CONSISTENCY_SYSTEM, user: `DOCUMENT A — ${p.a.doc_id} ${p.a.title} (status: ${p.a.status}, date: ${p.a.source_date})\n${cut(p.a)}\n\n=====\nDOCUMENT B — ${p.b.doc_id} ${p.b.title} (status: ${p.b.status}, date: ${p.b.source_date})\n${cut(p.b)}`, effort: 'high', intent: 'weekly_review' })
+    if (!res.json || !Array.isArray(res.json.contradictions)) throw new Error('reply was not {"contradictions":[…]}')
+    const ms = contradictionsToMemories(res.json, { a: { ...p.a, body: cut(p.a) }, b: { ...p.b, body: cut(p.b) }, ref: `${p.a.doc_id}~${p.b.doc_id}` })
+    for (const m of ms) if (addMemory(m).created) created++
+    prog[hashOf(p)] = { at: new Date().toISOString(), n: ms.length }; fs.writeFileSync(progressFile, JSON.stringify(prog), { mode: 0o600 })
+    log(`  [${k + 1}/${todo.length}] ${p.label}: ${ms.length} contradictions`)
+  })
+  log(`consistency: done — ${r.ok} pairs ok, ${r.failed} failed, ${created} new candidates`)
+}
+
 if (process.argv[1] && import.meta.url.endsWith(path.basename(process.argv[1]))) {
   try {
     if (cmd === 'reviews') await coachJobs('session_review', unreviewedSessions().slice(0, limit), Number(arg('conc', 2)))
     else if (cmd === 'postmortems') await coachJobs('race_postmortem', raceSessions().slice(0, limit), Number(arg('conc', 2)))
-    else if (cmd === 'extract') await extract(Number(arg('conc', 3)))
-    else { console.error('commands: reviews | postmortems | extract   [--limit N] [--conc N] [--dry]'); process.exit(2) }
+    else if (cmd === 'extract') await extract(Number(arg('conc', 4)), Number(arg('chunk', 6000)))
+    else if (cmd === 'consistency') await consistency(Number(arg('conc', 4)))
+    else { console.error('commands: reviews | postmortems | extract [--chunk N] | consistency   [--limit N] [--conc N] [--dry]'); process.exit(2) }
   } catch (e) { console.error('error:', e.message); process.exit(1) }
 }

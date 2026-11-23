@@ -26,3 +26,11 @@ test('pool: one failure does not stop the batch', async () => {
   const seen = []; const r = await B.pool([1, 2, 3, 4], 2, async (x) => { if (x === 2) throw new Error('boom'); seen.push(x) })
   assert.deepEqual(seen.sort(), [1, 3, 4]); assert.equal(r.failed, 1); assert.equal(r.ok, 3)
 })
+
+test('contradictions need a verbatim quote from EACH document and become candidates', () => {
+  const a = { doc_id: '03.9', source_date: '2026-11-10', body: 'Opening pace 6:15/km aktif.' }, b = { doc_id: '04.4', source_date: '2026-10-01', body: 'Opening pace 5:57/km (Skenario C).' }
+  const ms = B.contradictionsToMemories({ contradictions: [
+    { topic: 'Opening pace', a_quote: 'Opening pace 6:15/km aktif', b_quote: 'Opening pace 5:57/km', explanation: 'A is newer.', severity: 'high' },
+    { topic: 'Made up', a_quote: 'Opening pace 6:15/km aktif', b_quote: 'never written', explanation: 'x' }] }, { a, b, ref: '03.9~04.4' })
+  assert.equal(ms.length, 1); assert.equal(ms[0].kind, 'conflict'); assert.equal(ms[0].status, 'candidate'); assert.equal(ms[0].payload.doc_b, '04.4'); assert.equal(ms[0].valid_from, '2026-11-10')
+})

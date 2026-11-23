@@ -103,7 +103,7 @@ export function memoryInbox({ source = '', doc = '', limitDocs = 12, offsetDocs 
     if (doc && g !== doc) continue
     if (!groups.has(g)) groups.set(g, { doc: g, title: idb.prepare('SELECT title FROM kb_docs WHERE doc_id=?').get(g)?.title || (g === 'coach' ? 'Written by the coach' : g), count: 0, rules: 0, items: [] })
     const G = groups.get(g); G.count++; if (m.tier === 'procedural') G.rules++
-    G.items.push({ id: m.id, tier: m.tier, kind: m.kind, title: m.title, body: m.body.slice(0, 600), quote: p.quote || null, tag: m.evidence_tag, confidence: m.confidence, status: m.status, source: m.source, by: m.created_by, valid_from: m.valid_from })
+    G.items.push({ id: m.id, tier: m.tier, kind: m.kind, title: m.title, body: m.body.slice(0, 600), quote: p.quote || null, quote_b: p.quote_b || null, doc_b: p.doc_b || null, tag: m.evidence_tag, confidence: m.confidence, status: m.status, source: m.source, by: m.created_by, valid_from: m.valid_from })
   }
   const list = [...groups.values()].sort((a, b) => b.count - a.count || a.doc.localeCompare(b.doc))
   return { total: all.length, docs: list.length, groups: list.slice(offsetDocs, offsetDocs + limitDocs) }

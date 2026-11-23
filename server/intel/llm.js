@@ -9,7 +9,7 @@ const BASE = () => getConfig().base
 const key = () => { const k = getConfig().key; if (!k) throw Object.assign(new Error('API key not set (Profile → AI Coach, or DEEPSEEK_API_KEY in .env)'), { status: 503 }); return k }
 const monthOf = (ms = Date.now()) => new Date(ms + 7 * 3600e3).toISOString().slice(0, 7)
 const capCny = () => Number(process.env.DEEPSEEK_MONTHLY_CAP_CNY) || 15
-async function api(path, { method = 'GET', body, fetchFn = fetch, timeout = 120000 } = {}) {
+async function api(path, { method = 'GET', body, fetchFn = fetch, timeout = method === 'POST' ? 360000 : 120000 } = {}) { // a high-effort reasoning reply can take several minutes
   const r = await fetchFn(BASE() + path, { method, headers: { authorization: 'Bearer ' + key(), 'content-type': 'application/json' }, body: body ? JSON.stringify(body) : undefined, signal: AbortSignal.timeout(timeout) })
   const text = await r.text(); let j; try { j = JSON.parse(text) } catch { j = null }
   if (!r.ok) throw Object.assign(new Error(`deepseek ${r.status}: ${(j?.error?.message || text).slice(0, 200)}`), { status: r.status, body: j })

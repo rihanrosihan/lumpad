@@ -55,7 +55,8 @@ export function MemoryInbox() {
       {open === g.doc && <ul className="plain" style={{ marginTop: 6 }}>{g.items.map((m) => <li key={m.id} style={{ margin: '8px 0' }}>
         <b>{m.title}</b> <Chip tone={m.tier === 'procedural' ? 'yellow' : 'gray'}>{m.tier === 'procedural' ? 'rule' : m.kind}</Chip> <Chip tone="gray">{m.tag}</Chip>
         <div>{m.body}</div>
-        {m.quote && <blockquote className="muted" style={{ margin: '4px 0', paddingLeft: 8, borderLeft: '3px solid #8886' }}>“{m.quote}”</blockquote>}
+        {m.quote && <blockquote className="muted" style={{ margin: '4px 0', paddingLeft: 8, borderLeft: '3px solid #8886' }}>{m.doc_b ? `${g.doc}: ` : ''}“{m.quote}”</blockquote>}
+        {m.quote_b && <blockquote className="muted" style={{ margin: '4px 0', paddingLeft: 8, borderLeft: '3px solid #8886' }}>{m.doc_b}: “{m.quote_b}”</blockquote>}
         <button type="button" className="btn sm" disabled={!!busy} onClick={() => act([m.id], 'approve', 'one')}>✓ Approve</button> <button type="button" className="btn sm" disabled={!!busy} onClick={() => act([m.id], 'retract', 'one')}>✗ Retract</button>
       </li>)}</ul>}
     </div>)}
