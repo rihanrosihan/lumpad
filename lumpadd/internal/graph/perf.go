@@ -57,12 +57,14 @@ func SyncPerf(ctx context.Context, pool *pgxpool.Pool, aura *Client, st *SyncSta
 		"CREATE CONSTRAINT perfdomain_id IF NOT EXISTS FOR (d:PerfDomain) REQUIRE d.id IS UNIQUE",
 		"CREATE CONSTRAINT perfpoint_id IF NOT EXISTS FOR (p:PerfPoint) REQUIRE p.id IS UNIQUE",
 		"CREATE CONSTRAINT pb_id IF NOT EXISTS FOR (b:PB) REQUIRE b.id IS UNIQUE",
+		"CREATE CONSTRAINT stravaactivity_id IF NOT EXISTS FOR (a:StravaActivity) REQUIRE a.id IS UNIQUE",
+		"CREATE CONSTRAINT effort_id IF NOT EXISTS FOR (e:Effort) REQUIRE e.id IS UNIQUE",
 	} {
 		if _, err := aura.Query(ctx, c, nil); err != nil {
 			return fmt.Errorf("perf constraint: %w", err)
 		}
 	}
-	for _, q := range []string{`MATCH (p:PerfPoint) DETACH DELETE p`, `MATCH (b:PB) DETACH DELETE b`, `MATCH (d:PerfDomain) DETACH DELETE d`} {
+	for _, q := range []string{`MATCH (p:PerfPoint) DETACH DELETE p`, `MATCH (b:PB) DETACH DELETE b`, `MATCH (a:StravaActivity) DETACH DELETE a`, `MATCH (e:Effort) DETACH DELETE e`, `MATCH (d:PerfDomain) DETACH DELETE d`} {
 		if _, err := aura.Query(ctx, q, nil); err != nil {
 			return fmt.Errorf("perf reset: %w", err)
 		}
@@ -226,6 +228,19 @@ func SyncPerf(ctx context.Context, pool *pgxpool.Pool, aura *Client, st *SyncSta
 		pbs = append(pbs, sp...)
 	}
 
+	// ---- the Strava activities behind those records (details as saved by the Node app) and the best efforts inside each
+	if acts, efforts := stravaActivities(); len(acts) > 0 {
+		if err := runBatches(ctx, aura, acts, 30, `UNWIND $rows AS r CREATE (a:StravaActivity {id: r.id, name: r.name, date: r.date, type: r.type, distance_m: r.distance_m, moving_s: r.moving_s, elapsed_s: r.elapsed_s, elevation_m: r.elevation_m, avg_hr: r.avg_hr, max_hr: r.max_hr, cadence: r.cadence, gear: r.gear, url: r.url, pr_count: r.pr_count})
+			WITH a, r CALL { WITH a, r MATCH (s:Session {date: r.date}) WITH s ORDER BY s.distance_m DESC LIMIT 1 MERGE (a)-[:SAME_RUN_AS]->(s) }
+			WITH a, r CALL { WITH a, r MATCH (rc:Race {date: r.date}) MERGE (a)-[:RACE_DAY]->(rc) }
+			WITH a, r CALL { WITH a, r MATCH (sh:Shoe) WHERE r.gear IS NOT NULL AND toLower(sh.model) CONTAINS toLower(r.gear) MERGE (a)-[:WORE]->(sh) }`); err != nil {
+			return fmt.Errorf("perf strava activities: %w", err)
+		}
+		if err := runBatches(ctx, aura, efforts, 100, `UNWIND $rows AS r MATCH (a:StravaActivity {id: r.a}) CREATE (e:Effort {id: r.id, name: r.name, time_s: r.time_s, distance_m: r.distance_m, pr_rank: r.pr_rank}) MERGE (e)-[:BEST_OF]->(a)`); err != nil {
+			return fmt.Errorf("perf efforts: %w", err)
+		}
+	}
+
 	// ---- derived links (all deleted with their nodes on the next sync)
 	for _, q := range []string{
 		// chain every metric through time
@@ -236,6 +251,7 @@ func SyncPerf(ctx context.Context, pool *pgxpool.Pool, aura *Client, st *SyncSta
 		`MATCH (r:Race)<-[:ATTEMPT_OF]-(s:Session)-[:MEASURED]->(p:PerfPoint {metric: 'vdot_effort'}) SET p.race = true MERGE (r)-[:IMPLIES]->(p)`,
 		`MATCH (r:Race)<-[:ATTEMPT_OF]-(s:Session)-[:MEASURED]->(p:PerfPoint) WHERE p.metric IN ['onset_km','run_share','ef'] MERGE (r)-[:SHOWED]->(p)`,
 		// domains to goals and topics
+		`MATCH (b:PB {source:'strava'}), (a:StravaActivity) WHERE b.activity_id = a.id MERGE (b)-[:FROM_ACTIVITY]->(a)`,
 		`MATCH (d:PerfDomain {id:'vdot'}), (g:Entity {id:'Goal:sub4'}) MERGE (d)-[:TARGETS]->(g)`,
 		`MATCH (d:PerfDomain {id:'durability'}), (t:Topic {id:'durability'}) MERGE (d)-[:ABOUT]->(t)`,
 		`MATCH (d:PerfDomain {id:'load'}), (t:Topic {id:'load'}) MERGE (d)-[:ABOUT]->(t)`,
@@ -294,4 +310,52 @@ func hms(s float64) string {
 		return fmt.Sprintf("%d:%02d:%02d", t/3600, t%3600/60, t%60)
 	}
 	return fmt.Sprintf("%d:%02d", t/60, t%60)
+}
+
+// stravaActivities reads the activity details saved next to the records: (activities, best efforts).
+func stravaActivities() ([]map[string]any, []map[string]any) {
+	path := os.Getenv("STRAVA_PRS_FILE")
+	if path == "" {
+		path = "/opt/lumpad/server/data/strava_prs.json"
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return nil, nil
+	}
+	var doc struct {
+		Activities map[string]struct {
+			ID          string   `json:"id"`
+			Name        *string  `json:"name"`
+			Date        *string  `json:"date"`
+			Type        *string  `json:"type"`
+			Distance    *float64 `json:"distance_m"`
+			Moving      *float64 `json:"moving_s"`
+			Elapsed     *float64 `json:"elapsed_s"`
+			Elevation   *float64 `json:"elevation_m"`
+			AvgHR       *float64 `json:"avg_hr"`
+			MaxHR       *float64 `json:"max_hr"`
+			Cadence     *float64 `json:"avg_cadence"`
+			Gear        *string  `json:"gear"`
+			URL         *string  `json:"url"`
+			PRCount     *float64 `json:"pr_count"`
+			BestEfforts []struct {
+				Name     string   `json:"name"`
+				Time     float64  `json:"time_s"`
+				Distance float64  `json:"distance_m"`
+				PRRank   *float64 `json:"pr_rank"`
+			} `json:"best_efforts"`
+		} `json:"activities"`
+	}
+	if json.Unmarshal(raw, &doc) != nil {
+		return nil, nil
+	}
+	var acts, efforts []map[string]any
+	for id, a := range doc.Activities {
+		acts = append(acts, map[string]any{"id": id, "name": a.Name, "date": a.Date, "type": a.Type, "distance_m": a.Distance, "moving_s": a.Moving, "elapsed_s": a.Elapsed, "elevation_m": a.Elevation,
+			"avg_hr": a.AvgHR, "max_hr": a.MaxHR, "cadence": a.Cadence, "gear": a.Gear, "url": a.URL, "pr_count": a.PRCount})
+		for _, e := range a.BestEfforts {
+			efforts = append(efforts, map[string]any{"a": id, "id": "se:" + id + ":" + strings.ReplaceAll(e.Name, " ", "-"), "name": e.Name, "time_s": e.Time, "distance_m": e.Distance, "pr_rank": e.PRRank})
+		}
+	}
+	return acts, efforts
 }

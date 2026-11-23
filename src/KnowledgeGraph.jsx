@@ -213,12 +213,26 @@ const VIEW_HELP = { performance: 'PERFORMANCE is the hub; its domains are VDOT, 
 const sgn = (d) => (d.direction === 'improving' ? { c: '#16a34a', t: '▲ improving' } : d.direction === 'worsening' ? { c: '#dc2626', t: '▼ worsening' } : { c: '#64748b', t: '● steady' })
 const mmss = (s) => (s == null ? '—' : `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`)
 const hms = (s) => (s == null ? '—' : s >= 3600 ? `${Math.floor(s / 3600)}:${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}:${String(Math.round(s % 60)).padStart(2, '0')}` : mmss(s))
+// the Strava activity behind a record: what it was, how it went, its best efforts and km splits (saved from the Strava API when the records are pasted or refreshed)
+function ActivityDetail({ a, prs }) {
+  if (!a) return <p className="muted">No details saved for this activity yet (Strava was not connected when the records were saved). Press "Update from Strava" again.</p>
+  const pace = a.distance_m && a.moving_s ? a.moving_s / (a.distance_m / 1000) : null
+  return <div className="hyp-card" style={{ margin: '8px 0' }}>
+    <b>{a.name} <span className="muted">· {a.date} · {a.type}</span></b>
+    <small>{(a.distance_m / 1000).toFixed(2)} km · moving {hms(a.moving_s)}{a.elapsed_s && a.elapsed_s !== a.moving_s ? ` (elapsed ${hms(a.elapsed_s)})` : ''} · {mmss(pace)}/km · +{Math.round(a.elevation_m || 0)} m{a.avg_hr ? ` · HR ${Math.round(a.avg_hr)} avg${a.max_hr ? ` / ${Math.round(a.max_hr)} max` : ''}` : ''}{a.avg_cadence ? ` · cadence ${Math.round(a.avg_cadence * 2)}` : ''}{a.gear ? ` · ${a.gear}` : ''}</small>
+    {prs.length > 0 && <small>Records from this activity: {prs.map((p) => `${p.label} ${hms(p.time_s)}`).join(' · ')}</small>}
+    {a.best_efforts?.length > 0 && <details className="more" open><summary>Best efforts in this activity</summary><div className="chiprow">{a.best_efforts.map((e) => <span key={e.name} className="chip">{e.name}: {hms(e.time_s)}{e.pr_rank ? ` · PR #${e.pr_rank}` : ''}</span>)}</div></details>}
+    {a.splits?.length > 0 && <details className="more"><summary>Km splits ({a.splits.length})</summary><table className="mini"><thead><tr><th>km</th><th>time</th><th>pace</th><th>HR</th><th>elev</th></tr></thead><tbody>{a.splits.map((x) => <tr key={x.km}><td>{x.km}</td><td>{hms(x.time_s)}</td><td>{x.dist_m >= 900 ? mmss(x.pace_s) : '(' + Math.round(x.dist_m) + ' m)'}</td><td>{x.hr ? Math.round(x.hr) : '—'}</td><td>{x.elev_m != null ? (x.elev_m > 0 ? '+' : '') + Math.round(x.elev_m) : '—'}</td></tr>)}</tbody></table></details>}
+    <a href={a.url} target="_blank" rel="noopener noreferrer">Open in Strava ↗</a>
+  </div>
+}
 function StravaPRs({ s }) {
-  const d = s.strava_prs, [open, setOpen] = useState(false), [text, setText] = useState(''), [msg, setMsg] = useState(null), [busy, setBusy] = useState(false)
+  const d = s.strava_prs, [sel, setSel] = useState(null), [open, setOpen] = useState(false), [text, setText] = useState(''), [msg, setMsg] = useState(null), [busy, setBusy] = useState(false)
   const save = async () => { setBusy(true); setMsg(null); try { const r = await fetch('/api/perf/prs', { method: 'POST', headers: { 'content-type': 'application/json', 'x-lumpad': '1' }, body: JSON.stringify({ text }) }); const j = await r.json(); if (!r.ok) throw new Error(j.error || r.status); setMsg({ ok: true, text: `Saved ${j.count} records. Reload to see them.` }); setText('') } catch (e) { setMsg({ ok: false, text: e.message }) } setBusy(false) }
   return <div style={{ marginTop: 10 }}>
     <b style={{ display: 'block' }}>Personal records (Strava, all-time){d.best_vdot ? ` · best PR-implied VDOT ${d.best_vdot.value} (${d.best_vdot.label})` : ''}</b>
-    {d.prs.length > 0 ? <div className="chiprow" style={{ marginTop: 4 }}>{d.prs.map((p) => <a key={p.label} className="chip" href={p.url || undefined} target="_blank" rel="noopener noreferrer" title={`${p.activity_name || ''} ${p.date || ''} · VDOT ${p.vdot}`}>{p.label}: {hms(p.time_s)} <span className="muted">({mmss(p.pace_s_km)}/km{p.date ? ' · ' + p.date : ''})</span></a>)}</div> : <p className="muted">No Strava records saved yet. Paste the Best Efforts block from your Strava profile below.</p>}
+    {d.prs.length > 0 ? <div className="chiprow" style={{ marginTop: 4 }}>{d.prs.map((p) => <button key={p.label} type="button" aria-pressed={sel === p.activity_id} onClick={() => setSel(sel === p.activity_id ? null : p.activity_id)} title={`${p.activity_name || ''} ${p.date || ''} · VDOT ${p.vdot} — tap for the activity`}>{p.label}: {hms(p.time_s)} <span className="muted">({mmss(p.pace_s_km)}/km{p.date ? ' · ' + p.date : ''})</span></button>)}</div> : <p className="muted">No Strava records saved yet. Paste the Best Efforts block from your Strava profile below.</p>}
+    {sel && <ActivityDetail a={d.activities?.[sel]} prs={d.prs.filter((p) => p.activity_id === sel)} />}
     <small className="muted">{d.updated ? `Updated ${d.updated.slice(0, 10)}. ` : ''}Strava has no feed for these, so they are pasted in. </small><button type="button" className="btn sm" onClick={() => setOpen(!open)}>{open ? 'Cancel' : 'Update from Strava'}</button>
     {open && <div style={{ marginTop: 6 }}><textarea rows={6} style={{ width: '100%' }} value={text} onChange={(e) => setText(e.target.value)} placeholder={'400m    1:58 https://www.strava.com/activities/…\n5K    29:21 …\nMarathon    6:42:18 …'} aria-label="Strava best efforts" /><button type="button" className="btn sm primary" style={{ width: 'auto' }} disabled={busy || text.trim().length < 5} onClick={save}>{busy ? 'Saving…' : 'Save records'}</button></div>}
     {msg && <p className={msg.ok ? 'ok' : 'err'} role="status">{msg.text}</p>}

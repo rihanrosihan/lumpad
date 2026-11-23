@@ -55,7 +55,7 @@ export async function overview(opts = {}) {
 
 // ---- live graph for the Knowledge Graph screen: a bounded sample of the REAL graph, from fixed read-only queries (the browser only picks a view name).
 // Each endpoint is flattened to (label, key, name, date, ef, tl, wbgt): the properties the page can colour by. Health-derived labels exist only when NEO4J_SYNC_HEALTH=1 on the Go side.
-const P = (v) => `labels(${v})[0], coalesce(CASE WHEN ${v}.metric IS NOT NULL OR ${v}.is_pb IS NOT NULL THEN toString(${v}.id) END, toString(${v}.label_id), toString(${v}.date), toString(${v}.gear_id), toString(${v}.race_id), toString(${v}.id), toString(${v}.site), toString(${v}.name)), coalesce(CASE WHEN ${v}.metric IS NOT NULL THEN ${v}.metric + ' ' + toString(${v}.value) END, CASE WHEN ${v}.is_pb IS NOT NULL THEN ${v}.label END, ${v}.intent + ' · ' + ${v}.day, ${v}.title, ${v}.model, ${v}.name, ${v}.label, toString(${v}.date), toString(${v}.label_id), toString(${v}.id)), coalesce(${v}.date, ${v}.day, ${v}.valid_from), ${v}.ef, coalesce(${v}.tl, ${v}.planned_tl), ${v}.wbgt`
+const P = (v) => `labels(${v})[0], coalesce(CASE WHEN ${v}.metric IS NOT NULL OR ${v}.is_pb IS NOT NULL OR ${v}.url IS NOT NULL OR ${v}.pr_rank IS NOT NULL THEN toString(${v}.id) END, toString(${v}.label_id), toString(${v}.date), toString(${v}.gear_id), toString(${v}.race_id), toString(${v}.id), toString(${v}.site), toString(${v}.name)), coalesce(CASE WHEN ${v}.metric IS NOT NULL THEN ${v}.metric + ' ' + toString(${v}.value) END, CASE WHEN ${v}.is_pb IS NOT NULL THEN ${v}.label END, ${v}.intent + ' · ' + ${v}.day, ${v}.title, ${v}.model, ${v}.name, ${v}.label, toString(${v}.date), toString(${v}.label_id), toString(${v}.id)), coalesce(${v}.date, ${v}.day, ${v}.valid_from), ${v}.ef, coalesce(${v}.tl, ${v}.planned_tl), ${v}.wbgt`
 const ROW = (a, n) => `RETURN ${P(a)}, type(r), startNode(r) = ${a}, ${P(n)}`
 const REL = "['HAS_SESSION','WORE','IN_WEATHER','IN_BAND','ATTEMPT_OF','PRODUCED','SIMILAR_TO','CONTRADICTS','SUPERSEDES','NEXT_DAY','LOGGED_PAIN','ABOUT','HAS_WORKOUT','PRECEDED','RETRIEVED','CITED','WRITTEN_BY','REVIEWED','PLANS','EXECUTED_AS','RELATED_TO']"
 export const LIVE_MAX = { nodes: 220, edges: 460 }
@@ -65,6 +65,9 @@ const PERF_EXTRA = [
   `MATCH (a:PerfDomain)-[r:PART_OF]->(n:PerfDomain) ${ROW('a', 'n')}`,
   `MATCH (a:PB)-[r:ACHIEVED_IN]->(n:Session) ${ROW('a', 'n')} LIMIT 50`,
   `MATCH (a:PB {source: 'strava'})-[r:SET_IN]->(n:Race) ${ROW('a', 'n')} LIMIT 20`,
+  `MATCH (a:PB {source: 'strava'})-[r:FROM_ACTIVITY]->(n:StravaActivity) ${ROW('a', 'n')} LIMIT 20`,
+  `MATCH (a:StravaActivity)-[r:SAME_RUN_AS|RACE_DAY|WORE]->(n) ${ROW('a', 'n')} LIMIT 30`,
+  `MATCH (a:Effort)-[r:BEST_OF]->(n:StravaActivity) ${ROW('a', 'n')} LIMIT 60`,
   `MATCH (a:PerfPoint {metric: 'vdot_line'})-[r:OF_DOMAIN]->(n:PerfDomain) ${ROW('a', 'n')} LIMIT 24`,
   `MATCH (a:Race)-[r:IMPLIES]->(n:PerfPoint) ${ROW('a', 'n')} LIMIT 30`,
   `MATCH (a:PerfDomain)-[r:TARGETS]->(n:Entity) ${ROW('a', 'n')}`,

@@ -105,7 +105,7 @@ const routes = {
       alerts: [tw && hr(tw.created_at) > 30 ? 'twin older than 30 h' : null, failedSteps ? 'intel step failures in the last 24 h' : null].filter(Boolean) }
   },
   'GET /api/graph/node': async (q) => (await import('./neo4j.js')).node(q.get('kind') || 'races'),
-  'POST /api/perf/prs': async (_q, req) => { const b = JSON.parse((await readBody(req, 2e4)).toString() || '{}'); const d = await (await import('./intel/prs.js')).savePRs(b.text); return { ok: true, count: d.prs.length, updated: d.updated } },
+  'POST /api/perf/prs': async (_q, req) => { const b = JSON.parse((await readBody(req, 2e4)).toString() || '{}'); if (b.refresh) return { ok: true, ...(await (await import('./intel/prs.js')).refreshActivities()) }; const d = await (await import('./intel/prs.js')).savePRs(b.text); return { ok: true, count: d.prs.length, updated: d.updated } },
   'GET /api/perf/summary': async () => (await import('./intel/perf.js')).perfSummary(),
   'GET /api/graph/live': async (q) => (await import('./neo4j.js')).live(q.get('view') || 'sessions'),
   'GET /api/graph/overview': async () => (await import('./neo4j.js')).overview(),
