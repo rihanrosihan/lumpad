@@ -13,21 +13,33 @@ const runKm = (d) => (d && d.km > 0 && !['rest', 'gym'].includes(d.kind) ? d.km 
 const r1 = (x) => Math.round(x * 10) / 10
 const isLocked = (d) => !!d.locked || d.kind === 'race' || /gate|CP\d/i.test(`${d.label || ''} ${(d.tags || []).join(' ')}`)
 
-export function weekTotals(days) {
+// raceExempt (opt-in, DEC-8): race-day km do not count toward the weekly load guard. Default off, so the P0 numbers (29 of 54 weeks) are unchanged.
+export function weekTotals(days, { raceExempt = false } = {}) {
   const w = new Map()
-  for (const d of days) { const m = mondayOf(d.date); w.set(m, r1((w.get(m) || 0) + runKm(d))) }
+  for (const d of days) { const m = mondayOf(d.date); w.set(m, r1((w.get(m) || 0) + (raceExempt && d.kind === 'race' ? 0 : runKm(d)))) }
   return w
 }
-// cap for week `m`, from the previous four weeks: planned values inside the window, actualWeeks before it, ctx.weekly4w as the seed (only with ctx.seed)
+// Weeks that are down weeks by design: taper, recovery, race week, cutback (day.phase or day.down). Only used by guardBaseline 'build'.
+const DOWN_PHASES = new Set(['TAPER', 'RECOVERY', 'RACE WEEK'])
+export const downWeeks = (days) => new Set(days.filter((d) => d.down || DOWN_PHASES.has(d.phase)).map((d) => mondayOf(d.date)))
+// cap for week `m`, from the previous four weeks: planned values inside the window, actualWeeks before it, ctx.weekly4w as the seed (only with ctx.seed).
+//   guardBaseline 'literal' (default, the rule as written): the four calendar weeks before m.
+//   guardBaseline 'build' (needs the athlete's decision, DEC-9): the four most recent weeks that are NOT planned down weeks; a down week itself is not judged.
 function capFor(m, totals, ctx) {
-  const prev = [1, 2, 3, 4].map((i) => addDays(m, -7 * i)).map((p) => totals.get(p) ?? ctx.actualWeeks?.[p] ?? (ctx.seed ? ctx.weekly4w : undefined))
-  if (prev.some((x) => x == null)) return null // not enough history: the rule cannot judge this week
+  const val = (p) => totals.get(p) ?? ctx.actualWeeks?.[p] ?? (ctx.seed ? ctx.weekly4w : undefined)
+  let prev
+  if (ctx.guardBaseline === 'build') {
+    const down = ctx.downWeeks || new Set(); if (down.has(m)) return null
+    prev = []; for (let i = 1; i <= 20 && prev.length < 4; i++) { const p = addDays(m, -7 * i); if (!down.has(p)) prev.push(val(p)) }
+  } else prev = [1, 2, 3, 4].map((i) => addDays(m, -7 * i)).map(val)
+  if (prev.length < 4 || prev.some((x) => x == null)) return null // not enough history: the rule cannot judge this week
   const avg = prev.reduce((a, b) => a + b, 0) / 4
   return avg > 0 ? { avg: r1(avg), cap: r1(avg * 1.1) } : null
 }
 
 export function validate(days, ctx = {}) {
-  const out = [], totals = weekTotals(days), sorted = [...days].sort((a, b) => a.date.localeCompare(b.date))
+  if (ctx.guardBaseline === 'build' && !ctx.downWeeks) ctx = { ...ctx, downWeeks: downWeeks(days) }
+  const out = [], totals = weekTotals(days, ctx), sorted = [...days].sort((a, b) => a.date.localeCompare(b.date))
   for (const [m, km] of [...totals].sort()) {
     const c = capFor(m, totals, ctx)
     if (c && km > c.cap + 0.05) out.push({ rule: RULES.LOAD, severity: 'repair', date: m, detail: { week_km: km, avg4w: c.avg, cap_km: c.cap } })
@@ -59,8 +71,8 @@ function repairOnce(days, ctx) {
       if (prior > 0 && d.km > r1(prior * 1.1) + 0.05) scale(d, Math.floor(prior * 1.1 * 10) / 10)
     }
   }
-  for (const m of [...weekTotals(cur).keys()].sort()) {
-    const totals = weekTotals(cur), c = capFor(m, totals, ctx); if (!c) continue
+  for (const m of [...weekTotals(cur, ctx).keys()].sort()) {
+    const totals = weekTotals(cur, ctx), c = capFor(m, totals, ctx); if (!c) continue
     let over = totals.get(m) - c.cap; if (over <= 0.05) continue
     const wk = cur.filter((d) => mondayOf(d.date) === m && runKm(d) > 0 && !isLocked(d))
     for (const grp of [['easy'], ['quality', 'tt'], ['long']]) {
@@ -76,6 +88,7 @@ function repairOnce(days, ctx) {
 }
 // 48 h first (the later of two consecutive hard days becomes easy at <= 60 % km), then long-run cap and weekly cap. Lowering an earlier week lowers later caps, so iterate to a fixed point (km only ever decreases, so it terminates).
 export function repair(days, ctx = {}) {
+  if (ctx.guardBaseline === 'build' && !ctx.downWeeks) ctx = { ...ctx, downWeeks: downWeeks(days) }
   let cur = days.map((d) => ({ ...d })).sort((a, b) => a.date.localeCompare(b.date)), blocks = []
   for (let i = 0; i < 50; i++) {
     const idx = Object.fromEntries(cur.map((d) => [d.date, d]))
@@ -88,7 +101,8 @@ export function repair(days, ctx = {}) {
 }
 
 export function weekReport(days, ctx = {}) {
-  const totals = weekTotals(days), rows = [...totals].sort().map(([m, km]) => ({ monday: m, km, ...(capFor(m, totals, ctx) || {}) }))
+  if (ctx.guardBaseline === 'build' && !ctx.downWeeks) ctx = { ...ctx, downWeeks: downWeeks(days) }
+  const totals = weekTotals(days, ctx), rows = [...totals].sort().map(([m, km]) => ({ monday: m, km, ...(capFor(m, totals, ctx) || {}) }))
   const judged = rows.filter((r) => r.cap != null)
   return { weeks: rows.length, judged: judged.length, over: judged.filter((r) => r.km > r.cap + 0.05).length, rows }
 }

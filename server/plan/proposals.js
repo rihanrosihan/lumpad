@@ -49,8 +49,8 @@ export function expireProposals(db, today = wibDate()) {
   for (const { id } of open) tx(db, () => { db.prepare("UPDATE plan_version SET status='expired' WHERE id=(SELECT to_version FROM plan_adjustment WHERE id=?) AND status='proposed'").run(id); addEvent(db, id, 'expired', 'system') })
   return { expired: open.length }
 }
-export const openProposals = (db) => db.prepare(`SELECT a.id, a.created_at, a.operators, a.diff, a.rules, a.rationale_det, a.auto, a.to_version FROM plan_adjustment a
-  WHERE (SELECT event FROM plan_adjustment_event WHERE adjustment_id=a.id ORDER BY id DESC LIMIT 1)='proposed' ORDER BY a.id`).all().map((r) => ({ ...r, operators: P(r.operators), diff: P(r.diff), rules: P(r.rules) }))
+export const openProposals = (db) => db.prepare(`SELECT a.id, a.created_at, a.loop, a.operators, a.diff, a.rules, a.rationale_det, a.auto, a.to_version, v.summary FROM plan_adjustment a JOIN plan_version v ON v.id=a.to_version
+  WHERE (SELECT event FROM plan_adjustment_event WHERE adjustment_id=a.id ORDER BY id DESC LIMIT 1)='proposed' ORDER BY a.id`).all().map((r) => ({ ...r, operators: P(r.operators), diff: P(r.diff), rules: P(r.rules), summary: P(r.summary) }))
 
 // revert = a new 'revert' version that restores what each touched day was before this adjustment (FR-PLN-7). Refused when a later change touches one of those days.
 export function revert(db, adjustmentId, { today = wibDate(), by = 'athlete' } = {}) {

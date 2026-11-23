@@ -249,6 +249,13 @@ const routes = {
   'POST /api/plan/revert': async (_q, req) => PH.revert(await planBody(req), principal(req)),
   'POST /api/plan/missed': async (_q, req) => PH.missed(await planBody(req), principal(req)),
   'POST /api/plan/feedback': async (_q, req) => PH.feedback(await planBody(req), principal(req)),
+  // P4: goals, availability and the macro (season) proposal; writes need an authenticated user, the proposal is never applied here
+  'GET /api/plan/goals': async () => PH.goals(),
+  'PUT /api/plan/goal': async (_q, req) => PH.goal(await planBody(req), principal(req)),
+  'POST /api/plan/goals/seed': async (_q, req) => PH.seedGoals(await planBody(req), principal(req)),
+  'GET /api/plan/availability': async () => PH.availability(),
+  'PUT /api/plan/availability': async (_q, req) => PH.setAvailability(await planBody(req), principal(req)),
+  'POST /api/plan/macro': async (_q, req) => PH.macro(await planBody(req), principal(req)),
   'GET /api/plan/zones': async () => { const z = activeZones(planDb()); if (!z) throw Object.assign(new Error('no zone set yet'), { status: 404 }); return z },
   'GET /api/plan/day': async (q) => { const date = q.get('date'); if (!validDate(date)) throw Object.assign(new Error('date must be YYYY-MM-DD'), { status: 400 }); return { source: PLAN_META.source, version: PLAN_META.version, day: planDay(date) } },
   'GET /api/library': async () => lib.list(),

@@ -7,6 +7,7 @@ import { fromMissed } from './operators.js'
 import { raise, openTriggers } from './triggers.js'
 import { propose, accept, reject, revert, openProposals, expireProposals } from './proposals.js'
 import { syncPlan } from './read.js'
+import { listGoals, upsertGoal, seedGoals, getAvailability, setAvailability, proposeMacro } from './macroflow.js'
 
 const err = (status, message) => Object.assign(new Error(message), { status })
 export const needUser = (user) => { if (!user) throw err(401, 'authentication required for plan changes'); return user }
@@ -40,6 +41,14 @@ export function handlers({ latestTwin }) {
       if (!r.patch) return { ok: true, proposal: null, choice: r.choice, refused: r.refused ?? null, trigger: trig.id, note: r.refused || 'No plan change needed for this choice.' }
       return { ...propose(db, { patches: [r.patch], trigger: trig.id, today: wibDate(), inputs: { missed: date, choice: r.choice } }), choice: r.choice, trigger: trig.id }
     },
+    goals: () => ({ goals: listGoals(planDb()), archived: listGoals(planDb(), { status: 'archived' }) }),
+    goal: (body, user) => { needUser(user); return upsertGoal(planDb(), body, { by: 'athlete' }) },
+    seedGoals: (_b, user) => { needUser(user); return seedGoals(planDb()) },
+    availability: () => getAvailability(planDb()),
+    setAvailability: (body, user) => { needUser(user); return setAvailability(planDb(), body) },
+    // Plan v2 / regeneration: builds a kernel-checked macro PROPOSAL from the actual 4-week volume; nothing changes until it is accepted
+    macro: (body, user) => { needUser(user); const c = twinCtx(latestTwin), s = latestTwin?.()?.state
+      return proposeMacro(planDb(), { ctx: { weekly4w: s?.load?.weekly_km_4w ?? 15, longest30: s?.load?.longest_run_km_30d ?? 0, guardBaseline: body.guard_baseline, cutbackRatio: body.cutback_ratio, peakCap: body.peak_cap_km }, force: body.force === true, by: 'engine' }) },
     feedback: (body, user) => { needUser(user); if (!DATE.test(body.date || '')) throw err(400, 'date must be YYYY-MM-DD')
       const rpe = body.rpe == null ? null : +body.rpe; if (rpe != null && !(rpe >= 1 && rpe <= 10)) throw err(400, 'rpe must be 1-10'); if (body.verdict && !['too_easy', 'right', 'too_hard'].includes(body.verdict)) throw err(400, 'verdict must be too_easy, right or too_hard')
       const db = planDb(), id = Number(db.prepare('INSERT INTO session_feedback (date, rpe, verdict, text, created_at) VALUES (?,?,?,?,?)').run(body.date, rpe, body.verdict ?? null, String(body.text ?? '').slice(0, 500) || null, new Date().toISOString()).lastInsertRowid)
