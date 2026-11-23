@@ -1593,3 +1593,15 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .hero4.merged{margin:0;border-radius:0;border:0;box-shadow:none}
 .combo-body{padding:14px 16px;border:0;box-shadow:none;background:transparent;margin:0}
 @media(min-width:1024px){.hero4.merged{grid-template-columns:minmax(0,1fr)}}
+
+/* Home on desktop: the four stat tiles sit under "This week" / "Fitness toward sub-4", so the right column is as tall as the left one (no empty block) */
+.hr .bento4 { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 12px; }
+.hr .bento4 .b-cp { grid-column: auto; }
+@media (min-width: 1024px) {
+  .hrow { align-items: stretch; }
+  .hr { display: flex; flex-direction: column; gap: 12px; }
+  .hr > *, .hr .card { margin: 0 !important; }
+  .hr .score-grid { grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); }
+  .hr .sbsel { justify-content: space-between; } .hr .sbsel select { max-width: none; }
+}
+@media (min-width: 1024px) { .hl { display: flex; flex-direction: column; } .hl > .sess { flex: 1; } }

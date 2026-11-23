@@ -131,20 +131,20 @@ export default function Home({ vdot, settings, results, go, M: Mprop }) {
       <div className="bar"><i style={{ width: Math.max(0, Math.min(1, (vdot.v - TARGET.baseline) / (TARGET.vdotNeeded - TARGET.baseline))) * 100 + '%' }} /></div>
       <p className="muted">Needs {(TARGET.vdotNeeded - vdot.v).toFixed(1)} more VDOT · 1.02/mo required vs best observed pace 0.74 <Chip>HYPOTHESIS n=2</Chip></p>
     </Card></div>
+        <div className="bento4">
+          <button className="bx b-vol" onClick={() => go('activity')} aria-label="This week's volume, open Activities"><h3>Weekly volume</h3><div className="row-c"><Ring value={actWeek} max={(planWeek || lastWeekKm) || 1} label={`${r1(actWeek)} of ${r1(planWeek || lastWeekKm)} km`} size={78} /><div><b>{r1(actWeek)}</b><span className="muted"> / {r1(planWeek || lastWeekKm)} km</span><br /><small className="muted">{planWeek > 0 ? `planned · ${sign(r1(actWeek - actPrev))} km vs last week` : `last week ${r1(lastWeekKm)} km · no plan this week`}</small></div></div></button>
+          <button className="bx b-int" onClick={() => go('ready', { mode: 'analysis' })} aria-label="7-day intensity, open analysis"><h3>7-day intensity</h3>{M.intensity ? <Stacked100 parts={[{ k: 'Low', v: M.intensity.low, c: 'var(--green)' }, { k: 'Moderate', v: M.intensity.mid, c: 'var(--yellow)' }, { k: 'High', v: M.intensity.high, c: 'var(--red)' }]} marker={70} label={`Low ${M.intensity.low}%, moderate ${M.intensity.mid}%, high ${M.intensity.high}%; target 70% low`} /> : <p className="muted">No runs yet.</p>}<small className="muted">target ≥70% low (Campos 2021)</small></button>
+          <button className="bx b-load" onClick={() => go('ready', { mode: 'analysis' })} aria-label="Daily load, open analysis"><h3>Daily load</h3><BarChart data={loads7} height={64} label={`Training load this week: ${loads7.map((d) => d.value).join(', ')}`} /><small className="muted">dashed = plan (estimate)</small></button>
+          <button className="bx feat b-cp" onClick={() => nextCp ? go('calendar', { view: 'cp', id: nextCp.id }) : go('calendar', { view: 'race' })} aria-label={nextCp ? `Checkpoint CP${nextCp.id}, ${diffDays(nextCp.date, T)} days away` : `Race, ${toRace} days away`}><h3>{nextCp ? `CP${nextCp.id}` : 'Race'}</h3><div className="flipnum">{nextCp ? diffDays(nextCp.date, T) : toRace}<small className="muted" style={{ fontSize: '.8rem', fontWeight: 500 }}> days</small></div>
+            <small className="muted">{nextCp && th ? `Green ≤ ${th.G} · now ±${fmtTime(raceTime(vdot.v, dist))}` : nextCp ? nextCp.name : 'sub-4:00'}</small></button>
+
+        </div>
+        {briefDays.length > 0 && <div className="sbwrap"><label className="sbsel"><span>Preview session</span><select value={pvDay?.date || ''} onChange={(e) => setPv(e.target.value)} aria-label="Preview session for the smart brief">{briefDays.map((d) => <option key={d.date} value={d.date}>{d.date === T ? 'Today' : fmtShort(d.date)} · {d.label || KIND[d.kind].label} · {d.km} km</option>)}</select></label>
+          <SessionBrief day={pvDay} readiness={rd} healthRow={M.health?.at(-1)} dailyCheckin={pvDay?.date === T ? f : EMPTY_DAY} twinLoad={M.cur} vdot={vdot} /></div>}
       </div>
     </div>
 
-    <div className="bento4">
-      <button className="bx b-vol" onClick={() => go('activity')} aria-label="This week's volume, open Activities"><h3>Weekly volume</h3><div className="row-c"><Ring value={actWeek} max={(planWeek || lastWeekKm) || 1} label={`${r1(actWeek)} of ${r1(planWeek || lastWeekKm)} km`} size={78} /><div><b>{r1(actWeek)}</b><span className="muted"> / {r1(planWeek || lastWeekKm)} km</span><br /><small className="muted">{planWeek > 0 ? `planned · ${sign(r1(actWeek - actPrev))} km vs last week` : `last week ${r1(lastWeekKm)} km · no plan this week`}</small></div></div></button>
-      <button className="bx b-int" onClick={() => go('ready', { mode: 'analysis' })} aria-label="7-day intensity, open analysis"><h3>7-day intensity</h3>{M.intensity ? <Stacked100 parts={[{ k: 'Low', v: M.intensity.low, c: 'var(--green)' }, { k: 'Moderate', v: M.intensity.mid, c: 'var(--yellow)' }, { k: 'High', v: M.intensity.high, c: 'var(--red)' }]} marker={70} label={`Low ${M.intensity.low}%, moderate ${M.intensity.mid}%, high ${M.intensity.high}%; target 70% low`} /> : <p className="muted">No runs yet.</p>}<small className="muted">target ≥70% low (Campos 2021)</small></button>
-      <button className="bx b-load" onClick={() => go('ready', { mode: 'analysis' })} aria-label="Daily load, open analysis"><h3>Daily load</h3><BarChart data={loads7} height={64} label={`Training load this week: ${loads7.map((d) => d.value).join(', ')}`} /><small className="muted">dashed = plan (estimate)</small></button>
-      <button className="bx feat b-cp" onClick={() => nextCp ? go('calendar', { view: 'cp', id: nextCp.id }) : go('calendar', { view: 'race' })} aria-label={nextCp ? `Checkpoint CP${nextCp.id}, ${diffDays(nextCp.date, T)} days away` : `Race, ${toRace} days away`}><h3>{nextCp ? `CP${nextCp.id}` : 'Race'}</h3><div className="flipnum">{nextCp ? diffDays(nextCp.date, T) : toRace}<small className="muted" style={{ fontSize: '.8rem', fontWeight: 500 }}> days</small></div>
-        <small className="muted">{nextCp && th ? `Green ≤ ${th.G} · now ±${fmtTime(raceTime(vdot.v, dist))}` : nextCp ? nextCp.name : 'sub-4:00'}</small></button>
 
-    </div>
-
-    {briefDays.length > 0 && <div className="sbwrap"><label className="sbsel"><span>Preview session</span><select value={pvDay?.date || ''} onChange={(e) => setPv(e.target.value)} aria-label="Preview session for the smart brief">{briefDays.map((d) => <option key={d.date} value={d.date}>{d.date === T ? 'Today' : fmtShort(d.date)} · {d.label || KIND[d.kind].label} · {d.km} km</option>)}</select></label>
-      <SessionBrief day={pvDay} readiness={rd} healthRow={M.health?.at(-1)} dailyCheckin={pvDay?.date === T ? f : EMPTY_DAY} twinLoad={M.cur} vdot={vdot} /></div>}
     {last && <div className="card">
       <div className="prof-cmd-top">
         <div>
