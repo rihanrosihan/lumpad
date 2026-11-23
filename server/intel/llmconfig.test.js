@@ -94,5 +94,5 @@ test('model list under a key: sorted ids, cached, auth failure and missing key h
 test('Tokenomix quota: snapshot default, manual update, validation', () => {
   let q = C.getQuota(); assert.equal(q.total_m, 600); assert.equal(q.left_m, 480.6); assert.equal(q.left_pct, 80); assert.equal(q.portal, 'https://tokenomixai.com/en/portal')
   q = C.saveQuota({ used_m: '60', valid_until: '2026-12-31' }); assert.equal(q.left_m, 540); assert.equal(q.left_pct, 90); assert.equal(C.getQuota().used_m, 60)
-  assert.throws(() => C.saveQuota({ used_m: 200 }), /between 0 and the total/); assert.throws(() => C.saveQuota({ valid_until: 'soon' }), /date/); assert.throws(() => C.saveQuota({ total_m: -1 }), /positive/)
+  assert.throws(() => C.saveQuota({ used_m: 700 }), /between 0 and the total/); assert.throws(() => C.saveQuota({ valid_until: 'soon' }), /date/); assert.throws(() => C.saveQuota({ total_m: -1 }), /positive/)
 })
