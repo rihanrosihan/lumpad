@@ -26,8 +26,13 @@ import { status as archiveStatus } from './coros/archive.js'
 import { listMerged, activityDetail, gearList, gearRate, setShoe, readinessData, lapsInRange, exportRows, toCsv } from './activities.js'
 import { authorize, principal } from './auth.js'
 import { PLAN_META, planRange, planDay } from './plan/read.js'
+import { planDb } from './plan/db.js'
+import { activeZones, runZoneWatch } from './plan/zonewatch.js'
+import { resolveDay } from './plan/resolve.js'
 import { applyIngest, checkToken, syncStatus, coverage, healthRange, activitiesRange, lapsOf, validDate } from './ingest.js'
 
+// P2 shadow job (opt-in, PLAN_ZONEWATCH=1): after each COROS job, re-resolve benchmarks, store a new zone set when they moved, raise triggers. Writes only plan.db.
+const zoneWatchJob = async () => { if (process.env.PLAN_ZONEWATCH !== '1') return; try { const { db: app } = await import('./store.js'), kv = load('kv', {}), fitness = app.prepare('SELECT date, threshold_pace_s_km FROM fitness_daily ORDER BY date DESC LIMIT 14').all(); runZoneWatch({ db: planDb(), today: new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10), settings: kv['lumpad.settings']?.value || {}, results: kv['lumpad.results']?.value || {}, fitness }) } catch (e) { console.error('plan zonewatch', e.message) } }
 const send = (res, code, body, headers = {}) => { res.writeHead(code, { 'content-type': 'application/json', ...headers }); res.end(JSON.stringify(body)) }
 const readBody = (req, max = 20e6) => new Promise((ok, no) => { const c = []; let n = 0; req.on('data', (d) => { n += d.length; if (n > max) { no(Object.assign(new Error('payload too large'), { status: 413 })); req.destroy() } else c.push(d) }); req.on('end', () => ok(Buffer.concat(c))) })
 
@@ -230,7 +235,9 @@ const routes = {
   'GET /api/coros/plan': async () => load('coros_plan', { rows: null, at: null }),
   // adaptive plan engine, read path (P1). Source is PLAN_SOURCE=json (default) or engine; see server/plan/read.js
   'GET /api/plan/status': async () => ({ ...PLAN_META }),
-  'GET /api/plan/range': async (q) => { const from = q.get('from') || undefined, to = q.get('to') || undefined; if ((from && !validDate(from)) || (to && !validDate(to))) throw Object.assign(new Error('from/to must be YYYY-MM-DD'), { status: 400 }); return { source: PLAN_META.source, version: PLAN_META.version, days: planRange(from, to) } },
+  'GET /api/plan/range': async (q) => { const from = q.get('from') || undefined, to = q.get('to') || undefined; if ((from && !validDate(from)) || (to && !validDate(to))) throw Object.assign(new Error('from/to must be YYYY-MM-DD'), { status: 400 }); let days = planRange(from, to), zv = null; if (q.get('resolve') === '1') { const z = activeZones(planDb()); if (!z) throw Object.assign(new Error('no zone set yet (run server/plan/cli.js resolve)'), { status: 409 }); zv = z.zone_set.version; days = days.map((d) => resolveDay(d, z.zone_set)) }
+    return { source: PLAN_META.source, version: PLAN_META.version, zone_set: zv, days } },
+  'GET /api/plan/zones': async () => { const z = activeZones(planDb()); if (!z) throw Object.assign(new Error('no zone set yet'), { status: 404 }); return z },
   'GET /api/plan/day': async (q) => { const date = q.get('date'); if (!validDate(date)) throw Object.assign(new Error('date must be YYYY-MM-DD'), { status: 400 }); return { source: PLAN_META.source, version: PLAN_META.version, day: planDay(date) } },
   'GET /api/library': async () => lib.list(),
   'POST /api/library': async (_q, req) => lib.add(JSON.parse((await readBody(req, 1e5)).toString())),
@@ -307,4 +314,4 @@ http.createServer(async (req, res) => {
   if (req.method !== 'GET' && u.pathname !== '/api/ingest' && req.headers['x-lumpad'] !== '1') return send(res, 403, { error: 'missing X-Lumpad header' })
   try { const out = await h(u.searchParams, req, res); if (out !== null) send(res, 200, out) }
   catch (e) { const st = e.status || 500; if (st >= 500) console.error(req.method, u.pathname, e.message); send(res, st, { error: st >= 500 ? 'internal error (see server log)' : e.message }) }
-}).listen(process.env.PORT || 8787, '127.0.0.1', () => { console.log('lumpad api :' + (process.env.PORT || 8787)); if (process.env.SCHEDULER !== 'off') { startScheduler(); startIntelScheduler(); hooks.afterJob = () => afterSync() } })
+}).listen(process.env.PORT || 8787, '127.0.0.1', () => { console.log('lumpad api :' + (process.env.PORT || 8787)); if (process.env.SCHEDULER !== 'off') { startScheduler(); startIntelScheduler(); hooks.afterJob = () => { afterSync(); zoneWatchJob() } } })

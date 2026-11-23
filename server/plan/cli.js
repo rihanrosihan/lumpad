@@ -8,7 +8,8 @@ import { planDb } from './db.js'
 import { importPlan, renderDays, wibDate } from './store.js'
 import { seedCatalog } from './catalog.js'
 import { validate, weekReport } from './kernel.js'
-import { resolveBenchmarks, persist } from './benchmarks.js'
+import { runZoneWatch } from './zonewatch.js'
+import { resolveBenchmarks } from './benchmarks.js'
 
 const PLAN = JSON.parse(fs.readFileSync(new URL('../../src/data/plan.json', import.meta.url), 'utf8'))
 const cmd = process.argv[2], db = planDb()
@@ -26,6 +27,6 @@ else if (cmd === 'report') {
 else if (cmd === 'resolve') {
   const { db: app } = await import('../store.js'), { load } = await import('../db.js'), kv = load('kv', {}), today = wibDate()
   const fitness = app.prepare('SELECT date, threshold_pace_s_km FROM fitness_daily ORDER BY date DESC LIMIT 14').all()
-  const res = resolveBenchmarks({ settings: kv['lumpad.settings']?.value || {}, results: kv['lumpad.results']?.value || {}, fitness, today })
-  console.log(Object.values(res.benchmarks).map((b) => `${b.metric}=${JSON.stringify(b.value)} (${b.source})`).join('\n')); console.log(persist(db, res, { today }))
+  const settings = kv['lumpad.settings']?.value || {}, results = kv['lumpad.results']?.value || {}, res = resolveBenchmarks({ settings, results, fitness, today })
+  console.log(Object.values(res.benchmarks).map((b) => `${b.metric}=${JSON.stringify(b.value)} (${b.source})`).join('\n')); console.log(runZoneWatch({ db, today, settings, results, fitness }))
 } else { console.log('usage: import | verify | report | resolve'); process.exit(2) }
