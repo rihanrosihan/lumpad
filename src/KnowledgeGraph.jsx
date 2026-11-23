@@ -226,6 +226,19 @@ function ActivityDetail({ a, prs }) {
     <a href={a.url} target="_blank" rel="noopener noreferrer">Open in Strava ↗</a>
   </div>
 }
+// Both watches in one story: Garmin until 2025, COROS from Jan 2026. FIT-derived numbers share a parser, so they are one series; each watch's own scores stay on their own scale.
+function LongTerm({ s }) {
+  const lt = s.long_term || [], dv = s.devices?.garmin, c = s.coros
+  if (!lt.length) return null
+  return <details className="more" style={{ marginTop: 10 }} open><summary><b>Since 2024 — Garmin + COROS together</b> ({s.runs_total} runs)</summary>
+    <div className="tablewrap" style={{ overflowX: 'auto' }}><table className="mini"><thead><tr><th>Quarter</th><th>Watch</th><th>Runs</th><th>km</th><th>EF</th><th>Drift %</th><th>Best VDOT</th><th>Long runs</th><th>Fade km</th></tr></thead>
+      <tbody>{lt.map((r) => <tr key={r.quarter}><td>{r.quarter}</td><td>{r.era === 'garmin' ? 'Garmin' : 'COROS'}</td><td>{r.runs}</td><td>{r.km}</td><td>{r.ef ?? '—'}</td><td>{r.drift ?? '—'}</td><td>{r.best_vdot ?? '—'}</td><td>{r.long_runs}</td><td>{r.onset_km ?? '—'}</td></tr>)}</tbody></table></div>
+    <small className="muted">EF, drift, VDOT and fade are computed from the FIT files by the same parser, so both watches sit in one series. Each watch's own scores are on different scales and are NOT merged:</small>
+    <div className="hyp-grid" style={{ marginTop: 6 }}>
+      {dv && <div className="hyp-card"><b>Garmin</b><small className="muted">{dv.period[0]} → {dv.period[1]}</small><small>VO₂max {dv.vo2max.first} → {dv.vo2max.last} (peak {dv.vo2max.peak?.value}, {dv.vo2max.peak?.date})</small>{dv.pred && <small>Predictions: 5K {hms(dv.pred['5k'])} · 10K {hms(dv.pred['10k'])} · half {hms(dv.pred.hm)} · marathon {hms(dv.pred.marathon)}</small>}{dv.load && <small>Load {dv.load.acute}/{dv.load.chronic} (ratio {dv.load.ratio})</small>}</div>}
+      {c && <div className="hyp-card"><b>COROS</b><small className="muted">from {c.since?.date || c.date}</small><small>VO₂max {c.vo2max} · running level {c.running_level} · threshold {mmss(c.threshold_pace_s_km)}/km</small></div>}
+    </div></details>
+}
 function StravaPRs({ s }) {
   const d = s.strava_prs, [sel, setSel] = useState(null), [open, setOpen] = useState(false), [text, setText] = useState(''), [msg, setMsg] = useState(null), [busy, setBusy] = useState(false)
   const save = async () => { setBusy(true); setMsg(null); try { const r = await fetch('/api/perf/prs', { method: 'POST', headers: { 'content-type': 'application/json', 'x-lumpad': '1' }, body: JSON.stringify({ text }) }); const j = await r.json(); if (!r.ok) throw new Error(j.error || r.status); setMsg({ ok: true, text: `Saved ${j.count} records. Reload to see them.` }); setText('') } catch (e) { setMsg({ ok: false, text: e.message }) } setBusy(false) }
@@ -262,6 +275,7 @@ export function PerformancePanel() {
       <Tile title="Run pace" value={s.speed.run_pace.recent != null ? mmss(s.speed.run_pace.recent) + '/km' : null} sub="average of recent runs" tr={s.speed.run_pace} fmt={mmss} />
     </div>
     {c && <p style={{ margin: '10px 0 0' }}><b>COROS race predictions:</b> 5K {hms(c.pred_5k_s)} · 10K {hms(c.pred_10k_s)} · half {hms(c.pred_hm_s)} · marathon {hms(c.pred_marathon_s)}</p>}
+    <LongTerm s={s} />
     <StravaPRs s={s} />
     {Object.keys(pb).length > 0 && <details className="more" style={{ marginTop: 8 }}><summary>Cross-check: fastest consecutive whole km in your FIT files</summary>
       <div className="chiprow" style={{ marginTop: 4 }}>{Object.entries(pb).map(([k, x]) => <span key={k} className="chip">{k.replace('k', ' km')}: {hms(x.secs)} ({mmss(x.pace)}/km) · {x.date}</span>)}</div>

@@ -95,7 +95,7 @@ func SyncPerf(ctx context.Context, pool *pgxpool.Pool, aura *Client, st *SyncSta
 			vals := map[string]*float64{"ef": ef, "drift_pahr": drift, "hr800": hr800, "pace_hr150": ph150, "beats_km": beats, "economy_jm": econ, "run_share": share, "onset_km": onset, "gct_fade": gct, "stride_fade": stride, "run_pace": pace}
 			for _, m := range sessionMetrics {
 				if v := vals[m.Key]; v != nil && !math.IsNaN(*v) {
-					pts = append(pts, map[string]any{"id": lid + ":" + m.Key, "metric": m.Key, "domain": m.Domain, "unit": m.Unit, "date": dt, "value": round(*v, 3), "s": lid, "src": "fit"})
+					pts = append(pts, map[string]any{"id": lid + ":" + m.Key, "metric": m.Key, "domain": m.Domain, "unit": m.Unit, "date": dt, "value": round(*v, 3), "s": lid, "src": "fit", "era": eraOf(dt)})
 				}
 			}
 			var ks []kmRow
@@ -143,7 +143,7 @@ func SyncPerf(ctx context.Context, pool *pgxpool.Pool, aura *Client, st *SyncSta
 				}
 			}
 			if bestV > 25 && bestV < 75 {
-				pts = append(pts, map[string]any{"id": lid + ":vdot_effort", "metric": "vdot_effort", "domain": "vdot", "unit": "VDOT", "date": dt, "value": round(bestV, 1), "s": lid, "src": "fit"})
+				pts = append(pts, map[string]any{"id": lid + ":vdot_effort", "metric": "vdot_effort", "domain": "vdot", "unit": "VDOT", "date": dt, "value": round(bestV, 1), "s": lid, "src": "fit", "era": eraOf(dt)})
 			}
 			longest = append(longest, effort{lid, dt, dist})
 		}
@@ -162,7 +162,7 @@ func SyncPerf(ctx context.Context, pool *pgxpool.Pool, aura *Client, st *SyncSta
 			}
 			for i, n := range names {
 				if v[i] != nil && *v[i] > 0 {
-					dayPts = append(dayPts, map[string]any{"id": "coros:" + n.k + ":" + dt, "metric": n.k, "domain": "running_fitness", "unit": n.unit, "date": dt, "value": round(*v[i], 1), "src": "coros"})
+					dayPts = append(dayPts, map[string]any{"id": "coros:" + n.k + ":" + dt, "metric": n.k, "domain": "running_fitness", "unit": n.unit, "date": dt, "value": round(*v[i], 1), "src": "coros", "era": "coros"})
 				}
 			}
 		}
@@ -177,15 +177,17 @@ func SyncPerf(ctx context.Context, pool *pgxpool.Pool, aura *Client, st *SyncSta
 			}
 			for k, v := range map[string]*float64{"load_short": a, "load_long": b, "load_ratio": c} {
 				if v != nil {
-					dayPts = append(dayPts, map[string]any{"id": "load:" + k + ":" + dt, "metric": k, "domain": "load", "unit": map[string]string{"load_ratio": "ratio"}[k], "date": dt, "value": round(*v, 2), "src": "coros"})
+					dayPts = append(dayPts, map[string]any{"id": "load:" + k + ":" + dt, "metric": k, "domain": "load", "unit": map[string]string{"load_ratio": "ratio"}[k], "date": dt, "value": round(*v, 2), "src": "coros", "era": "coros"})
 				}
 			}
 		}
 		rs.Close()
 	}
 
+	// Garmin's own device numbers (VO2max, race predictions, load) written by the Node app; kept apart from COROS because the scales differ
+	dayPts = append(dayPts, garminDevicePoints()...)
 	all := append(append([]map[string]any{}, pts...), dayPts...)
-	if err := runBatches(ctx, aura, all, 300, `UNWIND $rows AS r CREATE (p:PerfPoint {id: r.id, metric: r.metric, domain: r.domain, unit: r.unit, date: r.date, value: r.value, source: r.src})
+	if err := runBatches(ctx, aura, all, 300, `UNWIND $rows AS r CREATE (p:PerfPoint {id: r.id, metric: r.metric, domain: r.domain, unit: r.unit, date: r.date, value: r.value, source: r.src, era: r.era})
 		WITH p, r MATCH (d:PerfDomain {id: r.domain}) MERGE (p)-[:OF_DOMAIN]->(d)`); err != nil {
 		return fmt.Errorf("perf points: %w", err)
 	}
@@ -358,4 +360,44 @@ func stravaActivities() ([]map[string]any, []map[string]any) {
 		}
 	}
 	return acts, efforts
+}
+
+// eraOf: which watch recorded a day. Garmin until the end of 2025, COROS from 2026-01-01 (the owner bought the COROS in January).
+func eraOf(date string) string {
+	if date < "2026-01-01" {
+		return "garmin"
+	}
+	return "coros"
+}
+
+// garminDevicePoints reads garmin_device.json (GARMIN_DEVICE_FILE, default /opt/lumpad/server/data/garmin_device.json): weekly Garmin VO2max, race predictions and acute/chronic load.
+func garminDevicePoints() []map[string]any {
+	path := os.Getenv("GARMIN_DEVICE_FILE")
+	if path == "" {
+		path = "/opt/lumpad/server/data/garmin_device.json"
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return nil
+	}
+	var doc struct {
+		Points []struct {
+			Metric string   `json:"metric"`
+			Domain string   `json:"domain"`
+			Unit   string   `json:"unit"`
+			Date   string   `json:"date"`
+			Value  *float64 `json:"value"`
+		} `json:"points"`
+	}
+	if json.Unmarshal(raw, &doc) != nil {
+		return nil
+	}
+	var out []map[string]any
+	for _, p := range doc.Points {
+		if p.Value == nil || p.Date == "" {
+			continue
+		}
+		out = append(out, map[string]any{"id": "garmin:" + p.Metric + ":" + p.Date, "metric": p.Metric, "domain": p.Domain, "unit": p.Unit, "date": p.Date, "value": *p.Value, "src": "garmin", "era": "garmin"})
+	}
+	return out
 }
