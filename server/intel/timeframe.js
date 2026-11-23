@@ -8,7 +8,7 @@ const DAY = 864e5
 export const diffDays = (a, b) => Math.round((Date.parse(a + 'T12:00:00Z') - Date.parse(b + 'T12:00:00Z')) / DAY)
 
 export function timeFrame({ intent, activityDate, today }) {
-  if (intent !== 'session_review' || !activityDate) return { mode: 'live', today }
+  if (!['session_review', 'race_postmortem'].includes(intent) || !activityDate) return { mode: 'live', today }
   const n = diffDays(today, activityDate)
   if (n <= 0) return { mode: 'same_day', session_date: activityDate, today, days_ago: 0 }
   if (n <= 2) return { mode: 'recent', session_date: activityDate, today, days_ago: n }

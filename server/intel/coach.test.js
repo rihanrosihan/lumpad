@@ -43,7 +43,7 @@ test('complete(): a run truncated by max_tokens is retried once at low effort wi
   }
   const r = await L.complete({ system: 's', user: 'u', effort: 'high', intent: 'daily_brief', fetchFn })
   assert.deepEqual(r.json, { a: 2 }); assert.equal(r.retried_low, true)
-  assert.equal(calls[0].effort, 'high'); assert.ok(calls[0].max >= 20000); assert.equal(calls[1].effort, 'low')
+  assert.equal(calls[0].effort, 'high'); assert.equal(calls[0].max, undefined, 'no output-token cap is sent by default'); assert.equal(calls[1].effort, 'low')
 })
 test('schema validator rejects wrong shapes with paths', () => {
   const bad = { summary: 1, analysis_md: 'x', recommendations: [{ action: 'a', why: 'b', priority: 'soon' }], flags: [], memory_writes: [], cited_ids: [] }
@@ -80,7 +80,7 @@ test('redact(): names, employer, e-mail, URLs and secrets never leave (fake look
   const t = C.redact(`Rihan Rosihan works at Pizza Hut Indonesia, mail a.b@example.com, see https://x.y/z token ${fakeKey} and ${fakeHex}`)
   assert.ok(!/Rihan|Rosihan|Pizza|example\.com|https|a1b2c3d4|ab12cd34/.test(t), t)
 })
-test('complete(): a brief truncated at low effort is retried once with twice the budget', async () => {
+test('complete(): a brief truncated at low effort is retried once (still without an output cap)', async () => {
   const calls = []
   const fetchFn = async (url, opt) => {
     if (url.endsWith('/models')) return ok(models)
@@ -89,7 +89,7 @@ test('complete(): a brief truncated at low effort is retried once with twice the
     return ok({ choices: [{ message: { content: first ? '' : '{"a":3}' }, finish_reason: first ? 'length' : 'stop' }], usage: {} })
   }
   const r = await L.complete({ system: 's', user: 'u', effort: 'low', intent: 'daily_brief', fetchFn })
-  assert.deepEqual(r.json, { a: 3 }); assert.equal(calls.length, 2); assert.equal(calls[1], calls[0] * 2)
+  assert.deepEqual(r.json, { a: 3 }); assert.equal(calls.length, 2); assert.equal(calls[0], undefined); assert.equal(calls[1], undefined)
 })
 test('softClamp: over-long display text is cut at a sentence, so a long answer is not a failed one; structure stays strict', async () => {
   const S = await import('./schema.js')

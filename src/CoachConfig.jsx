@@ -65,7 +65,7 @@ export function ProviderSettings() {
           {(models[cur]?.length ? models[cur] : listed).map((m) => <option key={m} value={m}>{m}</option>)}
         </select>
         <small>{ML.state === 'loading' && !listed.length ? 'Loading the models available under this key…' : (models[cur]?.length || listed.length) ? `${(models[cur]?.length ? models[cur] : listed).length} models available under this key.` : (ML.data && !ML.data.ok ? ML.data.error : (P.key_set ? '' : 'Paste a key and press Test connection to load its models.'))}{P.id === 'tokenomix' ? ' A model is required for this provider.' : ''}</small></label>
-      {P.custom_endpoint ? <label className="fld"><span>Max coach runs per day</span><input type="number" min="1" max="5000" value={max} onChange={set('max')} /><small>The budget guard stops new runs after this many in one day.</small></label> : null}
+      {P.custom_endpoint ? <label className="fld"><span>Max coach runs per day</span><input type="number" min="0" max="100000" value={max} onChange={set('max')} /><small>0 = no daily limit (the default). Only set a number if you want the budget guard to stop new runs after that many in one day.</small></label> : null}
     </div>
     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', margin: '12px 0 4px' }}>
       <button type="button" className="btn sm" disabled={!!busy} onClick={() => run('test')}>{busy === 'test' ? 'Testing…' : 'Test connection'}</button>

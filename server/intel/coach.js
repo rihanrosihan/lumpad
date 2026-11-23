@@ -17,7 +17,7 @@ import { db as appDb } from '../store.js'
 import { load } from '../db.js'
 import { redFlags, checkinFlags, referralFor, gateFromTwin, gateCheck, diagnosisWording } from './safety.js'
 
-const EFFORT = { daily_brief: 'low', question: 'high', session_review: 'high', weekly_review: 'high', race_plan: 'high' }
+const EFFORT = { daily_brief: 'low', question: 'high', session_review: 'high', weekly_review: 'high', race_plan: 'high', race_postmortem: 'high' }
 const now = () => new Date().toISOString()
 // Per-intent routing. Off by default: set COACH_CLAUDE_INTENTS=race_plan,session_review (after the eval) to send those to Anthropic.
 // An intent routed to Claude whose provider is not fully configured (key, model, prices) or is over its cap falls back to DeepSeek.
@@ -37,7 +37,7 @@ export const hasFit = (activityId) => !activityId || !!idb.prepare('SELECT 1 FRO
 const NO_FIT = 'The FIT file of this run is not imported yet, so it cannot be analysed. Weather, air quality, route and the coach review appear after the next COROS sync.'
 const ranToday = (date) => !!appDb.prepare("SELECT 1 FROM activities WHERE source='coros' AND sport='Run' AND date=? AND distance_m >= 1000").get(date || new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10))
 export async function coachStatus({ intent = 'daily_brief', question = '', date, activityId = null } = {}) {
-  if (intent === 'session_review' && !hasFit(activityId)) return { up_to_date: false, no_fit: true, reason: NO_FIT, run_id: null, last_run_id: null, last_at: null }
+  if (['session_review', 'race_postmortem'].includes(intent) && !hasFit(activityId)) return { up_to_date: false, no_fit: true, reason: NO_FIT, run_id: null, last_run_id: null, last_at: null }
   const ctx = retrieveRunnerContext({ intent, question, date, activityId, forecast: await forecastForCoach(date || new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10), ranToday(date)) }), hash = promptHash(renderPrompt(ctx, TASKS[intent] || TASKS.question))
   const same = savedRun(intent, hash)
   const last = question ? mdb.prepare('SELECT id, created_at FROM coach_run WHERE ok=1 AND intent=? AND question=? ORDER BY id DESC LIMIT 1').get(intent, question) : mdb.prepare('SELECT id, created_at FROM coach_run WHERE ok=1 AND intent=? ORDER BY id DESC LIMIT 1').get(intent)
@@ -91,7 +91,7 @@ export async function agenticLlm({ system, user, effort = 'low', intent = 'quest
   const messages = [{ role: 'system', content: system + '\n' + TOOL_RULES }, { role: 'user', content: user }], log = [], evidence = [], ids = new Set(), usage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0, prompt_cache_hit_tokens: 0 }
   let pre = null, model = null, final = null; try { pre = await snapBalance({ fetchFn }) } catch {}
   for (let round = 0; round < MAX_TOOL_ROUNDS && !final; round++) {
-    const last = round === MAX_TOOL_ROUNDS - 1, r = await completeWithTools({ messages, tools: last ? undefined : specs, effort, maxTokens: 6000, intent, fetchFn }); model = r.model
+    const last = round === MAX_TOOL_ROUNDS - 1, r = await completeWithTools({ messages, tools: last ? undefined : specs, effort, intent, fetchFn }); model = r.model
     for (const k of Object.keys(usage)) usage[k] += r.usage?.[k] || 0
     messages.push(r.message)   // exactly as received: tool_calls (and any reasoning_content) must go back unchanged
     const calls = (r.message.tool_calls || []).slice(0, MAX_CALLS_PER_ROUND)
@@ -116,7 +116,7 @@ export async function runCoach({ intent = 'daily_brief', question = '', date, ac
     audit('safety:referral', null, { ids: red.map((f) => f.id) }, id)
     return { runId: id, ok: true, parsed, model: 'safety-rules', cost_cny: 0, safety: true }
   }
-  if (intent === 'session_review' && !hasFit(activityId)) throw Object.assign(new Error(NO_FIT), { status: 409 })
+  if (['session_review', 'race_postmortem'].includes(intent) && !hasFit(activityId)) throw Object.assign(new Error(NO_FIT), { status: 409 })
   const agentic = (tools && intent === 'question') || TOOL_INTENTS().includes(intent)   // tool use is opt-in per intent; briefs stay one-shot until it has proved itself
   const ctx = retrieveRunnerContext({ intent, question, date, activityId, tokenBudget: agentic ? 7000 : 24000, forecast: await forecastForCoach(date || new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10), ranToday(date)) }), prompt = renderPrompt(ctx, TASKS[intent] || TASKS.question), reqHash = promptHash(agentic ? { ...prompt, user: prompt.user + '\u0000tools' } : prompt)
   if (!force) { const hit = savedRun(intent, reqHash); if (hit) { const row = getRun(hit.id); return { runId: hit.id, ok: true, cached: true, saved_at: hit.created_at, parsed: row.parsed, model: hit.model, cost_cny: 0 } } }

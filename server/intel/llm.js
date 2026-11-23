@@ -52,7 +52,7 @@ export function guard(intent, { month = monthOf() } = {}) {
   const cfg = getConfig()
   if (cfg.custom_endpoint) { // a non-DeepSeek gateway has no /user/balance: limit by runs per WIB day instead of by spend
     const since = new Date(Date.parse(new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10) + 'T00:00:00Z') - 7 * 3600e3).toISOString(), calls = mdb.prepare('SELECT COUNT(*) n FROM coach_run WHERE created_at >= ?').get(since).n
-    return calls >= cfg.max_calls_per_day ? { ok: false, level: 'paused', spend: 0, cap: capCny(), calls_today: calls, reason: `daily limit of ${cfg.max_calls_per_day} coach runs reached for this provider (${calls} today)` } : { ok: true, level: 'ok', spend: 0, cap: capCny(), calls_today: calls }
+    return cfg.max_calls_per_day > 0 && calls >= cfg.max_calls_per_day ? { ok: false, level: 'paused', spend: 0, cap: capCny(), calls_today: calls, reason: `daily limit of ${cfg.max_calls_per_day} coach runs reached for this provider (${calls} today)` } : { ok: true, level: 'ok', spend: 0, cap: capCny(), calls_today: calls }
   }
   const spend = monthSpend(month), cap = capCny(), maxCall = mdb.prepare('SELECT MAX(cost_cny) m FROM coach_run WHERE created_at >= ?').get(month + '-01').m || 0
   return guardDecision({ intent, spend, cap, maxCall })
@@ -70,21 +70,22 @@ export function costFromUsage(u, env = process.env) {
 const stripFence = (t) => String(t).trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '')
 // DeepSeek counts the model's hidden reasoning inside max_tokens, so a 'high' effort run can spend the whole budget thinking and return
 // finish_reason 'length' with no answer. Budget by effort, and if it still runs out retry once at low effort (costs add up).
-const BUDGET = { high: 24000, medium: 14000, low: 12000 }
+// No output-token cap is sent unless a caller asks for one (the provider's own limit applies), so high-effort reasoning is never starved. If a reply is still cut off, it is retried once at low effort.
+const BUDGET = { high: undefined, medium: undefined, low: undefined }
 export async function complete(o = {}) {
   const effort = o.effort || 'high'
-  try { return await completeOnce({ ...o, effort, maxTokens: o.maxTokens ?? BUDGET[effort] ?? 14000 }) }
+  try { return await completeOnce({ ...o, effort, maxTokens: o.maxTokens ?? BUDGET[effort] }) }
   catch (e) {
     if (!e.truncated) throw e
     // truncated at 'low' too (the daily brief): retry once with twice the budget; truncated at a higher effort: retry at low with twice the low budget
-    const r = await completeOnce({ ...o, effort: 'low', maxTokens: o.maxTokens ? o.maxTokens * 2 : BUDGET.low * 2 })
+    const r = await completeOnce({ ...o, effort: 'low', maxTokens: o.maxTokens ? o.maxTokens * 2 : undefined })
     return { ...r, retried_low: true, cost_cny: r.cost_cny != null && e.cost_cny != null ? +(r.cost_cny + e.cost_cny).toFixed(4) : r.cost_cny }
   }
 }
-async function completeOnce({ system, user, messages, effort = 'high', maxTokens = 14000, intent = 'question', fetchFn = fetch, skipGuard = false } = {}) {
+async function completeOnce({ system, user, messages, effort = 'high', maxTokens, intent = 'question', fetchFn = fetch, skipGuard = false } = {}) {
   const g = guard(intent); if (!skipGuard && !g.ok) throw Object.assign(new Error(g.reason), { status: 429, guard: g })
   const model = await resolveModel({ fetchFn }); let pre = null; try { pre = await snapBalance({ fetchFn }) } catch {}
-  const body = { model: model.id, messages: messages || [{ role: 'system', content: system }, { role: 'user', content: user }], response_format: { type: 'json_object' }, max_tokens: maxTokens, stream: false, ...(model.efforts?.includes(effort) ? { reasoning_effort: effort } : {}) }
+  const body = { model: model.id, messages: messages || [{ role: 'system', content: system }, { role: 'user', content: user }], response_format: { type: 'json_object' }, ...(maxTokens > 0 ? { max_tokens: maxTokens } : {}), stream: false, ...(model.efforts?.includes(effort) ? { reasoning_effort: effort } : {}) }
   let j, lastErr
   for (let a = 0; a < 3; a++) {
     try { j = await api('/chat/completions', { method: 'POST', body, fetchFn }); break }
@@ -100,10 +101,10 @@ async function completeOnce({ system, user, messages, effort = 'high', maxTokens
 
 // One chat turn with tools (OpenAI-compatible function calling). Returns the assistant message AS RECEIVED (tool_calls and any reasoning_content must be sent back
 // unchanged on the next turn), the usage of this turn and the finish reason. The spend guard is checked per turn; cost is settled by the caller over the whole loop.
-export async function completeWithTools({ messages, tools, effort = 'low', maxTokens = 6000, intent = 'question', fetchFn = fetch, skipGuard = false } = {}) {
+export async function completeWithTools({ messages, tools, effort = 'low', maxTokens, intent = 'question', fetchFn = fetch, skipGuard = false } = {}) {
   const g = guard(intent); if (!skipGuard && !g.ok) throw Object.assign(new Error(g.reason), { status: 429, guard: g })
   const model = await resolveModel({ fetchFn })
-  const body = { model: model.id, messages, max_tokens: maxTokens, stream: false, ...(tools?.length ? { tools, tool_choice: 'auto' } : {}), ...(model.efforts?.includes(effort) ? { reasoning_effort: effort } : {}) }
+  const body = { model: model.id, messages, ...(maxTokens > 0 ? { max_tokens: maxTokens } : {}), stream: false, ...(tools?.length ? { tools, tool_choice: 'auto' } : {}), ...(model.efforts?.includes(effort) ? { reasoning_effort: effort } : {}) }
   let j, lastErr
   for (let a = 0; a < 3; a++) {
     try { j = await api('/chat/completions', { method: 'POST', body, fetchFn }); break }

@@ -5,7 +5,7 @@ import fs from 'node:fs'
 import { load, save } from '../db.js'
 import { seal, unseal } from '../coros/oauth.js'
 
-export const DEFAULT_BASE = 'https://api.deepseek.com', FILE = 'llm_config', DEFAULT_MAX_CALLS = 100
+export const DEFAULT_BASE = 'https://api.deepseek.com', FILE = 'llm_config', DEFAULT_MAX_CALLS = 0 // 0 = no daily run limit
 // Two providers, each with its OWN saved key and model; `active` is the one the coach uses. Base URLs are fixed presets (no free-form URL, nothing to point at an internal host).
 // deepseek = the original DeepSeek API (its key can also come from .env: DEEPSEEK_API_KEY); tokenomix = the Tokenomix gateway (no balance endpoint → daily run limit instead of spend).
 export const PROVIDERS = {
@@ -44,7 +44,7 @@ const keyOf = (s, id) => keyInfo(s, id).key
 // internal (contains the plaintext key): used by llm.js only. Describes the ACTIVE provider.
 export function getConfig(id) {
   const s = raw() || {}, act = id || (Object.hasOwn(PROVIDERS, s.active) ? s.active : 'deepseek'), P = PROVIDERS[act], e = entry(s, act)
-  return { provider: act, label: P.label, base: P.base(), key: keyOf(s, act), key_source: keyInfo(s, act).source, model: e.model || (P.envModel ? env()[P.envModel] || null : null), max_calls_per_day: e.max_calls_per_day || DEFAULT_MAX_CALLS, custom_endpoint: !P.balance,
+  return { provider: act, label: P.label, base: P.base(), key: keyOf(s, act), key_source: keyInfo(s, act).source, model: e.model || (P.envModel ? env()[P.envModel] || null : null), max_calls_per_day: e.max_calls_per_day ?? DEFAULT_MAX_CALLS, custom_endpoint: !P.balance,
     saved: { key: !!e.key_sealed, model: !!e.model }, updated_at: s.updated_at || null }
 }
 const view = (id, active) => { const c = getConfig(id); return { id, label: c.label, base: c.base, active: id === active, key_set: !!c.key, key_masked: mask(c.key), key_source: c.key_source, model: c.model && c.model !== 'auto-flash' ? c.model : null,
@@ -60,7 +60,7 @@ export async function saveConfig({ provider = 'deepseek', api_key, model, max_ca
   const id = providerId(provider), s = { ...(raw() || {}) }; s.providers = { ...(s.providers || {}) }; const e = { ...(s.providers[id] || {}) }
   if (api_key !== undefined && api_key !== '') { const k = String(api_key).trim(); if (k.length < 8 || /\s/.test(k)) throw Object.assign(new Error('API key looks invalid'), { status: 400 }); e.key_sealed = seal({ k }) }
   if (model !== undefined) { const m = String(model).trim(); if (m.length > 120 || /[\s"'<>]/.test(m)) throw Object.assign(new Error('Model id looks invalid'), { status: 400 }); if (m) e.model = m; else delete e.model }
-  if (max_calls_per_day !== undefined && max_calls_per_day !== '') { const n = Math.round(Number(max_calls_per_day)); if (!(n >= 1 && n <= 5000)) throw Object.assign(new Error('Max runs per day must be 1–5000'), { status: 400 }); e.max_calls_per_day = n }
+  if (max_calls_per_day !== undefined && max_calls_per_day !== '') { const n = Math.round(Number(max_calls_per_day)); if (!(n >= 0 && n <= 100000)) throw Object.assign(new Error('Max runs per day must be 0 (no limit) to 100000'), { status: 400 }); e.max_calls_per_day = n }
   s.providers[id] = e
   if (activate) { if (!keyOf(s, id)) throw Object.assign(new Error(`No API key for ${PROVIDERS[id].label}: enter one first`), { status: 400 }); s.active = id }
   s.updated_at = now; save(FILE, s); save('deepseek_model', null) // the cached "newest Flash" belongs to the previous provider

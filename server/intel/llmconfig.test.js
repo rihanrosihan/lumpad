@@ -38,7 +38,7 @@ test('partial updates keep the key; clearing the model returns to automatic; bad
   await C.saveConfig({ provider: 'tokenomix', model: 'glm-5.3', activate: false }); assert.equal(C.getConfig('tokenomix').model, 'glm-5.3'); assert.equal(C.getConfig('tokenomix').key, KEY); assert.equal(C.getConfig().provider, 'deepseek', 'activate:false keeps the active provider')
   await C.saveConfig({ provider: 'tokenomix', api_key: '', activate: false }); assert.equal(C.getConfig('tokenomix').key, KEY)
   await C.saveConfig({ provider: 'tokenomix', model: '', activate: false }); assert.equal(C.getConfig('tokenomix').saved.model, false)
-  await assert.rejects(() => C.saveConfig({ provider: 'tokenomix', api_key: 'short' })); await assert.rejects(() => C.saveConfig({ provider: 'tokenomix', model: 'bad model' })); await assert.rejects(() => C.saveConfig({ provider: 'tokenomix', max_calls_per_day: 0 }))
+  await assert.rejects(() => C.saveConfig({ provider: 'tokenomix', api_key: 'short' })); await assert.rejects(() => C.saveConfig({ provider: 'tokenomix', model: 'bad model' })); await assert.rejects(() => C.saveConfig({ provider: 'tokenomix', max_calls_per_day: -1 })); assert.equal((await C.saveConfig({ provider: 'tokenomix', max_calls_per_day: 0, activate: false })).providers.find((x) => x.id === 'tokenomix').max_calls_per_day, 0)
 })
 test('connection test uses the provider\'s own base; ok / auth / model / no-JSON / error — the key never appears in any result', async () => {
   const urls = [], mk = (h) => async (url, opts) => { urls.push(url); const r = h(url, opts); return { status: r.status, text: async () => (typeof r.body === 'string' ? r.body : JSON.stringify(r.body)) } }
