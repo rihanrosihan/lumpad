@@ -57,3 +57,12 @@ test('feedback validation and the too-hard trigger', async () => {
   const r = H.feedback({ date: wib(), rpe: 8, verdict: 'too_hard', text: 'x'.repeat(900) }, 'rihan'); assert.ok(r.id); assert.equal(db.prepare('SELECT length(text) n FROM session_feedback WHERE id=?').get(r.id).n, 500)
   assert.equal(db.prepare("SELECT route FROM plan_trigger WHERE type='coach_feedback'").get().route, 'micro')
 })
+
+test('PLAN_ALLOW_ANON: off by default (401); when on, an unauthenticated caller is accepted as "anonymous", never as a named user', async () => {
+  const { needUser } = await import('./api.js')
+  assert.throws(() => needUser(null, {}), /authentication required/); assert.equal(needUser('rihan', {}), 'rihan')
+  assert.equal(needUser(null, { PLAN_ALLOW_ANON: '1' }), 'anonymous'); assert.equal(needUser('rihan', { PLAN_ALLOW_ANON: '1' }), 'rihan'); assert.throws(() => needUser(null, { PLAN_ALLOW_ANON: 'true' }), /authentication/)   // exactly "1"
+  process.env.PLAN_ALLOW_ANON = '1'
+  try { const r = H.menuChoose({ date: hardDay.date, option: 'A' }, null); assert.equal(r.chosen, 'A'); const g = H.goal({ race_date: '2028-01-09', name: 'Anon 10K', cls: 'D', distance_m: 10000 }, null); assert.ok(g.id) } finally { delete process.env.PLAN_ALLOW_ANON }
+  assert.equal(await code(() => H.goal({ race_date: '2028-02-09', name: 'x', cls: 'D', distance_m: 10000 }, null)), 401)   // switch off again: refused again
+})

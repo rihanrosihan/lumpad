@@ -12,7 +12,9 @@ import { proposeMacroCoach } from './coachflow.js'
 import { explainAdjustment, coachEnabled } from './planllm.js'
 
 const err = (status, message) => Object.assign(new Error(message), { status })
-export const needUser = (user) => { if (!user) throw err(401, 'authentication required for plan changes'); return user }
+// Plan changes need an authenticated user (the proxy login stamps X-Lumpad-User). With PLAN_ALLOW_ANON=1 (off by default, a deliberate choice) a caller without a login is accepted as
+// 'anonymous': anyone who can reach the site can then change the plan, and the audit log cannot tell who did it.
+export const needUser = (user, env = process.env) => { if (user) return user; if (env.PLAN_ALLOW_ANON === '1') return 'anonymous'; throw err(401, 'authentication required for plan changes') }
 const DATE = /^\d{4}-\d{2}-\d{2}$/
 const planMap = (db) => Object.fromEntries(renderDays(db).map((d) => [d.date, d]))
 // gate and load context from the latest twin (same numbers the coach uses); missing twin -> no gate
@@ -31,9 +33,9 @@ export function handlers({ latestTwin, complete = null, mdb = null, memoryRows =
         WHERE a.created_at >= ? AND a.created_at <= ? ORDER BY a.id DESC LIMIT ?`).all(q.get('from') || '0000', (q.get('to') || '9999') + 'Z', lim).map((r) => ({ ...r, operators: JSON.parse(r.operators), rules: JSON.parse(r.rules) })) },
     menu: (q) => { const date = q.get('date'); if (!DATE.test(date || '')) throw err(400, 'date must be YYYY-MM-DD')
       const c = twinCtx(latestTwin); return dailyMenu(planMap(planDb()), date, { gate: c.gate, availMin: +q.get('avail') || undefined, wbgt: +q.get('wbgt') || undefined, aqiBad: q.get('aqi') === 'bad', redFlag: q.get('redflag') === '1' }) },
-    accept: (body, user) => { needUser(user); const db = planDb(), r = accept(db, +body.adjustment_id, { by: 'athlete' }); return { ...r, sync: after(db), by: user } },
+    accept: (body, user) => { const who = needUser(user); const db = planDb(), r = accept(db, +body.adjustment_id, { by: 'athlete' }); return { ...r, sync: after(db), by: who } },
     reject: (body, user) => { needUser(user); return reject(planDb(), +body.adjustment_id, { by: 'athlete' }) },
-    revert: (body, user) => { needUser(user); const db = planDb(), r = revert(db, +body.adjustment_id, { by: 'athlete' }); return { ...r, sync: after(db), by: user } },
+    revert: (body, user) => { const who = needUser(user); const db = planDb(), r = revert(db, +body.adjustment_id, { by: 'athlete' }); return { ...r, sync: after(db), by: who } },
     // the missed-run card's choice -> trigger -> kernel-checked proposal (never applied here)
     missed: (body, user) => {
       needUser(user); const date = body.date; if (!DATE.test(date || '')) throw err(400, 'date must be YYYY-MM-DD'); const db = planDb(), plan = planMap(db), c = twinCtx(latestTwin)
@@ -57,14 +59,14 @@ export function handlers({ latestTwin, complete = null, mdb = null, memoryRows =
     why: async (body, user) => { needUser(user); const db = planDb(), a = db.prepare('SELECT * FROM plan_adjustment WHERE id=?').get(+body.adjustment_id); if (!a) throw err(404, 'adjustment not found')
       const adj = { ...a, operators: JSON.parse(a.operators), rules: JSON.parse(a.rules), diff: JSON.parse(a.diff) }; return explainAdjustment({ adjustment: adj, complete, mdb }) },
     // the athlete tapped option B or C on the daily menu: that tap IS the approval, so the kernel-checked proposal is applied in the same call (A = as planned, no change)
-    menuChoose: (body, user) => { needUser(user); const date = body.date, opt = body.option; if (!DATE.test(date || '')) throw err(400, 'date must be YYYY-MM-DD'); if (!['A', 'B', 'C'].includes(opt)) throw err(400, 'option must be A, B or C')
+    menuChoose: (body, user) => { const who = needUser(user); const date = body.date, opt = body.option; if (!DATE.test(date || '')) throw err(400, 'date must be YYYY-MM-DD'); if (!['A', 'B', 'C'].includes(opt)) throw err(400, 'option must be A, B or C')
       if (opt === 'A') return { ok: true, chosen: 'A', changed: false }
       const db = planDb(), c = twinCtx(latestTwin), menu = dailyMenu(planMap(db), date, { gate: c.gate, availMin: +body.avail_min || undefined, wbgt: +body.wbgt || undefined, aqiBad: body.aqi_bad === true, redFlag: body.red_flag === true })
       const o = menu.options.find((x) => x.id === opt); if (!o?.patch) throw err(409, `option ${opt} is not available for ${date} any more`)
       const trig = raise(db, { type: 'manual', source: 'athlete', key: `menu:${date}:${opt}:${o.patch.operator}`, payload: { date, option: opt, operator: o.patch.operator } })
       const r = propose(db, { patches: [o.patch], trigger: trig.id, today: wibDate(), inputs: { menu: date, option: opt } }); if (!r.ok) return { ok: false, ...r }
       if (r.duplicate) return { ok: true, chosen: opt, changed: false, note: 'already chosen' }
-      const done = r.auto ? { auto: true } : accept(db, r.adjustment, { by: 'athlete' }); return { ok: true, chosen: opt, changed: true, adjustment: r.adjustment, sync: after(db), ...done, by: user } },
+      const done = r.auto ? { auto: true } : accept(db, r.adjustment, { by: 'athlete' }); return { ok: true, chosen: opt, changed: true, adjustment: r.adjustment, sync: after(db), ...done, by: who } },
     feedback: (body, user) => { needUser(user); if (!DATE.test(body.date || '')) throw err(400, 'date must be YYYY-MM-DD')
       const rpe = body.rpe == null ? null : +body.rpe; if (rpe != null && !(rpe >= 1 && rpe <= 10)) throw err(400, 'rpe must be 1-10'); if (body.verdict && !['too_easy', 'right', 'too_hard'].includes(body.verdict)) throw err(400, 'verdict must be too_easy, right or too_hard')
       const db = planDb(), id = Number(db.prepare('INSERT INTO session_feedback (date, rpe, verdict, text, created_at) VALUES (?,?,?,?,?)').run(body.date, rpe, body.verdict ?? null, String(body.text ?? '').slice(0, 500) || null, new Date().toISOString()).lastInsertRowid)
