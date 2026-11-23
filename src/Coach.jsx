@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { cleanCoachText } from './lib/coachText.js'
 import { useSub } from './useSub.js'
-import { Card, Chip, Sheet, SegmentedTabs, StatusPill, ProvenanceBadge } from './ui.jsx'
+import { Card, Chip, Sheet, SegmentedTabs, StatusPill, ProvenanceBadge, toast } from './ui.jsx'
 import LagExplorer from './LagExplorer.jsx'
 import ShoeDegradation from './ShoeDegradation.jsx'
 import KnowledgeGraphPanel, { PerformancePanel } from './KnowledgeGraph.jsx'
@@ -502,22 +502,22 @@ const jumpTo = (id) => () => { const el = document.getElementById(id); el?.scrol
 
 export default function Coach({ go, focus }) {
   const [tick, setTick] = useState(0), [sec, setSec] = useSub(SECTIONS.map((x) => x.id), focus?.section && SECTIONS.some((x) => x.id === focus.section) ? focus.section : 'ask')
-  const [approvingAll, setApprovingAll] = useState(false)
+  const [approvingAll, setApprovingAll] = useState(false), [armed, setArmed] = useState(false)
   const st = useApi('/api/intel/status')
   const twin = useApi('/api/twin')
   const mat = useApi('/api/intel/matrices')
   const QU = useApi('/api/coach/quota')
   const PC = useApi(`/api/memory/pending?limit=1&_=${tick}`), pc = PC.data, pending = { length: pc?.total || 0 }, pendingRules = pc?.counts?.procedural || 0, pendingOther = pending.length - pendingRules
 
-  const act = (id, action) => post('/api/memory/action', { id, action }).then(() => setTick((x) => x + 1)).catch((e) => alert(e.message))
+  const act = (id, action) => post('/api/memory/action', { id, action }).then(() => setTick((x) => x + 1)).catch((e) => toast(e.message))
   const approveAll = async () => {
     if (!pendingOther || approvingAll) return
-    if (!confirm(`Remember all ${pendingOther} pending items${pendingRules ? ` (the ${pendingRules} rule proposals stay for you to review one by one)` : ''}?`)) return
-    setApprovingAll(true)
+    if (!armed) { setArmed(true); toast(`Tap "Remember all" again within 5 s to confirm: ${pendingOther} items${pendingRules ? ` (the ${pendingRules} rule proposals stay for you to review one by one)` : ''}.`, 5000); setTimeout(() => setArmed(false), 5000); return }
+    setArmed(false); setApprovingAll(true)
     try {
       await post('/api/memory/bulk', { scope: 'pending', action: 'approve' })
       invalidate('memory'); setTick((x) => x + 1)
-    } catch (e) { alert(e.message) }
+    } catch (e) { toast(e.message) }
     finally { setApprovingAll(false) }
   }
 
@@ -542,7 +542,7 @@ export default function Coach({ go, focus }) {
             {s?.busy ? 'Running pipeline…' : 'Run Analysis Now'}
           </button>
           {pendingOther > 0 && <button type="button" className="btn primary sm" disabled={approvingAll} onClick={approveAll} style={{ background: '#059669' }}>
-            {approvingAll ? 'Saving…' : `✓ Remember all ${pendingOther}`}
+            {approvingAll ? 'Saving…' : armed ? 'Tap again to confirm' : `✓ Remember all ${pendingOther}`}
           </button>}
         </div>
       </div>
