@@ -77,3 +77,11 @@ test('graph chat: a short follow-up inherits the previous subject; a saved answe
   const saved = S.saveAnswer({ question: 'why did borobudur end', answer_md: 'It ended under a black flag.', paths: ['RACE x'] }); assert.equal(saved.created, true)
   const m = M.getMemory(saved.id); assert.equal(m.status, 'candidate'); assert.equal(m.source, 'graph_ask'); assert.throws(() => S.saveAnswer({ question: 'x', answer_md: '' }), /nothing to save/)
 })
+
+test('audit findings carry an action, and Done / Snooze hide them without touching the documents', () => {
+  const a = S.kbAudit({ today: '2026-11-23' }), f = a.items.find((x) => x.kind === 'stale-open-item'); assert.ok(f && /^[0-9a-f]{12}$/.test(f.id) && f.action.length > 10)
+  S.ackFinding({ id: f.id, action: 'done' }); const b = S.kbAudit({ today: '2026-11-23' }); assert.ok(!b.items.some((x) => x.id === f.id) && b.hidden >= 1)
+  const g = b.items[0]; S.ackFinding({ id: g.id, action: 'snooze', days: 10 }, { today: '2026-11-23' })
+  assert.ok(!S.kbAudit({ today: '2026-11-30' }).items.some((x) => x.id === g.id), 'still snoozed after 7 days'); assert.ok(S.kbAudit({ today: '2026-12-10' }).items.some((x) => x.id === g.id), 'comes back after the snooze')
+  S.ackFinding({ id: f.id, action: 'undo' }); assert.ok(S.kbAudit({ today: '2026-11-23' }).items.some((x) => x.id === f.id)); assert.throws(() => S.ackFinding({ id: 'zz' }), /bad finding id/)
+})

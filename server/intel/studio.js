@@ -7,6 +7,7 @@
 import { idb, mdb } from './db.js'
 import { run as neoRun, configured as neoConfigured } from '../neo4j.js'
 import crypto from 'node:crypto'
+import { load, save } from '../db.js'
 import { getMemory, setStatus, ftsSearch, addMemory } from './memory.js'
 import { RACES } from '../../src/lib/season.js'
 
@@ -73,6 +74,23 @@ export function dateIn(text, docDate, today = wib()) {
   if (iso(y) > today) y -= 1
   return iso(y)
 }
+const ACTIONS = {
+  'stale-open-item': 'Decide it (or drop it) and mark it closed in 00.4. If the 2027 plan already settles it, note that and close it.',
+  'points-at-archived': 'Optional: change the pointer to the document that replaced the archived one, or leave it if it is only a historical reference.',
+  'self-reported': 'Usually an intentional note in the document. Only the index documents 00.1–00.4 need a sync pass; otherwise press Done.',
+  'old-active-doc': 'Belongs to a finished cycle? Set its status to ARCHIVE or REFERENCE in the project so it stops counting as current.',
+  'pending-extractions': 'Open Coach → Memory: run "Check for stale claims", retract what is flagged, then approve the groups two models agree on.',
+}
+export const findingId = (f) => crypto.createHash('sha256').update(`${f.kind}|${f.doc || ''}|${f.title}`).digest('hex').slice(0, 12)
+const loadAck = () => { try { return load('kb_audit_ack', {}) || {} } catch { return {} } }
+// "Done" hides a finding until its text changes; "Snooze" hides it for N days. Nothing in the documents is touched.
+export function ackFinding({ id, action = 'done', days = 30 }, { today = wib() } = {}) {
+  if (!/^[0-9a-f]{12}$/.test(String(id || ''))) throw Object.assign(new Error('bad finding id'), { status: 400 })
+  const ack = loadAck()
+  if (action === 'undo') delete ack[id]
+  else ack[id] = { until: action === 'snooze' ? new Date(Date.parse(today + 'T00:00:00Z') + Math.min(Math.max(+days || 30, 1), 365) * 864e5).toISOString().slice(0, 10) : 'forever', at: new Date().toISOString() }
+  save('kb_audit_ack', ack); return { ok: true }
+}
 export function kbAudit({ today = wib() } = {}) {
   const docs = idb.prepare('SELECT doc_id, title, status, source_date, body FROM kb_docs ORDER BY doc_id').all(), byId = new Map(docs.map((d) => [d.doc_id, d]))
   const archived = (d) => /^(SUPERSEDED|ARCHIVE|RETIRED)/i.test(d.status || '') && !/\bACTIVE\b/i.test(d.status)
@@ -98,7 +116,9 @@ export function kbAudit({ today = wib() } = {}) {
   if (total) out.push({ kind: 'pending-extractions', severity: total > 100 ? 'medium' : 'low', doc: null, title: `${total} extracted claims are waiting for your approval`, detail: pend.slice(0, 6).map((r) => `${r.d}: ${r.n}`).join(' · ') })
   const rank = { high: 0, medium: 1, low: 2 }
   out.sort((a, b) => rank[a.severity] - rank[b.severity])
-  return { generated: today, docs: docs.length, findings: out.length, items: out.slice(0, 40) }
+  const ack = loadAck(); let hidden = 0
+  const items = out.map((f) => ({ ...f, id: findingId(f), action: ACTIONS[f.kind] || '' })).filter((f) => { const a = ack[f.id]; if (a && (a.until === 'forever' || a.until >= today)) { hidden++; return false } return true })
+  return { generated: today, docs: docs.length, findings: items.length, hidden, items: items.slice(0, 40) }
 }
 
 // ---------------------------------------------------------------- memory inbox

@@ -17,7 +17,7 @@ import { runIntel, recentIntelJobs, afterSync } from './intel/run.js'
 import { startIntelScheduler } from './intel/schedule.js'
 import { plannedForecast } from './intel/forecast.js'
 import { adviceSummary, listAdvice, setStatus as setAdviceStatus } from './intel/advice.js'
-import { graphAsk, saveAnswer, staleSweep, kbAudit, memoryInbox, pendingPage, bulkAction, raceBrief } from './intel/studio.js'
+import { graphAsk, saveAnswer, staleSweep, kbAudit, ackFinding, memoryInbox, pendingPage, bulkAction, raceBrief } from './intel/studio.js'
 import { getConfig, publicConfig, saveConfig, resetConfig, testConnection, listModels, getQuota, saveQuota } from './intel/llmconfig.js'
 import { runCoach, recentRuns, getRun, newRun, finishRun, coachStatus } from './intel/coach.js'
 import { retrieveRunnerContext, renderPrompt, TASKS, OUTPUT_SCHEMA } from './intel/context.js'
@@ -182,6 +182,7 @@ const routes = {
   'POST /api/graph/save': async (_q, req) => saveAnswer(JSON.parse((await readBody(req, 12e3)).toString() || '{}'), principal(req) || 'athlete'),
   'POST /api/memory/sweep': async () => staleSweep(),
   'GET /api/kb/audit': async () => kbAudit(),
+  'POST /api/kb/audit/ack': async (_q, req) => ackFinding(JSON.parse((await readBody(req, 2e3)).toString() || '{}')),
   'GET /api/memory/inbox': async (q) => memoryInbox({ source: q.get('source') || '', doc: q.get('doc') || '', agreed: q.get('agreed') === '1', limitDocs: Math.min(+q.get('docs') || 12, 40), offsetDocs: Math.max(+q.get('offset') || 0, 0) }),
   'GET /api/memory/pending': async (q) => pendingPage({ tier: q.get('tier') || '', offset: q.get('offset'), limit: q.get('limit') }),
   'POST /api/memory/bulk': async (_q, req) => { const b = JSON.parse((await readBody(req, 2e4)).toString() || '{}'); return bulkAction(b.ids, b.action, principal(req) || 'athlete', { scope: b.scope, tier: b.tier, includeRules: b.include_rules === true }) },

@@ -36,11 +36,16 @@ export function GraphAsk() {
 
 const SEV = { high: 'red', medium: 'yellow', low: 'gray' }
 export function KbAudit() {
-  const A = useApi('/api/kb/audit'), a = A.data
-  return <Card title="Knowledge-base audit" right={a && <Chip tone={a.items.some((x) => x.severity === 'high') ? 'red' : a.findings ? 'yellow' : 'green'}>{a.findings} finding{a.findings === 1 ? '' : 's'}</Chip>}>
-    {!a ? <p className="muted">Checking {A.state === 'error' ? ' failed' : '…'}</p> : !a.items.length ? <p className="muted">Nothing stale or inconsistent found in {a.docs} documents.</p> :
-      <ul className="plain">{a.items.map((f, i) => <li key={i} style={{ margin: '6px 0' }}><Chip tone={SEV[f.severity]}>{f.severity}</Chip> <b>{f.title}</b>{f.detail ? <div className="muted">{f.detail}</div> : null}</li>)}</ul>}
-    <small className="muted">Deterministic checks of your documents (no model): archived docs still referenced, open items older than 30 days, docs not updated for 45+ days, self-reported staleness, claims waiting for approval.</small>
+  const [tick, setTick] = useState(0), [err, setErr] = useState('')
+  const A = useApi(`/api/kb/audit?_=${tick}`), a = A.data
+  const ack = async (id, action, days) => { try { await post('/api/kb/audit/ack', { id, action, days }); invalidate('kb/audit'); setTick((x) => x + 1) } catch (e) { setErr(e.message) } }
+  return <Card title="Knowledge-base audit" right={a && <Chip tone={a.items.some((x) => x.severity === 'high') ? 'red' : a.findings ? 'yellow' : 'green'}>{a.findings} to look at{a.hidden ? ` · ${a.hidden} hidden` : ''}</Chip>}>
+    {!a ? <p className="muted">Checking {A.state === 'error' ? ' failed' : '…'}</p> : !a.items.length ? <p className="muted">Nothing left to look at in {a.docs} documents.</p> :
+      <ul className="plain">{a.items.map((f) => <li key={f.id} style={{ margin: '10px 0' }}><Chip tone={SEV[f.severity]}>{f.severity}</Chip> <b>{f.title}</b>{f.detail ? <div className="muted">{f.detail}</div> : null}
+        {f.action && <div><b>What to do:</b> {f.action}</div>}
+        <button type="button" className="btn sm" onClick={() => ack(f.id, 'done')}>✓ Done / not an issue</button> <button type="button" className="btn sm" onClick={() => ack(f.id, 'snooze', 30)}>Snooze 30 days</button></li>)}</ul>}
+    {err && <p className="err" role="alert">{err}</p>}
+    <small className="muted">Deterministic checks of your documents (no model). "Done" or "Snooze" only hides the finding here; it does not change the documents themselves.</small>
   </Card>
 }
 
