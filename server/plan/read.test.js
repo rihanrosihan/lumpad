@@ -20,3 +20,7 @@ test('AC-P1-7: engine source falls back to plan.json when plan.db is empty or un
   const empty = openPlanDb(':memory:'), a = loadPlan({ source: 'engine', db: empty }); assert.equal(a.source, 'json-fallback'); assert.deepEqual(a.days, FILE); assert.match(a.error, /no active plan version/)
   const b = loadPlan({ source: 'engine', db: { prepare() { throw new Error('disk I/O error') } } }); assert.equal(b.source, 'json-fallback'); assert.deepEqual(b.days, FILE)
 })
+
+test('syncPlan is a no-op outside engine mode (nothing changes for json readers)', async () => {
+  const { syncPlan } = await import('./read.js'); assert.deepEqual(syncPlan(), { synced: false, reason: 'PLAN_SOURCE is not engine' })
+})

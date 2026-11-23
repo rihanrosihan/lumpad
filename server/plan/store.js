@@ -41,7 +41,7 @@ export function createVersion(db, { kind, parentId = null, baseMacroId = null, s
 }
 
 // Atomic activation (FR-PLN-4): optimistic parent check, supersede old, flip new, rebuild plan_active_day for the horizon, audit row. Past days are never touched (FR-PLN-5).
-export function activate(db, versionId, { expectedParent = undefined, today = wibDate(), trigger = null, loop = null, rationale = '', rules = [], operators = [], inputs = {}, auto = 0, by = 'system' } = {}) {
+export function activate(db, versionId, { adjustmentId = null, expectedParent = undefined, today = wibDate(), trigger = null, loop = null, rationale = '', rules = [], operators = [], inputs = {}, auto = 0, by = 'system' } = {}) {
   return tx(db, () => {
     const v = db.prepare('SELECT * FROM plan_version WHERE id=?').get(versionId)
     if (!v) throw Object.assign(new Error('version not found'), { status: 404 })
@@ -60,12 +60,18 @@ export function activate(db, versionId, { expectedParent = undefined, today = wi
     const diff = rows.map((r) => ({ date: r.date, slot: r.slot, before: before.get(`${r.date}|${r.slot}`) ? { kind: before.get(`${r.date}|${r.slot}`).kind, label: before.get(`${r.date}|${r.slot}`).label } : null, after: r.op === 'clear' ? null : { kind: r.kind, label: r.label } }))
       .filter((x) => JSON.stringify(x.before) !== JSON.stringify(x.after))
     const dates = rows.map((r) => r.date).sort()
-    const adj = Number(db.prepare(`INSERT INTO plan_adjustment (created_at, trigger_id, from_version, to_version, loop, scope_from, scope_to, operators, diff, rules, inputs, rationale_det, auto)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(now(), trigger, cur?.id ?? null, versionId, loop || v.kind, dates[0] ?? v.horizon_from, dates.at(-1) ?? v.horizon_to, J(operators), J(diff), J(rules), J(inputs), rationale || `${v.kind} version ${versionId} activated`, auto ? 1 : 0).lastInsertRowid)
+    const adj = adjustmentId ?? recordAdjustment(db, { trigger, from: cur?.id ?? null, to: versionId, loop: loop || v.kind, scope: [dates[0] ?? v.horizon_from, dates.at(-1) ?? v.horizon_to], operators, diff, rules, inputs, rationale: rationale || `${v.kind} version ${versionId} activated`, auto })
     db.prepare("INSERT INTO plan_adjustment_event (adjustment_id, at, event, by, detail) VALUES (?,?, 'applied', ?, NULL)").run(adj, now(), by)
     return { version: versionId, adjustment: adj, changed_days: diff.length }
   })
 }
+
+// one audit row per change; created when a change is proposed (or directly at activation for imports and manual edits). Append-only (DB triggers).
+export function recordAdjustment(db, { trigger = null, from = null, to, loop, scope, operators = [], diff = [], rules = [], inputs = {}, rationale, rationaleLlm = null, auto = 0, expected = null }) {
+  return Number(db.prepare(`INSERT INTO plan_adjustment (created_at, trigger_id, from_version, to_version, loop, scope_from, scope_to, operators, diff, rules, inputs, rationale_det, rationale_llm, auto, expected)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(now(), trigger, from, to, loop, scope[0], scope[1], J(operators), J(diff), J(rules), J(inputs), rationale, rationaleLlm, auto ? 1 : 0, expected ? J(expected) : null).lastInsertRowid)
+}
+export const addEvent = (db, adjustmentId, event, by, detail = null) => db.prepare('INSERT INTO plan_adjustment_event (adjustment_id, at, event, by, detail) VALUES (?,?,?,?,?)').run(adjustmentId, now(), event, by, detail ? J(detail) : null)
 
 export function importPlan(db, days) {
   const existing = db.prepare("SELECT id FROM plan_version WHERE kind='import' ORDER BY id LIMIT 1").get()

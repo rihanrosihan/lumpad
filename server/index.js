@@ -29,6 +29,9 @@ import { PLAN_META, planRange, planDay } from './plan/read.js'
 import { planDb } from './plan/db.js'
 import { activeZones, runZoneWatch } from './plan/zonewatch.js'
 import { resolveDay } from './plan/resolve.js'
+import { handlers as planHandlers } from './plan/api.js'
+const PH = planHandlers({ latestTwin: () => latestTwin() })
+const planBody = async (req) => JSON.parse((await readBody(req, 2e4)).toString() || '{}')
 import { applyIngest, checkToken, syncStatus, coverage, healthRange, activitiesRange, lapsOf, validDate } from './ingest.js'
 
 // P2 shadow job (opt-in, PLAN_ZONEWATCH=1): after each COROS job, re-resolve benchmarks, store a new zone set when they moved, raise triggers. Writes only plan.db.
@@ -237,6 +240,15 @@ const routes = {
   'GET /api/plan/status': async () => ({ ...PLAN_META }),
   'GET /api/plan/range': async (q) => { const from = q.get('from') || undefined, to = q.get('to') || undefined; if ((from && !validDate(from)) || (to && !validDate(to))) throw Object.assign(new Error('from/to must be YYYY-MM-DD'), { status: 400 }); let days = planRange(from, to), zv = null; if (q.get('resolve') === '1') { const z = activeZones(planDb()); if (!z) throw Object.assign(new Error('no zone set yet (run server/plan/cli.js resolve)'), { status: 409 }); zv = z.zone_set.version; days = days.map((d) => resolveDay(d, z.zone_set)) }
     return { source: PLAN_META.source, version: PLAN_META.version, zone_set: zv, days } },
+  // micro loop (P3): reads are open; every write needs an authenticated user (X-Lumpad-User from the proxy login), so none works while the login is off
+  'GET /api/plan/proposals': async () => PH.proposals(),
+  'GET /api/plan/audit': async (q) => PH.audit(q),
+  'GET /api/plan/menu': async (q) => PH.menu(q),
+  'POST /api/plan/proposals/accept': async (_q, req) => PH.accept(await planBody(req), principal(req)),
+  'POST /api/plan/proposals/reject': async (_q, req) => PH.reject(await planBody(req), principal(req)),
+  'POST /api/plan/revert': async (_q, req) => PH.revert(await planBody(req), principal(req)),
+  'POST /api/plan/missed': async (_q, req) => PH.missed(await planBody(req), principal(req)),
+  'POST /api/plan/feedback': async (_q, req) => PH.feedback(await planBody(req), principal(req)),
   'GET /api/plan/zones': async () => { const z = activeZones(planDb()); if (!z) throw Object.assign(new Error('no zone set yet'), { status: 404 }); return z },
   'GET /api/plan/day': async (q) => { const date = q.get('date'); if (!validDate(date)) throw Object.assign(new Error('date must be YYYY-MM-DD'), { status: 400 }); return { source: PLAN_META.source, version: PLAN_META.version, day: planDay(date) } },
   'GET /api/library': async () => lib.list(),

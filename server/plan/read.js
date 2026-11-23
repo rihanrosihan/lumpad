@@ -30,3 +30,14 @@ export const PLAN = loaded.days
 export const PLAN_META = { source: loaded.source, version: loaded.version, error: loaded.error ?? null, days: loaded.days.length, from: loaded.days[0]?.date, to: loaded.days.at(-1)?.date }
 export const planRange = (from = '0000', to = '9999') => PLAN.filter((d) => d.date >= from && d.date <= to)
 export const planDay = (date) => PLAN.find((d) => d.date === date) || null
+
+// Engine mode only: after an accepted change, refresh the plan IN PLACE. Day objects keep their identity (their fields are replaced), so the by-date maps the
+// readers built at import time stay valid. Dates are not added or removed here (a macro version that changes the horizon needs a restart until P4 handles it).
+export function syncPlan({ db = null } = {}) {
+  if (PLAN_META.source !== 'engine') return { synced: false, reason: 'PLAN_SOURCE is not engine' }
+  const next = loadPlan({ source: 'engine', db }); if (next.source !== 'engine') return { synced: false, reason: next.error }
+  const have = new Map(PLAN.map((d) => [d.date, d])); let changed = 0
+  for (const n of next.days) { const d = have.get(n.date); if (!d) continue; if (JSON.stringify(d) !== JSON.stringify(n)) { for (const k of Object.keys(d)) delete d[k]; Object.assign(d, n); changed++ } }
+  PLAN_META.version = next.version
+  return { synced: true, changed, version: next.version, new_dates: next.days.filter((n) => !have.has(n.date)).length }
+}
