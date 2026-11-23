@@ -3,8 +3,10 @@
 import { DatabaseSync } from 'node:sqlite'
 import fs from 'node:fs'
 import path from 'node:path'
+import os from 'node:os'
 
-const DIR = process.env.DATA_DIR || path.resolve('server/data')
+// a test process without DATA_DIR gets a throwaway directory, never the real garmin database
+const DIR = process.env.DATA_DIR || (process.env.NODE_TEST_CONTEXT ? fs.mkdtempSync(path.join(os.tmpdir(), 'lumpad-test-')) : path.resolve('server/data'))
 export const GARMIN_DB = process.env.GARMIN_DB || path.join(DIR, 'garmin.db')
 export const GARMIN_FIT_DIR = process.env.GARMIN_FIT_DIR || path.join(DIR, 'fit', 'garmin')
 

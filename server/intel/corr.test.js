@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert'
 process.env.INTEL_DB = ':memory:'; process.env.MEMORY_DB = ':memory:'; process.env.DATA_DIR = (await import('node:fs')).mkdtempSync((await import('node:path')).join((await import('node:os')).tmpdir(), 'lumpad-test-data-'))
-const { computeEdges, lagSql, lagRows, WINDOWS } = await import('./corr.js')
+const { computeEdges, lagSql, lagRows, WINDOWS, correlationGraph, OUTCOME_DOMAIN } = await import('./corr.js')
 const { idb } = await import('./db.js')
 const S = await import('./stats.js')
 
@@ -33,4 +33,16 @@ test('SQL lag windows: window [4,7] of day t is the sum over days t−7..t−4 a
   assert.equal(rows[day(t)].strength_lower__4_7, expected)
   assert.equal(rows[day(t)].strength_lower__1_3, [17, 18, 19].reduce((s, j) => s + (j % 3 === 0 ? 1 : 0), 0))
   assert.ok(Math.abs(rows[day(t)].hrv_dev__1_3 - (0.17 + 0.18 + 0.19) / 3) < 1e-9)
+})
+
+test('correlationGraph: hub, domains, outcomes and factors, three tiers kept apart, best window per pair, nothing invented', () => {
+  const e = (exposure, outcome, tier, pr, q, lo = 1, hi = 3) => ({ exposure, outcome, lag_lo: lo, lag_hi: hi, n: 120, n_eff: 60, rho: pr, partial_rho: pr, ci_lo: pr - 0.2, ci_hi: pr + 0.2, p: 0.04, q, status: tier })
+  const g = correlationGraph([e('strength_lower', 'gct_fade', 'candidate', -0.31, 0.08)], [e('strength_lower', 'gct_fade', 'x', -0.4, 0.5), e('sleep_min', 'ef_resid', 'x', 0.22, 0.6), e('run_km', 'unknown_outcome', 'x', 0.5, 0.1), e('hrv_dev', 'drift', 'x', NaN, 0.9)])
+  assert.equal(g.hub, 'PerfDomain:performance'); assert.deepEqual(g.counts, { supported: 0, candidate: 1, exploratory: 1 })
+  const c = g.edges.filter((x) => x.type === 'CORRELATES'); assert.equal(c.length, 2)
+  assert.equal(c.find((x) => x.from === 'Factor:strength_lower').tier, 'candidate', 'the gated tier wins over a stronger exploratory estimate of the same pair')
+  assert.ok(g.edges.some((x) => x.type === 'MEASURES' && x.from === 'Outcome:gct_fade' && x.to === 'PerfDomain:durability')); assert.equal(g.edges.filter((x) => x.type === 'PART_OF').length, 6)
+  assert.ok(!g.nodes.some((n) => /unknown_outcome|hrv_dev/.test(n.id)), 'unmapped outcomes and non-finite estimates are dropped')
+  assert.equal(correlationGraph([], []).edges.filter((x) => x.type === 'CORRELATES').length, 0); assert.deepEqual(correlationGraph().counts, { supported: 0, candidate: 0, exploratory: 0 })
+  for (const o of ['gct_fade', 'drift', 'ef_resid', 'run_share_long', 'stride_fade', 'pace_hr150', 'gct_avg']) assert.ok(OUTCOME_DOMAIN[o], o)
 })

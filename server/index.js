@@ -1,3 +1,4 @@
+import { addContext, listContext, removeContext, addFact, listFacts, sessionAnomalies, sessionBackground, PURPOSES } from './intel/sessionctx.js'
 import fs from 'node:fs'
 import path from 'node:path'
 import http from 'node:http'
@@ -11,7 +12,7 @@ import { withCoros } from './coros/mcp.js'
 import { startJob, recentJobs, isRunning, startScheduler, hooks } from './jobs.js'
 import { idb, mdb } from './intel/db.js'
 import { latestTwin, twinDiff } from './intel/twin.js'
-import { listEdges } from './intel/corr.js'
+import { listEdges, listExplore, correlationGraph } from './intel/corr.js'
 import { listMemory, setStatus, getMemory } from './intel/memory.js'
 import { runIntel, recentIntelJobs, afterSync } from './intel/run.js'
 import { startIntelScheduler } from './intel/schedule.js'
@@ -123,7 +124,7 @@ const routes = {
   'GET /api/graph/node': async (q) => (await import('./neo4j.js')).node(q.get('kind') || 'races'),
   'POST /api/perf/prs': async (_q, req) => { const b = JSON.parse((await readBody(req, 2e4)).toString() || '{}'); if (b.refresh) return { ok: true, ...(await (await import('./intel/prs.js')).refreshActivities()) }; const d = await (await import('./intel/prs.js')).savePRs(b.text); return { ok: true, count: d.prs.length, updated: d.updated } },
   'GET /api/perf/summary': async () => (await import('./intel/perf.js')).perfSummary(),
-  'GET /api/graph/live': async (q) => (await import('./neo4j.js')).live(q.get('view') || 'sessions'),
+  'GET /api/graph/live': async (q) => (q.get('view') === 'correlations' ? correlationGraph(listEdges().filter((e) => e.status === 'supported' || e.status === 'candidate'), listExplore()) : (await import('./neo4j.js')).live(q.get('view') || 'sessions')),
   'GET /api/graph/overview': async () => (await import('./neo4j.js')).overview(),
   'GET /api/data/quality': async () => {
     const cov = coverage()
@@ -198,6 +199,14 @@ const routes = {
   // Coach Studio: graph Q&A, knowledge-base audit, memory inbox (grouped by source document), race briefing
   'POST /api/graph/ask': async (_q, req) => { const b = JSON.parse((await readBody(req, 12e3)).toString() || '{}'); return graphAsk(b.question, { history: b.history }) },
   'POST /api/graph/save': async (_q, req) => saveAnswer(JSON.parse((await readBody(req, 12e3)).toString() || '{}'), principal(req) || 'athlete'),
+  // the athlete's own account of what a session was really about (walking with a partner, cheering zone, helping others): fact for the coach, and keeps the session out of durability statistics
+  'GET /api/session-context': async (q) => ({ items: listContext({ from: q.get('from') || undefined, to: q.get('to') || undefined }), purposes: PURPOSES }),
+  'POST /api/session-context': async (_q, req) => addContext(JSON.parse((await readBody(req, 4e3)).toString() || '{}'), principal(req) || 'athlete'),
+  'POST /api/session-context/delete': async (_q, req) => removeContext(JSON.parse((await readBody(req, 1e3)).toString() || '{}').id),
+  'GET /api/session-anomalies': async (q) => sessionAnomalies({ id: q.get('id') || undefined, date: q.get('date') || undefined }),
+  'GET /api/session-background': async (q) => sessionBackground({ date: q.get('date') }),
+  'GET /api/athlete-fact': async () => ({ items: listFacts() }),
+  'POST /api/athlete-fact': async (_q, req) => addFact(JSON.parse((await readBody(req, 4e3)).toString() || '{}').text, principal(req) || 'athlete'),
   'POST /api/memory/sweep': async () => staleSweep(),
   'GET /api/kb/audit': async () => kbAudit(),
   'POST /api/kb/audit/ack': async (_q, req) => ackFinding(JSON.parse((await readBody(req, 2e3)).toString() || '{}')),
@@ -225,8 +234,8 @@ const routes = {
   // free preview of what retrieval would send (no model call): counts, retrieved items, the decomposed query and the split telemetry it attached
   'GET /api/coach/preview': async (q) => {
     const intent = TASKS[q.get('intent')] ? q.get('intent') : 'daily_brief', ctx = retrieveRunnerContext({ intent, question: String(q.get('question') || '').slice(0, 1000) }), v = ctx.volatile
-    const item = (i) => ({ id: i.id, title: i.title, why: i.why })
-    return { schema: ctx.schema, tokens_est: ctx.tokens_est, rules_count: ctx.stable.rules.length, episodes: v.episodes.map(item), facts: v.facts.map(item), query: v.query, edges: v.correlation_edges.length,
+    const item = (i) => ({ id: i.id, title: i.title, why: i.why, tier: i.tier, tag: i.tag, date: i.date, ...ctx.retrieval?.signals?.[i.id] })
+    return { schema: ctx.schema, tokens_est: ctx.tokens_est, rules_count: ctx.stable.rules.length, episodes: v.episodes.map(item), facts: v.facts.map(item), query: v.query, edges: v.correlation_edges.length, retrieval: ctx.retrieval, recall: v.recall,
       telemetry: v.telemetry.map((t) => ({ date: t.date, km: t.km_total, splits: t.km.length })), twin_version: v.twin_version } },
   'GET /api/coach/context': async (q, req) => { checkToken(req); const intent = TASKS[q.get('intent')] ? q.get('intent') : 'daily_brief', ctx = retrieveRunnerContext({ intent, question: q.get('question') || '', activityId: q.get('activity') || null }), prompt = renderPrompt(ctx, TASKS[intent])
     return { run_id: newRun({ intent, provider: 'claude-code', ctx, prompt, question: q.get('question') }), ...prompt, output_schema: OUTPUT_SCHEMA, item_ids: ctx.item_ids } },

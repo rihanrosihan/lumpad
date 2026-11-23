@@ -47,6 +47,38 @@ test('the default views also carry every race, from one extra read-only query', 
   assert.ok(!/DELETE|SET |CREATE|MERGE|REMOVE|DROP/i.test(N.RACES_ALWAYS))
   const sent = []; const fetchFn = async (_u, o) => { const s = JSON.parse(o.body).statement; sent.push(s); return { ok: true, json: async () => ({ data: { values: s === N.RACES_ALWAYS ? [['Race', 'r1', 'Old Race', '2025-01-12', null, null, null, null, null, null, null, null, null, null, null, null]] : [] } }) } }
   const g = await N.live('sessions', { fetchFn, env: { uri: 'neo4j+s://x.databases.neo4j.io', user: 'u', pass: 'p', db: 'x' } })
-  assert.equal(sent.length, 2); assert.ok(g.nodes.some((n) => n.label === 'Race' && n.name === 'Old Race'))
+  assert.equal(sent.length, 2); assert.ok(g.nodes.some((n) => n.label === 'Race' && n.name === 'Old Race')); assert.equal(g.hub, undefined, 'the sessions view keeps its own layout')
   const sent2 = sent.length; await N.live('topics', { fetchFn, env: { uri: 'neo4j+s://x.databases.neo4j.io', user: 'u', pass: 'p', db: 'x' } }); assert.equal(sent.length, sent2 + 1, 'other views stay a single query')
+})
+
+import { anchorGraph, raceDomain, HUB } from './neo4j.js'
+test('raceDomain: long races test durability, short ones speed', () => {
+  for (const [n, d] of [['myBCA JRF FM 2026', 'durability'], ['Urbana Qualifier HM', 'durability'], ['Sentul Ultra 17K', 'durability'], ['Bogor City Trail Run', 'durability'], ['Milo Active Race 10K', 'speed'], ['Starbucks 5K', 'speed'], ['Guardian Run', 'speed'], ['LPS Monas Half Marathon', 'durability']]) assert.equal(raceDomain(n).to, 'PerfDomain:' + d, n)
+})
+test('anchorGraph ties every race, personal best and session to the performance hub with marked derived links; the rest is reported as unlinked', () => {
+  const node = (label, key, name, extra = {}) => ({ id: `${label}:${key}`, label, name, date: null, ef: null, tl: null, wbgt: null, ...extra })
+  const nodes = ['performance', 'vdot', 'running_fitness', 'cardio', 'durability', 'speed', 'load'].map((k) => node('PerfDomain', k, k)).concat([node('Race', 'r1', 'Starbucks 5K'), node('Race', 'r2', 'JRF FM 2026'), node('Race', 'r3', 'Milo 10K'), node('PB', 'p1', 'FIT best 1 km'), node('Session', 's1', 'run', { ef: 0.9 }), node('Session', 's2', 'run2', { tl: 120 }), node('Session', 's3', 'bare'), node('Shoe', 'x', 'orphan shoe'), node('PerfPoint', 'pp', 'vdot point')])
+  const edges = ['vdot', 'running_fitness', 'cardio', 'durability', 'speed', 'load'].map((k) => ({ from: `PerfDomain:${k}`, to: HUB, type: 'PART_OF' })).concat([{ from: 'PerfPoint:pp', to: 'PerfDomain:vdot', type: 'OF_DOMAIN' }, { from: 'Race:r3', to: 'PerfPoint:pp', type: 'IMPLIES' }, { from: 'PB:p1', to: 'Session:s3', type: 'ACHIEVED_IN' }])
+  const a = anchorGraph({ nodes, edges })
+  const derived = a.edges.filter((e) => e.derived).map((e) => `${e.from}>${e.to}`).sort()
+  assert.deepEqual(derived, ['PB:p1>PerfDomain:speed', 'PerfDomain:load>PerfDomain:running_fitness', 'PerfDomain:speed>PerfDomain:vdot', 'Race:r1>PerfDomain:speed', 'Race:r2>PerfDomain:durability', 'Session:s1>PerfDomain:cardio', 'Session:s2>PerfDomain:load', 'Shoe:x>PerfDomain:load'])
+  assert.ok(a.edges.filter((e) => e.derived).every((e) => e.type === 'INFORMS' && e.why)); assert.equal(a.hub, HUB)
+  assert.deepEqual(a.unlinked, []) // s3 is reached through the PB; r3 already reached the hub through its VDOT point and is not touched
+  assert.ok(!a.edges.some((e) => e.derived && e.from === 'Race:r3'))
+  assert.deepEqual(anchorGraph({ nodes: [node('Memory', 'm', 'note')], edges: [] }).unlinked, []); assert.equal(anchorGraph({ nodes: [node('Race', 'r', '5K')], edges: [] }).hub, null)
+})
+
+test('the races view also reads the hub skeleton (read-only) and comes back anchored to PERFORMANCE', async () => {
+  const sent = [], fetchFn = async (_u, o) => { const s = JSON.parse(o.body).statement; sent.push(s); return { ok: true, json: async () => ({ data: { values: /PART_OF/.test(s) ? [['PerfDomain', 'vdot', 'VDOT', null, null, null, null, 'PART_OF', true, 'PerfDomain', 'performance', 'PERFORMANCE', null, null, null, null], ['PerfDomain', 'speed', 'Speed', null, null, null, null, 'PART_OF', true, 'PerfDomain', 'performance', 'PERFORMANCE', null, null, null, null]] : [['Race', '2026-05-24', 'Starbucks 5K', '2026-05-24', null, null, null, null, null, null, null, null, null, null, null, null]] } }) } }
+  const g = await N.live('races', { fetchFn, env: { uri: 'neo4j+s://x.databases.neo4j.io', user: 'u', pass: 'p', db: 'x' } })
+  assert.equal(g.hub, 'PerfDomain:performance'); assert.ok(sent.some((q) => /PART_OF/.test(q))); assert.ok(sent.every((q) => !/DELETE|SET |CREATE|MERGE|REMOVE|DROP/i.test(q)), 'every query is read-only')
+  assert.ok(g.edges.some((e) => e.derived && e.from === 'Race:2026-05-24' && e.to === 'PerfDomain:speed')); assert.deepEqual(g.unlinked, [])
+})
+
+import { enrichDomain } from './neo4j.js'
+test('enrichDomain ties shoes, weather, plan weeks, checkpoints, topics and rules to the domain they inform; unknown topics stay unlinked', () => {
+  const d = (label, name) => enrichDomain({ label, name, ef: null, tl: null })?.to
+  assert.equal(d('Shoe', 'Nike Pegasus'), 'PerfDomain:load'); assert.equal(d('HeatBand', 'hot'), 'PerfDomain:cardio'); assert.equal(d('Checkpoint', 'CP3'), 'PerfDomain:durability')
+  assert.equal(d('Topic', 'gct_fade'), 'PerfDomain:durability'); assert.equal(d('Topic', 'sleep_min'), 'PerfDomain:cardio'); assert.equal(d('Rule', 'Cap easy pace by HRV'), 'PerfDomain:cardio')
+  assert.equal(d('Topic', 'strength_lower'), 'PerfDomain:load'); assert.equal(d('Topic', 'zzz'), undefined); assert.equal(d('Memory', 'note'), undefined)
 })

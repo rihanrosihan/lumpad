@@ -12,6 +12,8 @@ const TOPICS = [
   [/threshold|double|tempo|ambang/, ['thr_min', 'double_days', 'quality_sessions', 'pace_hr150']], [/efficien|\bef\b|economy|ekonomi/, ['ef_resid']],
   [/durab|fade|run.?share|walk|jalan kaki/, ['run_share_long']], [/volume|mileage|km per week|weekly/, ['run_km', 'run_tl']],
 ]
+// words that are also ordinary English: on their own they do not name a shoe
+const PLAIN = new Set(['deviate', 'speed', 'elite', 'tempo', 'ride', 'glide', 'rebel', 'flow', 'wave', 'boost', 'fresh', 'rocket', 'pegasus', 'ultra', 'carbon', 'prime', 'liberty', 'mach', 'trail', 'road', 'daily', 'training', 'racer', 'racing'])
 export function decompose(question = '', { today = new Date().toISOString().slice(0, 10), gear = [] } = {}) {
   const q = String(question || '').toLowerCase(), f = {}
   // dates
@@ -22,6 +24,7 @@ export function decompose(question = '', { today = new Date().toISOString().slic
     const n = +m[1], unit = /week|minggu/.test(m[2]) ? 7 : /month|bulan/.test(m[2]) ? 30 : 1; f.from = addDays(today, -n * unit); f.to = today
   } else if (/\b(last|past) week|minggu lalu|seminggu\b/.test(q)) { f.from = addDays(today, -7); f.to = today }
   else if (/\b(last|past) month|bulan lalu\b/.test(q)) { f.from = addDays(today, -30); f.to = today }
+  else if (/\b(?:this year|tahun ini)\b/.test(q)) { f.from = today.slice(0, 4) + '-01-01'; f.to = today }
   if ((m = /\b(20\d{2}-\d{2}-\d{2})\b/.exec(q))) { f.from = f.to = m[1] }
   else if (!f.from) {
     for (let i = 0; i < 12; i++) {
@@ -32,15 +35,23 @@ export function decompose(question = '', { today = new Date().toISOString().slic
       f.from = `${y}-${String(i + 1).padStart(2, '0')}-01`; f.to = new Date(Date.UTC(y, i + 1, 0)).toISOString().slice(0, 10); break
     }
   }
+  // a bare year ("tahun 2026", "in 2026") is the whole calendar year, unless a race is named (then the race day wins below)
+  if (!f.from && !RACE_WORDS.some(([w]) => q.includes(w)) && (m = /\b(?:tahun|year|in|during|sepanjang|sejak|di)\s+(20\d{2})\b/.exec(q))) { f.from = `${m[1]}-01-01`; f.to = `${m[1]}-12-31` }
   // named races → that race day (newest matching, or the year given)
   for (const [w, name] of RACE_WORDS) if (q.includes(w)) {
     const yr = (/\b(20\d{2})\b/.exec(q) || [])[1], hits = ATHLETE.races.filter((r) => r.name.includes(name) && (!yr || r.date.startsWith(yr)))
-    if (hits.length) { const r = hits.at(-1); f.race = r.name; f.race_date = r.date; if (!f.from) { f.from = f.to = r.date } }
+    if (hits.length) { const r = hits.at(-1); f.race = r.name; f.race_date = r.date; if (!f.from) { f.from = f.to = r.date }
+      // several races in one question ("Borobudur vs JRF"): keep every date, not only the last one named
+      ;(f.race_dates ||= []).includes(r.date) || f.race_dates.push(r.date) }
   }
   // distance / type
   if ((m = /\b(\d{1,2}(?:[.,]\d)?)\s?(?:k|km)\b/.exec(q))) { const k = parseFloat(m[1].replace(',', '.')); if (k >= 1) f.dist_km = [Math.round(k * 0.85 * 10) / 10, Math.round(k * 1.15 * 10) / 10] }
+  // "above 30 km" / "at most 10 km" are one-sided bounds, not a ±15 % band around the number
+  if ((m = /(?:(?<!\d\s?)\b(?:above|over|more than|longer than|at least|minimum|min|di atas|lebih dari|minimal)|>=?)\s*(\d{1,2}(?:[.,]\d)?)\s?(?:k|km)\b/.exec(q))) f.dist_km = [parseFloat(m[1].replace(',', '.')), 500]
+  else if ((m = /(?:(?<!\d\s?)\b(?:below|under|less than|shorter than|at most|maximum|max|di bawah|kurang dari|maksimal)|<=?)\s*(\d{1,2}(?:[.,]\d)?)\s?(?:k|km)\b/.exec(q))) f.dist_km = [0, parseFloat(m[1].replace(',', '.'))]
   if (/half|\bhm\b|setengah/.test(q)) f.dist_km = [19, 24]
   else if (/marathon|\bfm\b|maraton/.test(q) && !/half/.test(q)) f.dist_km = [35, 50]
+  if (/\b(earliest|oldest|paling awal)\b|\b(first|pertama)\s+(?:ever\s+|kali\s+)?(?:half|full|marathon|maraton|setengah|race|lomba|ultra|run\b|lari\b|fm\b|hm\b|\d{1,2}\s?(?:k|km)\s+(?:race|lomba))/.test(q)) f.oldest = true // "my first half marathon": the OLDEST match, not the newest
   const kinds = []
   if (/long run|lari panjang|\blr\b/.test(q)) { kinds.push('long'); f.dist_km ||= [16, 50] }
   if (/\beasy|santai|z2\b|zone 2/.test(q)) kinds.push('easy')
@@ -52,7 +63,9 @@ export function decompose(question = '', { today = new Date().toISOString().slic
   if ((m = /(?:above|over|more than|>|di atas|lebih dari)\s*(\d{3})\s*(?:bpm)?/.exec(q))) f.hr_min = +m[1]
   if ((m = /(?:below|under|less than|<|di bawah|kurang dari)\s*(\d{3})\s*(?:bpm)?/.exec(q))) f.hr_max = +m[1]
   // shoes from the athlete's own garage: a distinctive word of the model name
-  const shoes = gear.filter((g) => String(g.name || '').toLowerCase().split(/[^a-z0-9]+/).some((w) => w.length >= 4 && !STOP.has(w) && q.includes(w)) || (/x2\b/.test(q) && /x2\b/i.test(g.name)))
+  // a shoe matches on whole words only, and a single common word ("deviate", "speed", "elite") needs shoe talk around it: "where did I deviate" is not the PUMA Deviate
+  const qWords = new Set(q.split(/[^a-z0-9]+/)), shoeTalk = /\b(shoes?|sepatu|wore|wear|pair|footwear|pakai|dipakai|mileage|insole)\b/.test(q)
+  const shoes = gear.filter((g) => { const hits = String(g.name || '').toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length >= 4 && !STOP.has(w) && qWords.has(w)); return hits.length >= 2 || (hits.length === 1 && (shoeTalk || /\d/.test(hits[0]) || !PLAIN.has(hits[0]))) || (/x2\b/.test(q) && /x2\b/i.test(g.name)) })
   if (shoes.length) f.shoes = shoes.map((g) => ({ id: g.id, name: g.name }))
   const topics = [...new Set(TOPICS.filter(([re]) => re.test(q)).flatMap(([, ids]) => ids))]
   if (shoes.length || /shoe|sepatu/.test(q)) topics.push('shoes')

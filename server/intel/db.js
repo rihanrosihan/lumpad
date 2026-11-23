@@ -6,7 +6,8 @@ import path from 'node:path'
 const dir = process.env.DATA_DIR || path.resolve('server/data')
 fs.mkdirSync(dir, { recursive: true })
 const open = (name, env, migrations) => {
-  const p = process.env[env] || path.join(dir, name)
+  // a test that forgets to point at an in-memory database must never touch the REAL data: node --test sets NODE_TEST_CONTEXT in every test process, so fall back to :memory:
+  const p = process.env[env] || (process.env.NODE_TEST_CONTEXT ? ':memory:' : path.join(dir, name))
   const d = new DatabaseSync(p)
   if (p !== ':memory:') try { fs.chmodSync(p, 0o600) } catch {}
   d.exec('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;')
@@ -41,6 +42,12 @@ CREATE TABLE intel_job (id INTEGER PRIMARY KEY AUTOINCREMENT, kind TEXT NOT NULL
 `, `
 CREATE TABLE daily_feat (date TEXT PRIMARY KEY, run_km REAL, run_min REAL, run_n INTEGER, tl REAL, run_tl REAL, strength INTEGER, strength_lower INTEGER, strength_upper INTEGER, strength_tl REAL, thr_min REAL, quality INTEGER, double_day INTEGER,
   sleep_min REAL, sleep_hr REAL, hrv REAL, hrv_dev REAL, rhr REAL, wbgt REAL, pain_max REAL, feel REAL, gi REAL);
+`, `
+-- the strongest tested associations that did NOT pass the gate (q < 0.10, stable halves, |rho| >= 0.3, n_eff >= 20): hypotheses for the graph only, never given to the coach
+CREATE TABLE corr_explore (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, run_at TEXT NOT NULL, exposure TEXT NOT NULL, outcome TEXT NOT NULL, lag_lo INTEGER, lag_hi INTEGER, n INTEGER, n_eff REAL,
+  rho REAL, partial_rho REAL, ci_lo REAL, ci_hi REAL, p REAL, q REAL, note TEXT
+);
 `])
 
 export const mdb = open('memory.db', 'MEMORY_DB', [`
@@ -72,4 +79,17 @@ CREATE TABLE coach_advice (
   kind TEXT NOT NULL, text TEXT NOT NULL, target TEXT, status TEXT NOT NULL DEFAULT 'open', evidence TEXT, resolved_at TEXT, manual INTEGER NOT NULL DEFAULT 0, UNIQUE (run_id, idx)
 );
 CREATE INDEX coach_advice_date ON coach_advice(for_date, status);
+`, `
+-- what the athlete says a session was really about (the watch cannot know why someone walked). Stated by the athlete = fact, above any inference.
+CREATE TABLE session_context (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT NOT NULL, label_id TEXT, purpose TEXT NOT NULL DEFAULT 'other', note TEXT NOT NULL,
+  intentional_walking INTEGER NOT NULL DEFAULT 0, counts_for_fitness INTEGER NOT NULL DEFAULT 1, run_km REAL, walk_km REAL,
+  created_by TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+);
+CREATE INDEX session_context_date ON session_context(date);
+`, `
+-- context for a stretch of one run (km 9-12), chosen from the anomalies the app finds: slow, fast, walk, pause, heart-rate spike
+ALTER TABLE session_context ADD COLUMN km_from REAL;
+ALTER TABLE session_context ADD COLUMN km_to REAL;
+ALTER TABLE session_context ADD COLUMN kind TEXT;
 `])

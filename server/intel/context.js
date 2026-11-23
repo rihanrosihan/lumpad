@@ -2,6 +2,7 @@
 // The `stable` block (rules, athlete summary, definitions) is byte-identical between calls so provider prefix caching works; everything that changes is in `volatile`.
 import { idb, mdb } from './db.js'
 import { ftsSearch, rrf, mmr, sortByEvidence, getMemory } from './memory.js'
+import { expandTerms, memoryIndex, tfidfRank, recallBlock, recallCount } from './recall.js'
 import { latestTwin } from './twin.js'
 import { listEdges } from './corr.js'
 import { OUTPUT_SCHEMA } from './schema.js'
@@ -13,6 +14,8 @@ import { adviceSummary } from './advice.js'
 import { PLAN } from '../plan/read.js'
 import { redact, STABLE_ATHLETE, DEFINITIONS, INTENT_QUERY, TASKS, renderPromptPure } from './prompt.js'
 import { decompose, filterSql } from './query.js'
+import { ATHLETE } from '../../src/lib/athlete.js'
+import { TARGET } from '../../src/lib/plan.js'
 import { db as app } from '../store.js'
 import { load } from '../db.js'
 
@@ -65,7 +68,10 @@ export function retrieveRunnerContext({ intent = 'daily_brief', question = '', d
   const items = new Map()   // id → {kind, text}: every retrievable item the model may cite
   const add = (m, why) => { if (!m || items.has(m.id)) return; items.set(m.id, { id: m.id, tier: m.tier, kind: m.kind, title: redact(m.title), body: redact(m.body), tag: m.evidence_tag, why, date: m.valid_from || null }) }
   // 1) pinned: locked + active procedural rules
-  const rules = mdb.prepare("SELECT * FROM memory WHERE tier='procedural' AND status='active' ORDER BY locked DESC, id").all().map((r) => ({ id: r.id, title: r.title, rule: redact(r.body), locked: !!r.locked, tag: r.evidence_tag }))
+  // Only locked rules (and the few hand-activated ones) are pinned. The ~1,000 unlocked rules extracted from the knowledge base / earlier coach runs are RETRIEVED by relevance below:
+  // pinning them all cost ~100k tokens per call and left no budget, so every retrieved note was trimmed away (coach_run.context_ids was empty). COACH_PIN_ALL_RULES=1 restores the old behaviour.
+  const pinAll = process.env.COACH_PIN_ALL_RULES === '1'
+  const rules = mdb.prepare(`SELECT * FROM memory WHERE tier='procedural' AND status='active' ${pinAll ? '' : "AND (locked=1 OR source='rules')"} ORDER BY locked DESC, id`).all().map((r) => ({ id: r.id, title: r.title, rule: redact(r.body), locked: !!r.locked, tag: r.evidence_tag }))
   // 2) episodic: focus session + its fingerprint neighbours, otherwise the most recent sessions for the intent
   const focus = activityId ? idb.prepare('SELECT label_id FROM fit_session WHERE activity_id=? OR label_id=?').get(activityId, String(activityId).replace(/^coros:/, ''))?.label_id : null
   const activityDate = focus ? idb.prepare('SELECT date FROM fit_session WHERE label_id=?').get(focus)?.date : null, realToday = wibDate()
@@ -81,42 +87,60 @@ export function retrieveRunnerContext({ intent = 'daily_brief', question = '', d
   const splits = (h) => ({ label_id: h.label_id, date: h.date, km_total: Math.round(h.distance_m / 100) / 10, cols: 'km, pace s/km (elapsed), HR, cadence spm, GCT ms, run share', km: JSON.parse(h.km || '[]').map((k) => [k.km, k.pace, k.hr, k.cad, k.gct, k.runShare]) })
   if (dq.has_filters) {
     const { where, params } = filterSql(dq.filters)
-    const hit = idb.prepare(`SELECT s.label_id, s.date, s.distance_m, s.km FROM fit_session s LEFT JOIN run_weather w ON w.label_id = s.label_id ${where} ORDER BY s.date DESC LIMIT 6`).all(...params)
+    const hit = idb.prepare(`SELECT s.label_id, s.date, s.distance_m, s.km FROM fit_session s LEFT JOIN run_weather w ON w.label_id = s.label_id ${where} ORDER BY s.date ${dq.filters.oldest ? 'ASC' : 'DESC'} LIMIT 6`).all(...params)
     for (const e of epiByLabel(hit.map((h) => h.label_id))) add({ ...e, tier: 'episodic', kind: 'session', evidence_tag: 'MEASURED' }, 'sql filter')
+    if (hit.length && intent === 'question') for (const [id, it] of items) if (it.why === 'recent') items.delete(id) // the asked-for sessions replace the generic latest-5 filler
     telemetry.push(...hit.slice(0, 3).map(splits))
   }
-  if (dq.filters.race_date) { // a named race is always brought in with its splits, even when the question also sets another date range
-    const h = idb.prepare('SELECT label_id, date, distance_m, km FROM fit_session WHERE date = ? ORDER BY distance_m DESC LIMIT 1').get(dq.filters.race_date)
+  for (const rd of dq.filters.race_dates || (dq.filters.race_date ? [dq.filters.race_date] : [])) { // every named race is brought in with its splits, even when the question also sets a date range
+    const h = idb.prepare('SELECT label_id, date, distance_m, km FROM fit_session WHERE date = ? ORDER BY distance_m DESC LIMIT 1').get(rd)
     if (h) { for (const e of epiByLabel([h.label_id])) add({ ...e, tier: 'episodic', kind: 'session', evidence_tag: 'MEASURED' }, 'named race'); if (!telemetry.some((t) => t.label_id === h.label_id)) telemetry.push(splits(h)) }
+    // the days right before a race belong to its story (a half marathon the day before a full one, a long run in the taper)
+    for (const b of idb.prepare('SELECT label_id, date, distance_m, km FROM fit_session WHERE date >= ? AND date < ? AND distance_m >= 5000 ORDER BY date DESC LIMIT 2').all(addDays(rd, -2), rd)) {
+      for (const e of epiByLabel([b.label_id])) add({ ...e, tier: 'episodic', kind: 'session', evidence_tag: 'MEASURED' }, 'before named race'); if (b.distance_m >= 15000 && telemetry.length < 4 && !telemetry.some((t) => t.label_id === b.label_id)) telemetry.push(splits(b)) }
   }
   if (focus && !telemetry.some((t) => t.label_id === focus)) { const h = idb.prepare('SELECT label_id, date, distance_m, km FROM fit_session WHERE label_id=?').get(focus); if (h) telemetry.unshift(splits(h)) }
   // 3) text retrieval (FTS5 BM25) over semantic + episodic, fused with RRF, diversified with MMR
   const q = [question, INTENT_QUERY[intent] || '', focus ? 'durability fade pacing' : ''].join(' ').trim()
   const since = addDays(date, -sinceDays)
-  const bySem = ftsSearch(q, { tiers: ['semantic'], limit: 30 }), byEpi = ftsSearch(q, { tiers: ['episodic'], limit: 12, since }), fused = rrf([bySem.map((x) => x.id), byEpi.map((x) => x.id)])
-  const pool = new Map([...bySem, ...byEpi].map((x) => [x.id, x])), ranked = fused.map((f) => ({ ...pool.get(f.id), fused: f.score })).filter((x) => x.id)
-  for (const x of mmr(ranked, 12).sort(sortByEvidence).slice(0, 12)) add(x, 'text match')
+  // four rankers fused with RRF: BM25 over semantic notes, BM25 over recent episodes, BM25 over the bilingual synonym expansion, and a local TF-IDF cosine over ALL active memory
+  const expanded = expandTerms(question, dq.topics), bySem = ftsSearch(q, { tiers: ['semantic'], limit: 30 }), byEpi = ftsSearch(q, { tiers: ['episodic'], limit: 12, since })
+  const byExp = expanded.length ? ftsSearch(expanded.join(' '), { tiers: ['semantic', 'episodic'], limit: 15, since }) : []
+  let bySim = [], bySimWide = []; try { bySimWide = tfidfRank(memoryIndex(mdb), [question, question, INTENT_QUERY[intent] || '', expanded.join(' ')].join(' '), { limit: 120, minScore: 0.04 }); bySim = bySimWide.slice(0, 30) } catch {}
+  // unlocked rules: text match AND semantic closeness. BM25 alone ranks by rank only, so generic words ("hari", "di") pulled in unrelated rules
+  const nearIds = new Set(bySimWide.map((x) => x.id)), byRules = pinAll ? [] : ftsSearch(q, { tiers: ['procedural'], limit: 20 }).filter((m) => !m.locked && m.source !== 'rules' && nearIds.has(m.id)).slice(0, 8)
+  const simRows = bySim.length ? mdb.prepare(`SELECT id, tier, kind, title, body, evidence_tag, valid_from, source, locked FROM memory WHERE status='active' AND id IN (${bySim.map(() => '?').join(',')})`).all(...bySim.map((x) => x.id)).filter((m) => m.tier !== 'procedural' || (!m.locked && m.source !== 'rules' && !pinAll)) : []
+  const lists = { fts_semantic: bySem.map((x) => x.id), fts_episodic: byEpi.map((x) => x.id), fts_expanded: byExp.map((x) => x.id), fts_rules: byRules.map((x) => x.id), tfidf: simRows.length ? bySim.map((x) => x.id).filter((id) => simRows.some((m) => m.id === id)) : [] }
+  const fused = rrf(Object.values(lists)), simScore = new Map(bySim.map((x) => [x.id, x.score]))
+  const pool = new Map([...simRows, ...byRules, ...byExp, ...byEpi, ...bySem].map((x) => [x.id, x])), ranked = fused.map((f) => ({ ...pool.get(f.id), fused: f.score })).filter((x) => x.id && !(x.tier === 'procedural' && (x.locked || x.source === 'rules' || pinAll))).filter((x) => { const where = Object.values(lists).map((l) => l.indexOf(x.id)).filter((i) => i >= 0); return where.length >= 2 || Math.min(...where) < 6 })
+  const signals = new Map(); for (const x of mmr(ranked, 12).sort(sortByEvidence).slice(0, 12)) { add(x, 'text match'); signals.set(x.id, { via: Object.keys(lists).filter((k) => lists[k].includes(x.id)), cosine: simScore.get(x.id) ?? null, rrf: Math.round(x.fused * 1e4) / 1e4 }) }
+  // 3b) the other databases: journal, daily features, plan vs done, and what the coach already told the athlete on this subject
+  let recall = {}; try { recall = recallBlock({ idb, mdb, app, goal: { state: twinRow.state, target: TARGET }, ctxDates: [...telemetry.map((t) => t.date), ...[...items.values()].map((i) => i.date), ...(dq.filters.race_dates || [])], races: ATHLETE.races, plan: PLAN, query: q, question, filters: dq.filters, from: dq.filters.from, to: dq.filters.to, today: date, intent, topics: dq.topics }) } catch {}
   // 4) correlation edges (supported; top candidates marked tentative)
   const rel = (e) => (dq.topics.includes(e.exposure) ? 1 : 0) + (dq.topics.includes(e.outcome) ? 1 : 0)
   const edges = listEdges().filter((e) => e.status === 'supported' || e.status === 'candidate').sort((a, b) => rel(b) - rel(a)).slice(0, 8).map((e) => ({ exposure: e.exposure, outcome: e.outcome, window_days_before: [e.lag_lo, e.lag_hi], partial_rho: e.partial_rho, ci: [e.ci_lo, e.ci_hi], n: e.n, n_eff: e.n_eff, q: e.q, status: e.status, caveat: 'association in one athlete, not causal' }))
   // 5) budget: drop from the bottom (text matches → older episodes → edges), never the rules or the twin
   // 4b) what the athlete has already done today (+ load after it): the brief must not read as if the day had not started
+  // a free question about past dates or named races is not a brief: leave out today's readiness, plan, load and heat forecast, or the answer turns into today's brief
+  const lookupQ = /\b(kapan|when|first|pertama|berapa|how many|how much|total|jumlah|siapa|which|mana|apa nama|list|daftar)\b/i.test(question), nowQ = /\b(today|hari ini|now|sekarang|besok|tomorrow|tonight|malam ini|boleh|should i|can i|apakah saya boleh)\b/i.test(question)
+  const retroQ = intent === 'question' && !nowQ && !!(lookupQ || dq.filters.race_dates?.length || (dq.filters.to && dq.filters.to < addDays(date, -1))) // a lookup ("when was my first HM", "how many races") is not a brief: no readiness, forecast or plan
   let todayAct, sessionDay; try {
-    if (!retro) { const rows = app.prepare("SELECT id, name, sport, distance_m, duration_s, avg_hr, avg_pace_s_km, training_load FROM activities WHERE source='coros' AND date=? ORDER BY start_ts").all(date)
+    if (!retro && !retroQ) { const rows = app.prepare("SELECT id, name, sport, distance_m, duration_s, avg_hr, avg_pace_s_km, training_load FROM activities WHERE source='coros' AND date=? ORDER BY start_ts").all(date)
       todayAct = todayActivity(rows.map((a) => ({ ...a, fit: !!idb.prepare('SELECT 1 FROM fit_session WHERE activity_id=?').get(a.id) })), twinRow, date, PLAN.find((d) => d.date === addDays(date, 1)) || null) }
-    else sessionDay = buildSessionDay(activityDate, tf)
+    else if (retro) sessionDay = buildSessionDay(activityDate, tf)
   } catch {}
   let adviceHist; if (tf.mode !== 'past') try { const a = adviceSummary({ today: date }); if (a.resolved) adviceHist = { last_days: a.days, checked: a.resolved, by_kind: a.by_kind, recent: a.recent } } catch {}
-  const twin = tf.mode === 'past' ? pastTwin(twinRow.state) : compactTwin(twinRow.state), stable = { schema: SCHEMA, athlete: STABLE_ATHLETE, definitions: DEFINITIONS, rules }, list = [...items.values()]
+  const twin = tf.mode === 'past' || retroQ ? pastTwin(twinRow.state) : compactTwin(twinRow.state), stable = { schema: SCHEMA, athlete: STABLE_ATHLETE, definitions: DEFINITIONS, rules }, list = [...items.values()]
   const facts = focus ? (() => { const h = idb.prepare('SELECT km, run_share, avg_hr, distance_m FROM fit_session WHERE label_id=?').get(focus); try { return h ? sessionFacts(JSON.parse(h.km || '[]'), h) : undefined } catch { return undefined } })() : undefined
   let volatile, tokens
   for (;;) {
-    volatile = { as_of: date, intent, question: redact(question), query: { filters: { ...dq.filters, shoes: dq.filters.shoes?.map((x) => x.name) }, topics: dq.topics }, twin_version: twinRow.version, twin, episodes: list.filter((i) => i.tier === 'episodic'), facts: list.filter((i) => i.tier !== 'episodic'), correlation_edges: edges, telemetry, focus_label: focus || null, today_activity: todayAct, session_day: sessionDay, session_facts: facts, time_frame: tf.mode === 'live' || tf.mode === 'same_day' ? undefined : tf, frame_note: frameNote(tf) || undefined, advice_history: adviceHist, planned_forecast: tf.mode === 'past' ? undefined : forecast || undefined }
+    volatile = { as_of: date, intent, question: redact(question), query: { filters: { ...dq.filters, shoes: dq.filters.shoes?.map((x) => x.name) }, topics: dq.topics }, twin_version: twinRow.version, twin, episodes: list.filter((i) => i.tier === 'episodic'), facts: list.filter((i) => i.tier !== 'episodic'), correlation_edges: edges, telemetry, focus_label: focus || null, today_activity: todayAct, session_day: sessionDay, session_facts: facts, time_frame: tf.mode === 'live' || tf.mode === 'same_day' ? undefined : tf, frame_note: frameNote(tf) || undefined, advice_history: adviceHist, planned_forecast: tf.mode === 'past' || retroQ ? undefined : forecast || undefined, recall: recallCount(recall) ? recall : undefined }
     tokens = EST(JSON.stringify(stable)) + EST(JSON.stringify(volatile)); if (tokens <= tokenBudget || list.length === 0) break
+    const shed = ['prior_answers', 'plan', 'daily', 'journal', 'weekly']  /* counts are never shed: they ARE the answer */.find((k) => recall[k]?.length); if (shed) { recall[shed] = []; continue } // the extra databases go first, before telemetry and notes
     if (telemetry.length > 1) { telemetry.pop(); continue }
     const drop = list.map((i, k) => [i, k]).filter(([i]) => i.why === 'text match').pop() || list.map((i, k) => [i, k]).filter(([i]) => i.why === 'recent').pop() || [list.at(-1), list.length - 1]; list.splice(drop[1], 1)
   }
-  return { schema: SCHEMA, stable, volatile, item_ids: list.map((i) => i.id), tokens_est: tokens }
+  return { schema: SCHEMA, stable, volatile, item_ids: list.map((i) => i.id), tokens_est: tokens, retrieval: { expanded, signals: Object.fromEntries(list.filter((i) => signals.has(i.id)).map((i) => [i.id, signals.get(i.id)])), rankers: Object.fromEntries(Object.entries(lists).map(([k, v]) => [k, v.length])), recall: Object.fromEntries(Object.entries(recall).map(([k, v]) => [k, v.length])) } }
 }
 
 // ---- prompt + output contract (coach/1)

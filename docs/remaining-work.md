@@ -37,23 +37,28 @@ G3 needs 14 consecutive days where every shadow check is identical **and** at le
 
 ## 4. Needs code (safe during G3)
 
-1. **Second AI provider in the Node coach.** Anthropic Messages API behind the existing `complete()`; per-intent routing (race plan and session review to Claude, daily brief stays DeepSeek); JSON via instructions + parse; cost from env prices (`ANTHROPIC_PRICE_IN/OUT_USD_PER_MTOK`, `USD_CNY`) and refuse to run if unset so the monthly cap stays meaningful; eval before routing. Port the same rule to Go at cutover.
-2. **Google screens.** The server endpoints exist and are tested (`server/google_geo.js`); most have no screen:
-   - Long-run route planner (loop + water points + elevation): Routes, Elevation, Places.
-   - Race-day travel card (when to leave): Routes with traffic, Time Zone for non-WIB races.
-   - Share card with a static route map; Street View photos in the race guide.
-   - Roadmap / Satellite / Terrain switch (`/api/map/tile?t=`); the v61 activity map still uses ArcGIS.
-   - Place names on activity cards (`/api/geo/place`), air quality at the run's hour (`/api/env/airhistory`).
-   - Not built: Isochrones API (response shape unknown), pollen (declined), JavaScript/Embed/3D/Places UI Kit (would load Google code and loosen the CSP).
-3. **Server tuning for 4 GB RAM / 60 GB disk.** `postgresql-4gb.conf` (shared_buffers ~1 GB, effective_cache_size ~2 GB, maintenance_work_mem 256 MB), raise `MemoryMax` of `lumpadd-serve` and the oneshot services, journald size limit, log rotation. Needs a Postgres restart: do it right after a morning shadow pass.
-4. **Readiness page:** split Load / PMC / ACWR and HRV / Autonomic into separate panels (they are built together today).
-5. **Pending UI polish:** wrap or scroll rule for Coach chip rows if the sideways swipe is not wanted; official race results move from `src/data/officialRaces.js` to stored data with an edit screen.
+Updated 23 Nov 2026 after checking the tree against the commits. Done since the 21 Nov version of this list:
+
+- Second AI provider in the Node coach: `server/intel/anthropic.js`, per-intent routing (opt-in), env-priced cost, own monthly cap (`e5541a0`). Still needs your key and prices in `.env.v2`, and an eval before routing is switched on.
+- Readiness split into four panels, activity map styles, place and air quality at the run's hour, route planner, editable official results (`9b10974`).
+- Plan engine P0 to P5 (dormant / opt-in, see `docs/` evidence and decisions DEC-8..10): plan.db and guardrail kernel, single plan read path (`PLAN_SOURCE`), zone resolution, micro-patch operators, daily menu, macro generator, AI selector, outcome evaluation, shadow report. Off by default; `PLAN_ALLOW_ANON` lets plan writes work without a login.
+
+Still open:
+
+1. **Google screens not found in `src`:** share card with a static route map (no `maps/static` use), race-day travel card with traffic Routes (check `RaceGoogle.jsx`, which has Street View and Time Zone), pollen declined, Isochrones not built, JS / Embed / 3D / Places UI Kit would loosen the CSP.
+2. **Server tuning for 4 GB RAM / 60 GB disk.** `postgresql-4gb.conf` (shared_buffers ~1 GB, effective_cache_size ~2 GB, maintenance_work_mem 256 MB), raise `MemoryMax` of `lumpadd-serve` and the oneshot services, journald size limit, log rotation. Needs a Postgres restart: do it right after a morning shadow pass.
+3. **Coach chip rows:** wrap or scroll rule if the sideways swipe is not wanted.
+4. **Go parity ports** listed in section 5 (needs a Go toolchain; none in the dev container).
 
 ## 5. Known issues and risks
 
 - **Sub-4 report uses placeholders.** `buildSub4Report` in `lumpadd/cmd/lumpadd/main.go` hard-codes VDOT 31.7, run share 0.28, WBGT forecasts 27.5 / 26.5 and realization ratios 0.59 / 0.75 / 0.95. Replace with data before relying on that card.
 - **Shadow blind spot (reduced).** Per-pass checks only cover what changed; the daily full sweep covers all FIT sessions. Twin and correlation checks still follow Node jobs.
 - **Node and Go rule parity to port at cutover:** truncated-brief retry (2x budget), `softClamp` of over-long answer text.
+- **Correlations view parity to port at cutover:** `corrJob` now also keeps the 30 strongest tests that fail the gate in `corr_explore` (intel.db migration 3; exploratory only, never given to the coach), `correlationGraph` / `OUTCOME_DOMAIN` in `server/intel/corr.js` build the view (served by `GET /api/graph/live?view=correlations`, no Neo4j needed), and `sessionDataset` leaves out sessions the athlete marked `counts_for_fitness=0`. Test safety: in a `node --test` process `server/intel/db.js`, `server/store.js`, `server/db.js` and `server/garmin/db.js` fall back to in-memory or throwaway storage when no database / `DATA_DIR` is set, so a test can never open the real data.
+- **Live graph anchoring parity to port at cutover:** `anchorGraph` / `raceDomain` / `ANCHORED_VIEWS` in `server/neo4j.js` (derived INFORMS links tie races, personal bests and sessions to the PERFORMANCE hub; the Performance, All races and Races/rules/shoes views return `hub` and `unlinked`) and `radialLayout` in `src/lib/graphlayout.js`. The stored graph itself still links a race to performance only through a VDOT point; adding real `INFORMS` edges in the Go projection (`lumpad graph-sync`) would remove the need for derived links.
+- **Athlete context parity to port at cutover:** `session_context` (memory.db migration 5), `server/intel/sessionctx.js`, the `athlete_context` recall block (first key, never shed), exclusion of `counts_for_fitness=0` dates from `durability()` / `fadeCurves()` in the twin, and the dual official/watch PB in `rankBlock`. `server/intel/anomalies.js` (per-km slow / fast / walk / pause / heart-rate-spike detector; `GET /api/session-anomalies`), `sessionBackground` (`GET /api/session-background`: weather, body, pain / injury history, shoe, plan, earlier notes for a day) and the km columns of `session_context` (memory.db migration 6) need the same port. The `tell` tab (`src/TellCoach.jsx`) writes through `/api/session-context` and `/api/athlete-fact`; the Go server needs the same routes.
+- **Retrieval parity to port at cutover:** `server/intel/recall.js` (bilingual synonym expansion, local TF-IDF cosine ranker, journal / daily / plan / earlier-answer recall block) and the pinned-rules change in `server/intel/context.js` (only locked rules are pinned; unlocked rules are retrieved; `COACH_PIN_ALL_RULES=1` restores the old behaviour). `lumpadd/internal/coach/retrieve.go` still pins every active procedural rule and has no recall block; `Volatile` needs a `recall` field and `RenderPrompt` the same key order.
 - **Activity v61 loads ArcGIS tiles** and widened the CSP for it, which contradicts the earlier "no outside tiles" policy; the Google tile proxy exists as the alternative.
 - **Two PWA implementations overlapped** (`58d6a13` mine, `c31503a` yours). It deployed and runs; test install on a phone and tell me if it misbehaves.
 - **Open login:** if the login is off, anyone with the address can read health data and trigger paid calls. Caps: DeepSeek `¥15`/month, Google `GOOGLE_DAILY_CAP` 4000/day; `/api/ingest` still needs its token. `deploy/login.sh on` restores it.

@@ -1,4 +1,5 @@
 // AthleteDigitalTwin (schema twin/1): a versioned JSON state rebuilt from measured data. A new version is written only when its inputs changed.
+import { excludedDates } from './sessionctx.js'
 import crypto from 'node:crypto'
 import { db as app } from '../store.js'
 import { load } from '../db.js'
@@ -173,14 +174,17 @@ function strengthTransfer() {
   const edges = listEdges().filter((e) => /^strength/.test(e.exposure)).slice(0, 6).map((e) => ({ exposure: e.exposure, outcome: e.outcome, days_before: [e.lag_lo, e.lag_hi], partial_rho: e.partial_rho, n: e.n, status: e.status }))
   return { gym_vs_fresh: mx?.gym_to_stride || [], by_lag_hours: mx?.gym_lag || [], edges, note: 'associations in observational data, not proof of cause' }
 }
+// a race attempt whose walking the athlete explained keeps its result but is marked: its run share is not an endurance signal
+const flagRaces = (rc, skip) => (rc?.fm_attempts ? { ...rc, fm_attempts: rc.fm_attempts.map((a) => (skip.has(a.date) ? { ...a, athlete_context: 'walking was by choice (athlete statement): not an endurance signal' } : a)) } : rc)
 export function buildTwin(T = wibDate()) {
-  const kv = load('kv', {}), S = sessions('2025-01-01'), aer = aerobic(S, T, hr800Baseline(T)), lr = loadAndReadiness(T, { z: aer.hr_at_800.z, n: aer.hr_at_800.n })
+  const kv = load('kv', {}), S = sessions('2025-01-01'), skipDates = excludedDates(), Sd = S.filter((s) => !skipDates.has(s.date)), // sessions the athlete says were not a fitness test (walk with a partner, cheering zone, helping others) stay out of durability / fade
+    aer = aerobic(S, T, hr800Baseline(T)), lr = loadAndReadiness(T, { z: aer.hr_at_800.z, n: aer.hr_at_800.n })
   const results = kv['lumpad.results']?.value || {}, last = CHECKPOINTS.filter((c) => results[c.id]?.vdot != null && c.kind === 'tt').at(-1), vdot0 = last ? results[last.id].vdot : TARGET.baseline
   const gaps = []; const noShoe = S.filter((s) => s.date >= '2026-01-01' && !s.shoe_id).length; if (noShoe) gaps.push(`${noShoe} runs in 2026 without a shoe`)
   const noWx = idb.prepare("SELECT COUNT(*) n FROM fit_session s LEFT JOIN run_weather w ON w.label_id=s.label_id WHERE w.label_id IS NULL").get().n; if (noWx) gaps.push(`${noWx} sessions without weather`)
   if (!idb.prepare('SELECT COUNT(*) n FROM daily_log WHERE pain IS NOT NULL').get().n) gaps.push('no pain log yet')
   const pending = app.prepare("SELECT 1 FROM activities WHERE sport='Run' AND source='coros'").all().length - S.length; if (pending > 0) gaps.push(`${pending} runs have no FIT file yet (laps-only metrics)`)
-  return { schema: SCHEMA, as_of: T, physiological_profile: profile(S, T), ...lr, baselines: baselines(S, T), intensity: intensity(S, T), strength_to_run_transfer: strengthTransfer(), aerobic: aer, durability: durability(S, T), heat: heat(S), shoes: shoes(S), fade_curves: fadeCurves(S), races: races(S, kv), injury: injury(T), plan: plan(T, kv),
+  return { schema: SCHEMA, as_of: T, physiological_profile: profile(S, T), ...lr, baselines: baselines(S, T), intensity: intensity(S, T), strength_to_run_transfer: strengthTransfer(), aerobic: aer, durability: durability(Sd, T), heat: heat(S), shoes: shoes(S), fade_curves: fadeCurves(Sd), races: flagRaces(races(S, kv), skipDates), injury: injury(T), plan: plan(T, kv),
     projection: projection(T, vdot0), sessions_with_fit: S.length, data_gaps: gaps }
 }
 // write a new version only when the content (minus the date) changed

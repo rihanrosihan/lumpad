@@ -7,6 +7,7 @@ import ShoeDegradation from './ShoeDegradation.jsx'
 import KnowledgeGraphPanel, { PerformancePanel } from './KnowledgeGraph.jsx'
 import AdviceLog from './AdviceLog.jsx'
 import { GraphAsk, KbAudit, MemoryInbox } from './Studio.jsx'
+import TellCoach from './TellCoach.jsx'
 import { useApi, invalidate, fmtDur, fmtPaceS } from './api.js'
 import { fmtShort } from './lib/calendar.js'
 
@@ -52,6 +53,8 @@ const pace = (x) => (x == null ? '—' : `${Math.floor(x / 60)}:${String(Math.ro
 const sgn = (x, d = 1) => (x == null ? '—' : (x > 0 ? '+' : '') + (+x).toFixed(d))
 export const post = (path, body) => fetch(path, { method: 'POST', headers: { 'content-type': 'application/json', 'x-lumpad': '1' }, body: JSON.stringify(body || {}) }).then(async (r) => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || r.status); return j })
 const PRIO = { now: ['red', 'now'], this_week: ['yellow', 'this week'], later: ['none', 'later'] }
+const RANKER = { fts_semantic: 'notes BM25', fts_episodic: 'sessions BM25', fts_expanded: 'synonym BM25', fts_rules: 'rules BM25', tfidf: 'semantic cosine' }
+const RECALL = { counts: 'exact counts', rankings: 'exact ranking', precedents: 'precedents', goal_gap: 'goal gap', weekly: 'weekly totals', journal: 'daily log', daily: 'daily data', plan: 'plan days', prior_answers: 'earlier answers' }
 const INTENTS = [['daily_brief', "Today's brief"], ['weekly_review', 'Weekly review'], ['race_plan', 'Race strategy'], ['session_review', 'Session review'], ['question', 'Free question']]
 
 export function Result({ p, res }) {
@@ -96,8 +99,20 @@ function Ask({ st, initIntent }) {
         </div>
         {P.data.query && (P.data.query.topics?.length > 0 || Object.keys(P.data.query.filters || {}).length > 0) && <div className="chips"><Chip tone="str">query decomposition</Chip>{Object.entries(P.data.query.filters).map(([k, v]) => <Chip key={k}>{k}: {Array.isArray(v) ? v.join('–') : String(v)}</Chip>)}{P.data.query.topics.slice(0, 6).map((t) => <Chip key={t}>#{t}</Chip>)}</div>}
         {P.data.telemetry?.length > 0 && <p className="muted" style={{ fontSize: '.78rem', margin: '6px 0' }}>Exact km splits attached: {P.data.telemetry.map((t) => `${t.date} (${t.km} km, ${t.splits} splits)`).join(' · ')} · correlation edges: {P.data.edges}</p>}
-        <p className="muted" style={{ fontSize: '.78rem', margin: '6px 0' }}>Retrieved items injected into prompt (SQL filters + BM25 + RRF + MMR + 16-D kNN): {P.data.episodes?.map((e) => `[${e.id}] ${e.title}${e.why && e.why !== 'recent' ? ' (' + e.why + ')' : ''}`).join(' · ')}</p>
+        {P.data.retrieval && <div className="chips"><Chip tone="str">semantic search</Chip>{Object.entries(P.data.retrieval.rankers || {}).map(([k, n]) => <Chip key={k}>{RANKER[k] || k}: {n}</Chip>)}{Object.entries(P.data.retrieval.recall || {}).filter(([, n]) => n > 0).map(([k, n]) => <Chip key={k} tone="green">{RECALL[k] || k}: {n}</Chip>)}</div>}
+        {P.data.retrieval?.expanded?.length > 0 && <p className="muted" style={{ fontSize: '.78rem', margin: '6px 0' }}>Also searched (EN/ID synonyms): {P.data.retrieval.expanded.join(', ')}</p>}
+        <details className="more" open><summary>Retrieved items injected into the prompt ({(P.data.episodes?.length || 0) + (P.data.facts?.length || 0)})</summary>
+          <ul className="plain">{[...(P.data.episodes || []), ...(P.data.facts || [])].map((e) => <li key={e.id} style={{ margin: '6px 0' }}><code>#{e.id}</code> <b>{e.title}</b> <span className="muted">{[e.tier, e.tag, e.date].filter(Boolean).join(' · ')}</span>
+            <div className="chips" style={{ marginTop: 2 }}>{e.why && <Chip>{e.why}</Chip>}{(e.via || []).map((v) => <Chip key={v} tone="blue">{RANKER[v] || v}</Chip>)}{e.cosine != null && <Chip>cos {e.cosine}</Chip>}</div></li>)}</ul></details>
+        {P.data.recall && Object.values(P.data.recall).some((v) => v?.length) && <details className="more"><summary>Other databases attached (journal, daily data, plan, earlier coach answers)</summary>
+          {P.data.recall.counts?.length > 0 && <><b>Exact counts</b><ul>{(() => { const c = P.data.recall.counts[0]; return [['All runs in window', c.all_runs_in_window], ...Object.entries(c.places || {})].map(([k, v]) => <li key={k}>{k}: <b>{v.runs}</b> runs · {v.km} km{v.first ? ` · ${v.first} → ${v.last}` : ''}</li>) })()}</ul></>}
+          {P.data.recall.prior_answers?.length > 0 && <><b>Earlier coach answers</b><ul>{P.data.recall.prior_answers.map((a) => <li key={a.run}>{a.date} · {a.intent}: {a.summary}</li>)}</ul></>}
+          {P.data.recall.journal?.length > 0 && <><b>Your daily log</b><ul>{P.data.recall.journal.map((j) => <li key={j.date}>{j.date}: feel {j.feel ?? '—'}{j.pain ? ` · pain ${j.pain}` : ''}{j.gi != null ? ` · GI ${j.gi}` : ''}{j.fuel ? ` · ${j.fuel}` : ''}</li>)}</ul></>}
+          {P.data.recall.plan?.length > 0 && <><b>Plan vs done</b><ul>{P.data.recall.plan.map((d) => <li key={d.date}>{d.date}: {d.kind}{d.km != null ? ` ${d.km} km planned` : ''}{d.done_km != null ? ` · ${d.done_km} km done` : ''}</li>)}</ul></>}
+          {P.data.recall.daily?.length > 0 && <p className="muted">{P.data.recall.daily.length} daily measurement rows (load, sleep, HRV, resting HR, WBGT, pain) attached.</p>}
+        </details>}
       </div>}
+      <small className="muted">Facts typed above apply to this one answer only. To make something stick (why a session was different, a lasting fact), use the <b>Tell the coach</b> tab.</small>
       {st?.guard?.level === 'paused' && <p className="muted">Monthly cap reached — analyses still run, the coach is back on the 1st.</p>}
       {err && <p className="err" role="alert">{err}</p>}
     </Card>
@@ -497,7 +512,7 @@ function MemoryQueue({ tick, onAct }) {
   </>
 }
 
-const SECTIONS = [{ id: 'ask', label: 'Ask & Twin' }, { id: 'kg', label: 'Knowledge Graph' }, { id: 'mc', label: 'Monte Carlo & RAG' }, { id: 'lag', label: 'Lag Explorer' }, { id: 'mem', label: 'Memory Queue' }, { id: 'adv', label: 'Advice Log' }, { id: 'mat', label: 'Matrices & Episodes' }, { id: 'dur', label: 'Durability & Shoes' }]
+const SECTIONS = [{ id: 'ask', label: 'Ask & Twin' }, { id: 'tell', label: 'Tell the coach' }, { id: 'kg', label: 'Knowledge Graph' }, { id: 'mc', label: 'Monte Carlo & RAG' }, { id: 'lag', label: 'Lag Explorer' }, { id: 'mem', label: 'Memory Queue' }, { id: 'adv', label: 'Advice Log' }, { id: 'mat', label: 'Matrices & Episodes' }, { id: 'dur', label: 'Durability & Shoes' }]
 const jumpTo = (id) => () => { const el = document.getElementById(id); el?.scrollIntoView({ behavior: 'smooth', block: 'start' }); el?.focus({ preventScroll: true }) }
 
 export default function Coach({ go, focus }) {
@@ -553,6 +568,8 @@ export default function Coach({ go, focus }) {
       <Ask st={s} initIntent={focus?.intent} />
       <TwinPillars twin={twin.data} />
     </div>}
+
+    {sec === 'tell' && <div id="cs-tell" tabIndex={-1}><TellCoach /></div>}
 
     {sec === 'kg' && <div id="cs-kg" tabIndex={-1}><PerformancePanel /><GraphAsk /><KnowledgeGraphPanel twin={twin.data} matrices={mat.data} status={s} /><KbAudit /></div>}
 

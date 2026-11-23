@@ -2,8 +2,10 @@
 import { DatabaseSync } from 'node:sqlite'
 import fs from 'node:fs'
 import path from 'node:path'
+import os from 'node:os'
 
-const dir = process.env.DATA_DIR || path.resolve('server/data')
+// a test process without DATA_DIR gets a throwaway directory (and so a throwaway lumpad.db): tests must never open the real activities database
+const dir = process.env.DATA_DIR || (process.env.NODE_TEST_CONTEXT ? fs.mkdtempSync(path.join(os.tmpdir(), 'lumpad-test-')) : path.resolve('server/data'))
 fs.mkdirSync(dir, { recursive: true })
 export const DB_PATH = process.env.LUMPAD_DB || path.join(dir, 'lumpad.db')
 export const db = new DatabaseSync(DB_PATH)

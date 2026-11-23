@@ -34,6 +34,7 @@ export function evaluateOutcomes(db, { today = wibDate(), loadObs, addMemory = n
     const ev = db.prepare("SELECT event FROM plan_adjustment_event WHERE adjustment_id=?").all(a.id).map((e) => e.event)
     if (!ev.includes('applied') || ev.includes('reverted') || ev.includes('evaluated')) continue
     const adj = { ...a, diff: JSON.parse(a.diff) }, from = adj.diff.map((x) => x.date).sort()[0] ?? a.scope_from, obs = observe(adj, { ...loadObs(from, addDays(today, 0)), today })
+    if (!obs.executed) continue   // its dates have not passed: leave it open (revertible) and look again tomorrow
     const [verdict, detail] = evaluateOutcome(a.expected ? JSON.parse(a.expected) : {}, obs)
     addEvent(db, a.id, 'evaluated', 'system', { verdict, ...detail }); out.push({ id: a.id, verdict, ...detail })
     if (addMemory && env.PLAN_OUTCOME_MEMORY === '1' && (verdict === 'harmed' || verdict === 'helped')) addMemory(outcomeMemory(a, verdict, detail))

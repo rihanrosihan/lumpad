@@ -2,7 +2,7 @@
 // "days lo..hi BEFORE the run" (lo ≥ 1, so the run day itself is never counted). Statistics: Spearman + partial (controls: pace, temperature/WBGT, duration),
 // circular-shift permutation p (keeps outcome autocorrelation), block bootstrap by ISO week, n_eff from lag-1 autocorrelation, Benjamini–Hochberg FDR, split-half stability.
 // Edges are ASSOCIATIONS in one athlete's observational data, never causal claims.
-import { idb, tx } from './db.js'
+import { idb, mdb, tx } from './db.js'
 import { spearman, partialSpearman, shiftP, blockBootstrapCI, bh, nEff, ols, rank } from './stats.js'
 
 export const WINDOWS = [[1, 3], [4, 7], [8, 14], [15, 28]]
@@ -67,7 +67,9 @@ export function sessionDataset() {
   const temp = (s) => s.wbgt ?? s.wx ?? s.temp_device_c, steady = rows.filter((s) => s.run_share >= 0.85 && s.distance_m >= 3000 && s.distance_m <= 21000 && s.ef != null && temp(s) != null)
   const fit = steady.length >= 20 ? ols(steady.map((s) => [s.run_pace, temp(s), s.elapsed_s / 60]), steady.map((s) => s.ef)) : null
   const efRes = (s) => (fit && s.ef != null && temp(s) != null && s.run_share >= 0.85 && s.distance_m >= 3000 ? s.ef - (fit.coef[0] + fit.coef[1] * s.run_pace + fit.coef[2] * temp(s) + fit.coef[3] * (s.elapsed_s / 60)) : null)
-  return rows.filter((s) => lags[s.date]).map((s) => ({
+  // sessions the athlete says were not a fitness test (walking by choice at an event, with a partner ...) are left out, exactly as in the twin: their run share is not an endurance signal
+  let skip = new Set(); try { skip = new Set(mdb.prepare('SELECT date FROM session_context WHERE counts_for_fitness=0 AND km_from IS NULL').all().map((r) => r.date)) } catch {}
+  return rows.filter((s) => lags[s.date] && !skip.has(s.date)).map((s) => ({
     date: s.date, ctl: [s.run_pace, temp(s) ?? NaN, s.elapsed_s / 60, s.distance_m / 1000],
     y: { gct_fade: s.gct_fade, drift: s.drift_pahr ?? s.run_drift, ef_resid: efRes(s), run_share_long: s.distance_m >= 16000 ? s.run_share : null, stride_fade: s.stride_fade, pace_hr150: s.pace_hr150, gct_avg: JSON.parse(s.metrics || '{}').run_gct ?? null },
     x: Object.fromEntries(Object.entries(lags[s.date]).filter(([k]) => k !== 'date')),
@@ -82,6 +84,34 @@ export function corrJob() {
     for (const e of keep) idb.prepare('INSERT INTO corr_edge (run_at, exposure, outcome, lag_lo, lag_hi, n, n_eff, rho, partial_rho, ci_lo, ci_hi, p, q, stable, status, note) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(now, e.exposure, e.outcome, e.lag_lo, e.lag_hi, e.n, e.n_eff, e.rho, e.partial_rho, e.ci_lo, e.ci_hi, e.p, e.q, e.stable, e.status, e.note)
     for (const p of prev) if (p.status === 'supported' && !keep.some((e) => e.exposure === p.exposure && e.outcome === p.outcome && e.lag_lo === p.lag_lo)) idb.prepare("INSERT INTO corr_edge (run_at, exposure, outcome, lag_lo, lag_hi, n, n_eff, rho, partial_rho, ci_lo, ci_hi, p, q, stable, status, note) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,'expired','not reconfirmed')").run(p.run_at, p.exposure, p.outcome, p.lag_lo, p.lag_hi, p.n, p.n_eff, p.rho, p.partial_rho, p.ci_lo, p.ci_hi, p.p, p.q, p.stable)
   })
-  return { sessions: ds.length, tested: out.tested, supported: keep.filter((e) => e.status === 'supported').length, candidates: keep.filter((e) => e.status === 'candidate').length }
+  // the strongest tests that did not pass the gate are kept apart as exploratory hypotheses for the graph (never read by the coach)
+  const explore = out.edges.filter((e) => e.status === 'none' && e.n_eff >= 10 && Number.isFinite(e.partial_rho)).sort((a, b) => Math.abs(b.partial_rho) - Math.abs(a.partial_rho) || a.q - b.q).slice(0, EXPLORE_MAX)
+  tx(idb, () => { idb.prepare('DELETE FROM corr_explore').run(); for (const e of explore) idb.prepare('INSERT INTO corr_explore (run_at, exposure, outcome, lag_lo, lag_hi, n, n_eff, rho, partial_rho, ci_lo, ci_hi, p, q, note) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(now, e.exposure, e.outcome, e.lag_lo, e.lag_hi, e.n, e.n_eff, e.rho, e.partial_rho, e.ci_lo, e.ci_hi, e.p, e.q, e.note) })
+  return { sessions: ds.length, tested: out.tested, supported: keep.filter((e) => e.status === 'supported').length, candidates: keep.filter((e) => e.status === 'candidate').length, exploratory: explore.length }
+}
+export const EXPLORE_MAX = 30
+export const listExplore = () => { try { return idb.prepare('SELECT * FROM corr_explore ORDER BY ABS(partial_rho) DESC').all() } catch { return [] } }
+
+// ---- the Correlations view of the live graph: PERFORMANCE in the centre, its domains, the outcomes each domain is measured by, and the factors that associate with them.
+// Three tiers, never mixed up: supported and candidate (passed the gate) and exploratory (tested but NOT significant after multiple-testing correction: a hypothesis, nothing more).
+const HUB = 'PerfDomain:performance'
+const DOMAINS = [['vdot', 'VDOT (race-equivalent fitness)'], ['running_fitness', 'COROS running fitness'], ['cardio', 'Cardiovascular efficiency'], ['durability', 'Durability'], ['speed', 'Speed & personal bests'], ['load', 'Training load']]
+export const OUTCOME_DOMAIN = { gct_fade: 'durability', stride_fade: 'durability', gct_avg: 'durability', run_share_long: 'durability', drift: 'cardio', ef_resid: 'cardio', pace_hr150: 'cardio' }
+const TIER_RANK = { supported: 0, candidate: 1, exploratory: 2 }
+export function correlationGraph(gated = [], explore = []) {
+  const best = new Map()
+  for (const e of [...gated.map((x) => ({ ...x, tier: x.status })), ...explore.map((x) => ({ ...x, tier: 'exploratory' }))]) {
+    if (!(e.outcome in OUTCOME_DOMAIN) || !Number.isFinite(e.partial_rho)) continue
+    const k = `${e.exposure}|${e.outcome}`, cur = best.get(k)
+    if (!cur || TIER_RANK[e.tier] < TIER_RANK[cur.tier] || (e.tier === cur.tier && Math.abs(e.partial_rho) > Math.abs(cur.partial_rho))) best.set(k, e)
+  }
+  const pairs = [...best.values()], expo = new Map(EXPOSURES.map((x) => [x.id, x.label])), outc = new Map(OUTCOMES.map((x) => [x.id, x.label]))
+  const nodes = [{ id: HUB, label: 'PerfDomain', name: 'PERFORMANCE', date: null, ef: null, tl: null, wbgt: null }], edges = [], have = new Set([HUB])
+  const add = (id, label, name) => { if (!have.has(id)) { have.add(id); nodes.push({ id, label, name, date: null, ef: null, tl: null, wbgt: null }) } return id }
+  for (const [k, name] of DOMAINS) { add(`PerfDomain:${k}`, 'PerfDomain', name); edges.push({ from: `PerfDomain:${k}`, to: HUB, type: 'PART_OF' }) }
+  for (const o of new Set(pairs.map((e) => e.outcome))) edges.push({ from: add(`Outcome:${o}`, 'Outcome', outc.get(o) || o), to: `PerfDomain:${OUTCOME_DOMAIN[o]}`, type: 'MEASURES' })
+  for (const e of pairs) edges.push({ from: add(`Factor:${e.exposure}`, 'Factor', expo.get(e.exposure) || e.exposure), to: `Outcome:${e.outcome}`, type: 'CORRELATES', tier: e.tier, rho: e.rho, partial_rho: e.partial_rho, p: e.p, q: e.q, n: e.n, n_eff: e.n_eff, lag: [e.lag_lo, e.lag_hi], ci: [e.ci_lo, e.ci_hi] })
+  const count = (t) => pairs.filter((e) => e.tier === t).length
+  return { connected: true, view: 'correlations', nodes, edges, hub: HUB, unlinked: [], truncated: false, kind: 'correlations', counts: { supported: count('supported'), candidate: count('candidate'), exploratory: count('exploratory') } }
 }
 export const listEdges = (status) => idb.prepare(`SELECT * FROM corr_edge ${status ? 'WHERE status = ?' : ''} ORDER BY (status='supported') DESC, q, ABS(partial_rho) DESC`).all(...(status ? [status] : []))

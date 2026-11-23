@@ -9,3 +9,8 @@ test('citation markers never reach the reader', () => {
   assert.equal(cleanCoachText('belum ditarik [12]'), 'not yet extracted')
   assert.equal(stripCites(null), '')
 })
+
+test('cleanCoachText: the belum-ditarik fix leaves Indonesian answers alone', () => {
+  assert.equal(cleanCoachText('Data belum ditarik.'), 'Data not yet extracted.')
+  assert.equal(cleanCoachText('Hasil resmi belum ditarik, jadi saya tidak bisa menilai untuk hari ini dan kamu sudah lari dengan baik.'), 'Hasil resmi belum ditarik, jadi saya tidak bisa menilai untuk hari ini dan kamu sudah lari dengan baik.')
+})

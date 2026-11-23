@@ -38,3 +38,52 @@ export function colorScale(nodes, measure) {
   const lo = Math.min(...v), hi = Math.max(...v), span = hi - lo || 1
   return (n) => { const x = m.get(n); return x == null || !isFinite(x) ? null : `hsl(${Math.round(220 - ((x - lo) / span) * 220)} 75% 50%)` }
 }
+
+// ---- radial layout around the PERFORMANCE hub (pure, deterministic). Hub in the centre, the domains on the first ring, and everything that informs a domain in that domain's sector,
+// one ring per hop (a crowded hop continues outward, so hops never overlap). Nodes that do not reach the hub are left out (reported in `lost`) unless showUnlinked asks for them on an
+// outer ring. `limit` caps the evidence drawn per domain: races, personal bests and sessions come first, then the newest; whatever hangs only off a hidden node is hidden too (`hidden`).
+const DOMAIN_ORDER = ['PerfDomain:vdot', 'PerfDomain:running_fitness', 'PerfDomain:cardio', 'PerfDomain:durability', 'PerfDomain:speed', 'PerfDomain:load']
+const RANK = { Race: 0, PB: 1, Session: 2, StravaActivity: 3, Shoe: 4, Effort: 5, PerfPoint: 6 }
+export function radialLayout(nodes, edges, hubId, { W = 760, H = 520, pad = 24, showUnlinked = false, limit = Infinity } = {}) {
+  const byId = new Map(nodes.map((n) => [n.id, n])); if (!byId.has(hubId)) return { pos: {}, depth: {}, domainOf: {}, rings: [], sectors: [], lost: nodes.map((n) => n.id), hidden: [] }
+  const adj = new Map(nodes.map((n) => [n.id, []])); for (const e of edges) { adj.get(e.from)?.push(e.to); adj.get(e.to)?.push(e.from) }
+  for (const a of adj.values()) a.sort()
+  const depth = { [hubId]: 0 }, parent = {}, domainOf = {}, q = [hubId]
+  while (q.length) { const x = q.shift(); for (const y of adj.get(x) || []) if (!(y in depth)) { depth[y] = depth[x] + 1; parent[y] = x; domainOf[y] = depth[x] === 0 ? y : domainOf[x]; q.push(y) } }
+  const lost = nodes.filter((n) => !(n.id in depth)).map((n) => n.id)
+  // per domain: keep the `limit` most informative evidence nodes (and the chain to the hub that each needs)
+  const hidden = new Set(), groups = new Map()
+  for (const n of nodes) if (n.id in depth && n.id !== hubId) (groups.get(domainOf[n.id]) || groups.set(domainOf[n.id], []).get(domainOf[n.id])).push(n)
+  if (limit < Infinity) for (const [k, list] of groups) {
+    const ev = list.filter((n) => n.id !== k).sort((a, b) => (RANK[a.label] ?? 7) - (RANK[b.label] ?? 7) || (b.date || '').localeCompare(a.date || '') || a.id.localeCompare(b.id)), keep = new Set([k])
+    for (const n of ev) { if (keep.size - 1 >= limit) break; const chain = []; for (let x = n.id; x && x !== k && !keep.has(x); x = parent[x]) chain.push(x); if (keep.size - 1 + chain.length > limit && keep.size > 1) continue; chain.forEach((c) => keep.add(c)) }
+    for (const n of list) if (!keep.has(n.id)) hidden.add(n.id)
+  }
+  const vis = (n) => n.id in depth && !hidden.has(n.id)
+  for (const k of [...groups.keys()]) groups.set(k, groups.get(k).filter(vis))
+  const keys = [...DOMAIN_ORDER.filter((k) => groups.has(k)), ...[...groups.keys()].filter((k) => !DOMAIN_ORDER.includes(k)).sort()]
+  const weights = keys.map((k) => Math.sqrt(groups.get(k).length)), total = weights.reduce((a, b) => a + b, 0) || 1
+  const cx = W / 2, cy = H / 2, R = Math.min(W, H) / 2 - pad - (showUnlinked ? 26 : 0), sx = (W / 2 - pad - (showUnlinked ? 26 : 0)) / R
+  const first = R * 0.26, step = 15
+  // radii are stacked per domain (depth 2 first, then depth 3 beyond it ...), then every radius is scaled so the outermost one fits the frame
+  const raw = {}, sector = []; let maxR = first
+  keys.forEach((k, i) => {
+    const span = (2 * Math.PI * weights[i]) / total, arc = span * 0.9, rest = groups.get(k).filter((n) => n.id !== k), byDepth = new Map(); for (const n of rest) (byDepth.get(depth[n.id]) || byDepth.set(depth[n.id], []).get(depth[n.id])).push(n)
+    let r = first + step; sector.push({ k, span })
+    for (const [, list] of [...byDepth.entries()].sort((x, y) => x[0] - y[0])) {
+      list.sort((x, y) => (x.date || '').localeCompare(y.date || '') || x.id.localeCompare(y.id)); let i2 = 0
+      while (i2 < list.length) { const cap = Math.max(1, Math.floor((r * arc) / 15)), take = list.slice(i2, i2 + cap); take.forEach((n, j) => { raw[n.id] = { r, a: j, of: take.length, k } }); maxR = Math.max(maxR, r); i2 += take.length; r += step }
+    }
+  })
+  const scale = maxR > R ? (R - first) / (maxR - first) : 1, rr = (r) => (r <= first ? r : first + (r - first) * scale)
+  const pos = { [hubId]: { x: cx, y: cy } }, sectors = []; let a0 = -Math.PI / 2
+  const put = (id, r, a) => { pos[id] = { x: Math.round((cx + r * sx * Math.cos(a)) * 10) / 10, y: Math.round((cy + r * Math.sin(a)) * 10) / 10 } }
+  keys.forEach((k, i) => {
+    const span = sector[i].span, mid = a0 + span / 2, arc = span * 0.9; sectors.push({ id: k, mid, span, r: first }); put(k, first, mid)
+    for (const [id, p] of Object.entries(raw)) if (p.k === k) put(id, rr(p.r), mid - arc / 2 + (arc * (p.a + 0.5)) / p.of)
+    a0 += span
+  })
+  if (showUnlinked && lost.length) lost.forEach((id, j) => put(id, R + 16, -Math.PI / 2 + (2 * Math.PI * (j + 0.5)) / lost.length))
+  const maxD = Math.max(1, ...Object.values(depth))
+  return { pos, depth, domainOf, rings: [first, rr(maxR)].filter((v, i, a) => a.indexOf(v) === i), sectors, lost, hidden: [...hidden], sx, maxD }
+}

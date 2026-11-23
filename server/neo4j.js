@@ -71,8 +71,16 @@ const PERF_EXTRA = [
   `MATCH (a:PerfPoint {metric: 'vdot_line'})-[r:OF_DOMAIN]->(n:PerfDomain) ${ROW('a', 'n')} LIMIT 24`,
   `MATCH (a:Race)-[r:IMPLIES]->(n:PerfPoint) ${ROW('a', 'n')} LIMIT 30`,
   `MATCH (a:PerfDomain)-[r:TARGETS]->(n:Entity) ${ROW('a', 'n')}`,
+  // enrichment (each is bounded; anchorGraph ties what is returned to the domain it informs)
+  `MATCH (a:Session)-[r:WORE]->(n:Shoe) ${ROW('a', 'n')} LIMIT 24`,
+  `MATCH (a:Weather)-[r:IN_BAND]->(n:HeatBand) ${ROW('a', 'n')} LIMIT 16`,
+  `MATCH (a:Topic) OPTIONAL MATCH (a)<-[r:ABOUT]-(n:Memory) WHERE n.status = 'active' ${ROW('a', 'n')} LIMIT 40`,
+  `MATCH (a:Rule) WHERE a.locked = true OPTIONAL MATCH (a)-[r:SUPERSEDES]-(n) ${ROW('a', 'n')} LIMIT 20`,
+  `MATCH (a:Checkpoint)-[r]-(n:Race) ${ROW('a', 'n')} LIMIT 20`,
 ]
-const EXTRA = { sessions: [RACES_ALWAYS], days: [RACES_ALWAYS], performance: PERF_EXTRA }
+// the hub and its six domains, so any view that shows races, personal bests or sessions can be tied to PERFORMANCE
+const SKELETON = `MATCH (a:PerfDomain)-[r:PART_OF]->(n:PerfDomain) ${ROW('a', 'n')}`
+const EXTRA = { sessions: [RACES_ALWAYS], days: [RACES_ALWAYS], performance: PERF_EXTRA, races: [SKELETON], context: [SKELETON] }
 export const LIVE_VIEWS = {
   // newest 30 sessions with everything one hop away
   sessions: `MATCH (a:Session) WITH a ORDER BY a.date DESC LIMIT 30 MATCH (a)-[r]-(n) WHERE type(r) IN ${REL} ${ROW('a', 'n')} LIMIT ${LIVE_MAX.edges}`,
@@ -110,12 +118,59 @@ export function toGraph(rows) {
   }
   return { nodes: [...nodes.values()], edges, truncated: (rows?.length || 0) >= LIVE_MAX.edges || nodes.size >= LIVE_MAX.nodes }
 }
+// ---- anchoring to the performance hub (pure). The stored graph links a race to performance only when it implies a VDOT, so DNFs, 5Ks, trail runs and ultras float free, and most
+// personal bests and sessions sit several hops away. For every node that does not reach the hub, add ONE derived link to the domain it informs. Derived links are marked
+// (derived: true, with the reason) so the page can draw them differently; they are rules over the name / metrics, never stored in Neo4j. Nodes that still cannot be tied
+// to performance are listed in `unlinked` so the page can hide them instead of drawing stray dots.
+export const HUB = 'PerfDomain:performance'
+const ENRICHABLE = new Set(['Race', 'PB', 'Session', 'Shoe', 'Weather', 'HeatBand', 'WeatherHour', 'PlanDay', 'TrainWeek', 'Week', 'Workout', 'Checkpoint', 'Topic', 'Rule'])
+// only the views where performance IS the point: the session / day / memory views are about something else and keep their own layout
+export const ANCHORED_VIEWS = new Set(['performance', 'races', 'context'])
+const DOMAIN = { vdot: 'PerfDomain:vdot', fitness: 'PerfDomain:running_fitness', cardio: 'PerfDomain:cardio', durability: 'PerfDomain:durability', speed: 'PerfDomain:speed', load: 'PerfDomain:load' }
+export function raceDomain(name) {
+  const n = String(name || ''), half = /\b(HM|half)\b/i.test(n), full = /\b(FM|marathon)\b/i.test(n) && !half, km = /\b(\d{1,3}(?:\.\d)?)\s?K\b/i.exec(n), long = half || full || /ultra|trail/i.test(n) || (km && +km[1] > 10.5)
+  return long ? { to: DOMAIN.durability, why: 'a long race (half, full, ultra or trail) tests durability' } : { to: DOMAIN.speed, why: 'a short race (10K or less) tests speed' }
+}
+// words in a topic / rule / week name → the domain it informs (first match wins; no match = not tied, reported as unlinked)
+const NAME_DOMAIN = [[/vdot|goal|target|sub-?4|race pred/i, 'vdot'], [/fade|gct|stride|durab|long run|fuel|cramp|walk/i, 'durability'], [/hrv|rhr|resting|heart|\bef\b|efficien|heat|wbgt|weather|humid|sleep|cardiac|drift/i, 'cardio'],
+  [/pace|speed|interval|tempo|threshold|thr_|sprint|vo2/i, 'speed'], [/ctl|fitness|taper|peak/i, 'fitness'], [/load|volume|\btl\b|km|week|strength|gym|plan|injur|pain|shoe|rest|recover/i, 'load']]
+const nameDomain = (name) => { for (const [re, k] of NAME_DOMAIN) if (re.test(String(name || ''))) return k; return null }
+export function enrichDomain(n) {
+  switch (n.label) {
+    case 'Race': return raceDomain(n.name)
+    case 'PB': return { to: DOMAIN.speed, why: 'a personal best is a speed result' }
+    case 'Session': return n.ef != null ? { to: DOMAIN.cardio, why: 'the session carries a running-efficiency reading' } : n.tl != null ? { to: DOMAIN.load, why: 'the session carries a training load' } : null
+    case 'Shoe': return { to: DOMAIN.load, why: 'shoe mileage is the load a pair has carried' }
+    case 'Weather': case 'HeatBand': case 'WeatherHour': return { to: DOMAIN.cardio, why: 'heat and humidity raise heart rate and lower running efficiency' }
+    case 'PlanDay': case 'TrainWeek': case 'Week': case 'Workout': return { to: DOMAIN.load, why: 'planned and done training is the load input' }
+    case 'Checkpoint': return { to: DOMAIN.durability, why: 'a race checkpoint shows how the pace held over distance' }
+    case 'Topic': case 'Rule': { const k = nameDomain(n.name); return k ? { to: DOMAIN[k], why: `the ${n.label.toLowerCase()} is about ${k === 'fitness' ? 'running fitness' : k}` } : null }
+    default: return null
+  }
+}
+// the domains themselves feed each other: load builds fitness, and a race or best effort sets the VDOT
+const DOMAIN_LINKS = [[DOMAIN.load, DOMAIN.fitness, 'training load builds running fitness'], [DOMAIN.speed, DOMAIN.vdot, 'race and best-effort results set the VDOT']]
+export function anchorGraph(g) {
+  if (!g?.nodes?.some((n) => ENRICHABLE.has(n.label)) || !g.nodes.some((n) => n.id === HUB)) return { ...g, hub: null, unlinked: [] }
+  const ids = new Set(g.nodes.map((n) => n.id)), reach = (edges) => { const adj = new Map(); for (const e of edges) { (adj.get(e.from) || adj.set(e.from, []).get(e.from)).push(e.to); (adj.get(e.to) || adj.set(e.to, []).get(e.to)).push(e.from) }
+    const seen = new Set([HUB]), q = [HUB]; while (q.length) { const x = q.shift(); for (const y of adj.get(x) || []) if (!seen.has(y)) { seen.add(y); q.push(y) } } return seen }
+  const before = reach(g.edges), edges = [...g.edges]
+  for (const n of g.nodes) {
+    if (before.has(n.id)) continue
+    const d = enrichDomain(n)
+    if (d && ids.has(d.to)) edges.push({ from: n.id, to: d.to, type: 'INFORMS', derived: true, why: d.why })
+  }
+  for (const [a, b, why] of DOMAIN_LINKS) if (ids.has(a) && ids.has(b) && !edges.some((e) => e.from === a && e.to === b)) edges.push({ from: a, to: b, type: 'INFORMS', derived: true, why })
+  const after = reach(edges)
+  return { ...g, edges, hub: HUB, unlinked: g.nodes.filter((n) => !after.has(n.id)).map((n) => n.id) }
+}
 export async function live(view, opts = {}) {
   const env = opts.env || neoEnv(); if (!configured(env)) return { connected: false, nodes: [], edges: [] }
   const v = Object.hasOwn(LIVE_VIEWS, view) ? view : 'performance'
   try {
     const [j, ...extra] = await Promise.all([run(LIVE_VIEWS[v], { ...opts, env, timeout: 8000 }), ...(EXTRA[v] || []).map((q) => run(q, { ...opts, env, timeout: 8000 }).catch(() => null))])
-    return { connected: true, view: v, ...toGraph([...extra.flatMap((x) => x?.data?.values || []), ...(j?.data?.values || [])]) }
+    const g = toGraph([...extra.flatMap((x) => x?.data?.values || []), ...(j?.data?.values || [])])
+    return { connected: true, view: v, ...(ANCHORED_VIEWS.has(v) ? anchorGraph(g) : g) }
   }
   catch (err) { return { connected: false, view: v, error: err.message, nodes: [], edges: [] } }
 }
