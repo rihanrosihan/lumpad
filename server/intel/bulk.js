@@ -103,7 +103,7 @@ async function extract(conc, chunkSize = 6000, model = null) {
   const jobs = []
   for (const d of idb.prepare('SELECT doc_id, title, status, source_date, body FROM kb_docs ORDER BY doc_id').all()) {
     if (statusOf(d.status) === 'archived') continue
-    chunk(parseDoc(d.body).body, chunkSize).forEach((c, i) => { const hash = crypto.createHash('sha256').update(EXTRACT_SYSTEM + '|' + c + (model ? '|' + model : '')).digest('hex').slice(0, 24); if (!prog[hash]) jobs.push({ label: `${d.doc_id}#${i}`, hash, doc: d, text: c, ref: `${d.doc_id}#x${i}` }) })
+    chunk(parseDoc(d.body).body, chunkSize).forEach((c, i) => { const hash = crypto.createHash('sha256').update(EXTRACT_SYSTEM + '|' + c + (model ? '|' + model : '')).digest('hex').slice(0, 24); if (!prog[hash]) jobs.push({ label: `${d.doc_id}#${i}`, hash, doc: d, text: c, ref: `${d.doc_id}#x${chunkSize === 6000 ? '' : chunkSize + '-'}${i}${model ? '~' + model : ''}` }) })
   }
   const todo = jobs.slice(0, limit)
   log(`extract: ${todo.length} chunks to read (${jobs.length - todo.length} deferred, ${Object.keys(prog).length} already done)`)
