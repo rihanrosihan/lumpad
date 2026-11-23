@@ -34,3 +34,9 @@ test('contradictions need a verbatim quote from EACH document and become candida
     { topic: 'Made up', a_quote: 'Opening pace 6:15/km aktif', b_quote: 'never written', explanation: 'x' }] }, { a, b, ref: '03.9~04.4' })
   assert.equal(ms.length, 1); assert.equal(ms[0].kind, 'conflict'); assert.equal(ms[0].status, 'candidate'); assert.equal(ms[0].payload.doc_b, '04.4'); assert.equal(ms[0].valid_from, '2026-11-10')
 })
+
+test('two models: the same sentence is recognised as one claim, different ones are not', () => {
+  assert.equal(B.sameClaim('Opening pace 6:15/km aktif', 'opening pace **6:15/km** aktif, kandidat 6:10'), true)
+  assert.equal(B.sameClaim('Opening pace 6:15/km aktif', 'Creatine baru dibeli 18 Sep'), false)
+  assert.equal(B.sameClaim('threshold pace 5:50 per km dengan caveat', 'threshold pace 5:50 per km tanpa caveat'), true)
+})

@@ -137,3 +137,11 @@ test('session review of a run whose FIT is not imported yet is refused, not answ
   assert.equal(st.no_fit, true)
   await assert.rejects(() => runCoach({ intent: 'session_review', question: 'session 999000111', activityId: 'coros:999000111', fetchFn: async () => { throw new Error('model must not be called') } }), /not imported yet/)
 })
+test('custom gateway: a high-effort reply is streamed (SSE) so a proxy cannot cut it at ~100 s, and assembled like a normal reply', async () => {
+  const L2 = await import('./llm.js')
+  const enc = new TextEncoder(), sse = ['data: {"choices":[{"delta":{"content":"{\\"a\\":"}}]}\n\n', 'data: {"choices":[{"delta":{"content":"7}"},"finish_reason":"stop"}]}\n\n', 'data: {"choices":[],"usage":{"prompt_tokens":5,"completion_tokens":3,"total_tokens":8}}\n\ndata: [DONE]\n\n']
+  let sent; const fetchFn = async (url, opt) => { sent = JSON.parse(opt.body); return { ok: true, status: 200, body: new ReadableStream({ start(c) { for (const x of sse) c.enqueue(enc.encode(x)); c.close() } }) } }
+  process.env.DEEPSEEK_API_KEY = 'sk-test-stream-0000'
+  const r = await L2.apiStream('/chat/completions', { model: 'm', messages: [] }, { fetchFn })
+  assert.equal(sent.stream, true); assert.equal(r.choices[0].message.content, '{"a":7}'); assert.equal(r.choices[0].finish_reason, 'stop'); assert.equal(r.usage.total_tokens, 8)
+})

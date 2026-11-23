@@ -180,7 +180,7 @@ const routes = {
   // Coach Studio: graph Q&A, knowledge-base audit, memory inbox (grouped by source document), race briefing
   'POST /api/graph/ask': async (_q, req) => graphAsk(JSON.parse((await readBody(req, 4e3)).toString() || '{}').question),
   'GET /api/kb/audit': async () => kbAudit(),
-  'GET /api/memory/inbox': async (q) => memoryInbox({ source: q.get('source') || '', doc: q.get('doc') || '', limitDocs: Math.min(+q.get('docs') || 12, 40), offsetDocs: Math.max(+q.get('offset') || 0, 0) }),
+  'GET /api/memory/inbox': async (q) => memoryInbox({ source: q.get('source') || '', doc: q.get('doc') || '', agreed: q.get('agreed') === '1', limitDocs: Math.min(+q.get('docs') || 12, 40), offsetDocs: Math.max(+q.get('offset') || 0, 0) }),
   'POST /api/memory/bulk': async (_q, req) => { const b = JSON.parse((await readBody(req, 2e4)).toString() || '{}'); return bulkAction(b.ids, b.action, principal(req) || 'athlete') },
   'GET /api/race/brief': async () => raceBrief(),
   'GET /api/coach/quota': async () => getQuota(),

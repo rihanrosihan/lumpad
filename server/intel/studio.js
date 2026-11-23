@@ -94,19 +94,20 @@ export function kbAudit({ today = wib() } = {}) {
 
 // ---------------------------------------------------------------- memory inbox
 const PENDING = "('candidate','proposal')"
-export function memoryInbox({ source = '', doc = '', limitDocs = 12, offsetDocs = 0 } = {}) {
+export function memoryInbox({ source = '', doc = '', agreed = false, limitDocs = 12, offsetDocs = 0 } = {}) {
   const all = mdb.prepare(`SELECT id, tier, kind, title, body, payload, evidence_tag, confidence, status, source, source_ref, created_by, created_at, valid_from FROM memory WHERE status IN ${PENDING} ${source ? 'AND source=@source' : ''} ORDER BY id`).all(source ? { source } : {})
   const groups = new Map()
   for (const m of all) {
     let p = {}; try { p = JSON.parse(m.payload || '{}') } catch {}
     const g = p.doc || (m.source_ref || '').split('#')[0] || (m.source === 'coach' ? 'coach' : 'other')
     if (doc && g !== doc) continue
-    if (!groups.has(g)) groups.set(g, { doc: g, title: idb.prepare('SELECT title FROM kb_docs WHERE doc_id=?').get(g)?.title || (g === 'coach' ? 'Written by the coach' : g), count: 0, rules: 0, items: [] })
-    const G = groups.get(g); G.count++; if (m.tier === 'procedural') G.rules++
-    G.items.push({ id: m.id, tier: m.tier, kind: m.kind, title: m.title, body: m.body.slice(0, 600), quote: p.quote || null, quote_b: p.quote_b || null, doc_b: p.doc_b || null, tag: m.evidence_tag, confidence: m.confidence, status: m.status, source: m.source, by: m.created_by, valid_from: m.valid_from })
+    if (agreed && (p.models || []).length < 2) continue
+    if (!groups.has(g)) groups.set(g, { doc: g, title: idb.prepare('SELECT title FROM kb_docs WHERE doc_id=?').get(g)?.title || (g === 'coach' ? 'Written by the coach' : g), count: 0, rules: 0, agreed: 0, items: [] })
+    const G = groups.get(g); G.count++; if (m.tier === 'procedural') G.rules++; if ((p.models || []).length >= 2) G.agreed = (G.agreed || 0) + 1
+    G.items.push({ id: m.id, tier: m.tier, kind: m.kind, title: m.title, body: m.body.slice(0, 600), quote: p.quote || null, quote_b: p.quote_b || null, doc_b: p.doc_b || null, models: p.models || [], agreed: (p.models || []).length >= 2, tag: m.evidence_tag, confidence: m.confidence, status: m.status, source: m.source, by: m.created_by, valid_from: m.valid_from })
   }
   const list = [...groups.values()].sort((a, b) => b.count - a.count || a.doc.localeCompare(b.doc))
-  return { total: all.length, docs: list.length, groups: list.slice(offsetDocs, offsetDocs + limitDocs) }
+  return { total: list.reduce((n, g) => n + g.count, 0), docs: list.length, groups: list.slice(offsetDocs, offsetDocs + limitDocs) }
 }
 // bulk approve / retract; locked rules are skipped, never changed. A proposal approved here becomes an ACTIVE rule the coach is bound by.
 export function bulkAction(ids, action, by = 'athlete') {

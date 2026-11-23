@@ -16,6 +16,24 @@ async function api(path, { method = 'GET', body, fetchFn = fetch, timeout = meth
   return j
 }
 
+// Streamed chat completion (SSE) assembled into the same shape as a normal reply. A gateway behind Cloudflare answers HTTP 524 when a plain request takes longer than ~100 s,
+// which high-effort reasoning does; a stream keeps the connection alive. Falls back to the plain error handling of api() on a non-2xx status.
+export async function apiStream(path, body, { fetchFn = fetch, timeout = 600000 } = {}) {
+  const r = await fetchFn(BASE() + path, { method: 'POST', headers: { authorization: 'Bearer ' + key(), 'content-type': 'application/json', accept: 'text/event-stream' }, body: JSON.stringify({ ...body, stream: true, stream_options: { include_usage: true } }), signal: AbortSignal.timeout(timeout) })
+  if (!r.ok) { const text = await r.text(); let j; try { j = JSON.parse(text) } catch { j = null }; throw Object.assign(new Error(`deepseek ${r.status}: ${(j?.error?.message || text).slice(0, 200)}`), { status: r.status, body: j }) }
+  let content = '', finish = null, usage = null, buf = ''
+  const eat = (line) => {
+    const t = line.trim(); if (!t.startsWith('data:')) return; const d = t.slice(5).trim(); if (!d || d === '[DONE]') return
+    let j; try { j = JSON.parse(d) } catch { return }
+    if (j.error) throw Object.assign(new Error(`deepseek stream: ${String(j.error.message || JSON.stringify(j.error)).slice(0, 200)}`), { status: 502 })
+    const ch = j.choices?.[0]; if (ch?.delta?.content) content += ch.delta.content; if (ch?.finish_reason) finish = ch.finish_reason; if (j.usage) usage = j.usage
+  }
+  const dec = new TextDecoder()
+  if (r.body?.getReader) { const rd = r.body.getReader(); for (;;) { const { done, value } = await rd.read(); if (done) break; buf += dec.decode(value, { stream: true }); let i; while ((i = buf.indexOf('\n')) >= 0) { eat(buf.slice(0, i)); buf = buf.slice(i + 1) } } buf += dec.decode(); eat(buf) }
+  else { for (const l of (await r.text()).split('\n')) eat(l) }
+  return { choices: [{ message: { content }, finish_reason: finish }], usage }
+}
+
 // ---- model resolution: highest-versioned "Flash" (name like "DeepSeek-V4.1-Flash"); cached daily; explicit DEEPSEEK_MODEL pins
 export const versionOf = (name) => { const m = /V(\d+(?:\.\d+)*)/i.exec(name || ''); return m ? m[1].split('.').map(Number) : [0] }
 export const cmpVer = (a, b) => { for (let i = 0; i < Math.max(a.length, b.length); i++) { const d = (a[i] || 0) - (b[i] || 0); if (d) return d } return 0 }
@@ -82,17 +100,17 @@ export async function complete(o = {}) {
     return { ...r, retried_low: true, cost_cny: r.cost_cny != null && e.cost_cny != null ? +(r.cost_cny + e.cost_cny).toFixed(4) : r.cost_cny }
   }
 }
-async function completeOnce({ system, user, messages, effort = 'high', maxTokens, intent = 'question', fetchFn = fetch, skipGuard = false } = {}) {
+async function completeOnce({ system, user, messages, effort = 'high', maxTokens, intent = 'question', fetchFn = fetch, skipGuard = false, model: modelOverride } = {}) {
   const g = guard(intent); if (!skipGuard && !g.ok) throw Object.assign(new Error(g.reason), { status: 429, guard: g })
-  const model = await resolveModel({ fetchFn }); let pre = null; try { pre = await snapBalance({ fetchFn }) } catch {}
+  const model = modelOverride ? { id: modelOverride, name: modelOverride, efforts: ['low', 'high', 'max'] } : await resolveModel({ fetchFn }); let pre = null; if (!getConfig().custom_endpoint) { try { pre = await snapBalance({ fetchFn }) } catch {} }
   const body = { model: model.id, messages: messages || [{ role: 'system', content: system }, { role: 'user', content: user }], response_format: { type: 'json_object' }, ...(maxTokens > 0 ? { max_tokens: maxTokens } : {}), stream: false, ...(model.efforts?.includes(effort) ? { reasoning_effort: effort } : {}) }
   let j, lastErr
   for (let a = 0; a < 3; a++) {
-    try { j = await api('/chat/completions', { method: 'POST', body, fetchFn }); break }
-    catch (e) { lastErr = e; if (e.status === 400 && body.reasoning_effort) { delete body.reasoning_effort; continue } if (![429, 500, 502, 503, 504].includes(e.status)) throw e; await new Promise((r) => setTimeout(r, 1500 * (a + 1))) }
+    try { j = getConfig().custom_endpoint ? await apiStream('/chat/completions', body, { fetchFn }) : await api('/chat/completions', { method: 'POST', body, fetchFn }); break }
+    catch (e) { lastErr = e; if (e.status === 400 && body.reasoning_effort) { delete body.reasoning_effort; continue } if (![429, 500, 502, 503, 504, 524].includes(e.status)) throw e; await new Promise((r) => setTimeout(r, 1500 * (a + 1))) }
   }
   if (!j) throw lastErr
-  let post = null; try { post = await snapBalance({ fetchFn }) } catch {}
+  let post = null; if (!getConfig().custom_endpoint) { try { post = await snapBalance({ fetchFn }) } catch {} }
   const text = j.choices?.[0]?.message?.content ?? '', finish = j.choices?.[0]?.finish_reason
   if (finish === 'length') throw Object.assign(new Error('response truncated (max_tokens) — the model used its whole budget before finishing'), { status: 502, text, truncated: true, cost_cny: pre != null && post != null ? +Math.max(0, pre - post).toFixed(4) : null })
   let json = null; try { json = JSON.parse(stripFence(text)) } catch {}
@@ -108,7 +126,7 @@ export async function completeWithTools({ messages, tools, effort = 'low', maxTo
   let j, lastErr
   for (let a = 0; a < 3; a++) {
     try { j = await api('/chat/completions', { method: 'POST', body, fetchFn }); break }
-    catch (e) { lastErr = e; if (e.status === 400 && body.reasoning_effort) { delete body.reasoning_effort; continue } if (![429, 500, 502, 503, 504].includes(e.status)) throw e; await new Promise((r) => setTimeout(r, 1500 * (a + 1))) }
+    catch (e) { lastErr = e; if (e.status === 400 && body.reasoning_effort) { delete body.reasoning_effort; continue } if (![429, 500, 502, 503, 504, 524].includes(e.status)) throw e; await new Promise((r) => setTimeout(r, 1500 * (a + 1))) }
   }
   if (!j) throw lastErr
   const ch = j.choices?.[0]; if (!ch?.message) throw Object.assign(new Error('no message in the model reply'), { status: 502 })

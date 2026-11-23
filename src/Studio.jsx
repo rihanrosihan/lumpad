@@ -35,25 +35,26 @@ export function KbAudit() {
 }
 
 export function MemoryInbox() {
-  const [tick, setTick] = useState(0), [open, setOpen] = useState(null), [busy, setBusy] = useState(''), [msg, setMsg] = useState(null)
-  const I = useApi(`/api/memory/inbox?docs=40&_=${tick}`), d = I.data
+  const [tick, setTick] = useState(0), [onlyAgreed, setOnlyAgreed] = useState(false), [open, setOpen] = useState(null), [busy, setBusy] = useState(''), [msg, setMsg] = useState(null)
+  const I = useApi(`/api/memory/inbox?docs=40${onlyAgreed ? '&agreed=1' : ''}&_=${tick}`), d = I.data
   const act = async (ids, action, label) => {
     if (action === 'approve' && ids.some((id) => d.groups.flatMap((g) => g.items).find((x) => x.id === id)?.tier === 'procedural') && !confirm('This includes RULES. Approved rules become binding for the coach. Approve anyway?')) return
     setBusy(label); setMsg(null)
     try { const r = await post('/api/memory/bulk', { ids, action }); setMsg({ ok: true, text: `${r.done} ${action === 'approve' ? 'approved' : 'retracted'}${r.skipped.length ? `, ${r.skipped.length} skipped` : ''}` }); invalidate('memory'); setTick((x) => x + 1) } catch (e) { setMsg({ ok: false, text: e.message }) }
     setBusy('')
   }
-  return <Card title="Memory inbox — grouped by source document" right={d && <Chip tone={d.total ? 'yellow' : 'green'}>{d.total} waiting</Chip>}>
+  return <Card title="Memory inbox — grouped by source document" right={d && <><label className="muted" style={{ marginRight: 8 }}><input type="checkbox" checked={onlyAgreed} onChange={(e) => setOnlyAgreed(e.target.checked)} /> only claims two models agree on</label><Chip tone={d.total ? 'yellow' : 'green'}>{d.total} waiting</Chip></>}>
     {!d ? <p className="muted">Loading…</p> : !d.groups.length ? <p className="muted">Nothing is waiting for your approval.</p> : d.groups.map((g) => <div key={g.doc} style={{ borderTop: '1px solid var(--line, #8883)', padding: '8px 0' }}>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
         <button type="button" className="btn sm" aria-expanded={open === g.doc} onClick={() => setOpen(open === g.doc ? null : g.doc)}>{open === g.doc ? '▾' : '▸'} {g.doc} · {g.title}</button>
-        <Chip tone="gray">{g.count} claims</Chip>{g.rules > 0 && <Chip tone="yellow">{g.rules} rules</Chip>}
+        <Chip tone="gray">{g.count} claims</Chip>{g.agreed > 0 && <Chip tone="green">{g.agreed} agreed by 2 models</Chip>}{g.rules > 0 && <Chip tone="yellow">{g.rules} rules</Chip>}
         <span style={{ flex: 1 }} />
         <button type="button" className="btn sm primary" style={{ width: 'auto' }} disabled={!!busy} onClick={() => act(g.items.map((x) => x.id), 'approve', g.doc)}>{busy === g.doc ? 'Saving…' : `✓ Approve ${g.count}`}</button>
+        {g.agreed > 0 && g.agreed < g.count && <button type="button" className="btn sm" disabled={!!busy} onClick={() => act(g.items.filter((x) => x.agreed).map((x) => x.id), 'approve', g.doc + 'a')}>{busy === g.doc + 'a' ? 'Saving…' : `✓ Approve the ${g.agreed} agreed`}</button>}
         <button type="button" className="btn sm" disabled={!!busy} onClick={() => act(g.items.map((x) => x.id), 'retract', g.doc)}>Retract all</button>
       </div>
       {open === g.doc && <ul className="plain" style={{ marginTop: 6 }}>{g.items.map((m) => <li key={m.id} style={{ margin: '8px 0' }}>
-        <b>{m.title}</b> <Chip tone={m.tier === 'procedural' ? 'yellow' : 'gray'}>{m.tier === 'procedural' ? 'rule' : m.kind}</Chip> <Chip tone="gray">{m.tag}</Chip>
+        <b>{m.title}</b> <Chip tone={m.tier === 'procedural' ? 'yellow' : 'gray'}>{m.tier === 'procedural' ? 'rule' : m.kind}</Chip> <Chip tone="gray">{m.tag}</Chip>{m.agreed && <Chip tone="green">✓ {m.models.length} models agree</Chip>}
         <div>{m.body}</div>
         {m.quote && <blockquote className="muted" style={{ margin: '4px 0', paddingLeft: 8, borderLeft: '3px solid #8886' }}>{m.doc_b ? `${g.doc}: ` : ''}“{m.quote}”</blockquote>}
         {m.quote_b && <blockquote className="muted" style={{ margin: '4px 0', paddingLeft: 8, borderLeft: '3px solid #8886' }}>{m.doc_b}: “{m.quote_b}”</blockquote>}

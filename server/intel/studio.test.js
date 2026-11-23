@@ -37,6 +37,7 @@ test('inbox groups pending claims by document with their quote; bulk approve act
   const r = M.addMemory({ tier: 'procedural', kind: 'rule', title: '03.9 · r', body: 'br', payload: { doc: '03.9', quote: 'rule quote' }, status: 'proposal', source: 'kb_extract', source_ref: '03.9#x1.1', created_by: 'extractor' })
   const inbox = S.memoryInbox({ source: 'kb_extract' }), g = inbox.groups.find((x) => x.doc === '03.9')
   assert.ok(g && g.rules >= 1 && g.items.some((i) => i.id === a.id && i.quote === 'verbatim') && g.title === 'Race plan')
+  assert.equal(S.memoryInbox({ source: 'kb_extract', agreed: true }).total, 0, 'single-model claims are not in the agreed view')
   const res = S.bulkAction([a.id, r.id, 999999], 'approve'); assert.equal(res.done, 2); assert.equal(res.skipped.length, 1)
   assert.equal(M.getMemory(a.id).status, 'active'); assert.equal(M.getMemory(r.id).status, 'active')
   assert.throws(() => S.bulkAction([a.id], 'delete'), /bad action/)

@@ -78,41 +78,56 @@ Rules:
 const norm = (s) => String(s || '').toLowerCase().replace(/[*_`>#]/g, '').replace(/\s+/g, ' ').trim()
 const KINDS = new Set(['fact', 'baseline', 'rule', 'decision', 'lesson', 'hypothesis', 'plan', 'constraint'])
 // pure: turn a model reply into memory rows; claims whose quote is not in the chunk are dropped
-export function claimsToMemories(reply, { docId, chunkText, ref, sourceDate, docStatus }) {
+export function sameClaim(a, b) {
+  const x = norm(a), y = norm(b); if (!x || !y) return false
+  if (x.includes(y) || y.includes(x)) return true
+  const wa = new Set(x.split(' ')), wb = new Set(y.split(' ')); let inter = 0; for (const w of wa) if (wb.has(w)) inter++
+  return inter / (wa.size + wb.size - inter) >= 0.6
+}
+export function claimsToMemories(reply, { docId, chunkText, ref, sourceDate, docStatus, model = null }) {
   const hay = norm(chunkText), out = [], dropped = []
   for (const c of Array.isArray(reply?.claims) ? reply.claims.slice(0, 12) : []) {
     const title = String(c?.title || '').trim().slice(0, 160), body = String(c?.body || '').trim().slice(0, 600), quote = String(c?.quote || '').trim(), kind = KINDS.has(c?.kind) ? c.kind : 'fact'
     if (!title || !body || !quote) { dropped.push('incomplete'); continue }
     if (!hay.includes(norm(quote))) { dropped.push('quote not in text'); continue }
     const procedural = kind === 'rule' || kind === 'constraint'
-    out.push({ tier: procedural ? 'procedural' : 'semantic', kind, title: `${docId} · ${title}`.slice(0, 200), body, payload: { doc: docId, quote: quote.slice(0, 300), doc_status: docStatus, extracted: true }, evidence_tag: kind === 'hypothesis' ? 'HYPOTHESIS' : 'KB',
+    out.push({ tier: procedural ? 'procedural' : 'semantic', kind, title: `${docId} · ${title}`.slice(0, 200), body, payload: { doc: docId, quote: quote.slice(0, 300), doc_status: docStatus, extracted: true, models: model ? [model] : [] }, evidence_tag: kind === 'hypothesis' ? 'HYPOTHESIS' : 'KB',
       confidence: Number.isFinite(+c.confidence) ? Math.min(1, Math.max(0, +c.confidence)) : null, status: procedural ? 'proposal' : 'candidate', source: 'kb_extract', source_ref: `${ref}.${out.length}`, created_by: 'extractor', valid_from: sourceDate || null })
   }
   return { memories: out, dropped }
 }
-async function extract(conc, chunkSize = 6000) {
+async function extract(conc, chunkSize = 6000, model = null) {
   const { chunk, statusOf, parseDoc } = await import('./kb.js'), { complete } = await import('./llm.js'), { addMemory } = await import('./memory.js')
   const progressFile = path.join(dir, 'tmp', 'extract-progress.json'); fs.mkdirSync(path.dirname(progressFile), { recursive: true, mode: 0o700 })
   let prog = {}; try { prog = JSON.parse(fs.readFileSync(progressFile, 'utf8')) } catch {}
   const jobs = []
   for (const d of idb.prepare('SELECT doc_id, title, status, source_date, body FROM kb_docs ORDER BY doc_id').all()) {
     if (statusOf(d.status) === 'archived') continue
-    chunk(parseDoc(d.body).body, chunkSize).forEach((c, i) => { const hash = crypto.createHash('sha256').update(EXTRACT_SYSTEM + '|' + c).digest('hex').slice(0, 24); if (!prog[hash]) jobs.push({ label: `${d.doc_id}#${i}`, hash, doc: d, text: c, ref: `${d.doc_id}#x${i}` }) })
+    chunk(parseDoc(d.body).body, chunkSize).forEach((c, i) => { const hash = crypto.createHash('sha256').update(EXTRACT_SYSTEM + '|' + c + (model ? '|' + model : '')).digest('hex').slice(0, 24); if (!prog[hash]) jobs.push({ label: `${d.doc_id}#${i}`, hash, doc: d, text: c, ref: `${d.doc_id}#x${i}` }) })
   }
   const todo = jobs.slice(0, limit)
   log(`extract: ${todo.length} chunks to read (${jobs.length - todo.length} deferred, ${Object.keys(prog).length} already done)`)
   if (dry) { todo.slice(0, 15).forEach((j) => log('  would read', j.label, j.text.length, 'chars')); return }
   const quotes = new Set(mdb.prepare("SELECT json_extract(payload,'$.quote') q FROM memory WHERE source='kb_extract'").all().map((r) => norm(r.q))) // a finer pass never re-adds a sentence that already has a claim
+  const byDoc = new Map()   // existing extracted claims per document, for cross-model agreement
+  for (const r of mdb.prepare("SELECT id, payload FROM memory WHERE source='kb_extract' AND created_by='extractor' AND status IN ('candidate','proposal','active')").all()) { let p = {}; try { p = JSON.parse(r.payload) } catch {} if (!byDoc.has(p.doc)) byDoc.set(p.doc, []); byDoc.get(p.doc).push({ id: r.id, quote: p.quote || '', models: p.models || [] }) }
+  const markAgreed = (id, m) => { const row = mdb.prepare('SELECT payload, confidence FROM memory WHERE id=?').get(id); let p = {}; try { p = JSON.parse(row.payload) } catch {}; p.models = [...new Set([...(p.models || []), m])]; mdb.prepare('UPDATE memory SET payload=?, confidence=?, updated_at=? WHERE id=?').run(JSON.stringify(p), Math.max(row.confidence ?? 0, 0.9), new Date().toISOString(), id) }
   const totals = { claims: 0, created: 0, dup: 0, dropped: 0, tokens: 0 }
   const r = await pool(todo, conc, async (j) => {
-    const res = await complete({ system: EXTRACT_SYSTEM, user: `Document ${j.doc.doc_id} — ${j.doc.title} (status: ${j.doc.status || 'n/a'}, date: ${j.doc.source_date || 'n/a'})\n\nTEXT:\n${j.text}`, effort: 'high', intent: 'weekly_review' })
+    const res = await complete({ system: EXTRACT_SYSTEM, user: `Document ${j.doc.doc_id} — ${j.doc.title} (status: ${j.doc.status || 'n/a'}, date: ${j.doc.source_date || 'n/a'})\n\nTEXT:\n${j.text}`, effort: 'high', intent: 'weekly_review', ...(model ? { model } : {}) })
     if (!res.json || !Array.isArray(res.json.claims)) throw new Error('reply was not {"claims":[…]}')
-    const { memories, dropped } = claimsToMemories(res.json, { docId: j.doc.doc_id, chunkText: j.text, ref: j.ref, sourceDate: j.doc.source_date, docStatus: j.doc.status })
-    let created = 0, dup = 0
-    for (const m of memories) { const qk = norm(m.payload.quote); if (quotes.has(qk)) { dup++; continue } const a = addMemory(m); if (a.created) { created++; quotes.add(qk) } else dup++ }
+    const { memories, dropped } = claimsToMemories(res.json, { docId: j.doc.doc_id, chunkText: j.text, ref: j.ref, sourceDate: j.doc.source_date, docStatus: j.doc.status, model: res.model || model })
+    let created = 0, dup = 0, agreed = 0
+    for (const m of memories) {
+      const qk = norm(m.payload.quote), mine = m.payload.models[0]
+      const twin = [...(byDoc.get(m.payload.doc) || [])].find((e) => sameClaim(e.quote, m.payload.quote))
+      if (twin) { if (mine && !twin.models.includes(mine)) { twin.models.push(mine); agreed++; markAgreed(twin.id, mine) } else dup++; continue }   // another model already made this claim: record the agreement instead of a duplicate
+      if (quotes.has(qk)) { dup++; continue }
+      const a = addMemory(m); if (a.created) { created++; quotes.add(qk); if (!byDoc.has(m.payload.doc)) byDoc.set(m.payload.doc, []); byDoc.get(m.payload.doc).push({ id: a.id, quote: m.payload.quote, models: [...m.payload.models] }) } else dup++
+    }
     Object.assign(totals, { claims: totals.claims + memories.length, created: totals.created + created, dup: totals.dup + dup, dropped: totals.dropped + dropped.length, tokens: totals.tokens + (res.usage?.total_tokens || 0) })
     prog[j.hash] = { at: new Date().toISOString(), n: memories.length }; fs.writeFileSync(progressFile, JSON.stringify(prog), { mode: 0o600 })
-    log(`  ${j.label}: ${memories.length} claims (${created} new, ${dup} dup, ${dropped.length} dropped)`)
+    log(`  ${j.label}: ${memories.length} claims (${created} new, ${agreed} agreed with another model, ${dup} dup, ${dropped.length} dropped)`)
   })
   log(`extract: done — ${r.ok} chunks ok, ${r.failed} failed; ${totals.created} new candidates, ${totals.dup} duplicates, ${totals.dropped} dropped (no faithful quote); ${totals.tokens} tokens`)
 }
@@ -162,8 +177,8 @@ if (process.argv[1] && import.meta.url.endsWith(path.basename(process.argv[1])))
   try {
     if (cmd === 'reviews') await coachJobs('session_review', unreviewedSessions().slice(0, limit), Number(arg('conc', 2)))
     else if (cmd === 'postmortems') await coachJobs('race_postmortem', raceSessions().slice(0, limit), Number(arg('conc', 2)))
-    else if (cmd === 'extract') await extract(Number(arg('conc', 4)), Number(arg('chunk', 6000)))
+    else if (cmd === 'extract') await extract(Number(arg('conc', 4)), Number(arg('chunk', 6000)), arg('model') || null)
     else if (cmd === 'consistency') await consistency(Number(arg('conc', 4)))
-    else { console.error('commands: reviews | postmortems | extract [--chunk N] | consistency   [--limit N] [--conc N] [--dry]'); process.exit(2) }
+    else { console.error('commands: reviews | postmortems | extract [--chunk N] [--model ID: a second model; claims both models make are marked as agreed] | consistency   [--limit N] [--conc N] [--dry]'); process.exit(2) }
   } catch (e) { console.error('error:', e.message); process.exit(1) }
 }
