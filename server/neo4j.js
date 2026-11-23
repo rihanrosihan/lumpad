@@ -58,7 +58,10 @@ export async function overview(opts = {}) {
 const P = (v) => `labels(${v})[0], coalesce(toString(${v}.label_id), toString(${v}.date), toString(${v}.gear_id), toString(${v}.race_id), toString(${v}.id), toString(${v}.site), toString(${v}.name)), coalesce(${v}.intent + ' · ' + ${v}.day, ${v}.title, ${v}.model, ${v}.name, ${v}.label, toString(${v}.date), toString(${v}.label_id), toString(${v}.id)), coalesce(${v}.date, ${v}.day, ${v}.valid_from), ${v}.ef, coalesce(${v}.tl, ${v}.planned_tl), ${v}.wbgt`
 const ROW = (a, n) => `RETURN ${P(a)}, type(r), startNode(r) = ${a}, ${P(n)}`
 const REL = "['HAS_SESSION','WORE','IN_WEATHER','IN_BAND','ATTEMPT_OF','PRODUCED','SIMILAR_TO','CONTRADICTS','SUPERSEDES','NEXT_DAY','LOGGED_PAIN','ABOUT','HAS_WORKOUT','PRECEDED','RETRIEVED','CITED','WRITTEN_BY','REVIEWED','PLANS','EXECUTED_AS','RELATED_TO']"
-export const LIVE_MAX = { nodes: 160, edges: 420 }
+export const LIVE_MAX = { nodes: 220, edges: 460 }
+// the default views always carry EVERY race (with the session that was run), so the picture is not limited to the races of the newest runs
+export const RACES_ALWAYS = `MATCH (a:Race) OPTIONAL MATCH (a)-[r:ATTEMPT_OF]-(n:Session) ${'RETURN '}${P('a')}, type(r), startNode(r) = a, ${P('n')} LIMIT 120`
+const WITH_RACES = new Set(['sessions', 'days'])
 export const LIVE_VIEWS = {
   // newest 30 sessions with everything one hop away
   sessions: `MATCH (a:Session) WITH a ORDER BY a.date DESC LIMIT 30 MATCH (a)-[r]-(n) WHERE type(r) IN ${REL} ${ROW('a', 'n')} LIMIT ${LIVE_MAX.edges}`,
@@ -97,6 +100,9 @@ export function toGraph(rows) {
 export async function live(view, opts = {}) {
   const env = opts.env || neoEnv(); if (!configured(env)) return { connected: false, nodes: [], edges: [] }
   const v = Object.hasOwn(LIVE_VIEWS, view) ? view : 'sessions'
-  try { const j = await run(LIVE_VIEWS[v], { ...opts, env, timeout: 8000 }); return { connected: true, view: v, ...toGraph(j?.data?.values) } }
+  try {
+    const [j, rj] = await Promise.all([run(LIVE_VIEWS[v], { ...opts, env, timeout: 8000 }), WITH_RACES.has(v) ? run(RACES_ALWAYS, { ...opts, env, timeout: 8000 }).catch(() => null) : null])
+    return { connected: true, view: v, ...toGraph([...(rj?.data?.values || []), ...(j?.data?.values || [])]) }
+  }
   catch (err) { return { connected: false, view: v, error: err.message, nodes: [], edges: [] } }
 }

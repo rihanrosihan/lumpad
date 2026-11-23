@@ -43,3 +43,10 @@ test('node properties for colouring are carried; every view is read-only and bou
   assert.deepEqual(Object.keys(N.LIVE_VIEWS).sort(), ['chains', 'context', 'days', 'memory', 'plan', 'races', 'sessions', 'topics', 'trace'])
   for (const [k, v] of Object.entries(N.LIVE_VIEWS)) assert.match(v, /LIMIT \d+/, k + ' must be bounded')
 })
+test('the default views also carry every race, from one extra read-only query', async () => {
+  assert.ok(!/DELETE|SET |CREATE|MERGE|REMOVE|DROP/i.test(N.RACES_ALWAYS))
+  const sent = []; const fetchFn = async (_u, o) => { const s = JSON.parse(o.body).statement; sent.push(s); return { ok: true, json: async () => ({ data: { values: s === N.RACES_ALWAYS ? [['Race', 'r1', 'Old Race', '2025-01-12', null, null, null, null, null, null, null, null, null, null, null, null]] : [] } }) } }
+  const g = await N.live('sessions', { fetchFn, env: { uri: 'neo4j+s://x.databases.neo4j.io', user: 'u', pass: 'p', db: 'x' } })
+  assert.equal(sent.length, 2); assert.ok(g.nodes.some((n) => n.label === 'Race' && n.name === 'Old Race'))
+  const sent2 = sent.length; await N.live('topics', { fetchFn, env: { uri: 'neo4j+s://x.databases.neo4j.io', user: 'u', pass: 'p', db: 'x' } }); assert.equal(sent.length, sent2 + 1, 'other views stay a single query')
+})
