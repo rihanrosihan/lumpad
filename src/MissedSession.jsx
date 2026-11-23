@@ -4,16 +4,17 @@ import { useApi } from './api.js'
 import { missedPlan, REASONS, AFTERNOON_FROM } from './lib/missed.js'
 import { painToday } from './lib/watch.js'
 import { BY_DATE } from './lib/calendar.js'
+import { useStore } from './store.js'
 
 const wibHour = () => { const q = new URLSearchParams(location.search).get('hour'); if (/^\d{1,2}$/.test(q || '')) return +q; return new Date(Date.now() + 7 * 3600e3).getUTCHours() }
 const TAG = { ok: 'Good option', caution: 'Possible, with care', no: 'Not advised' }
 
 export default function MissedSession({ day, date, runsToday, checkin, tier, weekly4w }) {
-  const [reason, setReason] = useState('time'), [open, setOpen] = useState(null)
+  const [reason, setReason] = useState('time'), [open, setOpen] = useState(null), [pick, setPick] = useStore('lumpad.missed.' + date, {})
   const twin = useApi('/api/twin').data?.state
   const hour = wibHour()
   if (!day || runsToday > 0 || hour < AFTERNOON_FROM) return null
-  const r = missedPlan(BY_DATE, date, { hour, reason, tier, pain: painToday(checkin), load: { tsb: twin?.load ? Math.round((twin.load.ctl - twin.load.atl) * 10) / 10 : null, acwr: twin?.load?.acwr_ewma ?? null }, weekly4w: twin?.load?.weekly_km_4w ?? weekly4w ?? null })
+  const r = missedPlan(BY_DATE, date, { hour, reason, tier, chose: pick.choice || null, pain: painToday(checkin), load: { tsb: twin?.load ? Math.round((twin.load.ctl - twin.load.atl) * 10) / 10 : null, acwr: twin?.load?.acwr_ewma ?? null }, weekly4w: twin?.load?.weekly_km_4w ?? weekly4w ?? null })
   if (!r) return null
   const show = open || r.recommended
   return <section className="card missed" aria-label="Today's run has not happened yet">
@@ -27,6 +28,7 @@ export default function MissedSession({ day, date, runsToday, checkin, tier, wee
       </button>
       <p className="missed-do">{s.do}</p>
       <small className="muted">{s.week}</small>
+      {s.verdict !== 'no' && <button type="button" className={`btn sm ${r.chose === s.id ? 'primary' : ''}`} aria-pressed={r.chose === s.id} onClick={() => setPick({ choice: r.chose === s.id ? null : s.id, at: Date.now() })}>{r.chose === s.id ? (s.id === 'evening' ? 'Chosen: I run tonight (decide again at 21:00)' : 'Chosen') : 'Choose this'}</button>}
       {show === s.id && <>
         <ul className="missed-checks">{s.checks.map((c, i) => <li key={i} className={`c-${c.level}`}><span aria-hidden="true">{c.ok ? '✓' : c.level === 'fail' ? '✕' : '!'}</span> {c.text}</li>)}</ul>
         {s.revisit && <small className="muted">{s.revisit}</small>}

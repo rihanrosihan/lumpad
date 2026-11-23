@@ -41,3 +41,11 @@ test('sunday move spills into next week and is flagged; tired prefers tomorrow o
   const t = missedPlan(plan, '2026-12-10', { hour: 15, reason: 'tired' })
   assert.notEqual(t.recommended, 'evening')
 })
+test('chose evening but 21:00 passed with no run: evening closes, fallback is tomorrow if allowed, else skip', () => {
+  const easy = missedPlan(plan, '2026-12-11', { hour: 21, chose: 'evening' }) // tomorrow easy, day after long
+  assert.ok(easy.eveningFailed); assert.equal(by(easy, 'evening').verdict, 'no'); assert.match(easy.note, /Tonight is closed/)
+  assert.notEqual(easy.recommended, 'evening')
+  const blocked = missedPlan(plan, '2026-12-09', { hour: 21, chose: 'evening' }) // tomorrow is the hard session
+  assert.equal(blocked.recommended, 'skip')
+  assert.equal(missedPlan(plan, '2026-12-11', { hour: 20, chose: 'evening' }).eveningFailed, false)
+})

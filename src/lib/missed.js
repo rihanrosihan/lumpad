@@ -18,13 +18,13 @@ const verdictOf = (checks) => (checks.some((c) => c.level === 'fail') ? 'no' : c
 
 // plan: date → day. ctx: { hour, reason, load:{tsb,acwr}, tier, pain, weekly4w, raceDays }
 export function missedPlan(plan, date, ctx = {}) {
-  const day = plan[date], km = RUNKM(day), { hour = 15, reason = 'time', pain = null, tier = null } = ctx
+  const day = plan[date], km = RUNKM(day), { hour = 15, reason = 'time', pain = null, tier = null, chose = null } = ctx
   if (!km || isRace(day) || hour < AFTERNOON_FROM) return null
   const tmr = plan[addDays(date, 1)], hard = isHard(day), tsb = ctx.load?.tsb ?? null, acwr = ctx.load?.acwr ?? null
   const sick = reason === 'sick' || (pain != null && pain >= 2), tired = reason === 'tired' || tier === 'compromised' || tier === 'depleted'
   const mon = mondayOf(date), week = Array.from({ length: 7 }, (_, i) => plan[addDays(mon, i)]).filter(Boolean)
   const weekKm = r1(week.reduce((s, d) => s + RUNKM(d), 0)), sunday = dowOf(date) === 0
-  const out = { day, km, hard, weekKm, reason, scenarios: [], recommended: null, note: null }
+  const out = { day, km, hard, weekKm, reason, chose, scenarios: [], recommended: null, note: null, eveningFailed: false }
 
   // 1. this evening
   const lateHard = hard && hour >= 18, tooLate = hour >= (hard ? 19 : 21)
@@ -93,6 +93,8 @@ export function missedPlan(plan, date, ctx = {}) {
   const rank = { ok: 0, caution: 1, no: 2 }, by = Object.fromEntries(out.scenarios.map((s) => [s.id, s]))
   const order = sick ? ['skip'] : tired ? ['tomorrow', 'skip', 'evening'] : reason === 'weather' ? ['evening', 'tomorrow', 'skip'] : ['evening', 'tomorrow', 'skip']
   out.recommended = order.slice().sort((a, b) => rank[by[a].verdict] - rank[by[b].verdict] || order.indexOf(a) - order.indexOf(b))[0]
-  out.note = sick ? 'Sick or pain beats the plan: rest is the plan.' : null
+  out.eveningFailed = chose === 'evening' && tooLate && !sick
+  if (out.eveningFailed) { out.recommended = by.tomorrow.verdict === 'no' ? 'skip' : by.tomorrow.verdict === 'caution' && by.skip.verdict === 'ok' && hard && day.kind === 'long' ? 'tomorrow' : out.recommended === 'evening' ? 'tomorrow' : out.recommended; if (out.recommended === 'tomorrow' && by.tomorrow.verdict === 'no') out.recommended = 'skip' }
+  out.note = out.eveningFailed ? `You planned the evening run, but it is ${hour}:00 WIB and no run was recorded. Tonight is closed (running now costs tomorrow's sleep). Pick tomorrow, if its checks allow, or let it go.` : sick ? 'Sick or pain beats the plan: rest is the plan.' : null
   return out
 }
