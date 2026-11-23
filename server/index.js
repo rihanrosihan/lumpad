@@ -125,6 +125,7 @@ const routes = {
   'POST /api/perf/prs': async (_q, req) => { const b = JSON.parse((await readBody(req, 2e4)).toString() || '{}'); if (b.refresh) return { ok: true, ...(await (await import('./intel/prs.js')).refreshActivities()) }; const d = await (await import('./intel/prs.js')).savePRs(b.text); return { ok: true, count: d.prs.length, updated: d.updated } },
   'GET /api/perf/summary': async () => (await import('./intel/perf.js')).perfSummary(),
   'GET /api/graph/live': async (q) => (q.get('view') === 'correlations' ? correlationGraph(listEdges().filter((e) => e.status === 'supported' || e.status === 'candidate'), listExplore()) : (await import('./neo4j.js')).live(q.get('view') || 'sessions')),
+  'GET /api/graph/expand': async (q) => (await import('./neo4j.js')).expand(q.get('label'), q.get('key')),
   'GET /api/graph/overview': async () => (await import('./neo4j.js')).overview(),
   'GET /api/data/quality': async () => {
     const cov = coverage()

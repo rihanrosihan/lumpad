@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Card, Chip, ProvenanceBadge, StatusPill } from './ui.jsx'
 import { useApi } from './api.js'
+import { getJson } from './net.js'
 import { layout, degrees, egoGraph, matchIds, dateRange, colorScale, MEASURES, radialLayout } from './lib/graphlayout.js'
 
 const KG_NODES = [
@@ -287,7 +288,10 @@ export function PerformancePanel() {
 
 function LiveGraph({ overview }) {
   const [view, setView] = useState('performance'), [sel, setSel] = useState(null), [focus, setFocus] = useState(false), [q, setQ] = useState(''), [by, setBy] = useState('type'), [range, setRange] = useState(null)
-  const on = !!overview?.connected, G = useApi(on ? `/api/graph/live?view=${view}` : '', on), full = G.data
+  const on = !!overview?.connected, G = useApi(on ? `/api/graph/live?view=${view}` : '', on), [extra, setExtra] = useState(null), [busy, setBusy] = useState(false)
+  // nodes pulled in with "Expand" (kept per view); merged into the picture without duplicates
+  const full = useMemo(() => { const b = G.data; if (!b || !extra || extra.view !== view) return b; const ids = new Set(b.nodes.map((n) => n.id)), ek = new Set(b.edges.map((e) => `${e.from}|${e.type}|${e.to}`)); return { ...b, nodes: [...b.nodes, ...extra.nodes.filter((n) => !ids.has(n.id))], edges: [...b.edges, ...extra.edges.filter((e) => !ek.has(`${e.from}|${e.type}|${e.to}`))], unlinked: (b.unlinked || []).filter((id) => !extra.edges.some((e) => e.derived && e.from === id)) } }, [G.data, extra, view])
+  const expandNode = async (n) => { const i = n.id.indexOf(':'); setBusy(true); try { const r = await getJson(`/api/graph/expand?label=${encodeURIComponent(n.id.slice(0, i))}&key=${encodeURIComponent(n.id.slice(i + 1))}`); if (r?.nodes?.length) setExtra((x) => ({ view, nodes: [...(x?.view === view ? x.nodes : []), ...r.nodes], edges: [...(x?.view === view ? x.edges : []), ...r.edges] })) } catch {} setBusy(false) }
   const [showAll, setShowAll] = useState(false), [showLost, setShowLost] = useState(false)
   const g = useMemo(() => (focus && sel && full ? egoGraph(full, sel) : full), [full, focus, sel])
   // views that carry races, personal bests or sessions are drawn AROUND the PERFORMANCE hub (centre), every node tied to it; the others keep the free force layout
@@ -321,6 +325,7 @@ function LiveGraph({ overview }) {
           <label className="muted" style={{ fontSize: '.75rem', display: 'flex', gap: 6, alignItems: 'center' }}>Colour by
             <select value={by} onChange={(e) => setBy(e.target.value)} aria-label="Colour nodes by"><option value="type">Type</option>{Object.entries(MEASURES).map(([k, m]) => <option key={k} value={k}>{m.label}</option>)}</select></label>
           <button type="button" className="link" disabled={!sel} aria-pressed={focus} onClick={() => setFocus((f) => !f)} title="Show only the selected node and its neighbours">{focus ? 'Show all' : 'Focus on selected'}</button>
+          <button type="button" className="link" disabled={!sel || busy || full?.kind === 'correlations'} onClick={() => expandNode(full.nodes.find((n) => n.id === sel))} title="Pull in this node's neighbours from Neo4j, even those outside the sample">{busy ? 'Expanding…' : 'Expand neighbours'}</button>
         </div>
         {dayIdx && dayIdx[1] > dayIdx[0] && <div className="muted" style={{ fontSize: '.74rem', display: 'grid', gridTemplateColumns: 'auto 1fr 1fr auto', gap: 8, alignItems: 'center', marginBottom: 6 }}>
           <span>{lo}</span>

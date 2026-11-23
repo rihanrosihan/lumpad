@@ -20,10 +20,10 @@ export const resetEnvCache = () => { cache = null }
 export const configured = (e = neoEnv()) => !!(e.uri && e.user && e.pass)
 const hostOf = (uri) => uri.replace(/^(?:neo4j\+s|neo4j\+ssc|bolt\+s|bolt\+ssc|neo4j|bolt|https?):\/\//, '').split('/')[0]
 
-export async function run(statement, { fetchFn = fetch, env = neoEnv(), timeout = 1500 } = {}) {
+export async function run(statement, { fetchFn = fetch, env = neoEnv(), timeout = 1500, params } = {}) {
   const r = await fetchFn(`https://${hostOf(env.uri)}/db/${encodeURIComponent(env.db)}/query/v2`, {
     method: 'POST', headers: { Authorization: 'Basic ' + Buffer.from(`${env.user}:${env.pass}`).toString('base64'), 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify({ statement }), signal: AbortSignal.timeout(timeout) })
+    body: JSON.stringify(params ? { statement, parameters: params } : { statement }), signal: AbortSignal.timeout(timeout) })
   if (!r.ok) throw new Error('HTTP ' + r.status)
   return r.json()
 }
@@ -55,7 +55,8 @@ export async function overview(opts = {}) {
 
 // ---- live graph for the Knowledge Graph screen: a bounded sample of the REAL graph, from fixed read-only queries (the browser only picks a view name).
 // Each endpoint is flattened to (label, key, name, date, ef, tl, wbgt): the properties the page can colour by. Health-derived labels exist only when NEO4J_SYNC_HEALTH=1 on the Go side.
-const P = (v) => `labels(${v})[0], coalesce(CASE WHEN ${v}.metric IS NOT NULL OR ${v}.is_pb IS NOT NULL OR ${v}.url IS NOT NULL OR ${v}.pr_rank IS NOT NULL THEN toString(${v}.id) END, toString(${v}.label_id), toString(${v}.date), toString(${v}.gear_id), toString(${v}.race_id), toString(${v}.id), toString(${v}.site), toString(${v}.name)), coalesce(CASE WHEN ${v}.metric IS NOT NULL THEN ${v}.metric + ' ' + toString(${v}.value) END, CASE WHEN ${v}.is_pb IS NOT NULL THEN ${v}.label END, ${v}.intent + ' · ' + ${v}.day, ${v}.title, ${v}.model, ${v}.name, ${v}.label, toString(${v}.date), toString(${v}.label_id), toString(${v}.id)), coalesce(${v}.date, ${v}.day, ${v}.valid_from), ${v}.ef, coalesce(${v}.tl, ${v}.planned_tl), ${v}.wbgt`
+const KEY = (v) => `coalesce(CASE WHEN ${v}.metric IS NOT NULL OR ${v}.is_pb IS NOT NULL OR ${v}.url IS NOT NULL OR ${v}.pr_rank IS NOT NULL THEN toString(${v}.id) END, toString(${v}.label_id), toString(${v}.date), toString(${v}.gear_id), toString(${v}.race_id), toString(${v}.id), toString(${v}.site), toString(${v}.name))`
+const P = (v) => `labels(${v})[0], ${KEY(v)}, coalesce(CASE WHEN ${v}.metric IS NOT NULL THEN ${v}.metric + ' ' + toString(${v}.value) END, CASE WHEN ${v}.is_pb IS NOT NULL THEN ${v}.label END, ${v}.intent + ' · ' + ${v}.day, ${v}.title, ${v}.model, ${v}.name, ${v}.label, toString(${v}.date), toString(${v}.label_id), toString(${v}.id)), coalesce(${v}.date, ${v}.day, ${v}.valid_from), ${v}.ef, coalesce(${v}.tl, ${v}.planned_tl), ${v}.wbgt`
 const ROW = (a, n) => `RETURN ${P(a)}, type(r), startNode(r) = ${a}, ${P(n)}`
 const REL = "['HAS_SESSION','WORE','IN_WEATHER','IN_BAND','ATTEMPT_OF','PRODUCED','SIMILAR_TO','CONTRADICTS','SUPERSEDES','NEXT_DAY','LOGGED_PAIN','ABOUT','HAS_WORKOUT','PRECEDED','RETRIEVED','CITED','WRITTEN_BY','REVIEWED','PLANS','EXECUTED_AS','RELATED_TO']"
 export const LIVE_MAX = { nodes: 220, edges: 460 }
@@ -74,13 +75,15 @@ const PERF_EXTRA = [
   // enrichment (each is bounded; anchorGraph ties what is returned to the domain it informs)
   `MATCH (a:Session)-[r:WORE]->(n:Shoe) ${ROW('a', 'n')} LIMIT 24`,
   `MATCH (a:Weather)-[r:IN_BAND]->(n:HeatBand) ${ROW('a', 'n')} LIMIT 16`,
-  `MATCH (a:Topic) OPTIONAL MATCH (a)<-[r:ABOUT]-(n:Memory) WHERE n.status = 'active' ${ROW('a', 'n')} LIMIT 40`,
+  `MATCH (a:Topic) OPTIONAL MATCH (a)-[r:NO_SUCH_LINK]-(n) ${ROW('a', 'n')} LIMIT 30`,   // every topic as a node of its own
+  `MATCH (a:Topic) CALL { WITH a MATCH (a)<-[r:ABOUT]-(n:Memory) WHERE n.status = 'active' RETURN r, n ORDER BY n.valid_from DESC LIMIT 2 } ${ROW('a', 'n')} LIMIT 40`,
   `MATCH (a:Rule) WHERE a.locked = true OPTIONAL MATCH (a)-[r:SUPERSEDES]-(n) ${ROW('a', 'n')} LIMIT 20`,
   `MATCH (a:Checkpoint)-[r]-(n:Race) ${ROW('a', 'n')} LIMIT 20`,
 ]
 // the hub and its six domains, so any view that shows races, personal bests or sessions can be tied to PERFORMANCE
 const SKELETON = `MATCH (a:PerfDomain)-[r:PART_OF]->(n:PerfDomain) ${ROW('a', 'n')}`
 const EXTRA = { sessions: [RACES_ALWAYS], days: [RACES_ALWAYS], performance: PERF_EXTRA, races: [SKELETON], context: [SKELETON] }
+const CAPS = { performance: { Memory: 10, Effort: 12, PerfPoint: 48, Weather: 8, Session: 26, PB: 24, Km: 0, Lap: 0 } }
 export const LIVE_VIEWS = {
   // newest 30 sessions with everything one hop away
   sessions: `MATCH (a:Session) WITH a ORDER BY a.date DESC LIMIT 30 MATCH (a)-[r]-(n) WHERE type(r) IN ${REL} ${ROW('a', 'n')} LIMIT ${LIVE_MAX.edges}`,
@@ -104,10 +107,13 @@ export const LIVE_VIEWS = {
   context: `MATCH (a) WHERE a:Race OR a:Rule OR a:Shoe WITH a ORDER BY CASE WHEN a:Race THEN 0 WHEN a:Rule THEN 1 ELSE 2 END LIMIT 40 CALL { WITH a OPTIONAL MATCH (a)-[r:ATTEMPT_OF|WORE|SUPERSEDES]-(n) RETURN r, n ORDER BY n.date DESC LIMIT 6 } ${ROW('a', 'n')} LIMIT ${LIVE_MAX.edges}`,
 }
 // rows → { nodes, edges, truncated }; pure so it can be tested without a database. Row = [label, key, name, date, ef, tl, wbgt, relType, outgoing, label, key, name, date, ef, tl, wbgt]
-export function toGraph(rows) {
-  const nodes = new Map(), edges = [], seen = new Set()
+// `caps` = most nodes one label may add ({Memory: 12}), so a label with thousands of rows cannot crowd the others out of the node budget
+export function toGraph(rows, { caps = {} } = {}) {
+  const nodes = new Map(), edges = [], seen = new Set(), used = {}
   const add = (label, key, name, date, ef, tl, wbgt) => { if (key == null || label == null) return null; const id = `${label}:${key}`
-    if (!nodes.has(id) && nodes.size < LIVE_MAX.nodes) nodes.set(id, { id, label, name: String(name ?? key).slice(0, 80), date: date ? String(date).slice(0, 10) : null, ef: ef ?? null, tl: tl ?? null, wbgt: wbgt ?? null })
+    if (!nodes.has(id) && nodes.size < LIVE_MAX.nodes && (used[label] || 0) < (caps[label] ?? Infinity)) used[label] = (used[label] || 0) + 1
+    else if (!nodes.has(id)) return null
+    if (!nodes.has(id)) nodes.set(id, { id, label, name: String(name ?? key).slice(0, 80), date: date ? String(date).slice(0, 10) : null, ef: ef ?? null, tl: tl ?? null, wbgt: wbgt ?? null })
     return nodes.has(id) ? id : null }
   for (const r of rows || []) {
     const a = add(r[0], r[1], r[2], r[3], r[4], r[5], r[6]); if (!a) continue
@@ -169,8 +175,21 @@ export async function live(view, opts = {}) {
   const v = Object.hasOwn(LIVE_VIEWS, view) ? view : 'performance'
   try {
     const [j, ...extra] = await Promise.all([run(LIVE_VIEWS[v], { ...opts, env, timeout: 8000 }), ...(EXTRA[v] || []).map((q) => run(q, { ...opts, env, timeout: 8000 }).catch(() => null))])
-    const g = toGraph([...extra.flatMap((x) => x?.data?.values || []), ...(j?.data?.values || [])])
+    const g = toGraph([...extra.flatMap((x) => x?.data?.values || []), ...(j?.data?.values || [])], { caps: CAPS[v] })
     return { connected: true, view: v, ...(ANCHORED_VIEWS.has(v) ? anchorGraph(g) : g) }
   }
   catch (err) { return { connected: false, view: v, error: err.message, nodes: [], edges: [] } }
+}
+
+// ---- expand one node: its direct neighbours (bounded), read-only, with the node chosen by label + key as PARAMETERS (never spliced into the Cypher).
+// New nodes are tied to the performance domains with the same derived links as anchorGraph, so an expanded node never floats loose.
+export async function expand(label, key, opts = {}) {
+  const env = opts.env || neoEnv(); if (!configured(env)) return { connected: false, nodes: [], edges: [] }
+  if (!/^[A-Za-z]{2,24}$/.test(String(label || '')) || !String(key ?? '').length || String(key).length > 120) return { connected: true, nodes: [], edges: [], error: 'bad node id' }
+  try {
+    const j = await run(`MATCH (a) WHERE labels(a)[0] = $label AND ${KEY('a')} = $key MATCH (a)-[r]-(n) WHERE type(r) IN ${REL} ${ROW('a', 'n')} LIMIT 60`, { ...opts, env, timeout: 8000, params: { label, key: String(key) } })
+    const g = toGraph(j?.data?.values || []), have = new Set(g.nodes.map((n) => n.id)), edges = [...g.edges]
+    for (const n of g.nodes) { const d = enrichDomain(n); if (d && n.label !== 'PerfDomain') edges.push({ from: n.id, to: d.to, type: 'INFORMS', derived: true, why: d.why }) }
+    return { connected: true, center: `${label}:${key}`, nodes: g.nodes, edges: edges.filter((e) => have.has(e.from) || have.has(e.to)), truncated: g.truncated }
+  } catch (err) { return { connected: false, error: err.message, nodes: [], edges: [] } }
 }

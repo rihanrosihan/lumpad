@@ -82,3 +82,17 @@ test('enrichDomain ties shoes, weather, plan weeks, checkpoints, topics and rule
   assert.equal(d('Topic', 'gct_fade'), 'PerfDomain:durability'); assert.equal(d('Topic', 'sleep_min'), 'PerfDomain:cardio'); assert.equal(d('Rule', 'Cap easy pace by HRV'), 'PerfDomain:cardio')
   assert.equal(d('Topic', 'strength_lower'), 'PerfDomain:load'); assert.equal(d('Topic', 'zzz'), undefined); assert.equal(d('Memory', 'note'), undefined)
 })
+
+test('toGraph caps: one label cannot take more than its share of the node budget', () => {
+  const rows = Array.from({ length: 30 }, (_, i) => ['Memory', 'm' + i, 'mem', null, null, null, null, null, null, null, null, null, null, null, null, null]).concat([['Topic', 't', 'gct_fade', null, null, null, null, null, null, null, null, null, null, null, null, null]])
+  const g = N.toGraph(rows, { caps: { Memory: 5 } })
+  assert.equal(g.nodes.filter((n) => n.label === 'Memory').length, 5); assert.ok(g.nodes.some((n) => n.label === 'Topic'))
+})
+test('expand sends the node as parameters (never in the Cypher), refuses odd labels, and ties new nodes to a domain', async () => {
+  const sent = []; const env = { uri: 'neo4j+s://x.databases.neo4j.io', user: 'u', pass: 'p', db: 'x' }
+  const fetchFn = async (_u, o) => { const b = JSON.parse(o.body); sent.push(b); return { ok: true, json: async () => ({ data: { values: [['Shoe', '7', 'Pegasus', null, null, null, null, 'WORE', false, 'Session', 's1', 'run', '2026-01-01', 0.9, null, null]] } }) } }
+  const g = await N.expand('Shoe', "7' OR 1=1 //", { fetchFn, env })
+  assert.deepEqual(sent[0].parameters, { label: 'Shoe', key: "7' OR 1=1 //" }); assert.ok(!sent[0].statement.includes('OR 1=1'))
+  assert.ok(g.edges.some((e) => e.derived && e.from === 'Shoe:7' && e.to === 'PerfDomain:load')); assert.ok(sent[0].statement.indexOf('DELETE') < 0)
+  assert.equal((await N.expand('Sh oe);DROP', 'x', { fetchFn, env })).error, 'bad node id'); assert.equal(sent.length, 1)
+})
