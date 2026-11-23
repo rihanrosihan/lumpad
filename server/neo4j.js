@@ -74,6 +74,8 @@ export const LIVE_VIEWS = {
   memory: `MATCH (a:Memory) WHERE a.status = 'active' AND a.source <> 'kb' WITH a ORDER BY a.valid_from DESC LIMIT 60 OPTIONAL MATCH (a)-[r:PRODUCED|SUPERSEDES|CONTRADICTS|RELATED_TO|ABOUT|WRITTEN_BY]-(n) ${ROW('a', 'n')} LIMIT ${LIVE_MAX.edges}`,
   // the last 3 weeks that have training, as a chain of days with their sessions and workouts (future plan days have none)
   days: `MATCH (a:Day) WHERE EXISTS { (a)-[:HAS_SESSION|HAS_WORKOUT]->() } WITH a ORDER BY a.date DESC LIMIT 21 OPTIONAL MATCH (a)-[r:NEXT_DAY|HAS_SESSION|HAS_WORKOUT|LOGGED_PAIN]-(n) ${ROW('a', 'n')} LIMIT ${LIVE_MAX.edges}`,
+  // EVERY race: the canonical races and every ledger entry (04.1), with the session that was run, the event, the ledger link and the next race
+  races: `MATCH (a) WHERE a:Race OR a:RaceEntry WITH a ORDER BY a.date DESC LIMIT 80 OPTIONAL MATCH (a)-[r:ATTEMPT_OF|LEDGER_OF|DONE_AS|OF_EVENT|NEXT_RACE]-(n) ${ROW('a', 'n')} LIMIT ${LIVE_MAX.edges}`,
   // races, rules and shoes (races first) with a few of their sessions each, so no single shoe floods the picture
   context: `MATCH (a) WHERE a:Race OR a:Rule OR a:Shoe WITH a ORDER BY CASE WHEN a:Race THEN 0 WHEN a:Rule THEN 1 ELSE 2 END LIMIT 40 CALL { WITH a OPTIONAL MATCH (a)-[r:ATTEMPT_OF|WORE|SUPERSEDES]-(n) RETURN r, n ORDER BY n.date DESC LIMIT 6 } ${ROW('a', 'n')} LIMIT ${LIVE_MAX.edges}`,
 }

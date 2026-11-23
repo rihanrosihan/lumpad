@@ -825,6 +825,9 @@ func SyncKB(ctx context.Context, aura *Client, redact func(string) string, memRo
 	for _, q := range []string{
 		`MATCH (e:RaceEntry), (r:Race) WHERE r.date = e.date MERGE (e)-[:LEDGER_OF]->(r)`,
 		`MATCH (e:RaceEntry), (s:Session) WHERE s.date = e.date MERGE (e)-[:DONE_AS]->(s)`,
+		// every ledger race becomes a Race node too (the canonical list only holds a few), so the Races view and every Race query see the whole history
+		`MATCH (e:RaceEntry) WHERE NOT EXISTS { (e)-[:LEDGER_OF]->(:Race) } MERGE (r:Race {race_id: 'ledger:' + e.id}) SET r.src = 'kbx', r.date = e.date, r.name = e.name, r.class = 'HISTORY', r.result = e.result, r.distance_text = e.distance, r.status = CASE WHEN e.dns THEN 'DNS' WHEN e.dnf THEN 'DNF' ELSE 'Finish' END MERGE (e)-[:LEDGER_OF]->(r)`,
+		`MATCH (r:Race {src:'kbx'})<-[:LEDGER_OF]-(e:RaceEntry)-[:DONE_AS]->(s:Session) MERGE (s)-[:ATTEMPT_OF]->(r)`,
 		`MATCH (e:RaceEntry {src:'kbx'}), (t:Topic {id:'race'}) MERGE (e)-[:ABOUT]->(t)`,
 		`MATCH (e:RaceEntry {dnf: true}), (en:Entity {id:'Condition:heat-illness'}) WHERE toLower(e.note) CONTAINS 'heat' OR toLower(e.note) CONTAINS 'black flag' MERGE (e)-[:FACED]->(en)`,
 		`MATCH (a:RaceEntry), (b:RaceEntry) WHERE a.date < b.date AND NOT EXISTS { MATCH (c:RaceEntry) WHERE c.date > a.date AND c.date < b.date } MERGE (a)-[:NEXT_RACE]->(b)`,

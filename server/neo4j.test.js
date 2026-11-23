@@ -40,6 +40,6 @@ test('toGraph caps nodes; live() with no settings does not call out', async () =
 test('node properties for colouring are carried; every view is read-only and bounded', () => {
   const g = N.toGraph([['Session', 'S1', 'Run', '2026-11-01T06:00', 1.5, 120, 28.1, 'WORE', true, 'Shoe', 'g1', 'Vaporfly', null, null, null, null]])
   assert.deepEqual(g.nodes[0], { id: 'Session:S1', label: 'Session', name: 'Run', date: '2026-11-01', ef: 1.5, tl: 120, wbgt: 28.1 })
-  assert.deepEqual(Object.keys(N.LIVE_VIEWS).sort(), ['chains', 'context', 'days', 'memory', 'plan', 'sessions', 'topics', 'trace'])
+  assert.deepEqual(Object.keys(N.LIVE_VIEWS).sort(), ['chains', 'context', 'days', 'memory', 'plan', 'races', 'sessions', 'topics', 'trace'])
   for (const [k, v] of Object.entries(N.LIVE_VIEWS)) assert.match(v, /LIMIT \d+/, k + ' must be bounded')
 })
