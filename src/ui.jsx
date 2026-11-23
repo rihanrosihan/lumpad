@@ -97,3 +97,11 @@ export function Info({ k }) {
 }
 // evidence / source notes stay available but collapsed so numbers, not paragraphs, lead
 export const Evidence = ({ children }) => <details className="evid"><summary>Evidence</summary><p className="src-note">{children}</p></details>
+
+// Non-blocking message (replaces alert/confirm): a small banner above the bottom bar that fades after a few seconds.
+export function toast(msg, ms = 3800) {
+  if (typeof document === 'undefined') return
+  let t = document.getElementById('app-toast')
+  if (!t) { t = document.createElement('div'); t.id = 'app-toast'; t.setAttribute('role', 'status'); t.setAttribute('aria-live', 'polite'); document.body.appendChild(t) }
+  t.textContent = String(msg); t.className = 'show'; clearTimeout(t._h); t._h = setTimeout(() => { t.className = '' }, ms)
+}

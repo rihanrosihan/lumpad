@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import SessionBrief from './SessionBrief.jsx'
 import { useStore } from './store.js'
 import { paces, raceTime, fmtTime, fmtPace } from './lib/vdot.js'
@@ -18,6 +18,7 @@ import { BarChart } from './charts.jsx'
 import FuelCard from './FuelCard.jsx'
 import TodayCard from './TodayCard.jsx'
 import MissedSession from './MissedSession.jsx'
+import RunQuick from './RunQuick.jsx'
 import { pickShoe } from './lib/shoes.js'
 import { WorkoutDetail, WorkoutLine, mainTarget, metaFor } from './Workout.jsx'
 import { cfgOf, hrRange } from './lib/zones.js'
@@ -53,8 +54,10 @@ export default function Home({ vdot, settings, results, go, M: Mprop }) {
   const recent = pre ? M.acts.filter((a) => a.sport_class === 'run' && a.date >= addDays(T, -14) && (a.distance_m || 0) >= 30000)[0] : null
   const heavy = M.cur && (M.cur.tsb < -30 || (M.cur.acwr != null && M.cur.acwr > 1.3))
   const DAYN = fmtLong(T).split(',')[0], rh = M.rhr, acwr = M.cur?.acwr, hvPct = hv.enough && hv.roll7 ? Math.round(((hv.today - hv.roll7) / hv.roll7) * 100) : null
-  const headline = day ? `${DAYN} — ${day.label || KIND[day.kind].label}${day.km ? ' · ' + day.km + ' km' : ''}` : T < PLAN_START ? `${DAYN} — Recover, then the season starts ${DAYS3[(new Date(PLAN_START + 'T12:00:00').getDay())]} ${fmtShort(PLAN_START)}` : `${DAYN} — No session`
+  const headline = day ? `${DAYN} — ${day.label || KIND[day.kind].label}${day.km ? ' · ' + day.km + '\u00A0km' : ''}` : T < PLAN_START ? `${DAYN} — Recover, then the season starts ${DAYS3[(new Date(PLAN_START + 'T12:00:00').getDay())]} ${fmtShort(PLAN_START)}` : `${DAYN} — No session`
   const summary = [hv.enough && `HRV ${hv.today} ms (${sign(hvPct)}% vs 7 d)`, rh.value != null && `RHR ${rh.value} bpm`, M.cur && `TSB ${sign(M.cur.tsb)}${fz ? ` (${fz.label})` : ''}`, acwr != null && `ACWR ${acwr}`].filter(Boolean).join(' · ')
+  const [narrow, setNarrow] = useState(() => typeof matchMedia !== 'undefined' && matchMedia('(max-width:640px)').matches), [quick, setQuick] = useState(null)
+  useEffect(() => { const m = matchMedia('(max-width:640px)'), f = () => setNarrow(m.matches); m.addEventListener('change', f); return () => m.removeEventListener('change', f) }, [])
   const runs3 = M.acts.filter((a) => a.sport_class === 'run').slice(0, 3), hrCap = hrRange(2, cfg)[1]
   const [pv, setPv] = useState(''), briefDays = Array.from({ length: 8 }, (_, i) => effectiveDay(BY_DATE[addDays(T, i)], scale.items?.[addDays(T, i)], addDays(T, i))).filter((d) => d && d.km > 0 && !['rest', 'gym'].includes(d.kind)), pvDay = briefDays.find((d) => d.date === pv) || briefDays[0]
   const RACES = PLAN.filter((d) => d.kind === 'race' && /FM|Full/.test(d.label || '')), near = RACES.find((d) => d.date >= T), aRace = settings.raceDate
@@ -80,7 +83,7 @@ export default function Home({ vdot, settings, results, go, M: Mprop }) {
       <div className="hv2-readiness">
         <button className="card hero-btn g-hero" onClick={() => go('ready')} aria-label={`Readiness ${rd.score ?? 'not available'}. Open details`}>
           <div className="hero">
-            <RadialGauge value={rd.score} tone={tier ? TIER_TONE[tier.id] : 'none'} label="Readiness" size={112} sub={rd.score == null ? 'not enough data' : '/ 100'} />
+            <RadialGauge value={rd.score} tone={tier ? TIER_TONE[tier.id] : 'none'} label="Readiness" size={narrow ? 72 : 112} sub={rd.score == null ? 'not enough data' : '/ 100'} />
             <div className="hx"><span className={'tierc ' + (tier ? 'tier-' + tier.id : '')}>{tier ? tier.label : checked ? { green: 'Go', yellow: 'Scale down', red: 'Rest' }[g.level] : 'No check-in yet'}</span>
               <h2>{rd.caps[0] ? 'Gate active: ' + rd.caps[0].why : tier ? (day ? tier.advice : heavy ? 'No session planned. Load is high — easy running or rest only.' : 'No session planned today. Easy run or rest.') : checked ? (g.reasons[0]?.msg || 'No red flags') : 'Tap to check in (±15 seconds)'}</h2>
               <p className="muted">Data {rd.coverage}/100 pts{M.recov?.recovery_hours != null ? ` · full recovery ±${M.recov.recovery_hours} h` : ''}</p></div>
@@ -100,7 +103,7 @@ export default function Home({ vdot, settings, results, go, M: Mprop }) {
           <small>{DAYS3[(i + 1) % 7]}</small><b>{d && d.km ? d.km : '–'}</b><i>{ran ? '✓ ' + r1(ran) : d ? KIND[d.kind].short : ''}</i></button> })}</div>
         {day && day.km > 0 && <p className="hv2-cap"><b>{DAYN} (Today):</b> {day.label || KIND[day.kind].label} <span className="num">{day.km} km{metaFor(day, cfg)?.tl ? ` · ${metaFor(day, cfg).tl} TL` : ''}</span></p>}
         <div className="hv2-traj"><div className="hv2-week-h"><h3>Fitness toward sub-4</h3><span className="muted num">{vdot.v.toFixed(1)} → {TARGET.vdotNeeded}</span></div>
-      <div className="bar"><i style={{ width: Math.max(0, Math.min(1, (vdot.v - TARGET.baseline) / (TARGET.vdotNeeded - TARGET.baseline))) * 100 + '%' }} /></div>
+      <div className="vsegs" role="img" aria-label={`Progress toward the sub-4 VDOT: ${vdot.v.toFixed(1)} of ${TARGET.vdotNeeded}`}>{Array.from({ length: 10 }, (_, i) => { const p = Math.max(0, Math.min(1, (vdot.v - TARGET.baseline) / (TARGET.vdotNeeded - TARGET.baseline))) * 10; return <i key={i} className={p >= i + 1 ? 'on' : p > i ? 'part' : ''} /> })}</div>
       <p className="muted">Needs {(TARGET.vdotNeeded - vdot.v).toFixed(1)} more VDOT · 1.02/mo required vs best observed pace 0.74 <Chip>HYPOTHESIS n=2</Chip></p>
         </div>
       </div>
@@ -159,15 +162,16 @@ export default function Home({ vdot, settings, results, go, M: Mprop }) {
       <div className="hv2-table" role="table" aria-label="Recent runs">
         <div className="hv2-tr hv2-th" role="row"><span>Date · Load</span><span>Activity &amp; gear</span><span>Distance</span><span>Duration</span><span>Avg pace</span><span>Avg HR</span><span>Analysis</span></div>
         {runs3.map((a) => <div key={a.id} className="hv2-tr" role="row">
-          <span className="hv2-c-date"><b>{fmtShort(a.date)}</b>{a.training_load ? <Chip tone={a.training_load >= 100 ? 'red' : a.training_load >= 70 ? 'yellow' : 'green'}>TL {a.training_load}</Chip> : null}</span>
+          <span className="hv2-c-date"><b className="num">{fmtShort(a.date)}</b>{a.training_load ? <Chip tone={a.training_load >= 100 ? 'red' : a.training_load >= 70 ? 'yellow' : 'green'}>TL {a.training_load}</Chip> : null}{a.avg_hr && a.avg_hr > hrCap ? <span className="hv2-capm"><Chip tone="yellow">&gt;{hrCap} cap</Chip></span> : null}</span>
           <span className="hv2-c-name"><b>{a.name}</b><small>{[a.gear_id && G.data?.find?.((g) => g.id === a.gear_id)?.name].filter(Boolean).join(' · ')}</small></span>
           <span className="num" data-l="Distance">{a.distance_m ? (a.distance_m / 1000).toFixed(2) + ' km' : '—'}</span>
           <span className="num" data-l="Duration">{a.duration_s ? fmtDur(a.duration_s) : '—'}</span>
           <span className="num" data-l="Avg pace">{a.avg_pace_s_km ? fmtPaceS(a.avg_pace_s_km) + ' /km' : '—'}</span>
-          <span className="num" data-l="Avg HR">{a.avg_hr ? a.avg_hr + ' bpm' : '—'}{a.avg_hr && a.avg_hr > hrCap ? <Chip tone="yellow">&gt;{hrCap} cap</Chip> : null}</span>
-          <span><button type="button" className="btn primary sm" onClick={() => go('activity', { id: (a.ids?.[0] || a.id) })}>Open Full Run Analysis →</button></span>
+          <span className="num" data-l="Avg HR">{a.avg_hr ? a.avg_hr + ' bpm' : '—'}{a.avg_hr && a.avg_hr > hrCap ? <span className="hv2-capd"><Chip tone="yellow">&gt;{hrCap} cap</Chip></span> : null}</span>
+          <span className="hv2-c-act"><button type="button" className="btn primary sm" onClick={() => setQuick(a)}><span className="hv2-dx">Open </span>Full <span className="hv2-dx">Run </span>Analysis →</button></span>
         </div>)}
       </div>
     </div>}
+    {quick && <RunQuick a={quick} hrCap={hrCap} onClose={() => setQuick(null)} onFull={() => { const id = quick.ids?.[0] || quick.id; setQuick(null); go('activity', { id }) }} />}
   </section>
 }
