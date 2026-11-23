@@ -1,8 +1,15 @@
 // Plan helpers. Dates are local-time ISO strings (YYYY-MM-DD) — never toISOString(), which shifts to UTC
 // (at 05:00 WIB that would be "yesterday").
-import PLAN from '../data/plan.json'
-export { PLAN }
-export const BY_DATE = Object.fromEntries(PLAN.map((d) => [d.date, d]))
+import BUNDLED from '../data/plan.json' with { type: 'json' }
+import { planApiEnabled, choosePlan } from './planapi.js'
+// The plan is the bundled file unless the opt-in server path is on and a valid cached server plan exists (see planapi.js). Chosen once at import time,
+// so every module sees the same plan; the exported containers are filled in place by derive().
+const store = (() => { try { return typeof localStorage !== 'undefined' ? localStorage : null } catch { return null } })()
+export const PLAN_ENABLED = planApiEnabled(import.meta.env || {}, store, typeof location !== 'undefined' ? location.search : '')
+const CHOSEN = choosePlan(BUNDLED, { enabled: PLAN_ENABLED, storage: store })
+export const PLAN_SOURCE = CHOSEN.source
+export const PLAN = [...CHOSEN.days]
+export const BY_DATE = {}
 export const pad = (n) => String(n).padStart(2, '0')
 export const iso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 export const parse = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d, 12) }
@@ -25,28 +32,27 @@ export const KIND = {
   race: { label: 'Race', short: 'R' }, rest: { label: 'Rest', short: '–' }, gym: { label: 'Gym only', short: 'G' },
 }
 export const RACE_DATE = '2027-10-24'
-export const PLAN_START = PLAN[0].date
 
 export { STRENGTH_TAGS, strengthOf, isLowerDay } from './strength.js'
 
 // Weeks (W0…W52) with planned km and phase
-export const WEEKS = (() => {
-  const m = new Map()
-  for (const d of PLAN) {
-    if (!m.has(d.week)) m.set(d.week, { id: d.week, phase: d.phase, start: d.date, km: 0, days: [] })
-    const w = m.get(d.week); w.km += d.km; w.days.push(d)
-  }
-  return [...m.values()].map((w) => ({ ...w, km: Math.round(w.km * 10) / 10 }))
-})()
+export const WEEKS = []
 export const weekOf = (date) => WEEKS.find((w) => w.days.some((d) => d.date === date))
 export const PHASE_NAME = { 'PRE-SEASON': 'Pre-season', 'OFF-SEASON': 'Off-season', RAMADAN: 'Ramadan', BASE: 'Base', BUILD: 'Build', 'C-RACE': 'C-race', RECOVERY: 'Recovery', PEAK: 'Peak', TAPER: 'Taper', 'RACE WEEK': 'Race week' }
 
 // Calendar months covered by the plan (Nov 2026 → Dec 2027): [{ key:'2026-11', y, m (0–11) }]
-export const PLAN_MONTHS = (() => {
-  const out = [], seen = new Set()
-  for (const d of PLAN) { const key = d.date.slice(0, 7); if (!seen.has(key)) { seen.add(key); out.push({ key, y: +key.slice(0, 4), m: +key.slice(5, 7) - 1 }) } }
-  return out
-})()
+export const PLAN_MONTHS = []
 export const monthLabel = (mo) => `${MONTHS[mo.m]} ${mo.y}`
-export const PLAN_END = PLAN.at(-1).date
-export const PLAN_KM = Math.round(PLAN.reduce((a, d) => a + d.km, 0))
+export let PLAN_START, PLAN_END, PLAN_KM
+// derive everything from PLAN (runs once at import; live bindings and in-place containers keep importers consistent)
+function derive() {
+  for (const k of Object.keys(BY_DATE)) delete BY_DATE[k]
+  for (const d of PLAN) BY_DATE[d.date] = d
+  const m = new Map()
+  for (const d of PLAN) { if (!m.has(d.week)) m.set(d.week, { id: d.week, phase: d.phase, start: d.date, km: 0, days: [] }); const w = m.get(d.week); w.km += d.km; w.days.push(d) }
+  WEEKS.length = 0; WEEKS.push(...[...m.values()].map((w) => ({ ...w, km: Math.round(w.km * 10) / 10 })))
+  const seen = new Set(); PLAN_MONTHS.length = 0
+  for (const d of PLAN) { const key = d.date.slice(0, 7); if (!seen.has(key)) { seen.add(key); PLAN_MONTHS.push({ key, y: +key.slice(0, 4), m: +key.slice(5, 7) - 1 }) } }
+  PLAN_START = PLAN[0].date; PLAN_END = PLAN.at(-1).date; PLAN_KM = Math.round(PLAN.reduce((a, d) => a + d.km, 0))
+}
+derive()

@@ -1,6 +1,7 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
+import { refreshPlan, planApiEnabled } from './lib/planapi.js'
 import '@fontsource-variable/inter'
 import '@fontsource-variable/plus-jakarta-sans'
 import '@fontsource-variable/jetbrains-mono'
@@ -28,6 +29,9 @@ function capCharts() {
 let capQ = 0
 new MutationObserver(() => { cancelAnimationFrame(capQ); capQ = requestAnimationFrame(capCharts) }).observe(document.documentElement, { childList: true, subtree: true })
 createRoot(document.getElementById('root')).render(<App />)
+// opt-in plan server path (default off): refresh the cached server plan in the background; it takes effect at the next launch
+const _pe = planApiEnabled(import.meta.env, localStorage, location.search)
+if (_pe) refreshPlan({ storage: localStorage, enabled: true, onChange: (i) => window.dispatchEvent(new CustomEvent('lumpad:plan-changed', { detail: i })) })
 
 // A deploy replaced the files this tab still points at (lazy chunk gone): reload once to pick up the new build
 addEventListener('vite:preloadError', () => { try { if (sessionStorage.getItem('lumpad-reload')) return; sessionStorage.setItem('lumpad-reload', '1') } catch {} location.reload() })
