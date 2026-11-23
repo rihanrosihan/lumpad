@@ -38,6 +38,10 @@ import { applyIngest, checkToken, syncStatus, coverage, healthRange, activitiesR
 
 // P2 shadow job (opt-in, PLAN_ZONEWATCH=1): after each COROS job, re-resolve benchmarks, store a new zone set when they moved, raise triggers. Writes only plan.db.
 const zoneWatchJob = async () => { if (process.env.PLAN_STATS === '1') try { const { db: app } = await import('./store.js'), { refreshTemplateStats } = await import('./plan/stats.js'); refreshTemplateStats(planDb(), { appDb: app, intelDb: idb, today: new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10) }) } catch (e) { console.error('plan stats', e.message) }
+  if (process.env.PLAN_SHADOW === '1') try {   // shadow mode: log what would be proposed today (never applied), then evaluate outcomes of earlier applied changes
+    const { db: app } = await import('./store.js'), { runShadow } = await import('./plan/shadow.js'), { evaluateOutcomes, loadObservations } = await import('./plan/outcomes.js'), { addMemory } = await import('./intel/memory.js'), today = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10)
+    runShadow(planDb(), { today, twinState: latestTwin()?.state ?? null }); evaluateOutcomes(planDb(), { today, loadObs: (a, b) => loadObservations(app, idb, a, b), addMemory })
+  } catch (e) { console.error('plan shadow', e.message) }
   if (process.env.PLAN_ZONEWATCH !== '1') return; try { const { db: app } = await import('./store.js'), kv = load('kv', {}), fitness = app.prepare('SELECT date, threshold_pace_s_km FROM fitness_daily ORDER BY date DESC LIMIT 14').all(); runZoneWatch({ db: planDb(), today: new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10), settings: kv['lumpad.settings']?.value || {}, results: kv['lumpad.results']?.value || {}, fitness }) } catch (e) { console.error('plan zonewatch', e.message) } }
 const send = (res, code, body, headers = {}) => { res.writeHead(code, { 'content-type': 'application/json', ...headers }); res.end(JSON.stringify(body)) }
 const readBody = (req, max = 20e6) => new Promise((ok, no) => { const c = []; let n = 0; req.on('data', (d) => { n += d.length; if (n > max) { no(Object.assign(new Error('payload too large'), { status: 413 })); req.destroy() } else c.push(d) }); req.on('end', () => ok(Buffer.concat(c))) })
@@ -245,6 +249,8 @@ const routes = {
     return { source: PLAN_META.source, version: PLAN_META.version, zone_set: zv, days } },
   // micro loop (P3): reads are open; every write needs an authenticated user (X-Lumpad-User from the proxy login), so none works while the login is off
   'GET /api/plan/proposals': async () => PH.proposals(),
+  'GET /api/plan/digest': async (q) => PH.digest(q),
+  'GET /api/plan/shadow': async () => PH.shadow(),
   'GET /api/plan/audit': async (q) => PH.audit(q),
   'GET /api/plan/menu': async (q) => PH.menu(q),
   'POST /api/plan/menu/choose': async (_q, req) => PH.menuChoose(await planBody(req), principal(req)),

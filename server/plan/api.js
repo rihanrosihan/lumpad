@@ -10,6 +10,8 @@ import { syncPlan } from './read.js'
 import { listGoals, upsertGoal, seedGoals, getAvailability, setAvailability, proposeMacro } from './macroflow.js'
 import { proposeMacroCoach } from './coachflow.js'
 import { explainAdjustment, coachEnabled } from './planllm.js'
+import { digest, loadObservations } from './outcomes.js'
+import { shadowReport } from './shadow.js'
 
 const err = (status, message) => Object.assign(new Error(message), { status })
 // Plan changes need an authenticated user (the proxy login stamps X-Lumpad-User). With PLAN_ALLOW_ANON=1 (off by default, a deliberate choice) a caller without a login is accepted as
@@ -22,6 +24,7 @@ function twinCtx(latestTwin) {
   const s = latestTwin?.()?.state
   return { gate: { tierId: s?.readiness?.tier ?? null, caps: s?.readiness?.caps?.length ?? 0, progPct: s?.load?.km_vs_4wk_avg_pct ?? null }, load: { tsb: s?.load?.tsb ?? null, acwr: s?.load?.acwr_uncoupled ?? null }, weekly4w: s?.load?.weekly_km_4w ?? null, tier: s?.readiness?.tier ?? null }
 }
+const addD = (s, n) => { const d = new Date(s + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10) }
 const after = (db) => { expireProposals(db); return syncPlan({ db }) }
 
 export function handlers({ latestTwin, complete = null, mdb = null, memoryRows = () => [] }) {
@@ -45,6 +48,10 @@ export function handlers({ latestTwin, complete = null, mdb = null, memoryRows =
       if (!r.patch) return { ok: true, proposal: null, choice: r.choice, refused: r.refused ?? null, trigger: trig.id, note: r.refused || 'No plan change needed for this choice.' }
       return { ...propose(db, { patches: [r.patch], trigger: trig.id, today: wibDate(), inputs: { missed: date, choice: r.choice } }), choice: r.choice, trigger: trig.id }
     },
+    // weekly line for the review: changes applied / rejected / expired / reverted, outcome verdicts, adherence by template
+    digest: (q) => { const to = q.get('to') || wibDate(), from = q.get('from') || addD(to, -7); if (!DATE.test(from) || !DATE.test(to)) throw err(400, 'from/to must be YYYY-MM-DD'); return digest(planDb(), from, to) },
+    // shadow review: every would-have-proposed change next to what you actually ran that day
+    shadow: async () => { const { db: app } = await import('../store.js'), { idb } = await import('../intel/db.js'), db = planDb(), first = db.prepare("SELECT MIN(substr(created_at,1,10)) d FROM plan_adjustment WHERE inputs LIKE '%\"shadow\":true%'").get().d || wibDate(); return shadowReport(db, loadObservations(app, idb, first, wibDate()).runs) },
     goals: () => ({ goals: listGoals(planDb()), archived: listGoals(planDb(), { status: 'archived' }) }),
     goal: (body, user) => { needUser(user); return upsertGoal(planDb(), body, { by: 'athlete' }) },
     seedGoals: (_b, user) => { needUser(user); return seedGoals(planDb()) },
