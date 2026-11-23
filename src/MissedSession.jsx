@@ -17,7 +17,7 @@ export default function MissedSession({ day, date, runsToday, checkin, tier, wee
   if (!r) return null
   const show = open || r.recommended
   return <section className="card missed" aria-label="Today's run has not happened yet">
-    <div className="missed-head"><small>Afternoon check · {hour}:00 WIB</small><b>No run yet: {r.day.label || r.day.kind} · {r.km} km</b></div>
+    <div className="missed-head"><small>Check · {hour}:00 WIB</small><b>No run yet: {r.day.label || r.day.kind} · {r.km} km</b></div>
     <p className="muted">Three ways forward. Moving it to tomorrow can change the whole week, so it is checked against your rules first. This is advice; the plan is not edited.</p>
     <div className="chips" role="group" aria-label="Why it did not happen">{REASONS.map((x) => <button key={x.id} type="button" className={`chip ${reason === x.id ? 'on' : ''}`} aria-pressed={reason === x.id} onClick={() => setReason(x.id)}>{x.label}</button>)}</div>
     {r.note && <p className="missed-note" role="note">{r.note}</p>}

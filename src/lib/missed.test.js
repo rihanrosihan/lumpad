@@ -9,7 +9,7 @@ const plan = mk([['2026-12-07', 'easy', 10], ['2026-12-08', 'rest', 0], ['2026-1
 const by = (r, id) => r.scenarios.find((s) => s.id === id)
 
 test('not shown before the afternoon, on rest days, or on race days', () => {
-  assert.equal(missedPlan(plan, '2026-12-09', { hour: 13 }), null)
+  assert.equal(missedPlan(plan, '2026-12-09', { hour: 9 }), null)
   assert.equal(missedPlan(plan, '2026-12-08', { hour: 16 }), null)
   assert.equal(missedPlan({ d: 1, '2026-12-09': { date: '2026-12-09', kind: 'race', km: 10 } }, '2026-12-09', { hour: 16 }), null)
 })

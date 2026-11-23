@@ -3,7 +3,7 @@
 import { addDays, dowOf, mondayOf } from './dates.js'
 import { isLowerDay } from './strength.js'
 
-export const AFTERNOON_FROM = 14 // WIB hour: before this the day is not "missed" yet
+export const AFTERNOON_FROM = 10 // WIB hour: before this the day is not "missed" yet
 const HARD = new Set(['quality', 'tt', 'speed', 'long'])
 const RUNKM = (d) => (d && d.km > 0 && !['rest', 'gym'].includes(d.kind) ? d.km : 0)
 const r1 = (n) => Math.round(n * 10) / 10
