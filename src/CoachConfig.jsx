@@ -73,7 +73,34 @@ export function ProviderSettings() {
         : !P.active && <button type="button" className="btn sm primary" style={{ width: 'auto' }} disabled={!!busy || !P.key_set} onClick={() => run('use')}>{busy === 'use' ? 'Testing and switching…' : `Use ${P.label}`}</button>}
       {(P.saved?.key || P.saved?.model) && <button type="button" className="btn sm" disabled={!!busy} onClick={() => run('reset')}>Remove saved key</button>}
     </div>
+    {P.id === 'tokenomix' && <TokenomixQuota />}
     {test && <p className={test.ok ? 'ok' : 'err'} role="status">{test.ok ? `✓ ${P.label}: connected · model ${test.model} · ${test.model_count ?? 0} models · answered in ${(test.latency_ms / 1000).toFixed(1)} s · JSON output ${test.json_mode ? 'works' : 'did not work'}${test.warning ? ' — ' + test.warning : ''}` : `✗ ${test.error}`}</p>}
     {msg && <p className={msg.ok ? 'ok' : 'err'} role={msg.ok ? 'status' : 'alert'}>{msg.text}</p>}
   </Card>
+}
+
+// Tokenomix plan quota (typed in from the usage portal: it has no API). Warns when quota is low or the plan is about to expire.
+function TokenomixQuota() {
+  const Q = useApi('/api/coach/quota'), q = Q.data, [edit, setEdit] = useState(false), [f, setF] = useState({}), [err, setErr] = useState('')
+  if (!q) return null
+  const low = q.left_pct <= 10 || q.days_left <= 7, v = (k) => (f[k] !== undefined ? f[k] : q[k]), used = q.total_m > 0 ? Math.min(100, 100 - q.left_pct) : 0
+  const save = async () => { try { await post('/api/coach/quota', f); invalidate('coach/quota'); setEdit(false); setF({}); setErr('') } catch (e) { setErr(e.message || 'Failed') } }
+  return <div style={{ marginTop: 12 }}>
+    <dl className="kv">
+      <div><dt>Quota left</dt><dd>{q.left_m}M of {q.total_m}M · {q.left_pct}% left{low ? ' · low' : ''}</dd></div>
+      <div><dt>Used</dt><dd>{q.used_m}M ({used}%)</dd></div>
+      <div><dt>Valid until</dt><dd>{q.valid_until} · {q.days_left > 0 ? `${q.days_left} days left` : 'expired'}</dd></div>
+      <div><dt>Status</dt><dd>{q.status}</dd></div>
+    </dl>
+    <div className="bar" role="img" aria-label={`Tokenomix quota ${used}% used`}><i style={{ width: used + '%', background: low ? 'var(--red-t)' : 'var(--accent)' }} /></div>
+    <small className="muted">Typed in by hand (last update {q.as_of}); the portal has no API. <a href={q.portal} target="_blank" rel="noopener noreferrer">Open usage portal</a> · <button type="button" className="btn sm" onClick={() => setEdit(!edit)}>{edit ? 'Cancel' : 'Update figures'}</button></small>
+    {edit && <div className="form" style={{ gridTemplateColumns: '1fr 1fr', marginTop: 8 }}>
+      <label className="fld"><span>Total (M tokens)</span><input type="number" step="any" value={v('total_m')} onChange={(e) => setF({ ...f, total_m: e.target.value })} /></label>
+      <label className="fld"><span>Used (M tokens)</span><input type="number" step="any" value={v('used_m')} onChange={(e) => setF({ ...f, used_m: e.target.value })} /></label>
+      <label className="fld"><span>Valid until</span><input type="date" value={v('valid_until')} onChange={(e) => setF({ ...f, valid_until: e.target.value })} /></label>
+      <label className="fld"><span>Status</span><input value={v('status')} onChange={(e) => setF({ ...f, status: e.target.value })} /></label>
+      <button type="button" className="btn sm primary" style={{ width: 'auto' }} onClick={save}>Save figures</button>
+    </div>}
+    {err && <p className="err" role="alert">{err}</p>}
+  </div>
 }

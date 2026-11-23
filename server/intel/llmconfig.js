@@ -117,3 +117,21 @@ export async function listModels({ provider, api_key, fetchFn = fetch, force = f
   } catch (e) { return { ok: false, provider: id, error: redact(e.name === 'TimeoutError' ? 'Timed out waiting for the server' : e.message || 'Network error', key), models: [] } }
 }
 export const clearModelCache = () => modelCache.clear()
+
+// Tokenomix plan quota: the portal has no API we can call, so the figures are typed in by hand (snapshot below until the first save) and shown as a card.
+export const QUOTA_FILE = 'tokenomix_quota', PORTAL_URL = 'https://tokenomixai.com/en/portal'
+const QUOTA_SNAPSHOT = { total_m: 100, used_m: 1.48, valid_until: '2026-12-20', status: 'active', as_of: '2026-11-23' }
+export function getQuota() {
+  let q = null; try { q = load(QUOTA_FILE, null) } catch {}
+  q = q || QUOTA_SNAPSHOT
+  const left = Math.max(0, q.total_m - q.used_m), days = Math.ceil((Date.parse(q.valid_until + 'T23:59:59+07:00') - Date.now()) / 864e5)
+  return { ...q, left_m: Math.round(left * 100) / 100, left_pct: q.total_m > 0 ? Math.round((left / q.total_m) * 100) : 0, days_left: days, portal: PORTAL_URL }
+}
+export function saveQuota({ total_m, used_m, valid_until, status } = {}, { now = new Date().toISOString() } = {}) {
+  const cur = getQuota(), t = total_m === undefined || total_m === '' ? cur.total_m : Number(total_m), u = used_m === undefined || used_m === '' ? cur.used_m : Number(used_m)
+  const v = valid_until || cur.valid_until, st = String(status || cur.status).trim().slice(0, 30)
+  if (!(t > 0 && t <= 1e6)) throw Object.assign(new Error('Total quota must be a positive number of millions of tokens'), { status: 400 })
+  if (!(u >= 0 && u <= t)) throw Object.assign(new Error('Used must be between 0 and the total'), { status: 400 })
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(v) || Number.isNaN(Date.parse(v))) throw Object.assign(new Error('Valid until must be a date (YYYY-MM-DD)'), { status: 400 })
+  save(QUOTA_FILE, { total_m: t, used_m: u, valid_until: v, status: st, as_of: now.slice(0, 10) }); return getQuota()
+}

@@ -17,7 +17,7 @@ import { runIntel, recentIntelJobs, afterSync } from './intel/run.js'
 import { startIntelScheduler } from './intel/schedule.js'
 import { plannedForecast } from './intel/forecast.js'
 import { adviceSummary, listAdvice, setStatus as setAdviceStatus } from './intel/advice.js'
-import { getConfig, publicConfig, saveConfig, resetConfig, testConnection, listModels } from './intel/llmconfig.js'
+import { getConfig, publicConfig, saveConfig, resetConfig, testConnection, listModels, getQuota, saveQuota } from './intel/llmconfig.js'
 import { runCoach, recentRuns, getRun, newRun, finishRun, coachStatus } from './intel/coach.js'
 import { retrieveRunnerContext, renderPrompt, TASKS, OUTPUT_SCHEMA } from './intel/context.js'
 import { guardStatus, resolveModel } from './intel/llm.js'
@@ -175,6 +175,8 @@ const routes = {
     const changes = !!(b.api_key || b.model || (activate && id !== getConfig().provider))
     if (changes && !b.skip_test) { const t = await testConnection({ provider: id, api_key: b.api_key, model: b.model }); if (!t.ok) throw Object.assign(new Error(t.error || 'Connection test failed'), { status: 400, test: t }) }
     return { ...(await saveConfig({ provider: id, api_key: b.api_key, model: b.model, max_calls_per_day: b.max_calls_per_day, activate })), saved_ok: true } },
+  'GET /api/coach/quota': async () => getQuota(),
+  'POST /api/coach/quota': async (_q, req) => saveQuota(JSON.parse((await readBody(req, 1e4)).toString() || '{}')),
   'POST /api/coach/config/reset': async (_q, req) => { const b = JSON.parse((await readBody(req, 1e4)).toString() || '{}'); return resetConfig(b.provider || undefined) },
   'POST /api/coach/run': async (_q, req) => { const b = JSON.parse((await readBody(req, 2e4)).toString() || '{}'); if (!TASKS[b.intent || 'daily_brief']) throw Object.assign(new Error('bad intent'), { status: 400 }); return runCoach({ intent: b.intent || 'daily_brief', question: String(b.question || '').slice(0, 1000), activityId: b.activity_id || null, force: b.force === true, tools: b.tools === true }) },
   'GET /api/coach/status': async (q) => { const i = q.get('intent') || 'daily_brief'; if (!TASKS[i]) throw Object.assign(new Error('bad intent'), { status: 400 }); return coachStatus({ intent: i, question: String(q.get('question') || '').slice(0, 1000), activityId: q.get('activity_id') || null }) },

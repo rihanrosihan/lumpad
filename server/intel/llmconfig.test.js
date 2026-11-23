@@ -90,3 +90,9 @@ test('model list under a key: sorted ids, cached, auth failure and missing key h
   r = await C.listModels({ provider: 'tokenomix', api_key: KEY, force: true, fetchFn: async () => { throw new Error('down ' + KEY) } }); assert.ok(!JSON.stringify(r).includes(KEY))
   await assert.rejects(() => C.listModels({ provider: 'evil', api_key: KEY }))
 })
+
+test('Tokenomix quota: snapshot default, manual update, validation', () => {
+  let q = C.getQuota(); assert.equal(q.total_m, 100); assert.equal(q.left_m, 98.52); assert.equal(q.left_pct, 99); assert.equal(q.portal, 'https://tokenomixai.com/en/portal')
+  q = C.saveQuota({ used_m: '60', valid_until: '2026-12-31' }); assert.equal(q.left_m, 40); assert.equal(q.left_pct, 40); assert.equal(C.getQuota().used_m, 60)
+  assert.throws(() => C.saveQuota({ used_m: 200 }), /between 0 and the total/); assert.throws(() => C.saveQuota({ valid_until: 'soon' }), /date/); assert.throws(() => C.saveQuota({ total_m: -1 }), /positive/)
+})
