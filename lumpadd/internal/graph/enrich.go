@@ -297,6 +297,11 @@ func SyncEnrich(ctx context.Context, pool *pgxpool.Pool, aura *Client, redact fu
 		return fmt.Errorf("executed as: %w", err)
 	}
 	st.PlanDaysWindow = len(pRows)
+
+	// 5. Knowledge-base layer from the exported project docs (documents, ledger, 2027 season, conflicts, open items, exercises, entities). A failure here never fails the core sync.
+	if err := SyncKB(ctx, aura, redact, memRows, st); err != nil {
+		st.KBError = err.Error()
+	}
 	return nil
 }
 

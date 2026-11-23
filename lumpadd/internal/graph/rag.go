@@ -120,5 +120,25 @@ func ExpandContext(ctx context.Context, aura *Client, intent string, topics []st
 		collect(res)
 	}
 
+	// 5. Knowledge-base layer: the athlete's own documented doctrine on the same subject (current docs only; chunks of archived docs are never pulled in)
+	if intent == "race_plan" {
+		res, err := aura.Query(c, `
+			MATCH (d:Document {archived: false})-[x:MENTIONS]->(e:Entity) WHERE e.kind IN ['Goal','Event']
+			MATCH (m:Memory)-[:FROM_DOC]->(d) WHERE (m)-[:MENTIONS]->(e)
+			RETURN '' AS lid, m.id ORDER BY x.n DESC LIMIT 4`, nil)
+		if err == nil {
+			collect(res)
+		}
+	}
+	if hasAny(topics, "strength_lower", "gct_fade", "stride_fade") {
+		res, err := aura.Query(c, `
+			MATCH (d:Document {archived: false})-[x:MENTIONS]->(e:Entity {kind: 'Condition'})
+			MATCH (m:Memory)-[:FROM_DOC]->(d) WHERE (m)-[:MENTIONS]->(e)
+			RETURN '' AS lid, m.id ORDER BY x.n DESC LIMIT 4`, nil)
+		if err == nil {
+			collect(res)
+		}
+	}
+
 	return hits, nil
 }

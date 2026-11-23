@@ -16,24 +16,27 @@ import (
 // Never syncs raw GPS coordinates (lat1/lon1) or unredacted PII strings.
 
 type SyncStats struct {
-	Days           int `json:"days"`
-	Sessions       int `json:"sessions"`
-	Shoes          int `json:"shoes"`
-	Races          int `json:"races"`
-	PainLinks      int `json:"pain_links"`
-	Rules          int `json:"rules"`
-	Memories       int `json:"memories"`
-	Decisions      int `json:"decisions"`
-	PlanDays       int `json:"plan_days"`
-	SimilarEdges   int `json:"similar_edges"`
-	ConflictEdges  int `json:"conflict_edges"`
-	TopicLinks     int `json:"topic_links"`
-	RelatedLinks   int `json:"related_links"`
-	Workouts       int `json:"workouts"`
-	Chains         int `json:"strength_chains"`
-	CoachRuns      int `json:"coach_runs"`
-	TraceEdges     int `json:"trace_edges"`
-	PlanDaysWindow int `json:"plan_days_window"`
+	Days           int    `json:"days"`
+	Sessions       int    `json:"sessions"`
+	Shoes          int    `json:"shoes"`
+	Races          int    `json:"races"`
+	PainLinks      int    `json:"pain_links"`
+	Rules          int    `json:"rules"`
+	Memories       int    `json:"memories"`
+	Decisions      int    `json:"decisions"`
+	PlanDays       int    `json:"plan_days"`
+	SimilarEdges   int    `json:"similar_edges"`
+	ConflictEdges  int    `json:"conflict_edges"`
+	TopicLinks     int    `json:"topic_links"`
+	RelatedLinks   int    `json:"related_links"`
+	Workouts       int    `json:"workouts"`
+	Chains         int    `json:"strength_chains"`
+	CoachRuns      int    `json:"coach_runs"`
+	TraceEdges     int    `json:"trace_edges"`
+	PlanDaysWindow int    `json:"plan_days_window"`
+	KBNodes        int    `json:"kb_nodes"`
+	KBEdges        int    `json:"kb_edges"`
+	KBError        string `json:"kb_error,omitempty"`
 }
 
 type OverviewStats struct {
