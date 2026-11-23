@@ -12,7 +12,7 @@ const wibDay = (ms) => new Date(ms + 7 * 3600e3).toISOString().slice(0, 10)
 // preview: 200–300 characters, cut at a sentence or word boundary
 export const preview = (t, max = 280, min = 200) => { if (t.length <= max) return t; const c = t.slice(0, max), at = Math.max(c.lastIndexOf('. '), c.lastIndexOf('! '), c.lastIndexOf('? ')); return at >= min ? c.slice(0, at + 1) : c.replace(/\s+\S*$/, '') + '…' }
 const clean = cleanCoachText
-export default function TodayCard({ checkin, settings, go, todayActs = [], date, tomorrow = null, weekPlanKm = null }) {
+export default function TodayCard({ bare = false, checkin, settings, go, todayActs = [], date, tomorrow = null, weekPlanKm = null }) {
   const [open, setOpen] = useState(false), [tick, setTick] = useState(0), [busy, setBusy] = useState(false), [err, setErr] = useState(''), T = useApi('/api/twin'), twin = T.data?.state, R = useApi('/api/coach/runs')
   const brief = (R.data || []).find((r) => r.intent === 'daily_brief' && r.ok && wibDay(Date.parse(r.created_at)) === wibDay(Date.now()))
   const B = useApi(brief ? `/api/coach/run?id=${brief.id}` : '', !!brief), p = B.data?.parsed
@@ -26,7 +26,7 @@ export default function TodayCard({ checkin, settings, go, todayActs = [], date,
   const tm = tomorrowCheck(twin, tomorrow, { after: fresh ? Math.round((L.ctl - L.atl) * 10) / 10 : null, pain: painToday(checkin), weekPlanKm, hrCap })
   const attention = items.filter((i) => i.status === 'alert' || i.status === 'watch').slice(0, 4), clear = items.filter((i) => i.status === 'ok')
   const coachLine = p?.summary ? clean(p.summary).replace(/^(GO|EASY ONLY|REST)[.:,—\s-]*/i, '') : null
-  return <section className={`card watch call-${call?.level || 'none'}`} aria-label="Today">
+  return <section className={`${bare ? 'combo-body' : 'card'} watch call-${call?.level || 'none'}`} aria-label="Today">
     {call && <div className="watch-call">
       <span className="watch-verdict">{call.label}</span>
       <p>{call.why}</p>

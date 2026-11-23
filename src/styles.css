@@ -1574,3 +1574,22 @@ body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area
 .tmr-heat{margin:0;font-size:.8rem;line-height:1.45}.tmr-heat small{color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:.66rem}
 .heat{font-size:.68rem;font-weight:800;text-transform:uppercase;padding:1px 7px;border-radius:999px;background:#dcfce7;color:#15803d}
 .heat-yellow{background:#fef9c3;color:#854d0e}.heat-orange{background:#ffedd5;color:#9a3412}.heat-red{background:#fee2e2;color:#b91c1c}.heat-black{background:#111827;color:#f9fafb}
+
+/* missed session (afternoon check) */
+.missed{display:grid;gap:8px}
+.missed-head{display:grid;gap:2px}.missed-head small{color:var(--muted)}
+.missed .chips{display:flex;flex-wrap:wrap;gap:6px}.missed .chip.on{outline:2px solid var(--accent,currentColor)}
+.missed-note{margin:0;font-weight:600}
+.missed-grid{display:grid;gap:8px}
+.missed-sc{border:1px solid var(--line);border-radius:12px;padding:8px 12px;display:grid;gap:4px}
+.missed-sc.v-no{opacity:.8}.missed-sc.open{border-color:currentColor}
+.missed-top{all:unset;cursor:pointer;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.missed-do{margin:0;font-size:.9rem}
+.missed-checks{margin:4px 0 0;padding:0;list-style:none;display:grid;gap:3px;font-size:.8rem}
+.missed-checks .c-fail{color:var(--red)}.missed-checks .c-warn{color:var(--yellow)}.missed-checks .c-ok{color:var(--muted)}
+
+/* daily briefing + today's call as ONE block */
+.card.combo{padding:0;overflow:hidden;display:grid;gap:0}
+.hero4.merged{margin:0;border-radius:0;border:0;box-shadow:none}
+.combo-body{padding:14px 16px;border:0;box-shadow:none;background:transparent;margin:0}
+@media(min-width:1024px){.hero4.merged{grid-template-columns:minmax(0,1fr)}}

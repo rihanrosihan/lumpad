@@ -17,6 +17,7 @@ import { RadialGauge, Ring, Stacked100, StepChart, Sparkline } from './charts2.j
 import { BarChart } from './charts.jsx'
 import FuelCard from './FuelCard.jsx'
 import TodayCard from './TodayCard.jsx'
+import MissedSession from './MissedSession.jsx'
 import { pickShoe } from './lib/shoes.js'
 import { WorkoutDetail, WorkoutLine, mainTarget, metaFor } from './Workout.jsx'
 import { cfgOf, hrRange } from './lib/zones.js'
@@ -57,16 +58,19 @@ export default function Home({ vdot, settings, results, go, M: Mprop }) {
   const [pv, setPv] = useState(''), briefDays = Array.from({ length: 8 }, (_, i) => effectiveDay(BY_DATE[addDays(T, i)], scale.items?.[addDays(T, i)], addDays(T, i))).filter((d) => d && d.km > 0 && !['rest', 'gym'].includes(d.kind)), pvDay = briefDays.find((d) => d.date === pv) || briefDays[0]
   const RACES = PLAN.filter((d) => d.kind === 'race' && /FM|Full/.test(d.label || '')), near = RACES.find((d) => d.date >= T), aRace = settings.raceDate
   return <section className="screen home">
-    <div className="hero4">
-      <div className="h4-tags"><span className="tag">DAILY BRIEFING · {fmtLong(T).split(', ').slice(1).join(', ').toUpperCase()}</span>{day && <span className="tag am">{((wk?.id || '') + ' · ' + (PHASE_NAME[day.phase] || day.phase)).toUpperCase()}</span>}</div>
-      <button className={`fresh ${sync === null ? 'warn' : sync?.lastRun ? (sync.lastRun.ok ? 'ok' : 'warn') : 'none'}`} onClick={() => go('profile')}>
-      <i />{sync === undefined ? 'Checking sync…' : sync === null ? 'Sync status unreachable — data may be stale' : sync?.lastRun ? <>Sync {ago(sync.lastRun.received_at)} · {wib(sync.lastRun.received_at)} WIB</> : 'No sync yet — no COROS/Strava data has arrived'}
-    </button>
-      <h1>{headline}</h1>
+    <div className="card combo">
+      <div className="hero4 merged">
+        <div className="h4-tags"><span className="tag">DAILY BRIEFING · {fmtLong(T).split(', ').slice(1).join(', ').toUpperCase()}</span>{day && <span className="tag am">{((wk?.id || '') + ' · ' + (PHASE_NAME[day.phase] || day.phase)).toUpperCase()}</span>}</div>
+        <button className={`fresh ${sync === null ? 'warn' : sync?.lastRun ? (sync.lastRun.ok ? 'ok' : 'warn') : 'none'}`} onClick={() => go('profile')}>
+        <i />{sync === undefined ? 'Checking sync…' : sync === null ? 'Sync status unreachable — data may be stale' : sync?.lastRun ? <>Sync {ago(sync.lastRun.received_at)} · {wib(sync.lastRun.received_at)} WIB</> : 'No sync yet — no COROS/Strava data has arrived'}
+      </button>
+        <h1>{headline}</h1>
 
+      </div>
+      <TodayCard bare checkin={checked ? f : null} settings={settings} go={go} todayActs={M.acts.filter((a) => a.date === T && a.sport_class !== 'strength')} date={T} tomorrow={effectiveDay(BY_DATE[addDays(T, 1)], scale.items?.[addDays(T, 1)], T)} weekPlanKm={(() => { const m = mondayOf(addDays(T, 1)); return Math.round(Array.from({ length: 7 }, (_, i) => BY_DATE[addDays(m, i)]?.km || 0).reduce((a, b) => a + b, 0) * 10) / 10 })()} />
     </div>
 
-    <TodayCard checkin={checked ? f : null} settings={settings} go={go} todayActs={M.acts.filter((a) => a.date === T && a.sport_class !== 'strength')} date={T} tomorrow={effectiveDay(BY_DATE[addDays(T, 1)], scale.items?.[addDays(T, 1)], T)} weekPlanKm={(() => { const m = mondayOf(addDays(T, 1)); return Math.round(Array.from({ length: 7 }, (_, i) => BY_DATE[addDays(m, i)]?.km || 0).reduce((a, b) => a + b, 0) * 10) / 10 })()} />
+    <MissedSession day={day} date={T} runsToday={M.acts.filter((a) => a.date === T && a.sport_class === 'run').length} checkin={checked ? f : null} tier={tier?.id} />
 
     <FuelCard last={last} today={T} />
 
