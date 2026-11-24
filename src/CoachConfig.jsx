@@ -34,9 +34,10 @@ const AUTO = '__auto__' // dropdown marker for "no fixed model"
 export function ProviderSettings() {
   const C = useApi('/api/coach/config'), cfg = C.data
   const [sel, setSel] = useState(null), [form, setForm] = useState({ api_key: '', model: '', max: '' }), [test, setTest] = useState(null), [busy, setBusy] = useState(''), [msg, setMsg] = useState(null), [models, setModels] = useState({})
-  if (!cfg?.providers) return <Card title="AI provider, API key & model"><p className="muted">Loading…</p></Card>
-  const cur = sel || cfg.active, P = cfg.providers.find((x) => x.id === cur) || cfg.providers[0], inUse = cfg.providers.find((x) => x.active)
-  const ML = useApi(P.key_set ? `/api/coach/models?provider=${cur}${form.api_key ? '&_=' + form.api_key.length : ''}` : '', P.key_set && !form.api_key), listed = ML.data?.ok ? ML.data.models : []
+  // Every hook must run on every render (React error #310): derive P safely, call useApi unconditionally ('' = do not fetch), only then return early.
+  const providers = cfg?.providers, cur = sel || cfg?.active, P = providers?.find((x) => x.id === cur) || providers?.[0], inUse = providers?.find((x) => x.active)
+  const ML = useApi(P?.key_set ? `/api/coach/models?provider=${cur}${form.api_key ? '&_=' + form.api_key.length : ''}` : '', !!P?.key_set && !form.api_key), listed = ML.data?.ok ? ML.data.models : []
+  if (!providers) return <Card title="AI provider, API key & model"><p className="muted">Loading…</p></Card>
   const val = (k, d) => (form[k] !== '' ? form[k] : d), model = val('model', P.model || (P.id === 'deepseek' ? AUTO : '')), max = val('max', P.max_calls_per_day), dirty = !!(form.api_key || form.model || form.max)
   const set = (k) => (e) => { setForm((f) => ({ ...f, [k]: e.target.value })); setMsg(null) }
   const pick = (id) => { setSel(id); setForm({ api_key: '', model: '', max: '' }); setTest(null); setMsg(null) }
