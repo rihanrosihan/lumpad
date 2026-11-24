@@ -1,10 +1,13 @@
 // node server/oldlumpad/cli.js <command> [--dry] [--yes] ...      Run as the lumpad user (it owns the data and the Neo4j env):
 //   sudo -u lumpad bash -c 'cd /opt/lumpad && nice -n 15 ionice -c3 node --env-file=.env --max-old-space-size=384 server/oldlumpad/cli.js <command>'
+import fs from 'node:fs'
 import { openDb, OLD_HORIZON } from './db.js'
 
 const [cmd = 'help', ...rest] = process.argv.slice(2)
 const flag = (n) => rest.includes('--' + n), opt = (n, d) => { const a = rest.find((x) => x.startsWith(`--${n}=`)); return a ? a.slice(n.length + 3) : d }
-const ZIP = opt('zip', '/opt/lumpad/old_lumpad.zip'), log = (...a) => process.stderr.write(a.join(' ') + '\n')
+// the archive has moved once already (root /opt/lumpad/old_lumpad.zip -> old_lumpad_full/old_lumpad.zip); try the current canonical spot first, then the old one, before giving up
+const ZIP_CANDIDATES = ['/opt/lumpad/old_lumpad_full/old_lumpad.zip', '/opt/lumpad/old_lumpad.zip']
+const ZIP = opt('zip', ZIP_CANDIDATES.find((p) => fs.existsSync(p)) || ZIP_CANDIDATES[0]), log = (...a) => process.stderr.write(a.join(' ') + '\n')
 const out = (o) => console.log(JSON.stringify(o, null, 1))
 const db = openDb()
 
