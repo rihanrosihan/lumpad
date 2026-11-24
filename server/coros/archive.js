@@ -91,7 +91,8 @@ function planActivity(today, a) {
   const id = a.label_id, st = a.sport_type, args = { labelId: id, sportType: st }
   upsert(today, 'detail:' + id, 'getActivityDetail', args, a.date)
   upsert(today, 'laps:' + id, 'queryActivityLapData', args, a.date)
-  if (!adb.prepare('SELECT 1 FROM fit_files WHERE label_id=?').get(id)) upsert(today, 'fit:' + id, 'queryActivityFitFileDownloadUrls', args, a.date)
+  // 10001 = Multisport parent: COROS serves no FIT for it ("no FIT URL" / "not a FIT file"), so asking only burns the FIT quota
+  if (st !== 10001 && !adb.prepare('SELECT 1 FROM fit_files WHERE label_id=?').get(id)) upsert(today, 'fit:' + id, 'queryActivityFitFileDownloadUrls', args, a.date)
   if (a.start_ts && a.end_ts && a.end_ts > a.start_ts) upsert(today, 'custom:' + id, 'queryCustomActivityLapData', { ...args, startTimestamp: a.start_ts, endTimestamp: a.end_ts }, a.date)
 }
 
@@ -280,7 +281,7 @@ export function status(today = jakartaDate()) {
     etaDays: Math.max(0, ...buckets.map((b) => b.etaDays), Math.ceil(pending / Math.max(1, B.total))),
     backlog, complete: backlog === 0 && !!healthFrom() && tools.some((t) => t.tool === 'querySportRecords' && t.pending === 0),
     activities: adb.prepare('SELECT COUNT(*) n, MIN(date) first, MAX(date) last FROM activities').get(),
-    fit: adb.prepare('SELECT COUNT(*) files, COALESCE(SUM(bytes),0) bytes FROM fit_files').get(),
+    fit: adb.prepare('SELECT COUNT(*) files, COALESCE(SUM(bytes),0) bytes, COALESCE(SUM(sport_type IN (100,101,102,103)),0) runs FROM fit_files').get(), // runs = the files the intel pipeline parses (RUN in intel/pipeline.js)
     dbBytes: ARCHIVE_PATH === ':memory:' ? 0 : size(ARCHIVE_PATH) + size(ARCHIVE_PATH + '-wal'),
     usageLast7: adb.prepare('SELECT day, SUM(calls) calls, SUM(errors) errors FROM usage WHERE day >= ? GROUP BY day ORDER BY day').all(addDays(today, -6)),
   }

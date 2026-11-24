@@ -130,6 +130,7 @@ export default function Profile({ vdot, results, settings, setSettings, go }) {
   const srv = Srv.data || {}
   const fitTotal = Arch.data?.activities?.n ?? (typeof Arch.data?.activities === 'number' ? Arch.data.activities : null) ?? qd.coros_runs ?? 456
   const fitDone = Arch.data?.fit?.files ?? (typeof Arch.data?.fit === 'number' ? Arch.data.fit : 0)
+  const fitRuns = Arch.data?.fit?.runs ?? null // only run-sport FITs are parsed (EF/drift/fade mean nothing for strength or walks)
   const fitParsed = srv.dbCounts?.fit_sessions ?? Intel.data?.counts?.fit_sessions ?? qd.fit_sessions ?? 0
   const weatherDone = srv.dbCounts?.run_weather ?? Intel.data?.counts?.weather ?? (fitParsed && qd.missing_weather != null ? Math.max(0, fitParsed - qd.missing_weather) : 0)
   const shoeMatched = qd.coros_runs != null && qd.missing_shoe != null ? Math.max(0, qd.coros_runs - qd.missing_shoe) : null
@@ -139,7 +140,7 @@ export default function Profile({ vdot, results, settings, setSettings, go }) {
     { stream: 'coros', item: 'Daily Health & Readiness', value: 'Sleep, nocturnal HRV, RHR, stress & wellness checks', avail: Arch.data?.healthFrom ? `from ${Arch.data.healthFrom}` : 'Daily', local: 'lumpad.db:health_daily', pct: 100 },
     { stream: 'coros', item: '1-Hz FIT Binaries', value: 'Raw GPS, HR, GCT, vertical oscillation, stride & power', avail: `${fitTotal} activities`, local: `${fitDone} files · coros.db`, pct: fitTotal ? Math.round((fitDone / fitTotal) * 1000) / 10 : 0 },
     { stream: 'strava', item: 'Shoe Rotation Backfill', value: `${active.length} active shoes matched to COROS runs by timestamp`, avail: `${qd.coros_runs ?? '—'} runs`, local: shoeMatched != null ? `${shoeMatched} matched · lumpad.db:gear` : `${active.length} shoes`, pct: qd.coros_runs && shoeMatched != null ? Math.round((shoeMatched / qd.coros_runs) * 1000) / 10 : (Src.data?.strava?.connected ? 100 : 0) },
-    { stream: 'intel', item: 'Parsed FIT & 16-D kNN', value: 'EF, HR@800, onset_km, run_share, GCT & shoe_id', avail: `${fitDone || fitParsed} FIT files`, local: `${fitParsed} sessions · intel.db`, pct: fitDone ? Math.min(100, Math.round((fitParsed / fitDone) * 1000) / 10) : 100 },
+    { stream: 'intel', item: 'Parsed FIT & 16-D kNN', value: 'EF, HR@800, onset_km, run_share, GCT & shoe_id', avail: fitRuns != null ? `${fitRuns} run FIT files` : `${fitDone || fitParsed} FIT files`, local: `${fitParsed} sessions · intel.db`, pct: (fitRuns ?? fitDone) ? Math.min(100, Math.round((fitParsed / (fitRuns ?? fitDone)) * 1000) / 10) : 100 },
     { stream: 'intel', item: 'WBGT Heat & Weather', value: 'Temperature, humidity, dew point & WBGT °C', avail: `${fitParsed || '—'} FIT runs`, local: `${weatherDone} rows · intel.db`, pct: fitParsed ? Math.min(100, Math.round((weatherDone / fitParsed) * 1000) / 10) : 0 },
   ].filter((r) => streamFilter === 'all' || r.stream === streamFilter)
 
