@@ -512,3 +512,10 @@ Tokens: **6.2 M** total (extraction 3.5 M, judge 1.1 M, QA 1.6 M incl. re-review
 * Of 169 held claims, 58 were source-faithful (reviewer flagged tense/advice only) and were promoted as archived: memory now 1,224 old_lumpad rows, graph 526 `Episode`. 111 remain held (95 partial, 11 unsupported, 5 other).
 * `verify` showed a one-time I1 diff after the morning COROS sync (09:00 WIB: activities, twin v62, daily_feat, health/fitness, 2 system ledger memories); attributed to that job via timestamps and the write log, then re-baselined; 33/33 identical.
 * The 9 old "coach questions" (2026-06-22 → 07-09) are auto-generated daily prompts 4–5 months stale; most are answered by the absorbed enrichment notes. Recommend retiring them rather than answering.
+
+### 13.5 Follow-up (2026-11-24, continued)
+
+* Of the 111 claims held as `needs_human`, **11 had never actually been reviewed**: a batch response from the adversarial reviewer dropped them, and the code's catch-all ("no review returned") was mis-read in the earlier triage as "unsupported" because its note also starts with "no". Re-queued and genuinely re-reviewed: **9 passed and were promoted** (memory now 1,233 `old_lumpad` rows, 102 still held, 21 failed, unchanged). The remaining 102 are real partial/overreach/other verdicts, not a processing gap.
+* The 9 `coach_question` events were formally retired (`payload.retired=1` with a dated reason), not deleted, so nothing is left looking like an unanswered open item and the raw text is still there if wanted.
+* `verify` re-run clean after both changes: 8/8 invariants, 33/33 protected tables identical.
+* Fixed the CLI's default archive path (the zip moved from `/opt/lumpad/old_lumpad.zip` to `/opt/lumpad/old_lumpad_full/old_lumpad.zip`): it now tries the current location first, falls back to the old root path, and `--zip=` still overrides both. Tightened `old_lumpad_full/` to owner `lumpad`, mode 700 (the file itself already was).
