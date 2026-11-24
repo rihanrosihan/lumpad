@@ -3,6 +3,7 @@
 import { idb, mdb } from './db.js'
 import { ftsSearch, rrf, mmr, sortByEvidence, getMemory } from './memory.js'
 import { expandTerms, memoryIndex, tfidfRank, recallBlock, recallCount } from './recall.js'
+import { historyLane } from '../oldlumpad/lane.js'
 import { latestTwin } from './twin.js'
 import { listEdges } from './corr.js'
 import { OUTPUT_SCHEMA } from './schema.js'
@@ -132,10 +133,12 @@ export function retrieveRunnerContext({ intent = 'daily_brief', question = '', d
   let adviceHist; if (tf.mode !== 'past') try { const a = adviceSummary({ today: date }); if (a.resolved) adviceHist = { last_days: a.days, checked: a.resolved, by_kind: a.by_kind, recent: a.recent } } catch {}
   const twin = tf.mode === 'past' || retroQ ? pastTwin(twinRow.state) : compactTwin(twinRow.state), stable = { schema: SCHEMA, athlete: STABLE_ATHLETE, definitions: DEFINITIONS, rules }, list = [...items.values()]
   const facts = focus ? (() => { const h = idb.prepare('SELECT km, run_share, avg_hr, distance_m FROM fit_session WHERE label_id=?').get(focus); try { return h ? sessionFacts(JSON.parse(h.km || '[]'), h) : undefined } catch { return undefined } })() : undefined
+  let hist = []; try { hist = historyLane({ mdb, question, filters: dq.filters, retroQ, intent }) } catch {}   // old-notes history lane: retrospective free questions only, [] when there is nothing
   let volatile, tokens
   for (;;) {
-    volatile = { as_of: date, intent, question: redact(question), query: { filters: { ...dq.filters, shoes: dq.filters.shoes?.map((x) => x.name) }, topics: dq.topics }, twin_version: twinRow.version, twin, episodes: list.filter((i) => i.tier === 'episodic'), facts: list.filter((i) => i.tier !== 'episodic'), correlation_edges: edges, telemetry, focus_label: focus || null, today_activity: todayAct, session_day: sessionDay, session_facts: facts, time_frame: tf.mode === 'live' || tf.mode === 'same_day' ? undefined : tf, frame_note: frameNote(tf) || undefined, advice_history: adviceHist, planned_forecast: tf.mode === 'past' || retroQ ? undefined : forecast || undefined, recall: recallCount(recall) ? recall : undefined }
+    volatile = { as_of: date, intent, question: redact(question), query: { filters: { ...dq.filters, shoes: dq.filters.shoes?.map((x) => x.name) }, topics: dq.topics }, twin_version: twinRow.version, twin, episodes: list.filter((i) => i.tier === 'episodic'), facts: list.filter((i) => i.tier !== 'episodic'), correlation_edges: edges, telemetry, focus_label: focus || null, today_activity: todayAct, session_day: sessionDay, session_facts: facts, time_frame: tf.mode === 'live' || tf.mode === 'same_day' ? undefined : tf, frame_note: frameNote(tf) || undefined, advice_history: adviceHist, planned_forecast: tf.mode === 'past' || retroQ ? undefined : forecast || undefined, recall: recallCount(recall) ? recall : undefined, historical_notes: hist.length ? hist : undefined }
     tokens = EST(JSON.stringify(stable)) + EST(JSON.stringify(volatile)); if (tokens <= tokenBudget || list.length === 0) break
+    if (hist.length) { hist = []; continue }   // the history lane is the first thing shed
     const shed = ['prior_answers', 'plan', 'daily', 'journal', 'weekly']  /* counts are never shed: they ARE the answer */.find((k) => recall[k]?.length); if (shed) { recall[shed] = []; continue } // the extra databases go first, before telemetry and notes
     if (telemetry.length > 1) { telemetry.pop(); continue }
     const drop = list.map((i, k) => [i, k]).filter(([i]) => i.why === 'text match').pop() || list.map((i, k) => [i, k]).filter(([i]) => i.why === 'recent').pop() || [list.at(-1), list.length - 1]; list.splice(drop[1], 1)

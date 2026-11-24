@@ -32,7 +32,7 @@ export function applyWriteback(parsed, { runId = null, itemIds = [], corpus = ''
     if (why.length) { out.rejected.push({ title: w.title, why }); audit('writeback:rejected', null, { title: w.title, why, provider }, runId); continue }
     const status = w.tier === 'procedural' ? 'proposal' : 'candidate'
     // dedupe: near-identical existing memory (same tier) → count it as another observation instead of a new row
-    const sim = ftsSearch(w.title + ' ' + w.body, { tiers: [w.tier], statuses: ['candidate', 'active', 'proposal'], limit: 5 }).find((x) => x.source !== 'kb' && !x.locked && jaccard(tokens(x.title + ' ' + x.body), tokens(w.title + ' ' + w.body)) >= 0.6)
+    const sim = ftsSearch(w.title + ' ' + w.body, { tiers: [w.tier], statuses: ['candidate', 'active', 'proposal'], limit: 5 }).find((x) => x.source !== 'kb' && x.source !== 'old_lumpad' && !x.locked && jaccard(tokens(x.title + ' ' + x.body), tokens(w.title + ' ' + w.body)) >= 0.6)
     if (sim) {
       // re-observation only raises n; activation is the athlete's decision (no self-promotion). n >= 3 marks it ready for review.
       const m = getMemory(sim.id), n = m.n + 1, ready = m.status === 'candidate' && n >= 3

@@ -18,3 +18,8 @@ garmin_backup.zip
 server/data/garmin.db*
 server/data/fit/garmin/
 tokenomixai.env
+
+# Old Lumpad archive (health, credentials, third-party data; never commit)
+old_lumpad.zip
+server/data/oldlumpad.db*
+server/data/tmp/
