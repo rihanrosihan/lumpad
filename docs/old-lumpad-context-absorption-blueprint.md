@@ -519,3 +519,9 @@ Tokens: **6.2 M** total (extraction 3.5 M, judge 1.1 M, QA 1.6 M incl. re-review
 * The 9 `coach_question` events were formally retired (`payload.retired=1` with a dated reason), not deleted, so nothing is left looking like an unanswered open item and the raw text is still there if wanted.
 * `verify` re-run clean after both changes: 8/8 invariants, 33/33 protected tables identical.
 * Fixed the CLI's default archive path (the zip moved from `/opt/lumpad/old_lumpad.zip` to `/opt/lumpad/old_lumpad_full/old_lumpad.zip`): it now tries the current location first, falls back to the old root path, and `--zip=` still overrides both. Tightened `old_lumpad_full/` to owner `lumpad`, mode 700 (the file itself already was).
+
+### 13.6 Follow-up (2026-11-24, final triage pass)
+
+* Found and closed the last processing inconsistency: 1 of the 102 still-held claims (`b57254a7…`, a return-to-run gate instruction) was "supported, flagged only for advice-style wording" with no overreach concern — the same pattern the earlier batch promoted, just reviewed in a later run that the original one-time triage query never re-swept. Promoted it for consistency: memory now **1,234** `old_lumpad` rows, **101** still held, 21 failed (unchanged).
+* Inspected the remaining 101 directly (not by note-prefix heuristic this time): **96 partial** (the quote is faithful but some detail — a number, a date, a qualifier — isn't in the shown source) and **5 overreach** (the claim or its source generalizes from a small sample, e.g. "guaranteed crash" from 3 incidents). No further processing bugs found; these are genuine human-judgment calls and are left held, as the QA gate is designed to do.
+* `verify` clean again: 8/8 invariants, 33/33 protected tables identical.
