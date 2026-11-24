@@ -1,5 +1,5 @@
 // plan.db = the versioned plan, triggers, adjustment audit, benchmarks, zone sets and the template catalog. NOT rebuildable (approvals, history) → included in server/snapshot.js.
-// Schema: docs/adaptive-plan-engine-blueprint-v2.md §10.3. Opened lazily (importing this file does not create the database until first use).
+// Schema (blueprint removed once done; see git history, `git show 9c2afae:docs/adaptive-plan-engine-blueprint-v2.md`, §10.3). Opened lazily (importing this file does not create the database until first use).
 import { DatabaseSync } from 'node:sqlite'
 import fs from 'node:fs'
 import path from 'node:path'

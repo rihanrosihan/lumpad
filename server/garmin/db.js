@@ -1,5 +1,5 @@
 // Garmin history import: dedicated database (server/data/garmin.db) — raw vault + staging. Never touches lumpad/intel/memory DBs.
-// Blueprint: docs/garmin-ingestion-blueprint.md (section 3.1). Everything here is idempotent and resumable.
+// Blueprint (removed once done; see git history, `git show 601ed56:docs/garmin-ingestion-blueprint.md`, section 3.1). Everything here is idempotent and resumable.
 import { DatabaseSync } from 'node:sqlite'
 import fs from 'node:fs'
 import path from 'node:path'
