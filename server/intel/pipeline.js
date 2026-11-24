@@ -82,11 +82,13 @@ function upsertEpisodic(s, card) {
 // process every FIT of a run sport that is not yet at the current parser version
 export async function fitJob(adb, { limit = 1000, baseline } = {}) {
   const have = new Map(idb.prepare('SELECT label_id, parser_version FROM fit_session').all().map((r) => [r.label_id, r.parser_version]))
-  const todo = fitFiles(adb).filter((f) => RUN.has(f.sport_type) && have.get(f.label_id) !== PARSER_VERSION).slice(0, limit)
+  // a file the parser rejected as hopeless (a few-second recording) is remembered in coros.db meta so the hourly job stops retrying it; a parser_version bump retries it once
+  const junk = new Set(adb.prepare("SELECT k FROM meta WHERE k LIKE 'fit_junk:%' AND v=?").all(String(PARSER_VERSION)).map((r) => r.k.slice(9)))
+  const todo = fitFiles(adb).filter((f) => RUN.has(f.sport_type) && have.get(f.label_id) !== PARSER_VERSION && !junk.has(f.label_id)).slice(0, limit)
   let done = 0, failed = []
   for (const f of todo) {
     const file = path.join(dataDir(), f.path)
-    try { if (!fs.existsSync(file)) throw new Error('file missing'); await processFit({ label_id: f.label_id, date: f.date, file }, { baseline }); done++ } catch (e) { failed.push({ label_id: f.label_id, why: String(e.message).slice(0, 120) }) }
+    try { if (!fs.existsSync(file)) throw new Error('file missing'); await processFit({ label_id: f.label_id, date: f.date, file }, { baseline }); done++ } catch (e) { if (/too few records/.test(e.message)) adb.prepare('INSERT INTO meta (k, v) VALUES (?,?) ON CONFLICT(k) DO UPDATE SET v=excluded.v').run('fit_junk:' + f.label_id, String(PARSER_VERSION)); else failed.push({ label_id: f.label_id, why: String(e.message).slice(0, 120) }) }
     await tick()
   }
   const cards = done || todo.length === 0 ? buildCards() : 0
