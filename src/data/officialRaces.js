@@ -20,9 +20,10 @@ export const OFFICIAL_RACES = {
     splits: [['5K','0:42:45','8:33/km'],['10K','1:23:04','8:04/km'],['15K','2:08:35','9:06/km'],['20K','2:57:22','9:45/km'],['21.1K Finish','3:07:12','8:56/km']],
   },
   '2026-06-14': {
-    event: 'BTN Jakarta International Marathon (Jakim) 2026', bib: '#44708', status: 'Official Finisher · 1st FM',
-    net: '6:53:03', gun: '7:03:43', rank: '6,717/8,347 Overall · 5,896/7,221 Gender',
-    provider: 'Codeine Official Timing', url: 'https://jakim.id/',
-    splits: [['5K','0:38:15','7:39/km'],['10K','1:17:52','7:55/km'],['15K','1:59:44','8:22/km'],['21.1K','2:57:41','9:30/km'],['30K','4:30:10','10:23/km'],['35K','5:33:58','12:46/km'],['40K','6:28:10','10:50/km'],['42.2K Finish','6:53:03','11:20/km']],
+    event: 'BTN Jakarta International Marathon (Jakim) 2026 · Day 2', bib: '#44708', status: 'Official Finisher · 1st FM · Marathon National',
+    net: '6:53:03', gun: '7:03:43', rank: '6,717/8,347 Overall · 5,896/7,221 Gender · 4,127/5,021 Category · net pace 9:48/km, gun pace 10:03/km',
+    provider: 'Sporticx Official Timing', url: 'https://result.sporticx.com/result/detail_result/btn-jakim-2026-day-2/44708',
+    // checkpoint → cumulative chip time, cumulative average pace (as published; the final 40 km → 42.195 segment is not a published checkpoint)
+    splits: [['2.3K','0:18:22','7:59/km'],['5K','0:38:15','7:39/km'],['10K','1:17:52','7:47/km'],['12.63K','1:40:48','7:58/km'],['15K','1:59:44','7:58/km'],['21K','2:57:41','8:27/km'],['24.2K','3:34:07','8:50/km'],['25K','3:42:04','8:52/km'],['30K','4:30:10','9:00/km'],['32.6K','5:03:47','9:19/km'],['35K','5:33:58','9:32/km'],['36.4K','5:44:30','9:27/km'],['37.5K','6:01:29','9:38/km'],['40K','6:28:10','9:42/km'],['42.195K Finish','6:53:03','9:48/km']],
   },
 }
